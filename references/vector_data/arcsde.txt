@@ -1,0 +1,128 @@
+Spatial Database Engine (SDE) is one of ESRI's <a href="http://www.esri.com/">http://www.esri.com/</a> products which enables spatial data to be stored, managed, and quickly retrieved from leading commercial database management systems like Oracle, Microsoft SQL Server, Sybase, IBM DB2, and Informix.
+<p>
+<H4>What MapServer 5.0 currently supports with SDE:</H4>
+
+<UL>
+<li>Versioned queries (query geometry and attributes from a specified version)
+<li>queryByAttributes (select geometry and attributes based on the values of an attribute)
+<li>Limited join support for within-database tables</li>
+<li>queryByRect (select geometry based on an extent)
+<li>Projection on the fly
+<li>SDE for Coverages (a read-only type of SDE for coverage, shapefile, and ArcStorm/ArcLibrarian repositories)
+<li>SDE 8.1, 8.2, 8.3, 9.0, 9.1, and 9.2
+<li>Linux, Windows, and Solaris (platforms that have SDE C API support)
+
+</UL>
+<p>
+
+<H4>What MapServer 5.0 currently DOES NOT support with SDE:</H4>
+
+<UL>
+<li>queryByShape (pass in a shape with MapScript and use it for queries)
+<li>Direct Connect (bypass SDE to connect directly to the database with the SDE C API)
+</UL>
+
+<p>
+<p>
+<H4>How to make a connection to SDE:</H4>
+
+<OL>
+<li> Install the SDE C API client libraries for your platform (preferably matched to the server version you are using, ie 8.2 client -&gt; 8.2 server, 8.3 client -&gt; 8.3 server)
+<li> Compile MapServer with SDE support (see <a href="/docs/howto/compiling_on_unix">MapServer Unix Compilation Howto</a> for specific details)
+
+<li> Define a LAYER block in a MapFile that uses SDE as the CONNECTIONTYPE
+</OL>
+<p>
+<pre>
+  LAYER  
+    NAME         states
+    TYPE         POLYGON
+    CONNECTION "sdemachine.iastate.edu,port:5151,sde,username,password"
+    CONNECTIONTYPE SDE
+    DATA "HOBU.STATES_LAYER,SHAPE,SDE.DEFAULT"
+    FILTER "where MYCOLUMN is not NULL"
+    PROCESSING "QUERYORDER=ATTRIBUTE" # <-- MapServer 4.10 and above
+
+    # Within database one-to-one join support
+    PROCESSING "JOINTABLE=SDE_MASTER.GEOSERVWRITE.JOINTABLE" # <-- MapServer 5.0 and above
+    CLASSITEM "SDE_MASTER.GEOSERVWRITE.JOINTABLE.VAL" # <-- MapServer 5.0 and above
+    FILTER "SDE_MASTER.GEOSERVWRITE.JOINTABLE.AQ_TAG=SDE_MASTER.GEOSERVWRITE.JOINTESTLAYER.AQ_TAG" #<-- MapServer 5.0 and above
+
+    # ObjectID column manipulation
+    PROCESSING "OBJECTID=OBJECTID"  # <-- MapServer 5.0 and above 
+ 
+    TEMPLATE '/where/the/template/file/is/located'
+    CLASS
+	STYLE
+		SYMBOL 'circle'
+		SIZE 3
+		COLOR -1 -1 -1
+		OUTLINECOLOR 0 0 0
+	END
+    END
+  END
+</pre>
+<p>
+<UL>
+<li><b>CONNECTION - Order is important!</b>
+<UL>
+<li><b>sdemachine.iastate.edu</b> - The name of the machine you are connecting to.  In some instances, this may need to be the IP address of the machine rather than the name if the server running MapServer is not configured to cascade DNS lookups
+
+<li><b>port:5151</b> - The port number of SDE.  The <em>port:</em> is important as SDE expects you to define the <b>service</b> in this slot, and it can be other names like <em>sde:oracle</em> (for direct connect) or <em>esri_sde</em> (for systems with port 5151 defined as esri_sde in /etc/services)
+<li><b>sde</b> - The database username that the SDE server is using to connect to your database.  It is often only important for SDE setups that are connecting to Oracle (and even then, not so important).  Just leave it as <em>sde</em> if you don't know what it should be.
+
+<li><b>username</b> - The username that will be connecting to SDE.  This user must have been granted rights to select the layer that you will be specifying in the <i>DATA</i> directive.  You can use ArcCatalog or the SDE command-line utilities to grant the appropriate rights to layers.
+<li><b>password</b> - Password of the user connecting to SDE.  <b>Case Sensitive</b>.
+</UL>
+</UL>
+<p>
+
+<UL>
+<li><b>DATA - Order is important!</b>
+<UL>
+<li><b>HOBU.STATES_LAYER</b> - The layer name you are querying.  This the <em>full</em> name of the table in which the layer resides.  If you are using Oracle or Microsoft SQL Server as the DB for SDE, the schema name must also be supplied.
+<li><b>SHAPE</b> - The column that contains the geometry.  SDE techically allows for storage of multiple geometry types in the same layer, but in practice this isn't desireable.  Also, expect to have problems if there are invalid or null geometries in the layer (or versions of the layer).
+<li><b>SDE.DEFAULT</b> - <b>Note! this is located in a different spot than MapServer 4.2, which had it on the CONNECTION string.</b>  As of MapServer 4.2, you can query against a specific version of the layer.  SDE supports multi-user editing with versions.  If a layer has been Registered with the GeoDatabase and Registered as Versioned (ArcGIS terms), MapServer can query against specified versions of those edits.  If not specified, <em>SDE.DEFAULT</em> will be used for all queries. <b>Case Sensitive</b>. 
+
+</UL>
+<li><b>TEMPLATE</b>
+<UL>
+<li><b>/where/the/template/file/is/located</b> - A template directive must be specified (can point to a dummy file) in order for MapServer to be able to query attributes from SDE.  If you are only going to be drawing layers, this directive is unnecessary and will slow down the query operations of SDE (especially for layers with lots of attribute columns).
+</UL>
+</UL>
+<li><b>PROCESSING</b>
+<UL>
+<li><b>PROCESSING "QUERYORDER=ATTRIBUTE"</b> - Allows you to force SDE to use the WHERE clause that was 
+defined in your FILTER statement first, without attempting to hit the spatial index.  Only in very 
+special cases will you want to do this. </li>
+</li>
+
+<blockquote>
+
+Limited within-database join support.  MapServer's SDE driver, as of MapServer 5.0, allows you to join a single 
+attribute table that has no geometries to the layer that you are rendering.  This feature allows you to use the 
+data in the joined table much as you would in a composite query that was made with something like PostGIS or Oracle 
+Spatial.  That is, the columns in the right table of the join are available for CLASSITEM, LABELITEM and so on.  The 
+biggest constraint, however, is that <b>fully qualified</b> names must be used or it most likely will not work.  The 
+join support is activated through PROCESSING options.
+
+<ul>
+<li>
+<b>PROCESSING "JOINTABLE=SDE_MASTER.GEOSERVWRITE.JOINTABLE"</b> - The JOINTABLE processing option tells the driver 
+which table you are joining the current layer to.
+</li>
+<li>
+<b>CLASSITEM "SDE_MASTER.GEOSERVWRITE.JOINTABLE.VAL"</b> - A CLASSITEM or LABELITEM for a joined table using this mechanism must be fully qualified.
+</li>
+<li>
+<b>FILTER "SDE_MASTER.GEOSERVWRITE.JOINTABLE.AQ_TAG=SDE_MASTER.GEOSERVWRITE.JOINTESTLAYER.AQ_TAG"</b> - An important part of the join is defining how the join is to be made.  Use a FILTER to do so.
+</li>
+</ul>
+
+</blockquote>
+<li>
+<b>PROCESSING "OBJECTID=OBJECTID"</b> - If you are having trouble with the SDE driver detecting your unique ID column, you can override it with this processing parameter.  Doing so will also have a slight performance benefit because it will save a couple of extra queries to the database.
+</li>
+
+</ul>
+

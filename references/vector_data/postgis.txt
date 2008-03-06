@@ -1,0 +1,40 @@
+PostGIS is supported directly by MapServer and must be compiled into MapServer to work.
+
+In most cases, PostgreSQL and PostGIS libraries (.dll or .so) must be present in the system's path environment for functionality to be present.  This includes the libpq and libpostgis libraries.
+
+Map File Example
+Specify::
+	
+	CONNECTIONTYPE POSTGIS
+
+Specify::
+
+	CONNECTION "host=yourhostname dbname=yourdatabasename user=yourdbusername password=yourdbpassword port=yourpgport"
+
+CONNECTION  parameters can be in any order.  Most are optional.  dbname is 
+required.  host defaults to localhost, port defaults to 5432 - the standard 
+port for PostgreSQL.
+
+Specify::
+	
+	DATA "geometrycolumn from yourtablename".  
+
+MapServer had a bug related to the keyword from.  Specify it in lower case 
+to avoid problems.  Geometrycolumn could be the_geom if the shp2pgsql 
+utility is used to load data, or wkb_geometry if ogr2ogr was used.
+
+Complete Mapfile example::
+
+  LAYER
+    NAME pg_test
+    STATUS ON
+    TYPE POLYGON
+    CONNECTIONTYPE POSTGIS
+    CONNECTION "host=mapserver.com dbname=gmap user=julio"
+    DATA "wkb_geometry FROM province"
+    CLASS
+       ...
+    END
+  END
+
+For more info about PostGIS and MapServer see the PostGIS docs: http://postgis.refractions.net/docs/

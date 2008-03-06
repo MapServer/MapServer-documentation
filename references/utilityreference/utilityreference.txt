@@ -1,0 +1,303 @@
+.. contents:: Table of Contents
+    :depth: 2
+    :backlinks: top
+
+Packages available with the utilities ready to use:
+
+- `MS4W Windows installer`_ - in /ms4w/tools/mapserv-utils/ (run the setenv.bat file before using)
+- `FWTools package`_ - all utils are available through shell window
+- `FGS Linux installer`_ - run setenv.sh before using
+
+shp2img
+=======
+
+:Purpose: 
+   Creates a map image from a mapfile. Output is either PNG or GIF depending 
+   on what version of the GD library used.  This is a useful utility to test your 
+   mapfile. You can simply provide the path to your mapfile and the name of an output 
+   image, and an image should be returned. If an image cannot be created an error will 
+   be displayed at the command line that should refer to a line number in the mapfile.
+   
+:Syntax: 
+   ::
+    
+      shp2img -m [mapfile] -o [image] -e minx miny maxx maxy
+       -t -l [layers] -i [format]
+       -m mapfile: Map file to operate on - required.
+       -i format: Override the IMAGETYPE value to pick output format.
+       -t: enable transparency
+       -o image: output filename (stdout if not provided)
+       -e minx miny maxx maxy: extents to render  optional
+       -l layers: layers to enable  optional
+       -all_debug n: Set debug level for map and all layers.
+       -map_debug n: Set map debug level.
+       -layer_debug layer_name n: Set layer debug level.
+       -p n: pause for n seconds after reading the map
+     
+:Example:
+   ::
+    
+     shp2img -m vector_blank.map -o test.png
+
+:Result:
+  A file named test.png is created, that you can drag into your browser to view.
+
+legend
+======
+
+:Purpose: Creates a legend from a mapfile. Output is either PNG or GIF depending 
+  on what version of the GD library used.
+
+:Syntax: 
+  ::
+  
+    legend [mapfile] [output image]
+
+scalebar
+========
+
+:Purpose: Creates a scalebar from a mapfile. Output is either PNG or GIF depending 
+  on what version of the GD library used.
+  
+:Syntax: scalebar [mapfile] [output image]
+
+sortshp
+=======
+
+:Purpose: 
+  Sorts a shapefile based on a single column in ascending or descending order. 
+  Supports INTEGER, DOUBLE and STRING column types. Useful for prioritizing shapes 
+  for rendering and/or labeling.
+:Description:
+  The idea here is that if you know that you need to display a certain attribute 
+  classed by a certain value, it will be faster for MapServer to access that value 
+  if it is at the beginning of the attribute file.
+:Syntax:
+  ::
+  
+     sortshp [infile] [outfile] [item] [ascending|descending]
+
+:Example:
+  This example uses a roads file (roads_ugl) that has a field with road classes in 
+  integer format (class1).
+  
+  ::
+  
+     sortshp roads_ugl roads-sort class1 ascending
+     
+:Result:
+  A new shapefile named roads-sort.shp is created with shapes sorted in ascending order, 
+  according to the values in the class1 field, as shown in Figure 3 below.
+
+sym2img
+=======
+
+:Purpose: Creates a graphic dump of a symbol file. Output is either PNG or GIF 
+  depending on what version of the GD library used. (this utility is not currently 
+  included in pre-compiled packages, due to issues mentioned in `bug#506`_)
+  
+:Syntax: sym2img [symbolfile] [outfile]
+
+shptree
+=======
+
+:Purpose: Creates a quadtree-based spatial index for a shapefile.   The default 
+  tree depth is calculated so that each tree node (quadtree cell) contains 8 shapes. 
+  Do not use the default with point files, a value between 6 and 10 seems to work ok.  
+  Your millage may vary and you'll need to do some experimenting.
+:Description:
+  This utility is a must for any MapServer application that uses shapefiles.  Shptree 
+  creates a spatial index of your shapefile, using a quadtree method.  This means that 
+  MapServer will use this index to quickly find the appropriate shapes to draw.  It creates 
+  a file of the same name as your shapefile, with a *.qix* file extension.
+  The quadtree method breaks the file into 4 quadrants, recursively until only a few shapes 
+  are contained in each quadrant.  This minimum number can be set with the <depth> parameter 
+  of the command.  More information on this command can be found at: 
+  http://mapserver.gis.umn.edu/cgi-bin/wiki.pl?ShpTree
+  
+:Syntax:
+  ::
+  
+    shptree <shpfile> [<depth>] [<index_format>]
+      Where:
+      <shpfile> is the name of the .shp file to index.
+      <depth>   (optional) is the maximum depth of the inde
+           to create, default is 0 meaning that shptre
+           will calculate a reasonable default depth.
+      <index_format> (optional) is one of:
+           NL: LSB byte order, using new index format
+           NM: MSB byte order, using new index format
+       The following old format options are deprecated
+           N:  Native byte order
+           L:  LSB (intel) byte order
+           M:  MSB byte order
+       The default index_format on this system is: NL
+       
+:Example:
+  ::
+  
+    shptree us_states.shp
+      creating index of new  LSB format   
+      
+:Result:
+  A file named us_states.qix is created in the same location.  (note that you can 
+  use the shptreevis utility, described next, to view the actual quadtree quadrants that 
+  are used by MapServer in this qix file)
+  
+shptreevis
+==========
+
+:Purpose:
+  This utility can be used to view the quadtree quadrants that are part of a .qix file 
+  (that was created with the shptree utility).
+
+:Syntax:
+  ::
+  
+    shptreevis
+      shptreevis shapefile new_shapefile
+      
+:Example:
+  ::
+  
+    shptreevis us_states.shp quad.shp
+        This new LSB index supports a shapefile with 2895 shapes, 10 depth
+
+:Result: 
+  A shapefile named quad.shp is created.  You can now view this shapefile in a desktop 
+  GIS (such as `QGIS`_ for example) to see the quadtrees that were created with 
+  the shptree command.
+
+tile4ms
+=======
+
+:Purpose: 
+  Creates a tile index shapefile for use with MapServer's TILEINDEX feature. The program 
+  creates a shapefile of rectangles from extents of all the shapefiles listed in [metafile] 
+  (one shapefile name per line) and the associated DBF with the filename for each shape tile 
+  in a column called LOCATION as required by mapserv.
+:Description:
+  This utility creates a shapefile containing the MBR (minimum bounding rectangle) of all 
+  shapes in the files provided, which can then be used in the LAYER objects TILEINDEX parameter 
+  of the mapfile.  The new filed created with this command is used by MapServer to only load 
+  the files assocated with that extent (or tile).
+:Syntax: 
+  ::
+  
+    tile4ms <meta-file> <tile-file> [-tile-path-only]
+    <meta-file>     INPUT  file containing list of shapefile names
+                    (complete paths 255 chars max, no extension)
+    <tile-file>     OUTPUT shape file of extent rectangles and names
+                    of tiles in <tile-file>.dbf
+    -tile-path-only Optional flag.  If specified then only the path to the
+                    shape files will be stored in the LOCATION field
+                    instead of storing the full filename.
+
+
+
+:Short Example: 
+  create tileindex.shp for all tiles under the /path/to/data directory:
+  ::
+
+       <on Unix> 
+     
+    cd /path/to/data
+    find . -name "/*.shp" -print > metafile.txt
+    tile4ms metafile.txt tileindex
+
+       <on Windows>   
+
+    dir /b /s /*.shp > metafile.txt
+    tile4ms metafile.txt tileindex
+    
+:Long Example:
+  This example uses TIGER Census data, where the data contains files divided 
+  up by county (in fact there are over 3200 counties, a very large dataset
+  indeed).  In this example we will show how to display all lakes for the 
+  state of Minnesota.  (note that here we have already converted the TIGER data 
+  into shapefile format, but you could keep the data in TIGER format and use 
+  the ogrtindex utility instead) The TIGER Census data for Minnesota is made 
+  up of 87 different counties, each containing its own lakes file (wp.shp).
+  
+  1. We need to create the meta-file for the tile4ms command.  This is a text 
+     file of the paths to all wp.shp files for the MN state.  To create this 
+     file we can use a few simple commands:
+  
+     ::
+     
+        DOS: dir wp.shp /b /s > wp_list.txt
+        (this includes full paths to the data, you might want to edit the txt 
+        file to remove the full path)
+  
+        UNIX: find -name *wp.shp -print > wp_list.txt
+        
+     The newly created file might look like the following (after removing the 
+     full path):
+     
+     ::
+     
+       001\wp.shp
+       003\wp.shp
+       005\wp.shp
+       007\wp.shp
+       009\wp.shp
+       011\wp.shp
+       013\wp.shp
+       015\wp.shp
+       017\wp.shp
+       019\wp.shp
+       . . .
+  
+  2. Execute the tile4ms command with the newly created meta-file to create the 
+     index file:
+  
+     ::
+     
+       tile4ms wp_list.txt index
+         Processed 87 of 87 files
+  
+  3. A new file named index.shp is created.  This is the index file with the MBRs 
+     of all wp.shp files for the entire state, as shown in Figure 4.  The attribute 
+     table of this file contains a field named LOCATION, that contains the path to 
+     each wp.shp file, as shown in Figure 5.
+  
+     Figure 4: Index file created by tile4ms utility
+  
+  
+     Figure 5: Attributes of index file created by tile4ms utility
+  
+  4. The final step is to use this in your mapfile.  
+        - LAYER objects TILEINDEX - must point to the location of the index file
+        - LAYER objects TILEITEM - specify the name of the field in the index file 
+          containing the paths (default is location)
+        - do not need to use the LAYERs DATA parameter
+     
+     For example:
+  
+         ::
+         
+           LAYER
+             NAME mn-lakes
+             STATUS ON
+             TILEINDEX "index"
+             TILEITEM "location"
+             TYPE POLYGON
+             CLASS
+               NAME "mn-lakes"
+               STYLE
+                 COLOR 0 0 255
+               END
+             END
+           END
+     
+     When you view the layer in a MapServer application, you will notice that when 
+     you are zoomed into a small area of the state only those lakes layers are 
+     loaded, which speeds up the application (shown in Figure 6).
+    
+.. #### rST Link Section ####
+
+.. _`MS4W Windows installer`: http://www.maptools.org/ms4w/
+.. _`FWTools package`: http://fwtools.maptools.org/
+.. _`FGS Linux installer`: http://www.maptools.org/fgs/
+.. _`bug#506`: http://mapserver.gis.umn.edu/bugs/show_bug.cgi?id=506
+.. _`QGIS`: http://www.qgis.org/

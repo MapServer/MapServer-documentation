@@ -1,0 +1,109 @@
+<h2>Requirements</h2>
+<p>Mapserver use many external libraries to handle projections, and several raster and vector formats. In order to enable PHP/Mapscript, the definitive tool for WebGIS scripting, you will need also the PHP include headers and of course a working PHP installation.</p>
+
+<p>If you plan to use a RDBMS such as <a href="http://postgis.refractions.net/">POSTGIS</a> or MySQL (the lattest is not a spatial enabled datasource, but can still be useful), you will need also those packages.</p>
+
+<p>The problem here is that in most cases, if you install those required libraries from precompiled binary packages, they will miss some important configuration files or source include headers that mapserver needs to parse during compilation. For this reason we will compile most of the required libraries from sources.</p>
+
+<p>Some other common libraries (e.g. zlib gd or libjpeg) are required and can be installed throug RPMs directly from the SuSE installation media or from the net, don't forget to install also the corresponding &quot;devel&quot; packages (the package that contains the source code).</p>
+
+<p>During the configuration step of one or more of the following libraries, you will probably see some errors regarding missing libraries, if this happens, don't panic, you will surely find those libraries in the SuSE repositories.</p>
+
+<p>Please follow the compilation steps in this order, otherwise you will break 
+dependencies. I will assume you will operate as a normal unprivileged user, only the installation step must be done as root.</p>
+
+<h2>Installing GEOS</h2>
+<p>GEOS (Geometry Engine - Open Source) is C++ port of  Java Topology Suite (JTS), download it from <a href="http://geos.refractions.net/">geos.refractions.net</a>, choose the latest version (at the time of writing is http://geos.refractions.net/geos-2.2.1.tar.bz2) and save the compressed tar archive somewhere on your disk .</p>
+
+<pre lang="bash">$ wget http://geos.refractions.net/geos-2.2.1.tar.bz2</pre>
+
+<p>Then uncompress it (a new directory will be created):</p><p>
+
+<pre lang="bash">$ tar -xjvf  geos-2.2.1.tar.bz2</pre>
+
+</p><p>change to the new directory:</p>
+
+<pre lang="bash">$ cd geos-2.2.1</pre>
+
+<p>Now start the configuration script, we will install all our libraries in /usr/local (the default is /usr, but it is always a better approach to keep manually installed software in a separated location)</p>
+
+<pre lang="bash">$ ./configure --prefix=/usr/local</pre>
+
+<p>If you get some configuration errors, read carefully the error message and install the missing pieces with yast. Then proceed with the usual compilation command:</p>
+
+<pre lang="bash">$ make
+$ su -c "make install"
+</pre>
+
+<h2>Installing GDAL</h2>
+<p>GDAL is a translator library for raster geospatial data formats, download the latest release from <a href="http://www.remotesensing.org/gdal/">www.remotesensing.org/gdal/</a>.
+
+<pre lang="bash">$ wget http://www.gdal.org/dl/gdal-1.3.1.tar.gz</pre>
+
+</p><p>Proceed now as you did for geos:</p>
+
+<pre lang="bash">
+$ tar -xzvf gdal-1.3.1.tar.gz
+$ cd gdal-1.3.1/
+$ ./configure --prefix=/usr/local
+$ make
+$ su -c "make install"
+</pre>
+
+<h2>Installing proj4</h2>
+Proj4 is a Cartographic Projections Library, get it fom <a href="http://proj.maptools.org/">proj.maptools.org</a>
+
+<pre lang="bash">$ wget ftp://ftp.remotesensing.org/proj/proj-4.4.9.tar.gz</pre>
+
+<p>Proceed as usual:</p>
+
+<pre lang="bash">
+$ tar -xzvf proj-4.4.9.tar.gz
+$ cd proj-4.4.9
+$ ./configure --prefix=/usr/local
+$ make
+$ su -c "make install"
+</pre>
+
+<em>Note: if the configure script failes complaining about missing proj4 header files, try copying <code>projects.h</code> from <code>/usr/local/include</code>  to <code>/usr/local/lib</code>, this makes absolutely no sense to me
+but it works.</em>
+
+<h2>Install mapserver webgis</h2>
+<p>Mapserver (even if someone is now calling it &quot;Mapserver Cheetah&quot;, I'm speaking of the old good &quot;original&quot; mapserver) is an Open Source development environment for building spatially-enabled internet applications. </p>
+
+<p>The new site is now online at <a href="http://mapserver.gis.umn.edu/">mapserver.gis.umn.edu</a> take a look at it if you need some other informations about this powerful technology.</p>
+
+<p>Now download the source code:</p>
+
+<pre lang="bash">$ wget http://cvs.gis.umn.edu/dist/mapserver-4.6.2.tar.gz
+$ tar -xzvf mapserver-4.6.2.tar.gz
+$ cd mapserver-4.6.2</pre>
+
+<p>We are close to the point: we will enable many mapserver features, in particular, POSTGIS, MySQL and PHP/Mapscript support, if you don't need those features, just delete the corresponding lines. Change also the PHP and Apach executable paths according to your installation, in my case I'm working with PHP5 and Apache is in <code>/usr/sbin/httpd2</code> </p>
+
+<pre lang="sh">$ ./configure \
+ --with-wfs \
+ --with-wfsclient \
+ --with-wmsclient \
+ --with-proj=/usr/local/lib \
+ --with-gdal=/usr/local/bin/gdal-config \
+ --with-ogr=/usr/local/bin/gdal-config \
+ --with-php=/usr/include/php5 \
+ --with-mygis=yes \
+ --with-postgis \
+ --with-httpd=/usr/sbin/httpd2 \
+ --prefix=/usr/local 
+</pre>
+
+<p>Now check configure output and proceed to compilation <p />
+
+<pre lang="bash">$ make</pre>
+
+</p><p>There is no <code>make install</code> in mapserver, just copy <code>mapserv</code> executable in your CGI directory (usually <code>/srv/www/cgi-bin</code>)</p>
+
+<p>If you have enabled PHP/Mapscript, copy the shared object <code>/mapscript/php3/php_mapscript.so</code> to yor PHP extension directory (usually <code>/usr/share/php5/extensions</code></p>
+
+<p>Finally, restart apache webserver and enjoy your fresh mapserver build!</p><code></code>
+
+<strong>Originally published on my blog at: <a href="http://www.itopen.it/2005/12/21/mapserver-webgis-installation-on-suse-10/"
+> ItOpen - Open Web Solutions</a></strong>

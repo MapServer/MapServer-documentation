@@ -1,0 +1,72 @@
+To set up projections you must define two projection objects: one for the 
+output image (in the MAP object) and one for each layer (in the LAYER 
+objects) to be projected. MapServer relies on the `PROJ.4`_ library for projections.  Projection objects therefore consist of a series of PROJ.4 keywords, which are either specified within the object directly or referred to in an *epsg* file. An epsg file is a lookup file containing projection parameters, and is part of the PROJ.4 library.  
+
+The following two examples both define the same projection (UTM zone 15, NAD83), but use 2 different methods:
+
+**Example1: Inline Projection Parameters**
+
+::
+
+    PROJECTION
+      "proj=utm"
+      "ellps=GRS80"
+      "datum=NAD83"
+      "zone=15"
+      "units=m"
+      "north"
+      "no_defs"
+    END
+    
+**Example2: epsg Projection Use**
+
+::
+
+    PROJECTION
+       "init=epsg:26915"
+    END
+
+    (this refers to an epsg lookup file that contains a '26915' code with the full projection parameters)
+
+The next two examples both display how to possibly define unprojected lat/longs ("geographic"):
+
+**Example3: Inline Projection Parameters**
+
+::
+
+    PROJECTION
+      "proj=latlong"
+      "ellps=WGS84"
+      "datum=WGS84"
+    END
+
+**Example4: epsg Projection Use**
+
+::  
+
+    PROJECTION
+       "init=epsg:4326"
+    END
+
+Important Notes
+---------------
+
+- If all of your data in the mapfile is in the same projection, you DO NOT have to specify any projection objects. MapServer will assume that all of the data is in the same projection.
+
+- If you specify a MAP-level projection, and then only one other LAYER projection object, MapServer will assume that all of the other layers are in the specified MAP-level projection. 
+
+- Always refer to the epsg file in lowercase, because it is a lowercase filename and on Linux/Unix systems this parameter is case sensitive.
+
+For More Information 
+--------------------
+
+- If you get projection errors, refer to the `MapServer Error page`_ to check if your exact error has been discussed.
+
+  - Search the MapServer-users `email list archives`_, odds are that someone has faced your exact issue before.
+- See the `PROJ.4`_ user guides for complete descriptions of supported projections and coordinate systems. 
+- Refer to the `Cartographical Map Projections`_ page for background information on projections.
+
+.. _`PROJ.4`: http://www.remotesensing.org/proj/
+.. _`Cartographical Map Projections`: http://www.progonos.com/furuti/MapProj/Normal/TOC/cartTOC.html
+.. _`MapServer Error page`: http://ms.gis.umn.edu/docs/error/
+.. _`email list archives`: http://lists.umn.edu/archives/mapserver-users.html

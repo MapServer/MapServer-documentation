@@ -1,0 +1,127 @@
+BACKGROUNDCOLOR [r] [g] [b]
+    Color to use for non-transparent symbols.
+  
+COLOR [r] [g] [b]
+    Color to use for drawing features.
+
+DEBUG [on|off]
+    Enables debugging of the class object. Verbose output is generated and sent 
+    to the standard error output (STDERR) or the MapServe r logfile if one is 
+    set using the LOG parameter in the `WEB`_ object.
+
+.. _`WEB`: /docs/reference/mapfile/web
+    
+EXPRESSION [string]
+    Four types of expressions are now supported to define class membership. 
+    String comparisons, regular expressions, simple logical expressions, and 
+    string functions. If no expression is given, then all features are said 
+    to belong to this class.
+
+    - String comparisons are case sensitive and are the fastest to evaluate. 
+      No special delimiters are necessary although string must be quoted if they 
+      contain special characters. (As a matter of good habit, it is recommended 
+      you quote all strings).
+      
+    - Regular expressions function just like previous versions of MapServer. 
+      However, you must now delimit a regular expression using /regex/. No 
+      quotes should be used.
+
+    - Logical expressions allow you to build fairly complex tests based on one 
+      or more attributes and therefore are only available with shapefiles. 
+      Logical expressions are delimited by parentheses "(expression)". 
+      Attribute names are delimited by square brackets "[ATTRIBUTE]". These 
+      names are case sensitive and must match the items in the shapefile. 
+      For example: EXPRESSION ([POPULATION] > 50000 AND '[LANGUAGE]' eq 
+      'FRENCH') ... The following logical operators are supported: 
+      =,>,<,<=,>=,=,or,and,lt,gt,ge,le,eq,ne. As you might expect this level 
+      of complexity is slower to process.
+
+    - One string function exists: length(). This obviously computes the length 
+      of a string. An example follows:
+
+      ::
+        
+         EXPRESSION (length('[NAME_E]') < 8)                      
+                                
+      String comparisons and regular expressions work from the classitem defined 
+      at the layer level. You may mix expression types within the different 
+      classes of a layer.
+      
+JOIN
+    Signals the start of a `JOIN`_ object.
+
+.. _`JOIN`: /docs/reference/mapfile/join
+    
+KEYIMAGE [filename]
+    Full filename of the legend image for the CLASS. This image is used when 
+    building a legend (or requesting a legend icon via MapScript or the CGI 
+    application).
+    
+LABEL
+    Signals the start of a `LABEL`_ object.
+
+.. _`LABEL`: /docs/reference/mapfile/label
+    
+MAXSCALE [double]
+    Maximum scale at which this CLASS is drawn.
+    
+MAXSIZE [integer]
+    Maximum size in pixels to draw a symbol. Default is 50.
+    
+MINSCALE [double]
+    Minimum scale at which this CLASS is drawn.
+    
+MINSIZE [integer]
+    Minimum size in pixels to draw a symbol. Default is 0.
+    
+NAME [string]
+    Name to use in legends for this class. If not set class won't show up in legend.
+    
+OUTLINECOLOR [r] [g] [b]
+    Color to use for outlining polygons and certain marker symbols. Line symbols 
+    do not support outline colors.
+    
+SIZE [integer]
+    Height, in pixels, of the symbol/pattern to be used. Only useful with scalable 
+    symbols. For vector (and ellipse) symbol types the default size is based on the 
+    range of Y values in the POINTS defining the symbol. For pixmaps, the default 
+    is the vertical size of the image. Default size is 1 for TTF symbols. 
+    
+STYLE
+    Signals the start of a `STYLE`_ object. A class can contain multiple styles.
+    
+.. _`STYLE`: /docs/reference/mapfile/style
+
+SYMBOL [integer|string|filename]
+    The symbol name or number to use for all features if attribute tables are 
+    not used. The number is the index of the symbol in the symbol file, starting 
+    at 1, the 5th symbol in the file is therefore symbol number 5. You can also 
+    give your symbols names using the NAME keyword in the symbol definition file, 
+    and use those to refer to them. Default is 0, which results in a single pixel, 
+    single width line, or solid polygon fill, depending on layer type.
+
+    You can also specify a gif or png filename. The path is relative to the location 
+    of the mapfile.
+    
+TEMPLATE [filename]
+    Template file or URL to use in presenting query results to the user.
+    
+TEXT [string]
+    Static text to label features in this class with. This overrides values obtained 
+    from the LABELTIEM. The string may be given as an expression delimited using 
+    the ()'s. This allows you to concatenate multiple attributes into a single 
+    label. For example: ([FIRSTNAME],[LASTNAME]).
+
+You can also "stack" 2 symbols to achieve interesting effects. You define the second 
+symbol, which effectively sits "on top" of the symbol normally defined above.
+
+The following parameters allow you to define the symbol, and they are equivalent 
+to their non-overlay counterparts:
+
+- OVERLAYBACKGROUNDCOLOR
+- OVERLAYCOLOR
+- OVERLAYOUTLINECOLOR
+- OVERLAYSIZE
+- OVERLAYMINSIZE
+- OVERLAYMAXSIZE
+- OVERLAYSYMBOL

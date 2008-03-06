@@ -1,0 +1,934 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.0 Transitional//EN">
+<HTML>
+<HEAD>
+	<META HTTP-EQUIV="CONTENT-TYPE" CONTENT="text/html; charset=windows-1252">
+	<TITLE>UMN-MapServer on SuSE</TITLE>
+	<META NAME="GENERATOR" CONTENT="OpenOffice.org 1.1.3  (Win32)">
+	<META NAME="AUTHOR" CONTENT="Benjain Thelen">
+	<META NAME="CREATED" CONTENT="20030731;16020000">
+	<META NAME="CHANGEDBY" CONTENT="Till Adams">
+	<META NAME="CHANGED" CONTENT="20050804;9075129">
+	<STYLE>
+	<!--
+		@page { size: 21cm 29.7cm; margin-left: 2.5cm; margin-right: 2.5cm; margin-top: 2.5cm; margin-bottom: 2cm }
+		P { margin-bottom: 0cm; direction: ltr; color: #000000; widows: 2; orphans: 2 }
+		P.western { font-family: "Times New Roman", serif; font-size: 10pt; so-language: en-GB }
+		P.cjk { font-family: "Times New Roman", serif; font-size: 10pt }
+		P.ctl { font-family: "Times New Roman", serif; font-size: 12pt; so-language: ar-SA }
+		H1 { margin-bottom: 0.11cm; direction: ltr; color: #000000; widows: 2; orphans: 2 }
+		H1.western { font-family: "Arial", sans-serif; font-size: 16pt; so-language: de-DE }
+		H1.cjk { font-family: "Times New Roman", serif; font-size: 16pt }
+		H1.ctl { font-family: "Arial", sans-serif; font-size: 16pt; so-language: ar-SA }
+		H2 { margin-bottom: 0.11cm; direction: ltr; color: #000000; widows: 2; orphans: 2 }
+		H2.western { font-family: "Arial", sans-serif; font-size: 14pt; so-language: de-DE; font-style: italic }
+		H2.cjk { font-family: "Times New Roman", serif; font-size: 14pt; font-style: italic }
+		H2.ctl { font-family: "Arial", sans-serif; font-size: 14pt; so-language: ar-SA; font-style: italic }
+		H3 { margin-bottom: 0.11cm; direction: ltr; color: #000000; widows: 2; orphans: 2 }
+		H3.western { font-family: "Arial", sans-serif; font-size: 13pt; so-language: de-DE }
+		H3.cjk { font-family: "Times New Roman", serif; font-size: 13pt }
+		H3.ctl { font-family: "Arial", sans-serif; font-size: 13pt; so-language: ar-SA }
+		H4 { margin-top: 0cm; margin-bottom: 0cm; direction: ltr; color: #000000; widows: 2; orphans: 2 }
+		H4.western { so-language: en-GB }
+		H4.cjk { font-family: "Times New Roman", serif }
+		H4.ctl { font-family: "Times New Roman", serif; so-language: ar-SA; font-weight: medium }
+		H5 { margin-bottom: 0.11cm; direction: ltr; color: #000000; widows: 2; orphans: 2; page-break-after: auto }
+		H5.western { font-size: 13pt; so-language: de-DE; font-style: italic }
+		H5.cjk { font-family: "Times New Roman", serif; font-size: 13pt; font-style: italic }
+		H5.ctl { font-family: "Times New Roman", serif; font-size: 13pt; so-language: ar-SA; font-style: italic }
+		H6 { margin-bottom: 0.21cm; direction: ltr; color: #000000; widows: 2; orphans: 2 }
+		H6.western { font-family: "Arial", sans-serif; font-size: 10pt; so-language: de-DE }
+		H6.cjk { font-size: 10pt }
+		H6.ctl { font-size: 10pt; so-language: ar-SA }
+		A:link { color: #0000ff }
+		A:visited { color: #800080 }
+	-->
+	</STYLE>
+</HEAD>
+<BODY LANG="en-US" TEXT="#000000" LINK="#0000ff" VLINK="#800080" DIR="LTR">
+<H1 LANG="en-GB" CLASS="western">In SuSE-Doku einarbeiten!</H1>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>&Auml;nderungen:</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>Z.B. Bietet die 9.2 nur
+noch den 2er Apache</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>Auf HT-Prozessoren mit
+SLES9 oder 9.2 Pro mu&szlig; noch Apache-Prefork installiert werden
+(MultiThreading), bleibt einem aber auch ohnein nichts anderes &uuml;brig</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>Auf dem 9SLES und 9.2
+Pro m&uuml;ssen nun einige php4-Module installiert werden, die vorher
+fest einkompiliert waren.</FONT></P>
+<H1 LANG="en-GB" CLASS="western"><BR><BR>
+</H1>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>(October 2004)</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>Authors:</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>Till Adams, terrestris GbR Bonn (Geo-Consortium)</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>Ben Thelen, CCGIS GbR Bonn (Geo-Consortium)</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>This How-To describes
+the required installation steps to have a UMN-MapServer 4 with
+PostGIS support on SuSE Linux 9 Professional running, as well as using Mapbender as a WMS client.</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="en-GB">A
+How-To for the installation of UMN-MapServer 3 on SuSE Linux 8.0 can
+be found here:
+</SPAN><FONT COLOR="#0000ff"><U><A HREF="http://mapserver.gis.umn.edu/cgi-bin/wilma_hiliter/mapserver-users/0208/msg00285.html"><SPAN LANG="en-GB">http://mapserver.gis.umn.edu/cgi-bin/wilma_hiliter/mapserver-users/0208/msg00285.html</SPAN></A></U></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="en-GB">Detailed
+information how to install Mapbender WMS Client Suite can be found on
+</SPAN><FONT COLOR="#0000ff"><U><A HREF="http://www.mapbender.org/"><SPAN LANG="en-GB">http://www.mapbender.org</SPAN></A></U></FONT><SPAN LANG="en-GB">.</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<H2 LANG="en-GB" CLASS="western">I. Required Software</H2>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>SuSE Linux 8.x, 9.x
+Professional, SuSE Linux Enterprise Server 8 / United Linux 1.0 or
+SuSE Linux Enterprise Server 9</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>The rpm-packages listed
+below, are chosen from SuSE 9.0. </FONT>
+</P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>Because of missing
+rpm-packages, it is necessary to install some software by compiling
+source code. In this case dependencies have to be checked, before
+doing so.</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT FACE="Arial, sans-serif"><FONT SIZE=3 STYLE="font-size: 13pt"><B>Available
+rpm packages</B></FONT></FONT></P>
+<H5 LANG="de-DE" CLASS="western">General software packages</H5>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3>apache-1.3.28						<FONT COLOR="#0000ff"><U><A HREF="http://httpd.apache.org/">http://httpd.apache.org/</A></U></FONT></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><FONT COLOR="#0000ff"><SPAN STYLE="background: #33cc66"><SPAN STYLE="text-decoration: none"><SPAN STYLE="font-style: normal"><SPAN LANG="de-DE"><FONT COLOR="#000000">Apache2</FONT></SPAN></SPAN></SPAN></SPAN></FONT></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><FONT COLOR="#0000ff"><SPAN STYLE="background: #33cc66"><SPAN STYLE="text-decoration: none"><SPAN STYLE="font-style: normal"><SPAN LANG="de-DE"><FONT COLOR="#000000">apache2-mod_php4</FONT></SPAN></SPAN></SPAN></SPAN></FONT></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><FONT COLOR="#0000ff"><SPAN STYLE="background: #33cc66"><SPAN STYLE="text-decoration: none"><SPAN STYLE="font-style: normal"><SPAN LANG="de-DE"><FONT COLOR="#000000">apache2-prefork</FONT></SPAN></SPAN></SPAN></SPAN></FONT></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><FONT COLOR="#0000ff"><SPAN STYLE="background: #33cc66"><SPAN STYLE="text-decoration: none"><SPAN STYLE="font-style: normal"><SPAN LANG="de-DE"><FONT COLOR="#000000">libapr0</FONT></SPAN></SPAN></SPAN></SPAN></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: transparent">mod_php4						<A HREF="http://www.php.net/">http://www.php.net</A></SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="en-GB">postgresql-7.3.4					</SPAN><FONT COLOR="#0000ff"><U><A HREF="http://www.postgresql.org/"><SPAN LANG="en-GB">http://www.postgresql.org</SPAN></A></U></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">postgrsql</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">postgrsql-devel</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">postgrsql-server</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">postgrsql-libs</SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="en-GB">mysql-Max	</SPAN>					<FONT COLOR="#0000ff"><U><A HREF="http://www.mysql.org/">http://www.mysql.org</A></U></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">mysql-devel-
+4.0.15</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">mysql</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">perl-DBD-mysql</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">mysql-shared</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">mysql-devel</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">mysql-client</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">mysql-MAX</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">php4-mysql</SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3>bzip2							Extracting
+source code</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>unzip		 					Extracting
+source code</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>gcc-c++						Compiling
+source code</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>make							Compiling
+source code</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="font-style: normal"><FONT SIZE=3><SPAN STYLE="background: transparent">openssl-devel						Required
+by MapServer</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="font-style: normal"><FONT SIZE=3><SPAN STYLE="background: #33cc66">openssl</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="font-style: normal"><FONT SIZE=3><SPAN STYLE="background: #33cc66">openssl-devel</SPAN></FONT></P>
+<H5 LANG="en-GB" CLASS="western">Libraries</H5>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><FONT COLOR="#0000ff"><U><A HREF="http://mapserver.gis.umn.edu/doc36/unix-install-howto.html"><SPAN LANG="en-GB">http://mapserver.gis.umn.edu/doc36/unix-install-howto.html</SPAN></A></U></FONT></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><FONT COLOR="#0000ff"><U><A HREF="http://mapserver.gis.umn.edu/doc40/unix-install-howto.html"><SPAN LANG="en-GB">http://mapserver.gis.umn.edu/doc40/unix-install-howto.html</SPAN></A></U></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="en-GB">curl-devel-7.10.5				</SPAN><FONT COLOR="#0000ff"><U><A HREF="http://curl.haxx.se/libcurl/"><SPAN LANG="fr-FR">http://curl.haxx.se/libcurl/</SPAN></A></U></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">curl</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">curl-devel</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">php4-curl</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>gd-devel-
+2.0.15				<FONT COLOR="#0000ff"><U><A HREF="http://www.boutell.com/gd/"><SPAN LANG="fr-FR">http://www.boutell.com/gd/</SPAN></A></U></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">gd</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">gd-devel</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">gdb</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">syslogd</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">gdbm</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">php4-gd</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>freetype2-devel-
+2.1.4			<FONT COLOR="#0000ff"><U><A HREF="http://www.freetype.org/"><SPAN LANG="en-GB">http://www.freetype.org/</SPAN></A></U></FONT></FONT></P>
+<P LANG="it-IT" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">freetype2</SPAN></FONT></P>
+<P LANG="it-IT" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">freetype2-devel</SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="it-IT">libjpeg-6.2.0		
+			</SPAN><FONT COLOR="#0000ff"><U><A HREF="http://www.ijg.org/"><SPAN LANG="it-IT">http://www.ijg.org/</SPAN></A></U></FONT></FONT></P>
+<P LANG="it-IT" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">libjpeg</SPAN></FONT></P>
+<P LANG="it-IT" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">libjpeg-devel</SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="it-IT">libtiff-3.5.7					</SPAN><FONT COLOR="#0000ff"><U><A HREF="http://www.libtiff.org/"><SPAN LANG="it-IT">http://www.libtiff.org/</SPAN></A></U></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">libtiff</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">libtiff-devel</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>libpng-devel-1.2.5				<FONT COLOR="#0000ff"><U><A HREF="http://www.libpng.org/pub/png/"><SPAN LANG="en-GB">http://www.libpng.org/pub/png/</SPAN></A></U></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">libpng</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">libpng-devel</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>yacc-91.7.30</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><FONT COLOR="#ff0000">fehlt
+nicht notwendig?</FONT>	</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>flex-2.5.4a</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">flex</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>bison-1.75					(MapServer
+&gt; 4.0)</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">bison</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>The <I>-devel
+</I>(developer) packages are required, in order to have the required
+header-files on the system for compiling UMN-MapServer. The main
+packages will be installed as a dependency at the same time.</FONT></P>
+<H3 LANG="de-DE" CLASS="western">Not available as rpm package:</H3>
+<H5 LANG="en-GB" CLASS="western">General software packages</H5>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="en-GB">PostGIS
+0.7.5/0.8.1/0.9.0			</SPAN><FONT COLOR="#0000ff"><U><A HREF="http://postgis.refractions.net/"><SPAN LANG="en-GB">http://postgis.refractions.net</SPAN></A></U></FONT></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="en-GB">UMN
+MapServer 4.x				</SPAN><FONT COLOR="#0000ff"><U><A HREF="http://mapserver.gis.umn.edu/"><SPAN LANG="en-GB">http://mapserver.gis.umn.edu</SPAN></A></U></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><FONT COLOR="#0000ff"><SPAN STYLE="text-decoration: none"><SPAN LANG="en-GB"><FONT COLOR="#000000">php
+4.3.4					</FONT></SPAN></SPAN><U><A HREF="http://www.php.net/"><SPAN LANG="en-GB">http://www.php.net</SPAN></A></U></FONT></FONT></P>
+<H5 LANG="en-GB" CLASS="western">Libraries</H5>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="it-IT">gdal
+1.2.1					</SPAN><FONT COLOR="#0000ff"><U><A HREF="http://www.remotesensing.org/gdal/"><SPAN LANG="it-IT">http://www.remotesensing.org/gdal/</SPAN></A></U></FONT></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="fr-FR">proj-4.4.8
+					</SPAN><FONT COLOR="#0000ff"><U><A HREF="http://www.remotesensing.org/proj/"><SPAN LANG="fr-FR">http://www.remotesensing.org/proj/</SPAN></A></U></FONT></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="fr-FR">libwww-5.4.0					</SPAN><FONT COLOR="#0000ff"><U><A HREF="http://www.w3.org/Library/"><SPAN LANG="fr-FR">http://www.w3.org/Library/</SPAN></A></U></FONT></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="fr-FR">libiconv-1.9.1
+				</SPAN><FONT COLOR="#0000ff"><U><A HREF="http://www.gnu.org/software/libiconv/"><SPAN LANG="fr-FR">http://www.gnu.org/software/libiconv/</SPAN></A></U></FONT></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="en-GB">GEOS-2.0.1					</SPAN><A HREF="http://geos.refractions.net/"><SPAN LANG="en-GB">http://geos.refractions.net/</SPAN></A></FONT></P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<H5 LANG="en-GB" CLASS="western">Other optional libraries</H5>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="en-GB">LibGeoTIFF				</SPAN><FONT COLOR="#0000ff"><U><A HREF="http://www.remotesensing.org/geotiff/geotiff.html"><SPAN LANG="en-GB">http://www.remotesensing.org/geotiff/geotiff.html</SPAN></A></U></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>Oracle Spatial Client
+Librairies	<A HREF="http://www.oracle.com/">http://www.oracle.com</A></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.01cm"><FONT SIZE=3>These
+libraries are provided with Oracle product, and used to interface
+with an Oracle Spatial warehouse.</FONT></P>
+<P LANG="de-DE" CLASS="western" STYLE="text-indent: -0.05cm"><FONT SIZE=3><SPAN LANG="fr-FR">SDE
+Client Librairies			</SPAN><A HREF="http://www.esri.com/"><SPAN LANG="fr-FR">http://www.esri.com</SPAN></A></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.01cm; text-indent: -0.03cm">
+<FONT SIZE=3>These libraries are provided with ESRI's Spatial Data
+Warehouse ArcSDE.</FONT></P>
+<H2 LANG="en-GB" CLASS="western" STYLE="page-break-before: always">II.
+Systems installation</H2>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>It is recommended to
+change the default partition suggestions.</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>For example:</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3>/dev/hda1	swap		2x RAM</FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3>/dev/hda2	/		1.0GB</FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3>/dev/hda3	Extended</FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3>/dev/hda5	/var		251 MB</FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3>/dev/hda6	/tmp		251 MB</FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3>/dev/hda7	/usr		2.0GB</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>/dev/hda8	/data		rest</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>This should be enough
+for a later X installation, if desired. But I recommend to choose
+<I>Minimal Installation</I>, which is without any graphical
+interface.</FONT></P>
+<H2 LANG="en-GB" CLASS="western">III. Software installation</H2>
+<H3 LANG="en-GB" CLASS="western">General instructions</H3>
+<H4 LANG="en-GB" CLASS="western">Yast2</H4>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>Yast2 is a graphical
+frontend based on rpm-packages which is able to solve dependency
+confilicts.</FONT></P>
+<H4 LANG="en-GB" CLASS="western"><BR>
+</H4>
+<H4 LANG="en-GB" CLASS="western">rpm</H4>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>Rpm-packages can be
+installed within a shell of course, too.</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="en-GB">	rpm
+-i URL (i.g. rpm -i
+</SPAN><FONT COLOR="#0000ff"><U><A HREF="ftp://ftp.suse.com/pub/suse/i386/8.2/suse/i586/mod_php4-4.3.1-52.i586.rpm"><SPAN LANG="en-GB">ftp://ftp.suse.com/pub/suse/&hellip;/mod_php4-4.3.1-52.i586.rpm</SPAN></A></U></FONT><SPAN LANG="en-GB">)</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>	rpm -i .rpm (i.g. rpm
+-i /tmp/mod_php4-4.3.1-52.i586.rpm)</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<H4 LANG="en-GB" CLASS="western">directly from source</H4>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>The sources can be
+downloaded from the websites listed in section <SPAN STYLE="font-weight: medium"><I>I.
+Required Software</I></SPAN>.</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>First the archive has to
+be extracted:</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>	# tar -xzf filename.tgz
+or</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>	# gzip -d -c
+filename.tgz | tar xvf -</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>After extraction, the
+<I>./configure-</I>skript needs to be executed. This script builds a
+system-specific makefile.</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>Change into the folder
+which was just created by the extraction-process and type:</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><I>./configure</I>
+[optional: --with-option / usually &ndash;h or --help prints out all
+available options]</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>The source code can then
+be built via <I>make</I> and after finishing, installed via <I>make
+install</I></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western" STYLE="margin-left: 2.51cm"><FONT SIZE=3>#
+./configure</FONT></P>
+<P LANG="de-DE" CLASS="western" STYLE="margin-left: 2.51cm"><FONT SIZE=3>#
+make</FONT></P>
+<P LANG="de-DE" CLASS="western" STYLE="margin-left: 2.51cm"><FONT SIZE=3>#
+make install</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.51cm"><FONT SIZE=3>#
+ldconfig</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.51cm"><BR>
+</P>
+<H3 LANG="fr-FR" CLASS="western">Installation Procedure</H3>
+<P LANG="fr-FR" CLASS="western"><BR>
+</P>
+<P LANG="fr-FR" CLASS="western"><FONT SIZE=3>Just start YAST, skim
+through the list above and install these packages.</FONT></P>
+<P LANG="fr-FR" CLASS="western"><BR>
+</P>
+<H3 LANG="fr-FR" CLASS="western">Before you start</H3>
+<P LANG="fr-FR" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3>Before starting check
+/etc/hosts, if your hostname is correctly configured:</FONT></P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3>[your.ip.add.ress]	[your.host.name]*</FONT></P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>*Checkout with the
+command <I>hostname</I>.</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>&acute;</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<H4 LANG="en-GB" CLASS="western">PostgreSQL</H4>
+<P LANG="fr-FR" CLASS="western"><FONT SIZE=3>PostgreSQL 7.2 is
+supported by UMN-MapServer, but version 7.3 is really recommended and
+since PostGIS 0.8 also PostgreSQL 7.4 is supported.</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>The source code is
+needed for building PostGIS against the PostgreSQL source tree later
+on. It  is installed into <SPAN STYLE="background: transparent">/usr/src/packages/SOURCES/</SPAN>
+and needs to be extracted and compiled.</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>	# bunzip2
+postgresql-7.3.4.tar.bz2</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>	# tar -xf 
+postgresql-7.3.4.tar</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>	# cd postgresql-7.3.4/</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>	# ./configure
+--without-readline (if not installed on the system)</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>	# make</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: transparent">To
+start postgresql manually type <I>/etc/init.d/postgresql start</I> on
+the command line. To start postgresql (or any other daemon) on boot,
+call the <I>Runlevel Editor</I> within Yast2.</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>To have PostgreSQL
+accepting Internet connections <I><FONT COLOR="#ff0000">/var/lib/pgsql/data/postgresql.conf</FONT>
+</I><SPAN STYLE="font-style: normal">needs</SPAN> to be edited.
+'<FONT COLOR="#ff0000">tcpip_socket=false</FONT>' or 'tcpip_socket=0
+needs to be uncommented and set to <FONT COLOR="#ff0000">true</FONT>
+( or '1'  for pgsql 7.2.x).</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>It is also required to
+configure the pg_hba.conf, which contains the list of allowed hosts. </FONT>
+</P>
+<H4 LANG="en-GB" CLASS="western"><BR>
+</H4>
+<H4 LANG="en-GB" CLASS="western">MySQL</H4>
+<P LANG="en-GB" CLASS="western" STYLE="font-weight: medium"><FONT SIZE=3>MySQL
+is required by Mapbender-2 wms client suite. MySQL 4 is mandatory.</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="font-weight: medium"><BR>
+</P>
+<P LANG="en-GB" CLASS="western" STYLE="font-weight: medium"><FONT SIZE=3>SuSE
+Linux requires the rpm-package mysql-Max to be installed, as the
+standard mysql-server package does not support innodb tables.</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="font-weight: medium"><BR>
+</P>
+<P LANG="en-GB" CLASS="western" STYLE="font-weight: medium"><FONT SIZE=3>Right
+after mysql installation the following needs to be uncommented
+/etc/my.cnf. &ldquo;skip-innodb&rdquo; just needs to be commented
+out. Restart mysql by typing <I>'/etc/init.de/mysql restart'</I></FONT></P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=2>#skip-innodb</FONT></P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=2># Uncomment the
+following if you are using InnoDB tables</FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=2>innodb_data_home_dir =
+/var/lib/mysql/ </FONT>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=2>innodb_data_file_path =
+ibdata1:10M:autoextend </FONT>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=2>innodb_log_group_home_dir
+= /var/lib/mysql/ </FONT>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=2>innodb_log_arch_dir =
+/var/lib/mysql/ </FONT>
+</P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=2># You can set
+.._buffer_pool_size up to 50 - 80 % </FONT>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=2># of RAM but beware of
+setting memory usage too high </FONT>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=2>innodb_buffer_pool_size
+= 16M </FONT>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=2>innodb_additional_mem_pool_size
+= 2M </FONT>
+</P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=2># Set .._log_file_size
+to 25 % of buffer pool size </FONT>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=2>innodb_log_file_size =
+5M </FONT>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=2>innodb_log_buffer_size =
+8M </FONT>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=2>innodb_flush_log_at_trx_commit
+= 1 </FONT>
+</P>
+<P LANG="en-GB" CLASS="western" STYLE="font-weight: medium"><FONT SIZE=2>innodb_lock_wait_timeout
+= 50</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="font-weight: medium"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: transparent">The
+developer-package is only required if php4MapScript support is
+required. Otherwise just install mysql-Max, without the dev-package.</SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<H4 LANG="en-GB" CLASS="western">PHP4</H4>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">phpMyAdmin</SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">php4</SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">php4-bz2</SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">php4-curl</SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">php4-dbase</SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">php4-gd</SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">php4-mysql</SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">php4-pgsql</SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">php4-session</SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">php4-zlib</SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">apache2-mod_php4</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>It is recommended for
+security reasons to install PHP4 as an apache module. However if
+UMN-MapServer needs to be compiled with PHP4 to support phpMapScript,
+then PHP4 needs to be compiled as a cgi.</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>The usage of <I>suexec</I>
+or <I>suphp</I> (<A HREF="http://www.suphp.org/">www.suphp.org</A>)
+for security reasons should be taken into account (See
+<A HREF="http://www.php.net/manual/en/security.cgi-bin.php">http://www.php.net/manual/en/security.cgi-bin.php</A>
+for more information on this security issue)!</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<H4 LANG="en-GB" CLASS="western">- Required opitions for php4</H4>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.49cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3><SPAN STYLE="background: transparent">--enable-dbase</SPAN></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.49cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3><SPAN STYLE="background: transparent">--enable-force-cgi-redirect
+</SPAN></FONT></FONT>
+</P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.49cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3><SPAN STYLE="background: transparent">--with-jpeg-dir[=DIR]</SPAN></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.49cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3><SPAN STYLE="background: transparent">--with-mysql[=DIR]</SPAN></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.49cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3><SPAN STYLE="background: transparent">--with-pgsql[=DIR]</SPAN></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.49cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3><SPAN STYLE="background: transparent">--with-png-dir[=DIR]</SPAN></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.49cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3><SPAN STYLE="background: transparent">--with-tiff-dir[=DIR]</SPAN></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.49cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3><SPAN STYLE="background: transparent">--with-freetype-dir[=DIR]</SPAN></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.49cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3><SPAN STYLE="background: transparent">--with-xml</SPAN></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.49cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3><SPAN STYLE="background: transparent">--with-zlib=yes</SPAN></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.49cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3><SPAN STYLE="background: transparent">--with-gd</SPAN></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.49cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3><SPAN STYLE="background: transparent">--with-curl[=DIR]</SPAN></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.49cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3><SPAN STYLE="background: transparent">--with-regex=system</SPAN></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<H6 LANG="en-GB" CLASS="western">Installation as a apache module --&gt;
+without phpMapScript support</H6>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: transparent">Install
+mod_php4.</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<H6 LANG="de-DE" CLASS="western">Installation as a cgi for
+phpMapScript support</H6>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="en-GB">PHP4
+must explicitely be compiled as a cgi and with the
+<I>--with-system-regex</I> option (Default: <I>--with-regex=php</I>)
+, if <SPAN STYLE="font-weight: medium">phpMapScript support</SPAN> is
+required.</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>Further information:</FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><FONT COLOR="#0000ff"><U><A HREF="http://mapserver.gis.umn.edu/data2/wilma/mapserver-users/0208/msg00354.html"><SPAN LANG="en-GB">http://mapserver.gis.umn.edu/data2/wilma/mapserver-users/0208/msg00354.html</SPAN></A></U></FONT></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><FONT COLOR="#0000ff"><U><A HREF="http://mapserver.gis.umn.edu/cgi-bin/wiki.pl?PHPMapScript"><SPAN LANG="en-GB">http://mapserver.gis.umn.edu/cgi-bin/wiki.pl?PHPMapScript</SPAN></A></U></FONT></FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><FONT COLOR="#0000ff"><U><A HREF="http://mapserver.gis.umn.edu/cgi-bin/wiki.pl?PHPMapScriptCGI"><SPAN LANG="en-GB">http://mapserver.gis.umn.edu/cgi-bin/wiki.pl?PHPMapScriptCGI</SPAN></A></U></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: transparent">Configure
+options for php4:</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=2><SPAN STYLE="background: transparent">./configure
+--prefix=/usr/share --datadir=/usr/share/php --bindir=/usr/bin
+--libdir=/usr/share --includedir=/usr/include --with-_lib=lib
+--with-config-file-path=/etc --with-exec-dir=/usr/lib/php/bin
+--disable-debug --enable-bcmath --enable-calendar --enable-ctype
+--enable-dbase --enable-exif --enable-filepro
+--enable-force-cgi-redirect --enable-ftp --enable-gd-imgstrttf
+--enable-gd-native-ttf --enable-inline-optimization
+--enable-magic-quotes --enable-mbstr-enc-trans --enable-mbstring
+--enable-mbregex --enable-memory-limit --enable-safe-mode
+--enable-shmop --enable-sigchild --enable-sysvsem --enable-sysvshm
+--enable-track-vars --enable-trans-sid --enable-versioning
+--enable-wddx --enable-yp --with-bz2 --with-dom=/usr/include/libxml2
+--with-gettext --with-jpeg-dir=/usr --with-mysql=/usr
+--with-pgsql=/usr --with-png-dir=/usr --with-tiff-dir=/usr --with-ttf
+--with-freetype-dir=yes --with-xml --with-zlib=yes --with-gd 
+--with-curl=/usr/local --with-iconv --with-regex=system</SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>After finishing the
+installation, the PHP4 binary (<I>/data/src/php-4.3.4/sapi/cgi</I>),
+needs be copied into the server's <I>cgi-bin</I> directory (<SPAN STYLE="background: transparent">SuSE
+default</SPAN>: <I>/srv/www/cgi-bin</I>),
+<SPAN STYLE="background: transparent"><I>/path/to/src-code/php.ini-dist
+</I><SPAN STYLE="font-style: normal">needs to be copied</SPAN> to
+<I>/etc/php.ini</I></SPAN> and the following lines have to be added
+to the apache configuration-file httpd.conf beneath <I><FONT FACE="Times New Roman, serif">AddType
+application/x-tar .tgz</FONT></I>:</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western" STYLE="margin-left: 2.04cm"><FONT SIZE=3><SPAN LANG="en-GB">AddType
+</SPAN><SPAN LANG="fr-FR">application/x-httpd-php .php</SPAN></FONT></P>
+<P LANG="fr-FR" CLASS="western" STYLE="margin-left: 2.04cm"><FONT SIZE=3>Action
+application/x-httpd-php /cgi-bin/php</FONT></P>
+<P LANG="fr-FR" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>A directory alias for
+apache has to be configured to allow web access to the directory,
+which is referenced in a map-file as <FONT FACE="Times New Roman, serif">&ldquo;IMAGEURL&rdquo;.
+</FONT>For instance:</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>	Alias /umn/
+&quot;/data/umn/umn-www&quot;</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>	&lt;Directory
+&quot;/data/umn/umn-www&quot;&gt;</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>		Options All</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>		AllowOverride None</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>		Order allow,deny</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>		Allow from all</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>	&lt;/Directory&gt;</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="en-GB">Apache
+needs to be restarted in order to load the changed httpd.conf. This
+can be accomplished either by typing <I><SPAN STYLE="background: transparent">/etc/init.d/apache
+</SPAN>restart</I> or by typing <I>apachectl graceful</I><SPAN STYLE="font-style: normal">.</SPAN></SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="font-style: normal"><BR>
+</P>
+<H4 LANG="en-GB" CLASS="western">libiconv-1.9.1</H4>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3>Required by
+UMN-MapServer 4 and gd2.</FONT></P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>No rpm-package
+available. Installation via source code compiling.</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<H4 LANG="fr-FR" CLASS="western">proj-4.4.8</H4>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>No rpm-package
+available. Installation via source code compiling</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>UMN-MapServer expects an
+epsg-file in capitel letters. The easiest way is to create a symbolic
+link in /usr/local/share/proj:</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>ln &ndash;s epsg EPSG</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><B>gdal-1.2.1</B></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>Requires g++.</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>No rpm-package
+available. Installation via source code compiling.</FONT></P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3>If UMN-MapServer failes
+to run with the appropriate gdal error-message, the following needs
+to be done:</FONT></P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western" STYLE="margin-left: 1.98cm"><FONT SIZE=3>#
+vi <SPAN LANG="fr-FR">/etc/ld.so.conf (add <I>/usr/local/lib</I>)</SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western" STYLE="margin-left: 1.98cm"><FONT SIZE=3><SPAN LANG="fr-FR">#
+</SPAN>ldconfig -v (check for entry)</FONT></P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<H4 LANG="en-GB" CLASS="western"><BR>
+</H4>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<H4 LANG="en-GB" CLASS="western">libwww-5.4.0</H4>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3>Required only by
+UMN-MapServer 3</FONT></P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>No rpm-package
+available. Installation via source code compiling.</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<H4 LANG="en-GB" CLASS="western">gd-1.8.4</H4>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3>UMN-MapServer requires a
+installed gd. UMN-MapServer 3 builds with gd1 or gd2.</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>SuSE 8.1 ships with
+gd-1.8.4, SuSE 8.2 ships with gd-2.0.11. For UMN-MapServer 4
+gd-2.0.12 or higher is required, which is available on SuSE 9</FONT></P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>Yast: gd-devel-1.8.4</FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="en-GB">Yast:
+</SPAN><SPAN LANG="fr-FR">gd-1.8.4</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<H4 LANG="en-GB" CLASS="western">gd2-2.0.15 
+</H4>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>Required by
+UMN-MapServer 4</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="font-weight: medium"><BR>
+</P>
+<P LANG="en-GB" CLASS="western" STYLE="font-weight: medium"><FONT SIZE=3>Yast:
+gd-2.0.15-devel</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="font-weight: medium"><FONT SIZE=3>Yast:
+gd-2.0.15</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="font-weight: medium"><BR>
+</P>
+<P LANG="en-GB" CLASS="western" STYLE="font-weight: medium"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="en-GB"><SPAN STYLE="font-weight: medium">For
+earlier releases than SuSE 9, there is no</SPAN> rpm-package
+available. Installation via source code compiling. Attention!
+gd-1.8.4 needs to be deinstalled!</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<H4 LANG="en-GB" CLASS="western">GEOS</H4>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>No rpm-package
+available. Installation via source code compiling.</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<H3 LANG="en-GB" CLASS="western">PostGIS 0.7.5/0.8.1/0.9.0</H3>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>PostGIS needs to be
+uncompressed and untared in the archive in the &quot;contrib&quot;
+directory of the PostgreSQL source tree. </FONT>
+</P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.04cm"><FONT SIZE=3>#
+cd /sourc-tree-of/postgresql-7.<SPAN STYLE="font-style: normal">3.4</SPAN>/contrib
+</FONT>
+</P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.04cm"><FONT SIZE=3>#
+gzip -d -c postgis-0.7.5.tar.gz | tar xvf -</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>Either the just created
+directory has to be renamed</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.06cm"><FONT SIZE=3>#
+mv postgis-0.7.5 postgis </FONT>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>or t<SPAN STYLE="font-style: normal">he
+Makefile has to be edited. For projection support leave the value for
+</SPAN><I>USE_PROJ</I><SPAN STYLE="font-style: normal">  and
+additionally since PostGIS 0.8 for geos support leave the value for
+</SPAN><SPAN STYLE="background: transparent"><FONT FACE="Times New Roman, serif"><I>USE_GEOS
+</I><SPAN STYLE="font-style: normal">(Requires a geos-installation)</SPAN><I>,
+</I><SPAN STYLE="font-style: normal">otherwise change it to &ldquo;0&rdquo;.</SPAN></FONT></SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.04cm"><FONT SIZE=3><I><B>#
+</B></I><SPAN STYLE="font-weight: medium"><SPAN STYLE="font-style: normal">cd
+postgis</SPAN></SPAN></FONT></P>
+<P LANG="de-DE" CLASS="western" STYLE="margin-left: 2.04cm"><FONT SIZE=3>#
+make</FONT></P>
+<P LANG="de-DE" CLASS="western" STYLE="margin-left: 2.04cm"><FONT SIZE=3>#
+make install</FONT></P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<H4 LANG="en-GB" CLASS="western">Load PostGIS functions and objects
+into PostgreSQL</H4>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3>The file <I>postgis.sql
+</I><SPAN STYLE="font-style: normal">uses the variable $libdir. This
+variable contains the path to the PostGIS libraries. On some systems
+it contains a wrong value and executing </SPAN><I>postgis.sql</I>
+fails.</FONT></P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3>To correct this either
+the string '$libdir' can be changed into the absolute path, which can
+be found out via <SPAN LANG="en-GB"><FONT FACE="Times New Roman, serif"><I>pg_config
+--pkglibdir</I> or the libraries can be copied to to the apropriate
+location.</FONT></SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT FACE="Times New Roman, serif"><FONT SIZE=3>The
+libraries can be found in <I>/usr/local/pgsql/lib/</I><SPAN STYLE="font-style: normal">.</SPAN></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT FACE="Times New Roman, serif"><FONT SIZE=3><I>pg_config
+--pkglibdir</I> shows <I>/usr/lib/postgresql</I>.</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT FACE="Times New Roman, serif"><FONT SIZE=3>ln
+-s /usr/local/pgsql/lib/libpostgis.so.0.7 /usr/lib/postgresql</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.05cm"><FONT SIZE=3>#
+cp /usr/local/pgsql/lib/libpostgis.a /usr/lib/postgresql (PostGIS
+0.7)</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.05cm"><FONT SIZE=3>#
+cp /usr/local/pgsql/lib/libpostgis.so.0.7 /usr/lib/postgresql
+(PostGIS 0.7)</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.05cm"><BR>
+</P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.05cm"><FONT SIZE=3>#
+cp /usr/local/pgsql/lib/libpostgis.so.0.8 /usr/lib/postgresql
+(PostGIS 0.8/0.9)</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT FACE="Times New Roman, serif"><FONT SIZE=3>In
+<I>pg_config --pkglibdir</I> (<I>/usr/lib/postgresql</I>) two
+symbolic links have to be created.</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.05cm"><FONT SIZE=3>#
+ln &ndash;s libpostgis.so.0.7 libpostgis.so (PostGIS 0.7)</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.05cm"><FONT SIZE=3>#
+ln &ndash;s libpostgis.so.0.7 libpostgis.so.0 (PostGIS 0.7)</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.05cm"><BR>
+</P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.05cm"><FONT SIZE=3>#
+ln -s libpostgis.so.0.8 libpostgis.so (PostGIS 0.8/0.9 )</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 2.05cm"><FONT SIZE=3>#
+ln -s libpostgis.so.0.8 libpostgis.so.0 (PostGIS 0.8/0.9)</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="en-GB">The
+following is necessary to add PostGIS support into a new or existing,
+but empty postgressql database. It has to be done as a known database
+user. On SuSE systems the pgsql-user is called <I>postgres</I>.</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="it-IT" CLASS="western"><FONT SIZE=3># su PG-SQL_USER</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=2 STYLE="font-size: 11pt">#
+createdb mydb (pgSQL-command to create a new database)</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=2 STYLE="font-size: 11pt">#
+createlang plpgsql mydb (there&rsquo;ll be no output)</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=2 STYLE="font-size: 11pt">#
+psql -d mydb -f<SPAN STYLE="background: transparent">
+/usr/local/pgsql/share/contrib/p</SPAN>ostgis.sql (psql the SQL
+console)</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=2 STYLE="font-size: 11pt">#
+psql -d mydb -f <SPAN STYLE="background: transparent">/usr/local/pgsql/share/contrib/</SPAN>spatial_ref_sys.sql</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>The following output can
+be seen after executing postgis.sql. This is not an error!</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="border-top: none; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding-top: 0cm; padding-bottom: 0.07cm; padding-left: 0cm; padding-right: 0cm">
+<BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=2>&gt; psql -d test2 -f
+/root/postgresql/postgresql-7.3.2/contrib/postgis-0.7.4/postgis.sql &gt;
+/tmp/output.txt</FONT></P>
+<P LANG="en-GB" CLASS="western">psql:/root/postgresql/postgresql-7.3.2/contrib/postgis-0.7.4/postgis.sql:18:
+NOTICE:  ProcedureCreate: type histogram2d is not yet defined</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=2>psql:/root/postgresql/postgresql-7.3.2/contrib/postgis-0.7.4/postgis.sql:23:
+NOTICE:  Argument type &quot;histogram2d&quot; is only a shell</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=2>.</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=2>.</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=2>psql:/root/postgresql/postgresql-7.3.2/contrib/postgis-0.7.4/postgis.sql:154:
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index
+'spatial_ref_sys_pk</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=2>ey' for table
+'spatial_ref_sys'</FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=2>psql:/root/postgresql/postgresql-7.3.2/contrib/postgis-0.7.4/postgis.sql:174:
+NOTICE:  CREATE TABLE / PRIMARY KEY will create implicit index
+'geometry_columns_p</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="border-top: none; border-bottom: 1px solid #000000; border-left: none; border-right: none; padding-top: 0cm; padding-bottom: 0.07cm; padding-left: 0cm; padding-right: 0cm">
+<FONT SIZE=2>k' for table 'geometry_columns'</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<H3 LANG="en-GB" CLASS="western">UMN-MapServer</H3>
+<H5 LANG="de-DE" CLASS="western">General Instructions</H5>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: transparent">If
+compiling of mapserver fails (first occured on SuSE 8.2) with an
+error regarding gdal (e.g. cannot find gdal-config), then supply the
+full path to gdal-config after <I>--with-ogr</I>!</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>To support phpMapScript
+supply the as the value of <I>--with-php </I>the path to the source
+tree of PHP4<I> : --with-php=<SPAN STYLE="background: transparent"><FONT SIZE=3><FONT FACE="Times New Roman, serif">/data/src/php-4.3.4</FONT></FONT></SPAN></I></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<H5 LANG="en-GB" CLASS="western">UMN-MapServer 3.6</H5>
+<H5 LANG="en-GB" CLASS="western"><SPAN STYLE="background: #33cc66">UMN-MapServer
+4.6 verwenden!!!!!!!</SPAN></H5>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>Obviously it is not
+necessary to supply the graphics libraries, so the following is
+enough:</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT FACE="Times New Roman, serif"><FONT SIZE=3>./configure
+--with-gd=/usr \</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 1.98cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3>--with-gdal
+\</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 1.98cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3>--with-ogr
+\</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 1.98cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3>--without-tiff
+\</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 1.98cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3>--without-png
+\</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 1.98cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3>--with-proj=/usr/local
+\</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 1.98cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3>--with-wmsclient
+\</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 1.98cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3>--with-postgis</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 1.98cm"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="de-DE" CLASS="western"><FONT SIZE=3><SPAN LANG="en-GB">Because
+there are incompatibilities between mapserver 3.6 and pgsql 7.3.2 a
+new mappostgis.c has to be used. See
+</SPAN><FONT COLOR="#0000ff"><U><A HREF="http://mapserver.gis.umn.edu/data2/wilma/mapserver-users/0304/msg00305.html"><SPAN LANG="en-GB">http://mapserver.gis.umn.edu/data2/wilma/mapserver-users/0304/msg00305.html</SPAN></A></U></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>Finally compile the code
+with <I>make </I><SPAN STYLE="font-style: normal">(<B>DO NOT </B></SPAN><B><I>make
+install</I><SPAN STYLE="font-style: normal">!!</SPAN></B><SPAN STYLE="font-style: normal">)
+and </SPAN>copy the mapserv binary to /srv/www/cgi-bin!</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<H5 LANG="de-DE" CLASS="western"><SPAN LANG="en-GB">UMN-MapServer</SPAN>
+4.0</H5>
+<P LANG="de-DE" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3>./configure --with-proj
+\</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 1.96cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3>--without-tiff
+\</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 1.98cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3>--without-png
+\</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 1.98cm"><FONT SIZE=3>--with-wmsclient
+\</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 1.98cm"><FONT SIZE=3>--with-wfs
+\</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 1.98cm"><FONT SIZE=3>--with-wfsclient
+\</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 1.98cm"><FONT SIZE=3>--with-postgis
+\</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 1.98cm"><FONT SIZE=3>--with-ogr
+\</FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 1.98cm"><FONT FACE="Times New Roman, serif"><FONT SIZE=3><SPAN STYLE="background: transparent">--with-gdal</SPAN></FONT></FONT></P>
+<P LANG="en-GB" CLASS="western" STYLE="margin-left: 0.05cm"><FONT SIZE=3>Finally
+compile the code with <I><SPAN STYLE="background: transparent">make</SPAN>
+</I><SPAN STYLE="font-style: normal">(<B>DO NOT </B></SPAN><B><I>make
+install</I><SPAN STYLE="font-style: normal">!!</SPAN></B><SPAN STYLE="font-style: normal">)
+and </SPAN>copy the mapserv binary to <I>/srv/www/cgi-bin</I>!</FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT SIZE=3><SPAN STYLE="background: #33cc66">Aus
+YAST SuSE9.2 installierte Pakete</SPAN></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT COLOR="#ff0000"><FONT SIZE=3>ge&auml;nderte
+Pfade</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT COLOR="#0000ff"><FONT SIZE=3>UMN-MAP-Server
+in /opt/mapserver2 installiert,--&gt;&gt;</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT COLOR="#0000ff"><FONT SIZE=3>in
+/etc/apache2/default-server.conf</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT COLOR="#0000ff"><FONT SIZE=3>Alias
+/mapbender2 &quot;/opt/mapbender2/http&quot;</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT COLOR="#0000ff"><FONT SIZE=3>&lt;Directory
+&quot;/opt/mapbender2/http&quot;&gt;</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT COLOR="#0000ff">        <FONT SIZE=3>Options
+MultiViews</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT COLOR="#0000ff">       
+<FONT SIZE=3>AllowOverride None</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT COLOR="#0000ff">        <FONT SIZE=3>Order
+allow,deny</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT COLOR="#0000ff">        <FONT SIZE=3>Allow
+from all</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><FONT COLOR="#0000ff"><FONT SIZE=3>&lt;/Directory&gt;</FONT></FONT></P>
+<P LANG="en-GB" CLASS="western"><BR>
+</P>
+<P LANG="en-GB" CLASS="western"><FONT COLOR="#0000ff"><FONT SIZE=3>eingef&uuml;gt.</FONT></FONT></P>
+</BODY>
+</HTML>

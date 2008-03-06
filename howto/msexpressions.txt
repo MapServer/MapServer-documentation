@@ -1,0 +1,215 @@
+<h2>Introduction</h2>
+<p>
+As of version 4.6.1, expressions are used in two places. They're used to filter layers for specific records in the dataset and they're used in CLASS EXPRESSIONS to specify to which items this CLASS does apply to.
+</p>
+<h2>Three different types of expressions</h2>
+<p>
+Expression are used to match attribute values with certain logical checks. There are three different types of expressions you can use with mapserver:
+</p>
+<p></p><ul>
+<li>String comparisions<br />A single attribute is compared with a string value.</li>
+<li>Regular expressions<br />A single attribute is matched with a regular expression.</li>
+<li>Logical "Mapserver expressions"<br />One or more attributes are compared using logical expressions.</li>
+</ul><p></p>
+<h2>String comparision</h2>
+<p>String comparision means as the name suggests that attribute values are checked if they are equal to some value. String comparision are the simplest form of mapserver expressions and the fastest option.</p>
+<p>To use a string comparision for filtering a LAYER, both FILTERITEM and FILTER must be set. FILTERITEM is set to the attribute name. FILTER is set to the value for comparision. The same rule applies to CLASSITEM and EXPRESSION in the CLASS object.</p>
+<p>Example for a simple string comparision filter:</p><pre>FILTER "2005"<br />FILTERITEM "year"<br /></pre> would match all records that have the attribute "year" set to "2005". The rendered map would appear as if the dataset would only contain those items that have the "year" set to "2005".<p></p>
+<p>Similarily, a classification for the items matched above would be done by setting the CLASSITEM in the layer and the EXPRESSION in the class:</p><pre>LAYER<br />  NAME "example"<br />  CLASSITEM "year"<br />  ...<br />    CLASS<br />      NAME "year-2005"<br />      EXPRESSION "2005"<br />      ...<br />    END<br />END<br /></pre><p></p>
+<p>For a reason explained later on the values for both CLASSITEM and FILTERITEM should start neither with an '/' nor with a '(' character.</p><p>
+</p><h2>Regular expression comparision</h2>
+<p>Regular expressions are a standard text pattern matching mechanism from the UNIX world. The functionality of regular expression matching is provided by the operating system on UNIX systems and therefore slightly operating system dependent. However their minimum set of features are those defined by the POSIX standard. The documentation of the particular regular expression library is usually in the "regex" manual page ("man regex").</p>
+<p>Regular expression with mapserver work similarily to string comparision, but allow more complex operation. They are slower than pure string comparisions, but might be still faster than logical expression. As with the string comparision use regular expressions, a FILTERITEM or a CLASSITEM has to defined, respectively.
+</p><p>A regular expression typically consists of characters with special meanings and characters that are interpreted as they are. Alphanumeric characters (A-Z, a-z and 0-9) are taken as they are. Characters with special means are:</p>
+<ul>
+<li><b>.</b> will match a single character</li>
+<li><b>[</b> and <b>]</b> are used for grouping. For example <i>[A-Z]</i> would match the characters A,B,C,...,X,Y,Z.</li>
+<li><b>{</b>,<b>}</b>,<b>*</b> are used to specify how often something should match.</li>
+<li><b>^</b> matches the beginning, <b>$</b> matches the end of the value.
+</li><li>The backslash <b>\</b> is used to take away the special meaning. For example <i>\$</i> would match the dollar sign.
+</li></ul>
+<p>The following LAYER configuration would have all records rendered on the map that have "hotel" in the attribute named "placename":</p><pre>LAYER<br />  NAME "regexp-example"<br />  FILTERITEM "placename"<br />  FILTER /hotel/<br />  ...<br />END<br /></pre><p></p>
+<p><i>Note that the regular expression is case-sensitive, thus records having "Hotel" in them would not have matched.</i></p>
+<p>Example: Match records that have a value for the current century (as of 2005 ;) in the attribute "year"</p><pre>FILTERITEM "year"<br />FILTER /^20[0-9][0-9]/<br /></pre><p></p>
+<p>Example: Match all the records that are either purely numerical or empty</p><pre>FILTER /^[0-9]*$/<br /></pre>
+<p><i>Note: When you experience frequently segmentation faults when working with mapserver and regular expressions, it might be that your current working environment is linked against more than one regular expression library. This can happen when mapserver is linked with components that bring their own copy, like the Apache httpd or PHP. In these cases the author has made best experiences with making all those components using the regular expression library of the operating system (i.e. the one in libc). That involved editing the build files of some of the components, however.</i></p>
+
+<h2>"Mapserver expressions"</h2>
+<p>Mapserver expressions are the most complex and depending how they are written can become quite slow. They can match any of the attributes and thus allow filtering and classification depending on more than one attribute. Besides pure logical operations there are also expressions allow also certain arithmetic, string- and time operations.</p>
+<p>To be able to use a mapserver expression for a FILTER or EXPRESSION value, the expression has to be finally of a logical value.
+</p><h3>Logical expressions</h3>
+<p>Syntactically, a logical expression is everything encapsulated in round breakets. Logical expressions take logical values as their input and return logical values. A logical expression is either 'true' or 'false'.</p>
+<p></p><ul>
+<li>
+( ( ... ) AND ( ... ) )<br />
+( ( ... ) &amp;&amp; ( ... ) )<br />
+... will become true when both of the two logical expressions in the innermost breakets are  true.</li>
+<li>
+( ( ... ) OR ( ... ) )<br />
+( ( ... ) || ( ... ) )<br />
+... will become true when at least one of the two logical expressions in the innermost breakets is true.</li>
+<li>NOT ( ... )<br />
+! ( ... )<br />
+... will become true, when the logical expression in the breakets becomes false</li>
+</ul><p></p>
+
+<h3>String operations that result in a logical value</h3>
+<p>Syntactically, a sting is something  encapsulated in double-quotes.</p>
+<p></p><ul>
+<li>
+( "String1" eq "String2" )<br />
+( "String1" == "String2" )<br />
+( "String1" = "String2" )<br />
+... will become true when both strings are equal. This operation is identical to the mapserver string comparision described earlier.</li>
+<li>
+( "String1" != "String2" )<br />
+( "String1" ne "String2" )<br />
+... will become true when both strings are not equal.</li>
+<li>
+( "String1" &lt; "String2" )<br />
+( "String1" lt "String2" )<br />
+... will become true when "String1"
+is lexigraphically smaller than "String2"</li>
+<li>
+( "String1" &gt; "String2" )<br />
+( "String1" gt "String2" )<br />
+... will become true when "String1"
+is lexigraphically larger than "String2".</li>
+<li>
+( "String1" &lt;= "String2" )<br />
+( "String1" le "String2" )<br />
+... will become true when "String1"
+is not lexigraphically larger than "String2"</li>
+<li>
+( "String1" &gt;= "String2" )<br />
+( "String1" ge "String2" )<br />
+... will become true when "String1"
+is not lexigraphically smaller than "String2".</li>
+<li>
+( "String1" IN "token1,token2,...,tokenN" )<br />
+... will become true when "String1" is in equal one of the given tokens.<br /><i>Note: The separator for those tokens is the comma. That means that you must not add unnecessary white space to the list and that you cannot compare to tokens that have a comma in it.</i></li>
+<li>
+( "String1" =~ /regexp/ )<br />
+... will become true, when "String1" matches the regular expression "regexp". This operation is identical to the regular expression matching describes earlier.
+</li></ul>
+<h3>String operations that return string values</h3>
+<p>There is only one operation for strings that returns a string value:
+</p><ul><li>"String1" + "String2<br />
+... will return "String1String2", thus the two string concatenated to each other.</li></ul><p></p>
+<h3>Arithmetic expressions returning logical values</h3>
+<p>The basic element for the arithmetic operation is the number. There are some purely arithmetic operations that are returning numbers as their value. They will be covered in the next section.</p>
+<p></p><ul>
+<li>
+( n1 eq n2 )<br />
+( n1 == n2 )<br />
+( n1 = n2 )<br />
+... will become true when both numbers are equal.</li>
+<li>
+( n1 != n2 )<br />
+( n1 ne n2 )<br />
+... will become true when both numbers are not equal.</li>
+<li>
+( n1 &lt; n2 )<br />
+( n1 lt n2 )<br />
+... will become true when n1
+is smaller than n2</li>
+<li>
+( n1 &gt; n2 )<br />
+( n1 gt n2 )<br />
+... will become true when n1
+is  larger than n2.</li>
+<li>
+( n1 &lt;= n2 )<br />
+( n1 le n2 )<br />
+... will become true when n1
+is smaller or equal n2</li>
+<li>
+( n1 &gt;= n2 )<br />
+( n1 ge n2 )<br />
+... will become true when n1
+is larger or equal n2.</li>
+<li>
+( n1 IN "number1,number2,...,numberN" )<br />
+... will become true when n1 is equal to one of the given numbers.</li>
+</ul><p></p>
+<h3>Arithmetic expression returning a number</h3>
+<p>As stated in the previous section, mapserver can do purely numerical operations with numbers.</p>
+<p></p><ul>
+<li>n1 + n2<br />
+... will become the sum of n1 and n2</li>
+<li>n1 - n2<br />
+... will become n2 subtracted from n1</li>
+<li>n1 * n2<br />
+... will become n1 multiplicated with n2</li>
+<li>n1 / n2<br />
+... will become n1 divided by n2</li>
+<li>-n1<br />
+... will become n1 with negated sign</li>
+<li>n1 ^ n2<br />
+... will become n1 by a power of n2</li>
+<li>length ( "String1" )<br />
+... will become the number of characters of "String1"</li>
+</ul><p></p>
+<p><i>Note: When the numerical operations above are used like logical operations, the following rule applies: values equal to zero will be taken as 'false' and everything else will be 'true'. That means the expression ...<pre>( 6 + 5 )</pre>... would evaluate as true, but <pre>( 5 - 5 )</pre> would evaluate as false.</i></p>
+<h3>Temporal expressions</h3>
+<p>Mapserver uses an internal time type to do comparision. To convert a keys value into this time type it will check the list below from the top down if the specified time matches and if so, it will do the conversion.</p>
+<p></p><ol>
+<li>YYYY-MM-DDTHH:MM:SSZ<br /><i>('Z' and 'T' being the characters itself)</i></li>
+<li>YYYY-MM-DDTHH:MM:SS<br /><i>('T' being the character itself)</i></li>
+<li>YYYY-MM-DD HH:MM:SS</li>
+<li>YYYY-MM-DDTHH:MM<br /><i>('T' being the character itself)</i></li>
+<li>YYYY-MM-DD HH:MM</li>
+<li>YYYY-MM-DDTHH<br /><i>('T' being the character itself)</i></li>
+<li>YYYY-MM-DD HH</li>
+<li>YYYY-MM-DD</li>
+<li>YYYY-MM</li>
+<li>YYYY</li>
+<li>THH:MM:SSZ<br /><i>('Z' and 'T' being the characters itself)</i></li>
+<li>THH:MM:SS</li>
+</ol><p></p>
+<p>For temporal values obtained this way, the following operations are supported:</p>
+<p></p><ul>
+<li>
+( n1 eq n2 )<br />
+( n1 == n2 )<br />
+( n1 = n2 )<br />
+... will become true when both times are equal.</li>
+<li>
+( t1 != t2 )<br />
+( t1 ne t2 )<br />
+... will become true when both times are not equal.</li>
+<li>
+( n1 &lt; n2 )<br />
+( n1 lt n2 )<br />
+... will become true when t1
+is earlier than t2</li>
+<li>
+( n1 &gt; n2 )<br />
+( n1 gt n2 )<br />
+... will become true when t1
+is later than t2.</li>
+<li>
+( t1 &lt;= t2 )<br />
+( t1 le t2 )<br />
+... will become true when t1
+is earlier or same t2</li>
+<li>
+( n1 &gt;= n2 )<br />
+( n1 ge n2 )<br />
+... will become true when t1
+is later or same t2.</li>
+</ul><p></p>
+<h3>How the attributes are referenced</h3>
+<p>To make a meaningful use of the expressions above, we need to get the attribute values into the expressions. That is done by enclosing the attribute key into square breakets, like this: [KEY]. Then before the expression is evaluated every occurance of "[KEY]" will be replaced by the value for attribute "KEY".</p>
+<p>Example: how a simple string comparision would be evaluated. The filter is set to:</p><pre>FILTER ( "[BUILDING_NAME]" == "National Museum" )<br /></pre><br />
+There is a attribute "BUILDING_NAME" and its value is "National Government Building". Thus the expression actually evaluated is...<pre>( "National Government Building" == "National Museum" )<br /></pre>...and as such should be false.<p></p>
+<p>Some layers do not really come with metadata.</p>
+<p>For raster layers for example special attributes have been defined that can be used for classification:</p><ul>
+<li>[PIXEL]<br />
+... will become the pixel value as number</li>
+<li>[RED], [GREEN], [BLUE]<br />
+... will become the colour value for the red, green and blue component in the pixel value, respectively.</li>
+</ul><p></p>
+<h3>Quotes escaping in strings<br /></h3>
+<p><i>Quotes escaping is not supported in Mapserver versions lower than 5.0.</i><br /></p><p>Starting with Mapserver 5.0, if your dataset contains double-quotes, you can use a C-like escape sequence in the expression string. For example if your key "<i>NAME</i>" has the value '<i>National "hero" statue</i>' you could write the FILTER expression as follows:<br /></p><pre>FILTER ( "[NAME]" == "National \"hero\" statue" )<br /></pre>to escape a single quote use the following sequence instead:<br /><pre>FILTER ( "[NAME]" == "National \'hero\' statue" )</pre>
+<p></p><br />

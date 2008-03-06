@@ -1,0 +1,68 @@
+Windows 2000<br>
+IIS 5.0<br>
+MS4W 1.2.1<br>
+Chameleon 2.2<br>
+PHP 4.3.11<br>
+MapServer 4.7<br>
+PhpPgAdmin 3.5.4 (if using postgresql/postgis)<br> 
+Postgres 8.0.3 (if using postgresql/postgis)<br>
+Postgis 1.0.3 (if using postgresql/postgis)<br>
+<br>
+This setup assumes that MS4W was unzipped to form c:\ms4w\ directory.<br>
+
+<h4>Php.ini file:</h4>
+<ul>
+<li>session.save_path (absolute path to your tmp directory)</li>
+<li>extension_dir (relative path to your php/extensions directory)</li>
+<li>cgi.force_redirect = 0</li>
+<li>enable the pg_sql extension (php_pgsql.dll) (for Postgresql)</li>
+</ul>
+
+<h4>Internet Services Manager</h4>
+Under your website tree, create a new website (e.g. msprojects). View the properties for the new website.
+<ul>
+<li><strong>Web Site Tab:</strong> set the IP address and under the Advanced tab put the complete Host Header name (e.g.msprojects.gc.ca).</li>
+<li><strong>Home Directory Tab:</strong></li>
+-content should come from: A directory located on this computer.<br>
+-Local Path: c:\ms4w\Apache\htdocs<br>
+-Read access + whatever else you need<br>
+-Execute Permissions: Scripts only<br>
+-Configuration button - App Mappings (Add extensions .php and .phtml, Executable is c:\ms4w\Apache\cgi-bin\php.exe,select All verbs, Script Engine, and check that file exists<br>
+<li><strong>Documents Tab:</strong> Add index.phtml and index.html</li>
+<li><strong>Directory Security Tab:</strong> Anonymous access amd authentication control: Select Anonymous access and the edit button should indicate the IUSR_ account</li> 
+<li><strong>Server Extensions Tab:</strong> Enable authoring is selected and client scripting says Javascript</li>
+</ul>
+	
+<h4>Under the tree for your new website - add virtual directories for:</h4>
+<ul>
+<li><strong>cgi-bin</strong> - under Properties, virtual directory tab Local Path should point to c:\ms4w\apache\cgi-bin. Select Read. Execute Permissions should say "scripts and executables"</li>
+<li><strong>ms_tmp</strong> - Under Properties, virtual directory tab Local Path should point to c:\ms4w\tmp\ms_tmp. Select Read, Write. Execute Permissions should say "scripts only". This is where temporary images are written to so in the File system Security tab (use windows explorer), the c:\ms4w\tmp\ms_tmp directory should have permissions set for the Internet Guest Accounnt (Read and execute, Read, Write, List Folder Contents).</li>
+<li><strong>tmp</strong> -Under Properties, virtual directory tab Local Path should point to c:\ms4w\tmp. Select Read, Write. Execute Permissions should say "scripts only". This is where chameleon writes sessions to so in the File system Security tab (use windows explorer), the c:\ms4w\tmp directory should have permissions set for the Internet Guest Accounnt (Read and execute, Read, Write, List Folder Contents).</li>
+<li><strong>chameleon</strong> -Under Properties, virtual directory tab Local Path should point to C:\ms4w\apps\chameleon\htdocs. Select Read. Execute Permissions should say "scripts only".
+	Under the Chameleon tree, you can add virtual directories for admin (c:\ms4w\apps\chameleon\admin\htdocs), samples (c:\ms4w\apps\chameleon\samples\htdocs), cwc2 (c:\ms4w\apps\chameleon\cwc2\htdocs)</li>
+<li><strong>phppgadmin</strong> - (if using postgresql/postgis) Under Properties, virtual directory tab Local Path should point to C:\ms4w\Apache\htdocs\phpPgAdmin. Select Read, Write. Execute Permissions should say "scripts and executables". Under Documents - add index.php.
+	Please note that We had to unzip the phppgadmin package into this directory in order to get phppgadmin to show us the login page at http://yourserver/phppgadmin/index.php. You might want additional security on this directory.</li> 
+<li><strong>gmap</strong> -Good for testing purposes. Remember to change your mapfiles as discussed in Mapfiles for IIS below. Under Properties, virtual directory tab Local Path should point to C:\ms4w\apps\gmap\htdocs. Select Read. Execute Permissions should say "scripts only".</li>
+</ul>
+	
+<h4>Test PHP:</h4>
+In a command line window, navigate to c:\ms4w\apache\cgi-bin and run php -i. This should return the output that the phpinfo() function returns. I got an error about how it couldn't find ntwdblib.dll. I found this in c:\ms4w\apache\php\dlls and I copied it to the cgi-bin directory. 
+
+<h4>Mapfiles for IIS:</h4>
+<ul>
+<li>Add a config line to the MAP level of the mapfile:<br>
+CONFIG PROJ_LIB "path/to/proj/nad/"<br>
+e.g. CONGIG PROJ_LIB "c:\ms4w\proj\nad\"</li><br>
+
+<li>change the IMAGEPATH to be an absolute path to your tmp/ms_tmp folder<br>
+e.g. IMAGEPATH "c:\ms4w\tmp\ms_tmp"</li>
+</ul>
+
+<h4>Configuration files:</h4>
+For Chameleon:<br>
+C:\ms4w\apps\chameleon\config\chameleon.xml<br> 
+C:\ms4w\apps\chameleon\config\cwc2.xml <br>
+<br>
+For phppgadmin: (if using postgresql/postgis)<br>		
+C:\ms4w\apps\phpPgAdmin\conf\config.inc.php<br>
+
