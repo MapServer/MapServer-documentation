@@ -1,4 +1,531 @@
-<div class="toc"><p><b>Table of Contents</b></p><dl><dt><a href="#intro">Introduction</a></dt><dd><dl><dt><a href="#related">WCS-Related information</a></dt><dt><a href="#software">Software Requirements</a></dt></dl></dd><dt><a href="#d45e65">Configuring your MapFile to serve WCS layers</a></dt><dd><dl><dt><a href="#d45e85">WEB object METADATA parameters</a></dt><dt><a href="#d45e257">LAYER object METADATA parameters</a></dt></dl></dd><dt><a href="#d45e380">Rules for handling SRS in a MapServer WCS</a></dt><dt><a href="#d45e385">Spatio/Temporal Indexes</a></dt><dt><a href="#d45e417">To-do items and known limitations</a></dt></dl></div><div class="sect1"><div class="titlepage"><div><h2 class="title"><a name="intro"></a>Introduction</h2></div></div><p>
+..
 
-      A WCS (or Web Coverage Server) allows for the publication of "coverages"- digital geospatial information representing space-varying phenomena. In the MapServer world it allows for un-filtered access to raster data. Conceptually it is easy think of WCS as a raster equivalent of WFS. The following documentation is based on the <a href="https://portal.opengeospatial.org/files/?artifact_id=3837" target="_top">Open GIS Consortium's (OGC) Web Coverage Server Interfaces Implementation Specification version 1.0.0</a>. 
-    </p><div class="sect2"><div class="titlepage"><div><h3 class="title"><a name="related"></a>WCS-Related information</h3></div></div><p>Here are some WCS related links. Since these are highly detailed technical specifications, there is no need to read through them in their entirety to get a MapServer WCS up and running.  It is still recommended however to read them over and get familiar with the basics of each of them, in order to understand how it all works:</p><div class="itemizedlist"><ul type="disc"><li><p>The <a href="https://portal.opengeospatial.org/files/?artifact_id=3837" target="_top">Open GIS Consortium's (OGC) Web Coverage Server Interfaces Implementation Specification version 1.0.0</a>.</p></li></ul></div><p>Working knowledge of MapServer is of course also required.</p></div><div class="sect2"><div class="titlepage"><div><h3 class="title"><a name="software"></a>Software Requirements</h3></div></div><p>In order to enable MapServer to serve WCS, it MUST be compiled against certain librairies:</p><div class="itemizedlist"><ul type="disc"><li><p>PROJ.4: The reprojection library. Version 4.4.3 or greater is required.</p></li><li><p>GDAL: I/O support library. Version x.x.x or greater is required.</p></li></ul></div><p>Please see the MapServer UNIX Compilation and Installation HOWTO for detailed instructions on compiling mapserver with support for these librairies and features.  For Windows users, look on the MapServer website to see if there are any binaries available that meet these requirements.</p></div></div><div class="sect1"><div class="titlepage"><div><h2 class="title"><a name="d45e65"></a>Configuring your MapFile to serve WCS layers</h2></div></div><p>Much as in the WMS and WFS support, WCS publishing is enabled by adding certain magic METADATA keyword/value pairs to a MapFile.</p><p>MapServer will serve and include in its WCS capabilities only the layers that meet the following conditions:</p><div class="itemizedlist"><ul type="disc"><li><p>Data source is of raster type that is processed using GDAL (e.g GeoTIFF, Erdas Imagine, ...)</p></li><li><p>LAYER NAME must be set</p></li><li><p>LAYER TYPE is RASTER</p></li><li><p>LAYER DUMP parameter set to TRUE</p></li></ul></div><div class="sect2"><div class="titlepage"><div><h3 class="title"><a name="d45e85"></a>WEB object METADATA parameters</h3></div></div><p>WCS support tries to leverage existing WMS or OWS metadata definitions. The rationale being that many values will be the same regardless of the type of service. The module will look for the following metadata prefixes (in order): wcs_, ows_ and finally wms_ unless otherwise noted.</p><div class="variablelist"><dl><dt><span class="term">metadatalink</span></dt><dd><p></p></dd><dt><span class="term">wcs_encoding</span></dt><dd><p></p></dd><dt><span class="term">description</span></dt><dd><p></p></dd><dt><span class="term">name</span></dt><dd><p></p></dd><dt><span class="term">label</span></dt><dd><p></p></dd><dt><span class="term">keywordlist</span></dt><dd><p></p></dd><dt><span class="term">fees</span></dt><dd><p></p></dd><dt><span class="term">accessconstraints</span></dt><dd><p></p></dd></dl></div><p>There are two ways to define service contact information. The WCS way (using the "responsibleparty" tags:</p><div class="variablelist"><dl><dt><span class="term">responsibleparty_individualname (wcs_ or ows_)</span></dt><dd><p></p></dd><dt><span class="term">responsibleparty_organizationname (wcs_ or ows_)</span></dt><dd><p></p></dd><dt><span class="term">responsibleparty_postionname (wcs_ or ows_)</span></dt><dd><p></p></dd><dt><span class="term">responsibleparty_address_deliverypoint (wcs_ or ows_)</span></dt><dd><p></p></dd><dt><span class="term">responsibleparty_address_city (wcs_ or ows_)</span></dt><dd><p></p></dd><dt><span class="term">responsibleparty_address_administrativearea (wcs_ or ows_)</span></dt><dd><p></p></dd><dt><span class="term">responsibleparty_address_postalcode (wcs_ or ows_)</span></dt><dd><p></p></dd><dt><span class="term">responsibleparty_address_country (wcs_ or ows_)</span></dt><dd><p></p></dd><dt><span class="term">responsibleparty_address_electronicmailaddress (wcs_ or ows_)</span></dt><dd><p></p></dd><dt><span class="term">responsibleparty_phone_voice (wcs_ or ows_)</span></dt><dd><p></p></dd><dt><span class="term">responsibleparty_phone_facsimile (wcs_ or ows_)</span></dt><dd><p></p></dd><dt><span class="term">responsibleparty_onlineresource (wcs_ or ows_)</span></dt><dd><p></p></dd></dl></div><p>Or using the method defined in the WMS support for mapserver:</p><div class="variablelist"><dl><dt><span class="term">contactperson</span></dt><dd><p></p></dd><dt><span class="term">contactorganization</span></dt><dd><p></p></dd><dt><span class="term">contactposition</span></dt><dd><p></p></dd><dt><span class="term">address</span></dt><dd><p></p></dd><dt><span class="term">city</span></dt><dd><p></p></dd><dt><span class="term">stateorprovince</span></dt><dd><p></p></dd><dt><span class="term">postcode</span></dt><dd><p></p></dd><dt><span class="term">country</span></dt><dd><p></p></dd><dt><span class="term">contactelectronicmailaddress</span></dt><dd><p></p></dd><dt><span class="term">contactvoicetelephone</span></dt><dd><p></p></dd><dt><span class="term">contactfacsimiletelephone</span></dt><dd><p></p></dd><dt><span class="term">service_onlineresource</span></dt><dd><p></p></dd></dl></div></div><div class="sect2"><div class="titlepage"><div><h3 class="title"><a name="d45e257"></a>LAYER object METADATA parameters</h3></div></div><p>WCS support tries to leverage existing WMS or OWS metadata definitions. The rationale being that many values will be the same regardless of the type of service. The module will look for the following metadata prefixes (in order): wcs_, ows_ and finally wms_ unless otherwise noted.</p><div class="variablelist"><dl><dt><span class="term">metadatalink</span></dt><dd><p></p></dd><dt><span class="term">description</span></dt><dd><p></p></dd><dt><span class="term">name</span></dt><dd><p></p></dd><dt><span class="term">label</span></dt><dd><p></p></dd><dt><span class="term">keywordlist</span></dt><dd><p></p></dd><dt><span class="term">timeposition</span></dt><dd><p></p></dd><dt><span class="term">timeperiod</span></dt><dd><p></p></dd><dt><span class="term">timeitem</span></dt><dd><p>The attribute in the spatio/temporal index that contains time values</p></dd><dt><span class="term">extent</span></dt><dd><p>Must be provided with tiled data.</p></dd><dt><span class="term">srs</span></dt><dd><p></p></dd><dt><span class="term">nativeformat</span></dt><dd><p></p></dd><dt><span class="term">formats</span></dt><dd><p></p></dd></dl></div><p>Axis Descriptions: what are they? MapServer allows you define a number of these for a layer. Individual axis are identified by name when defining specific metadata (e.g. description). All defined axes must be listed in the rangeset_axes metadata tag so MapServer knows in advance what to expect. A special rangeset for multiband date is automatically generated by adding the name "bands" to the rangeset_axes list. If found MapServer will automatically generate metadata for the image bands. You may of course extend that basic support using the naming conventions below.</p><div class="variablelist"><dl><dt><span class="term">rangeset_axes</span></dt><dd><p>Delimited list of defined range sets.</p></dd><dt><span class="term">{name}_semantic</span></dt><dd><p></p></dd><dt><span class="term">{name}_refsys</span></dt><dd><p></p></dd><dt><span class="term">{name}_refsyslabel</span></dt><dd><p></p></dd><dt><span class="term">{name}_description</span></dt><dd><p></p></dd><dt><span class="term">{name}_label</span></dt><dd><p></p></dd><dt><span class="term">{name}_values</span></dt><dd><p></p></dd><dt><span class="term">{name}_values_semantic</span></dt><dd><p></p></dd><dt><span class="term">{name}_values_type</span></dt><dd><p></p></dd><dt><span class="term">{name}_interval</span></dt><dd><p>Only a single interval is supported per axis.</p></dd></dl></div></div></div><div class="sect1"><div class="titlepage"><div><h2 class="title"><a name="d45e380"></a>Rules for handling SRS in a MapServer WCS</h2></div></div><p>TODO!</p></div><div class="sect1"><div class="titlepage"><div><h2 class="title"><a name="d45e385"></a>Spatio/Temporal Indexes</h2></div></div><p>MapServer has long supported a method of breaking a dataset into smaller, more manageable pieces or tiles.  In this case a shapefile is used to store the boundary of each tile, and an attribute holds the location of the actual data. Within a MapServer mapfile the layer keywords TILEINDEX and TILEITEM are used to activate tiling.</p><p>Consider the example where an organization wants to serve hundreds or even thousands of MODIS scenes. Five images cover the spatial extent and each group of five varies by date of acquisition.  This turns out to be a fairly common scenario for organizations interested in WCS, one that the existing tiling support does not adequately address.  In previous versions of MapServer a developer would have to create one tile index and one layer definition for each group of five images. This could result in configuration files that are prohibitively long and difficult to manage.</p><p>In order to more efficiently support the WCS specification a new tiling scheme has been implemented within MapServer.  One that supports spatial sub-setting, but also ad hoc sub-setting based on any attributes found within tile index.  In many cases a temporal attribute could be used, but sub-setting is not limited to that case.  The new scheme introduces the concept of tile index layers, that is, a separate layer definition is used to describe the tile index dataset. With this we get all the benefits of any MapServer layer, most importantly we can apply MapServer filters to the data.  Filters can be defined at runtime using MapServer CGI, MapScript or via the WCS server interface.  The syntax for the layer using the index remains unchanged except that the value for TILEINDEX refers to the index layer instead of an external shapefile.</p><p>So, looking at the example above again we can reduce our MapServer configuration to two layer definitions, one for the tile index and one for the imagery itself.  Extracting a single dates worth of imagery is now a matter of setting the appropriate filter within the tile index layer.</p><p>Building Spatio-Temporal Tile Indexes</p><p>Developing these tile indexes is more difficult than basic indexes simply because there are no ready-made tools to do so.  Fortunately we can leverage existing tool available within MapServer or supporting libraries such as GDAL by post processing their output.</p><p>Taking the above example, building an index is relatively simple task if you are willing to roll up your sleeves and write a bit of code.  First, the basic spatial index needs to be built.  The GDAL utility gdaltindex already does this. Simply point gdaltindex at the directory containing the collection of MODIS images and it will build a shapefile index suitable for use with MapServer.  The next step would be to add the temporal information.  The pseudo code would look something like:</p><div class="itemizedlist"><ul type="disc"><li><p>open the index .dbf file for reading</p></li><li><p>create a new column to hold the image acquisition date</p></li><li><p>for each image; 1) extract the image acquisition date and 2) insert it into the new column</p></li><li><p>close the index .dbf file</p></li></ul></div><p>This general approach could be used for many cases.  A scripting language such as Perl, PHP or Python works well since they all have readily available modules for manipulating .dbf files.  A worst case would involve hand editing the resulting .dbf file using a desktop tool such as Mircosoft Access or ESRI Arcview.</p></div><div class="sect1"><div class="titlepage"><div><h2 class="title"><a name="d45e417"></a>To-do items and known limitations</h2></div></div><div class="itemizedlist"><ul type="disc"><li><p>This is the initial release of WCS support for MapServer and it has not been widely used nor tested.</p></li><li><p>For now we support only GET requests. The spec also talks about XML-encoded POST requests but that is not supported at this time. It is anticipated that a general XML request solution will be created for all OWS services.</p></li><li><p>MapServer does not derive all of the metadata it could from a given dataset. For example, you must explicitly list time periods covered by a layer. This should get better with time.</p></li><li><p>Only spatial, simple temporal and radiometric band subsetting is possible with the current implementation. Furture enhancements should allow for arbitrary subsets based on pixel values or tile/image attributes.</p></li></ul></div></div></div>
+:Author: Jeff McKenna
+:Contact: jmckenna(at)dmsolutions.ca
+:Last Updated: 2008/03/10
+
+--------
+
+..  The next heading encountered becomes our H2
+..
+
+.. sectnum::
+
+.. contents:: Table of Contents
+    :depth: 3
+    :backlinks: top
+
+
+Introduction
+============
+
+A WCS (or Web Coverage Service) allows for the publication of "coverages"- digital 
+geospatial information representing space-varying phenomena. In the MapServer world 
+it allows for unfiltered access to raster data. Conceptually it is easy think of 
+WCS as a raster equivalent of WFS. The following documentation is based on the `Open 
+GIS Consortium's (OGC) Web Coverage Server Interfaces Implementation Specification 
+version 1.0.0`_.
+
+Links to WCS-Related Information
+--------------------------------
+
+- `WCS 1.0.0 specification`_
+- `Open Geospatial Consortium (OGC)`_ home page
+- `WMS Server HOWTO`_
+
+Software Requirements
+---------------------
+
+In order to enable MapServer to serve WCS data, it MUST be compiled against certain 
+libraries:
+
+- PROJ.4: The reprojection library. Version 4.4.3 or greater is required.
+- GDAL: raster support library.
+- MapServer: version >= 4.4 (tested with 5.0.2 while updating this document)
+
+Please see the `MapServer UNIX Compilation and Installation HOWTO`_ for detailed 
+instructions on compiling mapserver with support for these librairies and features. 
+For Windows users, `MapServer for Windows (MS4W)`_ comes WCS Server support.
+
+Configuring Your Mapfile to Serve WCS Layers
+============================================
+
+Much as in the WMS and WFS support, WCS publishing is enabled by adding certain 
+magic METADATA keyword/value pairs to a .map file.
+
+MapServer will serve and include in its WCS capabilities only the layers that 
+meet the following conditions:
+
+- Data source is a raster, which is processed using GDAL 
+  (e.g GeoTIFF, Erdas Imagine, ...)
+- LAYER NAME must be set
+- LAYER TYPE is set to RASTER
+- LAYER DUMP parameter set to TRUE
+- WEB metadata "wcs_label" must be set
+- LAYER metadata "wcs_label" must be set
+- LAYER metadata "wcs_rangeset_name" must be set
+- LAYER metadata "wcs_rangeset_label" must be set
+
+
+Example WCS Server Mapfile
+--------------------------
+
+The following is an example of a simple WCS Server mapfile. Note the comments 
+for the required parameters.
+
+::
+        
+	NAME WCS_server
+	STATUS ON
+	SIZE 400 300
+	SYMBOLSET ../etc/symbols.sym
+	EXTENT -2200000 -712631 3072800 3840000
+	UNITS METERS
+	SHAPEPATH "../data"
+	IMAGECOLOR 255 255 255
+	FONTSET "../etc/fonts.txt"
+
+
+	#
+	# Start of web interface definition
+	#
+	WEB
+	  IMAGEPATH "/ms4w/tmp/ms_tmp/" 
+	  IMAGEURL "/ms_tmp/"
+	  METADATA
+	    "wcs_label"                    "GMap WCS Demo Server" ### required  
+	    "wcs_description"              "Some text description of the service"  
+	    "wcs_onlineresource"           "http://127.0.0.1/cgi-bin/mapserv.exe?" ### recommended
+	    "wcs_fees"                     "none"
+	    "wcs_accessconstraints"        "none"
+	    "wcs_keywordlist"              "wcs,test"
+            "wcs_metadatalink_type"        "TC211" 
+            "wcs_metadatalink_format"      "text/plain" 
+            "wcs_metadatalink_href"        "http://someurl.com"
+            "wcs_address"                  "123 Gilmour Street"
+            "wcs_city"                     "Ottawa"
+            "wcs_stateorprovince"          "ON"
+            "wcs_postcode"                 "90210"
+            "wcs_country"                  "Canada"
+            "wcs_contactelectronicmailaddress" "blah@blah"
+            "wcs_contactperson"            "me"
+            "wcs_contactorganization"      "unemployed"
+            "wcs_contactposition"          "manager"
+            "wcs_contactvoicetelephone"    "613-555-1234"
+            "wcs_contactfacimiletelephone" "613-555-1235"
+            "wcs_service_onlineresource"   "http://127.0.0.1/cgi-bin/mapserv.exe?"            
+	  END
+	END
+
+	PROJECTION
+	  "init=epsg:42304"
+	END
+
+
+	LAYER
+	  NAME bathymetry
+	  METADATA
+	    "wcs_label"           "Elevation/Bathymetry"  ### required
+	    "wcs_rangeset_name"   "Range 1"               ### required to support DescribeCoverage request
+	    "wcs_rangeset_label"  "My Label"              ### required to support DescribeCoverage request 
+	  END
+	  TYPE RASTER ### required
+	  STATUS ON
+	  DATA bath_mapserver.tif
+	  PROJECTION
+	    "init=epsg:42304"
+	  END
+	  DUMP TRUE ### required
+	END
+
+
+	END # Map File
+	
+Test Your WCS Server
+====================
+
+Validate the Capabilities Metadata
+----------------------------------
+
+OK, now that we've got a mapfile, we have to check the XML capabilities returned 
+by our server to make sure nothing is missing.
+
+Using a web browser, access your server's online resource URL to which you add 
+the parameters "SERVICE=WCS&VERSION=1.0.0&REQUEST=GetCapabilities" to the end, e.g.
+
+::
+
+  http://my.host.com/cgi-bin/mapserv?map=mywcs.map&SERVICE=WCS&VERSION=1.0.0&REQUEST=GetCapabilities
+        
+
+If you get an error message in the XML output then take necessary actions. Common 
+problems and solutions are listed in the FAQ at the end of this document.
+
+If everything went well, you should have a complete XML capabilities document. 
+Search it for the word "WARNING"... MapServer inserts XML comments starting with 
+"<!--WARNING: " in the XML output if it detects missing mapfile parameters or 
+metadata items.
+
+Note that when a request happens, it is passed through WMS, WFS, and WCS in MapServer (in that order) 
+until one of the services respond to it.
+
+Here is a working example of a GetCapabilities request:
+
+http://gws2.pcigeomatics.com/wcs1.0.0/wcs?SERVICE=wcs&VERSION=1.0.0&REQUEST=getcapabilities
+
+Test With a DescribeCoverage Request
+------------------------------------
+
+OK, now that we know that our server can produce a valid XML GetCapabilities response 
+we should test the DescribeCoverage request.  The DescribeCoverage request lists more information
+about specific coverage offerings.
+
+Using a web browser, access your server's online resource URL to which you add 
+the parameters "SERVICE=WCS&VERSION=1.0.0&REQUEST=DescribeCoverage&COVERAGE=layername" to the end, e.g.
+
+::
+
+  http://my.host.com/cgi-bin/mapserv?map=mywcs.map&SERVICE=WCS&VERSION=1.0.0&REQUEST=DescribeCoverage&COVERAGE=bathymetry
+  
+Here is a working example of a DescribeCoverage request:
+
+http://gws2.pcigeomatics.com/wcs1.0.0/wcs?SERVICE=wcs&VERSION=1.0.0&REQUEST=DescribeCoverage&COVERAGE=demo/wcs_l7_ms.pix
+
+
+
+Test With a GetCoverage Request
+-------------------------------
+
+The GetCoverage request allows for the retrieval of coverages in a specified output format to the client.
+
+
+The following is a list of the required GetCoverage parameters according to the WCS spec:
+
+   **VERSION=version:** Request version
+
+   **REQUEST=GetCoverage:** Request name
+
+   **COVERAGE=coverage_name:** Name of an available coverage, as stated in the GetCapabilities
+
+   **CRS=epsg_code:** Coordinate Reference System in which the request is expressed.
+
+   **BBOX=minx,miny,maxx,maxy:** Bounding box corners (lower left, upper right) in CRS units.  One of BBOX or TIME is required.
+   
+   **TIME=time1,time2:** Request a subset corresponding to a time. One of BBOX or TIME is required..    
+
+   **WIDTH=output_width:** Width in pixels of map picture.  One of WIDTH/HEIGHT or RESX/Y is required.
+
+   **HEIGHT=output_height:** Height in pixels of map picture.  One of WIDTH/HEIGHT or RESX/Y is required.
+   
+   **RESX=x:** When requesting a georectified grid coverage, this requests a subset with a specific spatial resolution.  One of WIDTH/HEIGHT or RESX/Y is required.     
+
+   **RESY=y:** When requesting a georectified grid coverage, this requests a subset with a specific spatial resolution.  One of WIDTH/HEIGHT or RESX/Y is required.        
+   
+   **FORMAT=output_format:** Output format of map, as stated in the GetCapabilities.
+   
+The following are optional GetCoverage parameters according to the WCS spec:
+
+   **RESPONSE_CRS=epsg_code:** Coordinate Reference System in which to express coverage responses.
+   
+So to follow our above examples, a valid DescribeCoverage request would look like:
+
+::
+
+  http://my.host.com/cgi-bin/mapserv?map=mywcs.map&SERVICE=wcs&VERSION=1.0.0&REQUEST=GetCoverage&coverage=bathymetry&CRS=EPSG:42304&BBOX=-2200000,-712631,3072800,3840000&WIDTH=3199&HEIGHT=2833&FORMAT=GTiff
+
+Here is a working example of a GetCoverage request (note that 3MB tif is being requested, so this may take a few seconds):
+
+http://gws2.pcigeomatics.com/wcs1.0.0/wcs?SERVICE=wcs&VERSION=1.0.0&REQUEST=GetCoverage&COVERAGE=demo/wcs_l7_ms.pix&CRS=EPSG:4326&BBOx=-117.88341239280106,33.707704191028995,-117.65485697866967,33.89850474983795&WIDTH=700&HEIGHT=700&FORMAT=GeoTIFF
+        
+Reference Section
+=================
+
+WCS support tries to leverage existing WMS or OWS metadata definitions. The 
+rationale being that many values will be the same regardless of the type of service. 
+The module will look for the following metadata prefixes (in order): wcs, ows and 
+finally wms unless otherwise noted.
+
+The following metadata are available in the setup of the mapfile:
+
+Web Object Metadata
+-------------------
+
+**wcs_accessconstraints**
+
+- *Description:* (Optional) A list of codes describing any access constraints imposed by the service provider. The keyword NONE is reserved to mean no access constraints are imposed.
+
+**wcs_address, wcs_city, wcs_contactelectronicmailaddress, wcs_contactfacimiletelephone, wcs_contactorganization, wcs_contactperson, wcs_contactposition, wcs_contactvoicetelephone, wcs_country, wcs_postcode, wcs_service_onlineresource, wcs_stateorprovince**
+
+- *Description:* (Optional) Contact address information. If provided then all twelve metadata 
+  items are required.  You can also use the responsibleparty* metadata instead.
+
+**wcs_description**
+
+- *Description:* (Optional) A description of the server. 
+
+**wcs_fees**
+
+- *Description:* (Optional) A text string indicating any fees imposed by the service provider. 
+
+**wcs_keywords**
+
+- *Description:* (Optional) Short words for catalog searching. 
+
+**wcs_label**
+
+- *Description:* (Required) A human-readable label for the server.  
+
+**wcs_metadatalink_format**
+
+- *Description:* (Optional) The file format MIME type of the metadata record (e.g. 
+  "text/plain"). The web metadata wcs_metadatalink_type and wcs_metadatalink_href must 
+  also be specified.
+
+**wcs_metadatalink_href**
+
+- *Description:* (Optional) The URL to the server's metadata. The web metadata 
+  wcs_metadatalink_format and wcs_metadatalink_type must also be specified.
+
+**wcs_metadatalink_type**
+
+- *Description:* (Optional) The standard to which the metadata complies. Currently 
+  only two types are valid: "TC211" which refers to [ISO 19115], and "FGDC" which 
+  refers to [FGDC-STD-001-1988]. The web metadata wcs_metadatalink_format and 
+  wcs_metadatalink_href must also be specified.
+
+**wcs_name**
+
+- *Description:* (Optional) A name for the server. 
+
+
+**wcs_responsibleparty_address_administrativearea, wcs_responsibleparty_address_city, 
+wcs_responsibleparty_address_country, wcs_responsibleparty_address_deliverypoint, 
+wcs_responsibleparty_address_electronicmailaddress, wcs_responsibleparty_address_postalcode,
+wcs_responsibleparty_individualname, wcs_responsibleparty_onlineresource, 
+wcs_responsibleparty_organizationname, wcs_responsibleparty_phone_facsimile, 
+wcs_responsibleparty_phone_voice, wcs_responsibleparty_postionname** 
+
+- *Description:* (Optional) Contact address information. If provided then all twelve metadata 
+  items are required.  You can also use the address* metadata instead. 
+
+Layer Object Metadata
+---------------------
+
+**wcs_description**
+
+- *Description:* (Optional) A description of the layer.
+
+**wcs_extent**
+
+- *Description:* (Optional) Bounding box of layer, which must be provided for tiled data.  Comma-delimited, in the format of: minx,miny,maxx,maxy
+
+**wcs_formats**
+
+- *Description:* (Optional) The formats which may be requested for this layer, in a comma-delimited list. (e.g. "GTiff,MrSID")
+
+**wcs_keywords**
+
+- *Description:* (Optional) Short words for catalog searching. 
+
+**wcs_label**
+
+- *Description:* (Required) A human-readable label for the layer.  
+
+**wcs_metadatalink_format**
+
+- *Description:* (Optional) The file format MIME type of the metadata record (e.g. 
+  "text/plain"). The web metadata wcs_metadatalink_type and wcs_metadatalink_href must 
+  also be specified.
+
+**wcs_metadatalink_href**
+
+- *Description:* (Optional) The URL to the layer's metadata. The web metadata 
+  wcs_metadatalink_format and wcs_metadatalink_type must also be specified.
+
+**wcs_metadatalink_type**
+
+- *Description:* (Optional) The standard to which the metadata complies. Currently 
+  only two types are valid: "TC211" which refers to [ISO 19115], and "FGDC" which 
+  refers to [FGDC-STD-001-1988]. The web metadata wcs_metadatalink_format and 
+  wcs_metadatalink_href must also be specified.
+  
+**wcs_name**
+
+- *Description:* (Optional) A name for the layer. 
+
+**wcs_nativeformat**
+
+- *Description:* (Optional) The current format of the served raster layer. (e.g. "GTiff")
+
+*Axes Descriptions*
+
+MapServer allows you define a number of these for a layer. Individual axis are 
+identified by name when defining specific metadata (e.g. description). All 
+defined axes must be listed in the rangeset_axes metadata tag so MapServer 
+knows in advance what to expect. A special rangeset for multiband date is 
+automatically generated by adding the name "bands" to the rangeset_axes list. 
+If found MapServer will automatically generate metadata for the image bands. 
+You may of course extend that basic support using the naming conventions below.
+
+**wcs_rangeset_axes**
+
+- *Description:* (Optional) Delimited list of defined range sets.  If defined, you can
+  also use the following nine metadata items, where *rangeset axis* matches the axis name
+  provided in this *wcs_rangeset_axes* metadata:
+
+     **{rangeset axis}_semantic**
+
+     **{rangeset axis}_refsys**
+
+     **{rangeset axis}_refsyslabel**
+
+     **{rangeset axis}_description**
+
+     **{rangeset axis}_label**
+
+     **{rangeset axis}_values**
+
+     **{rangeset axis}_values_semantic**
+
+     **{rangeset axis}_values_type**
+
+     **{rangeset axis}_interval**
+
+**wcs_rangeset_label**
+
+- *Description:* (Required for DescribeCoverage request)
+
+**wcs_rangeset_name**
+
+- *Description:* (Required for DescribeCoverage request)
+
+**wcs_srs**
+
+- *Description:* (Optional) Spatial reference system of the layer, in the form of: EPSG:code (e.g. EPSG:42304)  
+
+**wcs_timeitem**
+
+- *Description:* (Optional) The attribute in the spatio/temporal index that contains time values.
+
+**wcs_timeposition**
+
+- *Description:* (Optional) 
+
+Rules for handling SRS in a MapServer WCS
+=========================================
+
+TODO!
+
+Spatio/Temporal Indexes
+=======================
+
+MapServer has long supported a method of breaking a dataset into smaller, more 
+manageable pieces or tiles. In this case a shapefile is used to store the boundary 
+of each tile, and an attribute holds the location of the actual data. Within a 
+MapServer mapfile the layer keywords TILEINDEX and TILEITEM are used to activate 
+tiling.
+
+Consider the example where an organization wants to serve hundreds or even thousands 
+of MODIS scenes. Five images cover the spatial extent and each group of five varies 
+by date of acquisition. This turns out to be a fairly common scenario for organizations 
+interested in WCS, one that the existing tiling support does not adequately address. 
+In previous versions of MapServer a developer would have to create one tile index and 
+one layer definition for each group of five images. This could result in configuration 
+files that are prohibitively long and difficult to manage.
+
+In order to more efficiently support the WCS specification a new tiling scheme has 
+been implemented within MapServer. One that supports spatial sub-setting, but also 
+ad hoc sub-setting based on any attributes found within tile index. In many cases 
+a temporal attribute could be used, but sub-setting is not limited to that case. 
+The new scheme introduces the concept of tile index layers, that is, a separate 
+layer definition is used to describe the tile index dataset. With this we get all 
+the benefits of any MapServer layer, most importantly we can apply MapServer filters 
+to the data. Filters can be defined at runtime using MapServer CGI, MapScript or via 
+the WCS server interface. The syntax for the layer using the index remains unchanged 
+except that the value for TILEINDEX refers to the index layer instead of an external 
+shapefile.
+
+So, looking at the example above again we can reduce our MapServer configuration to 
+two layer definitions, one for the tile index and one for the imagery itself. Extracting 
+a single dates worth of imagery is now a matter of setting the appropriate filter 
+within the tile index layer.
+
+Building Spatio-Temporal Tile Indexes
+-------------------------------------
+
+Developing these tile indexes is more difficult than basic indexes simply because 
+there are no ready-made tools to do so. Fortunately we can leverage existing tool 
+available within MapServer or supporting libraries such as GDAL by post processing
+their output.
+
+Taking the above example, building an index is relatively simple task if you are 
+willing to roll up your sleeves and write a bit of code. First, the basic spatial 
+index needs to be built. The GDAL utility gdaltindex already does this. Simply 
+point gdaltindex at the directory containing the collection of MODIS images and 
+it will build a shapefile index suitable for use with MapServer. The next step 
+would be to add the temporal information. The pseudo code would look something 
+like:
+
+- open the index .dbf file for reading
+
+- create a new column to hold the image acquisition date
+
+- for each image; 1) extract the image acquisition date and 2) insert it into 
+  the new column
+  
+- close the index .dbf file
+
+This general approach could be used for many cases. A scripting language such
+as Perl, PHP or Python works well since they all have readily available modules 
+for manipulating .dbf files. A worst case would involve hand editing the resulting 
+.dbf file using a desktop tool such as Mircosoft Access or ESRI Arcview.
+
+To-do Items and Known Limitations
+=================================
+
+- For now we support only GET requests. The spec also talks about XML-encoded 
+  POST requests but that is not supported at this time. It is anticipated that 
+  a general XML request solution will be created for all OWS services.
+
+- MapServer does not derive all of the metadata it could from a given dataset. 
+  For example, you must explicitly list time periods covered by a layer. This 
+  should get better with time.
+
+- Only spatial, simple temporal and radiometric band subsetting is possible 
+  with the current implementation. Furture enhancements should allow for arbitrary
+  subsets based on pixel values or tile/image attributes.
+
+About This Document
+===================
+
+
+Copyright Information
+---------------------
+
+Copyright (c) 2008, Steve Lime, Jeff McKenna.
+                
+This documentation is covered by the same Open Source license as the MapServer 
+software itself.  See MapServer's `License and Credits`__ page for the complete 
+text.
+            
+__ http://mapserver.gis.umn.edu/license.html   
+
+Disclaimer
+----------
+
+No liability for the contents of this document can be accepted.
+Use the concepts, examples and other content at your own risk.
+As this is a new edition of this document, there may be errors
+and inaccuracies that may be damaging to your system.
+Although this is highly unlikely, the author(s) do not take any 
+responsibility for that:  proceed with caution.
+
+.. #### rST Link Section ####
+
+.. _`Open GIS Consortium's (OGC) Web Coverage Server Interfaces Implementation Specification version 1.0.0`: https://portal.opengeospatial.org/files/?artifact_id=3837
+.. _`WCS 1.0.0 specification`: https://portal.opengeospatial.org/files/?artifact_id=3837
+.. _`Open Geospatial Consortium (OGC)`: http://www.opengeospatial.org/
+.. _`MapServer UNIX Compilation and Installation HOWTO`: http://mapserver.gis.umn.edu/docs/howto/compiling_on_unix/
+.. _`MapServer for Windows (MS4W)`: http://www.maptools.org/ms4w/index.phtml
+.. _`WMS Server HOWTO`: http://mapserver.gis.umn.edu/docs/howto/wms_server/
+
