@@ -1,6 +1,5 @@
------------------------------------------------------------------------------
- Variables
------------------------------------------------------------------------------
+Variables
+=========
 
 BUFFER [distance]
     A distance, in the same coordinate system as the map file, used in 
@@ -234,36 +233,62 @@ ZOOMSIZE [number]
 
     ZOOMDIR is limited to MAXZOOM compiled into the MapServer (25 by default).
 
------------------------------------------------------------------------------
- ROSA-Applet specific
------------------------------------------------------------------------------
+Changing map file parameters via a form or a URL
+================================================
 
-The ROSA Applet parameters were added to the CGI MapServer in version 3.6. 
-This Java Applet provides a more intuitive user interface to MapServer. The 
-MapTools site provides detailed information on the ROSA Applet.
+Begining with version 3.3 it is possible to change virtually any map file 
+value from a form or a URL. The syntax for this is fairly straight forward,
+and depends on what version of MapServer you are using. One potentially very 
+powerful use of this ability to change mapfile parameters through a URL 
+involves changing class expressions on-the-fly.  Try it out.
 
-The parameters can also be used by other interfaces/tools, if set to the right 
-values. Please note that the two parameters have to be handed over to te CGI 
-application in the order identified below.
 
-INPUT_TYPE (auto_rect | auto_point)
-    The INPUT_TYPE parameter is needed to identify if the coordinates handed 
-    over to the mapserver have to be interpreted as rectangular or point data.
+Using MapServer version >= 5
+----------------------------
 
-INPUT_COORD [minx,miny;maxx,maxy]
-    The ROSA-Applet always fills the pair of coordinates. In case of a point 
-    (input_type=auto_point) min and max coordinate are equal (Mapserver 
-    uses the min value).
+Previous versions of the MapServer CGI program allowed certain parameters
+to be changed via a URL using a cumbersome syntax such as 
+map_layer_0_class_0_color=255+0+0 which changes the color in one classObj.
+Not only was this cumbersome for users but also from a code maintenance
+perspective since we had to maintain separate loaders for URL-based config
+and file-based config. RFC-31 attempts to streamline both by migrating to
+a single object loading function that can be used with strings (either in
+MapScript or via URL) or with files.
 
------------------------------------------------------------------------------
- Changing map file parameters via a form or a URL
------------------------------------------------------------------------------
+So, in the past you have to change parameters one-at-a-time. Now you can
+pass chunks of mapfiles (with security restrictions) to the CGI interface.
+The map_object notation is still necessary to identify which object you
+want to modify but you can change multiple properties at one time. Note 
+that you can use either a '_' or a '.' to seperate identifiers.
 
-Begining with version 3.3 it is now possible to change virtually any map file 
-value from a form or a URL. The syntax for this is fairly straight forward. 
-Any value can be expressed using the hierarchy used in a map file. A map 
-contains a layer, which contains a class, which contains a label, which has a 
-color. This hierarchy is expressed as a sequence of MapServer keywords 
+Example 1, changing a scalebar object:
+
+::
+
+  ...&map.scalebar=UNITS+MILES+COLOR+121+121+121+SIZE+300+2&...
+
+Example 2, changing a presentation style:
+
+::
+
+ ...&map.layer[lakes].class[0].style[0]=SYMBOL+crosshatch+COLOR+151+51+151+SIZE+15&...
+
+Example 3, creating a new feature
+
+::
+
+  ...&map_layer[3]=FEATURE+POINTS+500000+1000000+END+TEXT+'A+test+point'+END&...
+
+The variable identifies an object uniquely (by name or index in the case of
+layerObj's and classObj's). The value is a snippet of a mapfile. You
+cannot create new objects other than inline features at this point.
+
+Using MapServer version < 5
+---------------------------
+
+For MapServer version < 5, any value can be expressed using the hierarchy used 
+in a map file. A map contains a layer, which contains a class, which contains a label, 
+which has a color. This hierarchy is expressed as a sequence of MapServer keywords 
 seperated by underscores. For example to change the color of a layer called 
 "lakes" with only one class defined you would use a form variable named 
 "map_lakes_class_color" and could assign it a color like "0 0 255". Layers can 
@@ -289,7 +314,25 @@ All subsequent calls to the feature object for that layer will modify the new
 feature. You can repeat the process to create additional features. This is 
 really intended for very small (point, rectangle) amounts of data.
 
-It's quite possible that we'll come up with some shortcuts for this 
-processing, but until we know how useful this is to users this is it. One 
-potentially very powerful use involves changing class expressions on-the-fly. 
-Anyway, try it out.
+
+ROSA-Applet Controls
+====================
+
+*note: Active development and maintenance of the ROSA Applet has stopped*
+
+The ROSA Applet parameters were added to the CGI MapServer in version 3.6. 
+This Java Applet provides a more intuitive user interface to MapServer. The 
+MapTools site provides detailed information on the ROSA Applet.
+
+The parameters can also be used by other interfaces/tools, if set to the right 
+values. Please note that the two parameters have to be handed over to te CGI 
+application in the order identified below.
+
+INPUT_TYPE (auto_rect | auto_point)
+    The INPUT_TYPE parameter is needed to identify if the coordinates handed 
+    over to the mapserver have to be interpreted as rectangular or point data.
+
+INPUT_COORD [minx,miny;maxx,maxy]
+    The ROSA-Applet always fills the pair of coordinates. In case of a point 
+    (input_type=auto_point) min and max coordinate are equal (Mapserver 
+    uses the min value).
