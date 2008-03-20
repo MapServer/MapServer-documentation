@@ -2,7 +2,7 @@
 
 :Author: Jeff McKenna
 :Contact: jmckenna(at)dmsolutions.ca
-:Last Updated: 2006/02/14
+:Last Updated: 2008/03/20
 
 --------
 
@@ -28,8 +28,9 @@ and storing additional layer information.
 
 Support for OGC Web Map Context was added to MapServer in version 3.7/4.0. This 
 allows client applications to load and save a map configuration in a standard XML format.
-MapServer can read context documents of versions 0.1.2, 0.1.4, 0.1.7, & 1.0.0 and 
-can export contents in versions 0.1.4, 0.1.7, & 1.0.0.
+MapServer can read context documents of versions 0.1.2, 0.1.4, 0.1.7, 1.0.0, 1.1.0 and 
+can export contents in versions 0.1.4, 0.1.7, 1.0.0, 1.1.0. Web Map Context 1.1.0
+support was added to MapServer 4.10
 
 This document assumes that you are already familiar with certain aspects of MapServer:
 
@@ -153,6 +154,28 @@ Layer Object Metadata
 
 - *wms_dataurl_format* : Format of the online resource where data corresponding 
   to the layer can be found.
+  
+- *wms_dimension* : Current dimension used. (added in MapServer 4.10)
+
+- *wms_dimensionlist* : List of available dimensions. (added in MapServer 4.10)
+
+- *wms_dimension_%s_default* : Default dimension value. (added in MapServer 4.10)  MapServer will check for wms_time and wms_timedefault metadata when this is not specified.
+  %s = the name of the dimension.
+  
+- *wms_dimension_%s_multiplevalues* : Multiple dimension values. (added in MapServer 4.10)
+  %s = the name of the dimension.  
+  
+- *wms_dimension_%s_nearestvalue* : Nearest dimension value. The default value is 0. (added in MapServer 4.10)
+  %s = the name of the dimension.  
+  
+- *wms_dimension_%s_units* : Units for the dimension values. The default value is ISO8601. (added in MapServer 4.10)
+  %s = the name of the dimension. 
+  
+- *wms_dimension_%s_unitsymbol* : Symbol for dimension units. The default value is t. (added in MapServer 4.10)
+  %s = the name of the dimension.
+  
+- *wms_dimension_%s_uservalue* : User dimension value. (added in MapServer 4.10) MapServer will check for wms_time and wms_timedefault metadata when this is not specified.
+  %s = the name of the dimension.    
 
 - *wms_format* : Current format used. 
 
@@ -234,6 +257,14 @@ Sample Map Context Mapfile
         "wms_srs"             "EPSG:42304"   
         "wms_title"           "Canadian boundaries"  #### REQUIRED
         "wms_onlineresource"  "http://www2.dmsolutions.ca/cgi-bin/mswms_gmap?"  #### REQUIRED
+        "wms_dimensionlist"             "time,width"    
+        "wms_dimension"                 "time"
+        "wms_dimension_time_unitsymbol" "t"    
+        "wms_dimension_time_units"      "ISO8601"
+        "wms_dimension_time_uservalue"  "1310"
+        "wms_dimension_time_default"    "1310"     
+        "wms_dimension_time_multiplevalues"  "1310,1410" 
+        "wms_dimension_time_nearestvalue"  "0"        
       END
     END  
 
@@ -265,7 +296,7 @@ Testing Map Context Support
    ::
    
       <?php
-        dl("php_mapscript_48.dll");
+        dl("php_mapscript.dll");
         $oMap = ms_newMapObj("gmap_wms_context.map");
         $oMap->saveMapContext("gmap_wms_context_output.xml");
       ?>               
@@ -285,64 +316,47 @@ The following is a sample Map Context document:
 
 ::
 
-    <?xml version='1.0' encoding="ISO-8859-1" standalone="no" ?>
-    <ViewContext version="1.0.0" id="DEMO" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.opengis.net/context" xsi:schemaLocation="http://www.opengis.net/context http://schemas.opengis.net/context/1.0.0/context.xsd">
-      <General>
-        <Window width="400" height="300"/>
-        <!-- Bounding box corners and spatial reference system -->
-        <BoundingBox SRS="EPSG:42304" minx="-2610230.000000" miny="-905635.000000" maxx="2636310.000000" maxy="3031130.000000"/>
-        <!-- Title of Context -->
-        <Title>my test</Title>
-      </General>
-      <!-- LayerList of Layer elements
-           - implied order: bottom To Top
-           first Layer element is bottom most layer in map view
-           last Layer elements is op most layer in map view
-      -->
-      <LayerList>
-        <Layer queryable="0" hidden="0">
-          <Server service="WMS" version="1.1.1" title="Oceans/Seas">
-            <OnlineResource xlink:type="simple" xlink:href="http://ceoware2.ccrs.nrcan.gc.ca/cubewerx/cubeserv/cubeserv.cgi?"/>
-          </Server>
-          <Name>OCEANSEA_BND_1M:Foundation</Name>
-          <Title>Oceans/Seas</Title>
-          <Abstract>VRF Narrative Table for 'Oceans/Seas':\n\n<P>In coastal area, points of change from ocean/sea areas (BA040) to inland water\nareas (BH000) were taken from Digital Chart of the World, edition 1, July 1992\nexcept when it was determined that the point of change was implemented too far\ninland.  In these cases, cartographic judgement was used to establish the point\nof change.\n</Abstract>
-          <SRS>EPSG:4326 AUTO:42001 AUTO:42002 AUTO:42003 AUTO:42004EPSG:32750 EPSG:32751 EPSG:32752 EPSG:32753 EPSG:32754 EPSG:32755 EPSG:32756 EPSG:32757 EPSG:32758 EPSG:32759 EPSG:32760 EPSG:41001 EPSG:42101 EPSG:42102 EPSG:42103 EPSG:42104 EPSG:42105 EPSG:42106 EPSG:42301 EPSG:42302 EPSG:42303 EPSG:42304 EPSG:42305 EPSG:42306 EPSG:42307 EPSG:42308 EPSG:42309 EPSG:42310 EPSG:100001.................</SRS>
-          <FormatList>
-            <Format>image/png  image/tiff  image/gif  image/jpeg  image/ppm  application/x-cubestor-wkb  application/x-cubestor-gml.1  application/x</Format>
-          </FormatList>
-          <StyleList>
-            <Style current="1">
-              <Name>0xb8d8f6</Name>
-              <Title>0xb8d8f6</Title>
-              <LegendURL width="16" height="16" format="image/gif">
-                <OnlineResource xlink:type="simple" xlink:href="http://ceoware2.ccrs.nrcan.gc.ca/cubewerx/cubeserv/cubeserv.cgi?VERSION=1.1.1&REQUEST=GetLegendGraphic&LAYER=OCEANSEA_BND_1M%3AFoundation&SPATIAL_TYPE=POLYGON&STYLE=0xb8d8f6&FORMAT=image%2Fgif&SIMPLE=TRUE"/>
-              </LegendURL>
-            </Style>
-          </StyleList>
-        </Layer>
-        <Layer queryable="0" hidden="0">
-          <Server service="WMS" version="1.1.1" title="Political Boundaries">
-            <OnlineResource xlink:type="simple" xlink:href="http://ceoware2.ccrs.nrcan.gc.ca/cubewerx/cubeserv/cubeserv.cgi?"/>
-          </Server>
-          <Name>POLBNDL_BND_1M:Foundation</Name>
-          <Title>Political Boundaries</Title>
-          <SRS>EPSG:4326 AUTO:42001 AUTO:42002 AUTO:42003 AUTO:EPSG:42102 EPSG:42103 EPSG:42104 EPSG:42105 EPSG:42106 EPSG:42301 EPSG:42302 EPSG:42303 EPSG:42304 EPSG:42305 EPSG:42306 EPSG:42307 EPSG:42308 EPSG:42309 EPSG:42310 EPSG:100001...........</SRS>
-          <FormatList>
-            <Format>image/png  image/tiff  image/gif  image/jpeg  image/ppm  application/x-cubestor-wkb  application/x-cubestor-gml.1  application/x</Format>
-          </FormatList>
-          <StyleList>
-            <Style current="1">
-              <Name>black</Name>
-              <Title>black</Title>
-              <LegendURL width="16" height="16" format="image/gif">
-                <OnlineResource xlink:type="simple" xlink:href="http://ceoware2.ccrs.nrcan.gc.ca/cubewerx/cubeserv/cubeserv.cgi?VERSION=1.1.1&REQUEST=GetLegendGraphic&LAYER=POLBNDL_BND_1M%3AFoundation&SPATIAL_TYPE=LINE&STYLE=black&FORMAT=image%2Fgif&SIMPLE=TRUE"/>
-              </LegendURL>
-            </Style>
-          </StyleList>
-        </Layer>
-      </LayerList>
-    </ViewContext>
+	<?xml version='1.0' encoding="ISO-8859-1" standalone="no" ?>
+	<ViewContext version="1.1.0" id="WMS_CONTEXT" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ogc="http://www.opengis.net/ogc" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.opengis.net/context" xmlns:sld="http://www.opengis.net/sld" xsi:schemaLocation="http://www.opengis.net/context http://schemas.opengis.net/context/1.1.0/context.xsd">
+	  <General>
+	    <Window width="400" height="300"/>
+	    <!-- Bounding box corners and spatial reference system -->
+	    <BoundingBox SRS="EPSG:42304" minx="-2200000.000000" miny="-712631.000000" maxx="3072800.000000" maxy="3840000.000000"/>
+	    <!-- Title of Context -->
+	    <Title>Map Context demo</Title>
+	    <Abstract>Demo for map context document. Blah blah...</Abstract>
+	    <ContactInformation>
+	    </ContactInformation>
+	  </General>
+	  <LayerList>
+	    <Layer queryable="0" hidden="0">
+	      <Server service="OGC:WMS" version="1.1.1" title="Canadian boundaries">
+		<OnlineResource xlink:type="simple" xlink:href="http://www2.dmsolutions.ca/cgi-bin/mswms_gmap?"/>
+	      </Server>
+	      <Name>prov_bound</Name>
+	      <Title>Canadian boundaries</Title>
+	      <SRS>EPSG:42304</SRS>
+	      <FormatList>
+		<Format current="1">image/gif</Format>
+	      </FormatList>
+	      <DimensionList>
+		<Dimension name="time" units="ISO8601" unitSymbol="t" userValue="1310" default="1310" multipleValues="1310,1410" nearestValue="0" current="1"/>
+	      </DimensionList>
+	    </Layer>
+	    <Layer queryable="0" hidden="0">
+	      <Server service="OGC:WMS" version="1.1.1" title="Canadian Cities">
+		<OnlineResource xlink:type="simple" xlink:href="http://www2.dmsolutions.ca/cgi-bin/mswms_gmap?"/>
+	      </Server>
+	      <Name>popplace</Name>
+	      <Title>Canadian Cities</Title>
+	      <SRS>EPSG:42304</SRS>
+	      <FormatList>
+		<Format current="1">image/png</Format>
+	      </FormatList>
+	      </DimensionList>
+	    </Layer>
+	  </LayerList>
+	</ViewContext>
             
 Map Context Support Through CGI
 -------------------------------
