@@ -1,0 +1,194 @@
+..
+
+:Author: Paul Ramsey
+:Contact: pramsey(at)cleverelephant.ca
+:Last Updated: 2008/04/30
+
+--------
+
+..  The next heading encountered becomes our H2
+..
+
+.. sectnum::
+
+.. contents:: Table of Contents
+    :depth: 2
+    :backlinks: top
+
+
+Introduction
+============
+
+MapServer can feed tile-based map clients directly using the CGI
+"tile mode".  Tile-based map clients work by dividing the map of the world up
+into a discrete number of zoom levels, each partitioned into a number of identically
+sized "tiles".  Instead of accessing a map by requesting a bounding box, a tile
+client builds a map by accessing individual tiles.
+
+
+Configuration
+=============
+
+Tile requests are handled by the 'mapserv' CGI program.  In order to 
+return tiles in the correct projection, Mapserver must be built with the 
+--use-proj option turned on.  You can check if your version of 'mapserv' has 
+projection support by running it with the '-v' option and looking 
+for 'SUPPORTS=PROJ'.
+
+Example 1. On Unix:
+
+   $ ./mapserv -v
+   MapServer version 4.6.1 OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG OUTPUT=WBMP OUTPUT=PDF
+   OUTPUT=SWF OUTPUT=SVG SUPPORTS=PROJ SUPPORTS=FREETYPE SUPPORTS=WMS_SERVER 
+   SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER 
+   INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE DEBUG=MSDEBUG
+
+Example 2. On Windows:
+
+   C:\apache\cgi-bin> mapserv -v
+   MapServer version 4.6.1 OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG OUTPUT=WBMP OUTPUT=PDF
+   OUTPUT=SWF OUTPUT=SVG SUPPORTS=PROJ SUPPORTS=FREETYPE SUPPORTS=WMS_SERVER 
+   SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER 
+   INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE DEBUG=MSDEBUG
+   
+Mapserver requires that each LAYER in your map file have a valid PROJECTION block
+to support reprojection.  Because the tile mode uses reprojection, you will have 
+to ensure each LAYER has a valid PROJECTION block.
+
+Configuration checklist:
+
+ * Mapserver compiled with PROJ support
+ * Map file with a PROJECTION defined for every LAYER
+ 
+
+Utilization
+===========
+
+The Mapserver tile support adds three new directives to the CGI interface:
+
+ * *mode=tile* tells the server to generate tiles based on the other tile mode
+   parameters
+ * *tilemode=spheremerc* tells the server use the "spherical mercator" tile 
+   scheme for the tiles
+ * *tile=x+y+z* tells the server what tile you want to retrieve
+ 
+ 
+About Spherical Mercator
+------------------------
+
+Spherical mercator (also called "web mercator" by some) is a world projection. All
+the major tile-based map interfaces (Google Maps, Microsoft Virtual Earth, Yahoo Maps, 
+OpenLayers) use the spherical mercator system to address tiles.
+
+A spherical mercator set of tiles has the following properties:
+
+ * The data has been reprojected to mercator using a spherical 
+   mercator algorithm
+ * There is one tile in top zoom level, zoom level zero
+ * Each succeeded zoom level (z) has 2^z tiles along each axis
+ * The top left tile in each zoom level is at tile coordinate 0,0
+ * The x tile coordinate increases left to right
+ * The y tile coordinate increases top to bottom
+ * Tiles are 256x256 in size
+ 
+The spherical mercator tiling scheme is currently the only one supported by the
+Mapserver tile mode.
+
+
+Using Google Maps
+-----------------
+
+The `Google Maps API`_ includes support for using alternative tile sets 
+as overlays, or as alternate base maps. Here is an example of an 
+`GTileLayerOverlay`_::
+
+  <!DOCTYPE html 
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+  <html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>Google/Mapserver Tile Example</title>
+    <script src="http://maps.google.com/maps?file=api&v=2&key=[YOUR KEY HERE]"
+            type="text/javascript"></script>
+    <script type="text/javascript">
+
+    function load() {
+      if (GBrowserIsCompatible()) {
+        var urlTemplate = 'http://localhost/cgi-bin/mapserv?';
+            urlTemplate += 'map=/var/map.map&';
+            urlTemplate += 'layers=layer1,layer2&';
+            urlTemplate += 'mode=tile&';
+            urlTemplate += 'tilemode=spheremerc&';
+            urlTemplate == 'tile={X}+{Y}+{Z}';
+        var myLayer = new GTileLayer(null,0,18,{                                      
+                                     tileUrlTemplate:urlTemplate,
+                                     isPng:true, 
+                                     opacity:1.0 }); 
+        var map = new GMap2(document.getElementById("map"));
+        map.addControl(new GLargeMapControl());
+        map.addControl(new GMapTypeControl());
+        map.setCenter(new GLatLng(35.35, -80.55), 15); 
+        map.addOverlay(new GTileLayerOverlay(myLayer)); 
+      }
+    }
+
+    </script>
+  </head>
+  <body onload="load()" onunload="GUnload()">
+    <div id="map" style="width: 500px; height: 500px"></div>
+  </body>
+  </html>
+
+Note the format of the tileUrlTemplate: a valid URL, with {X}, {Y} and {Z} substitution
+tokens that Google Maps will replace with the tile coordinates and zoom level on the fly
+to retrieve tiles from your server.
+
+You can also use a Mapserver tile layer as an alternate base map::
+
+  <!DOCTYPE html 
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" 
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+  <html xmlns="http://www.w3.org/1999/xhtml">
+  <head>
+    <meta http-equiv="content-type" content="text/html; charset=utf-8"/>
+    <title>Google/Mapserver Tile Example</title>
+    <script src="http://maps.google.com/maps?file=api&v=2&key=[YOUR KEY HERE]"
+            type="text/javascript"></script>
+    <script type="text/javascript">
+
+    function load() {
+      if (GBrowserIsCompatible()) {
+        var urlTemplate = 'http://localhost/cgi-bin/mapserv?';
+            urlTemplate += 'map=/var/map.map&';
+            urlTemplate += 'layers=layer1,layer2&';
+            urlTemplate += 'mode=tile&';
+            urlTemplate += 'tilemode=spheremerc&';
+            urlTemplate == 'tile={X}+{Y}+{Z}';
+        var myLayer = new GTileLayer(null,0,18,{                                      
+                                     tileUrlTemplate:urlTemplate,
+                                     isPng:true, 
+                                     opacity:0.3 }); 
+        var map = new GMap2(document.getElementById("map"));
+        map.addControl(new GLargeMapControl());
+        map.addControl(new GMapTypeControl());
+        map.setCenter(new GLatLng(35.35, -80.55), 15); 
+        var myMapType = new GMapType([myLayer], new GMercatorProjection(18), 'Mapserver');
+        map.addMapType(myMapType); 
+      }
+    }
+
+    </script>
+  </head>
+  <body onload="load()" onunload="GUnload()">
+    <div id="map" style="width: 500px; height: 500px"></div>
+  </body>
+  </html>
+
+The only change from the previous example is that we don't create a GTileLayerOverlay, 
+we create a GMapType, and add a map type, instead of an overlay.
+
+.. RST Link Section
+
+.. _`GTileLayerOverlay`: http://code.google.com/apis/maps/documentation/reference.html#GTileLayer
+.. _`Google Maps API`: http://code.google.com/apis/maps/
