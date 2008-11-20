@@ -17,29 +17,28 @@ Data Access / Connection Method
    must be used.
 *  Specify a full path or a relative path from the SHAPEPATH 
    to the .000 file for the CONNECTION
-*  The CONNECTION must also include a layer number (as per the 
-   layer number from ogrinfo, but minus one).
+*  Use the DATA parameter to specify the s57 layer name
 
 Special Notes
 ~~~~~~~~~~~~~~
 
 The underlying OGR code requires two files from your GDAL/OGR 
-installation when reading S57 data in MapServer : s57objectclasses.csv and s57attributes.csv.  These files can be found in the /GDAL/data/ folder (typically /usr/local/share/gdal).  If you receive an error in MapServer such as:
+installation when reading S57 data in MapServer : s57objectclasses.csv and s57attributes.csv.  These files can be found in the /GDAL/data/ folder (unix: /usr/local/share/gdal windows: /ms4w/gdaldata).  If you receive an error in MapServer such as:
 
 ::
 
 	msDrawMap(): Image handling error. Failed to draw layer named 's57'.
-	msOGRFileOpen(): OGR error. GetLayer( 9) failed for OGR connection
+	msOGRFileOpen(): OGR error. xxx failed for OGR connection
 
 you may have to point MapServer to these files using the CONFIG parameter in the main section of your map file:
 
 ::
 
-	CONFIG GDAL_DATA "C:\gdal\data"
+	CONFIG GDAL_DATA "C:\ms4w\gdaldata"
 
 OGRINFO Examples
 -------------------
-Using ogrinfo on an S57 file to get the OGR index number:
+Using ogrinfo on an S57 file to get the layer name:
 
 ::
 
@@ -78,7 +77,7 @@ Using ogrinfo to examine the structure of an S57 layer:
 
 ::
 
-	> ogrinfo us1bs02m.000 DEPARE
+	> ogrinfo us1bs02m.000 DEPARE -summary
 	ERROR 4: S57 Driver doesn't support update.
 	Had to open data source read-only.
 	INFO: Open of `us1bs02m.000'
@@ -122,14 +121,16 @@ Map File Example:
 ::
 
 	LAYER
-	NAME s57
-	TYPE POLYGON
-	STATUS DEFAULT
-	CONNECTIONTYPE OGR
-	CONNECTION "./s57/us1bs02m.000"
-        DATA "DEPARE" 
-	CLASS
-		COLOR 247 237 219
-		OUTLINECOLOR 120 120 120
-	END
+	  NAME s57
+	  TYPE POLYGON
+	  STATUS DEFAULT
+	  CONNECTIONTYPE OGR
+	  CONNECTION "./s57/us1bs02m.000"
+          DATA "DEPARE" 
+	  CLASS
+           STYLE
+	     COLOR 247 237 219
+	     OUTLINECOLOR 120 120 120
+           END
+	  END
 	END # Layer

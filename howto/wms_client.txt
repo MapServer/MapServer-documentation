@@ -1,8 +1,8 @@
 ..
 
 :Author: Jeff McKenna
-:Contact: jmckenna(at)dmsolutions.ca
-:Last Updated: 2006/01/17
+:Contact: jmckenna(at)gatewaygeomatics.com
+:Last Updated: 2008/07/15
 
 --------
 
@@ -79,10 +79,13 @@ Example 1. Mapserv Version Info on Unix:
 ::
 
    $ ./mapserv -v
-   MapServer version 4.8.0-beta2 OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG OUTPUT=WBMP 
-   OUTPUT=PDF OUTPUT=SWF OUTPUT=SVG SUPPORTS=PROJ SUPPORTS=FREETYPE SUPPORTS=WMS_SERVER
-   SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER
-   INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE DEBUG=MSDEBUG     
+   MapServer version 5.2.0-rc1 OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG OUTPUT=WBMP
+   OUTPUT=PDF OUTPUT=SWF OUTPUT=SVG SUPPORTS=PROJ SUPPORTS=AGG 
+   SUPPORTS=FREETYPE SUPPORTS=ICONV SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT
+   SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER
+   SUPPORTS=SOS_SERVER SUPPORTS=FASTCGI SUPPORTS=THREADS
+   SUPPORTS=GEOS SUPPORTS=RGBA_PNG INPUT=JPEG INPUT=POSTGIS 
+   INPUT=ORACLESPATIAL INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE    
         
 
 Example 2. Mapserv Version Info on Windows:
@@ -90,10 +93,13 @@ Example 2. Mapserv Version Info on Windows:
 ::
 
    C:\ms4w\apache\cgi-bin> mapserv -v
-   MapServer version 4.8.0-beta2 OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG OUTPUT=WBMP 
-   OUTPUT=PDF OUTPUT=SWF OUTPUT=SVG SUPPORTS=PROJ SUPPORTS=FREETYPE SUPPORTS=WMS_SERVER
-   SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER
-   INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE DEBUG=MSDEBUG  
+   MapServer version 5.2.0-rc1 OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG OUTPUT=WBMP
+   OUTPUT=PDF OUTPUT=SWF OUTPUT=SVG SUPPORTS=PROJ SUPPORTS=AGG 
+   SUPPORTS=FREETYPE SUPPORTS=ICONV SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT
+   SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER
+   SUPPORTS=SOS_SERVER SUPPORTS=FASTCGI SUPPORTS=THREADS
+   SUPPORTS=GEOS SUPPORTS=RGBA_PNG INPUT=JPEG INPUT=POSTGIS 
+   INPUT=ORACLESPATIAL INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE  
         
 Install Optional PROJ4 EPSG Codes
 ---------------------------------
@@ -154,7 +160,7 @@ Example 3. Setting IMAGEPATH Parameter in Mapfile
             
             
 
-If you want to keep this temporary file for debugging puposes, you should add the following 
+If you want to keep this temporary file for debugging purposes, you should add the following 
 statement to the LAYER object of your mapfile:
 
 ::
@@ -180,7 +186,7 @@ example of a layer using this connection type:
       CONNECTION "http://www2.dmsolutions.ca/cgi-bin/mswms_gmap?"
       CONNECTIONTYPE WMS
       METADATA
-        "wms_srs"             "EPSG:4236"
+        "wms_srs"             "EPSG:42304"
         "wms_name"            "prov_bound"
         "wms_server_version"  "1.1.1"
         "wms_format"          "image/gif"
@@ -233,6 +239,31 @@ Optional Layer Parameters and Metadata
 
 - **PROJECTION object** 
   - it is optional at this point. MapServer will create one internally if needed.
+
+- **"wms_auth_username" metadata**
+  - msEncrypt-style authorization string.  Empty strings are also accepted.
+
+  ::
+
+    METADATA
+      "wms_auth_username" "foo"
+      "wms_auth_password" "{FF88CFDAAE1A5E33}"
+    END
+
+- **"wms_auth_type" metadata**
+  - Authorization type.  Supported types include:
+
+    - basic
+    - digest
+    - ntlm
+    - any (the underlying http library picks the best among the opotions supported by the remote server)
+    - anysafe (the underlying http library picks only safe methods among the options supported by the remote server)
+
+  ::
+
+    METADATA
+      "wms_auth_type" "ntlm"
+    END
 
 - **"wms_connectiontimeout" metadata** 
   - the maximum time to wait for a remote WMS layer to load, set in seconds (default is 30 
@@ -296,6 +327,64 @@ Optional Layer Parameters and Metadata
     METADATA
       "wms_latlonboundingbox" "-124 48 -123 49"
     END
+
+- **"wms_proxy_auth_type" metadata**
+  - the authorization type to use for a proxy connection.  Supported types include:
+
+    - basic
+    - digest
+    - ntlm
+    - any (the underlying http library picks the best among the opotions supported by the remote server)
+    - anysafe (the underlying http library picks only safe methods among the options supported by the remote server)
+
+  ::
+
+    METADATA
+      "wms_proxy_auth_type" "ntlm"
+    END 
+
+- **"wms_proxy_host" metadata**
+  - the hostname of the proxy to use, in "dot-quad" format, with an optional port component (e.g. '192.168.2.10:8080').
+
+  ::
+
+    METADATA
+      "wms_proxy_host" "192.168.2.10"
+    END 
+
+- **"wms_proxy_port" metadata**
+  - the port to use for a proxy connection.
+
+  ::
+
+    METADATA
+      "wms_proxy_port" "8080"
+    END   
+
+- **"wms_proxy_type" metadata**
+  - the type of the proxy connection.  Valid values are 'http' and 'socks5', which are case sensitive.
+
+  ::
+
+    METADATA
+      "wms_proxy_type" "http"
+    END 
+
+- **"wms_proxy_username" metadata**
+  - msEncrypt-style string for a proxy connection.  Empty strings are also accepted.
+
+  ::
+
+    METADATA
+      "wms_proxy_username" "foo"
+      "wms_proxy_password" "{FF88CFDAAE1A5E33}"
+    END 
+
+- **"wms_sld_body" metadata**
+  -  can be used to specify an inline SLD document.
+
+- **"wms_sld_url" metadata**
+  - can be used to specify a link to an SLD document.
           
 - **"wms_style" metadata** 
   - name of style to use for the STYLES parameter in GetMap requests for this layer.
@@ -308,7 +397,7 @@ Optional Layer Parameters and Metadata
 
     METADATA
       ...
-      "wms_style"        "mystyle"
+      "wms_style"              "mystyle"
       "wms_style_mystyle_sld"  "http://my.host.com/mysld.xml"
       ...
     END
@@ -375,8 +464,7 @@ Limitations/TODO
    map draw would be extremely inefficient. And caching that information does not belong 
    in the core of MapServer. This is better done at the application level, in a script, 
    and only the necessary information is passed to the MapServer core via the CONNECTION 
-   string and metadata. (We will soon release the MapBrowser PHP application which 
-   demonstrates the use of PHP to fetch and parse remote WMS server capabilities). 
+   string and metadata. 
 
 
 About This Document
@@ -385,13 +473,13 @@ About This Document
 Copyright Information
 ---------------------
 
-Copyright (c) 2005, Jeff McKenna.
+Copyright (c) 2008, Jeff McKenna.
                 
 This documentation is covered by the same Open Source license as the MapServer 
 software itself.  See MapServer's `License and Credits`__ page for the complete 
 text.
             
-__ http://mapserver.gis.umn.edu/license.html   
+__ http://mapserver.gis.umn.edu/License  
 
 Disclaimer
 ----------

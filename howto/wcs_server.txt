@@ -1,8 +1,8 @@
 ..
 
 :Author: Jeff McKenna
-:Contact: jmckenna(at)dmsolutions.ca
-:Last Updated: 2008/03/19
+:Contact: jeffmckenna(at)gmail.com
+:Last Updated: 2008/04/18
 
 --------
 
@@ -30,7 +30,7 @@ Links to WCS-Related Information
 --------------------------------
 
 - `WCS 1.0.0 specification`_
-- `Open Geospatial Consortium (OGC)`_ home page
+- `WCS 1.1.1c1 specification`_
 - `WMS Server HOWTO`_
 
 Software Requirements
@@ -42,6 +42,10 @@ libraries:
 - PROJ.4: The reprojection library. Version 4.4.3 or greater is required.
 - GDAL: raster support library.
 - MapServer: version >= 4.4 (tested with 5.0.2 while updating this document)
+
+For WCS 1.1.x support (MapServer 5.2) there is an additional requirement:
+
+- libxml2: An xml parser and generation library. 
 
 Please see the `MapServer UNIX Compilation and Installation HOWTO`_ for detailed 
 instructions on compiling mapserver with support for these librairies and features. 
@@ -141,8 +145,8 @@ for the required parameters.
 
 	END # Map File
 	
-Test Your WCS Server
-====================
+Test Your WCS 1.0 Server
+========================
 
 Validate the Capabilities Metadata
 ----------------------------------
@@ -171,7 +175,7 @@ until one of the services respond to it.
 
 Here is a working example of a GetCapabilities request:
 
-http://gws2.pcigeomatics.com/wcs1.0.0/wcs?SERVICE=wcs&VERSION=1.0.0&REQUEST=getcapabilities
+http://maps.dnr.state.mn.us/cgi-bin/mapserv50?MAP=/usr/local/www/docs_maps/mapserver_demos/wcs/demo.map&SERVICE=wcs&VERSION=1.0.0&REQUEST=GetCapabilities
 
 Test With a DescribeCoverage Request
 ------------------------------------
@@ -189,8 +193,8 @@ the parameters "SERVICE=WCS&VERSION=1.0.0&REQUEST=DescribeCoverage&COVERAGE=laye
   
 Here is a working example of a DescribeCoverage request:
 
-http://gws2.pcigeomatics.com/wcs1.0.0/wcs?SERVICE=wcs&VERSION=1.0.0&REQUEST=DescribeCoverage&COVERAGE=demo/wcs_l7_ms.pix
-
+http://maps.dnr.state.mn.us/cgi-bin/mapserv50?MAP=/usr/local/www/docs_maps/mapserver_demos/wcs/demo.map
+  &SERVICE=wcs&VERSION=1.0.0&REQUEST=DescribeCoverage&COVERAGE=modis
 
 
 Test With a GetCoverage Request
@@ -231,12 +235,114 @@ So to follow our above examples, a valid DescribeCoverage request would look lik
 
 ::
 
-  http://my.host.com/cgi-bin/mapserv?map=mywcs.map&SERVICE=wcs&VERSION=1.0.0&REQUEST=GetCoverage&coverage=bathymetry&CRS=EPSG:42304&BBOX=-2200000,-712631,3072800,3840000&WIDTH=3199&HEIGHT=2833&FORMAT=GTiff
+  http://my.host.com/cgi-bin/mapserv?map=mywcs.map&SERVICE=wcs&VERSION=1.0.0&REQUEST=GetCoverage
+    &coverage=bathymetry&CRS=EPSG:42304&BBOX=-2200000,-712631,3072800,3840000
+    &WIDTH=3199&HEIGHT=2833&FORMAT=GTiff
 
 Here is a working example of a GetCoverage request (note that a 3MB tif is being requested, so this may take a few seconds):
 
-http://gws2.pcigeomatics.com/wcs1.0.0/wcs?SERVICE=wcs&VERSION=1.0.0&REQUEST=GetCoverage&COVERAGE=demo/wcs_l7_ms.pix&CRS=EPSG:4326&BBOx=-117.88341239280106,33.707704191028995,-117.65485697866967,33.89850474983795&WIDTH=700&HEIGHT=700&FORMAT=GeoTIFF
+http://gws2.pcigeomatics.com/wcs1.0.0/wcs?SERVICE=wcs&VERSION=1.0.0&REQUEST=GetCoverage&COVERAGE=demo/wcs_l7_ms.pix&CRS=EPSG:4326&BBOX=-117.88341239280106,33.707704191028995,-117.65485697866967,33.89850474983795&WIDTH=700&HEIGHT=700&FORMAT=GeoTIFF
         
+WCS 1.1.0+ Issues
+=================
+
+WCS 1.1.0 and later versions of the WCS protocol are supported by MapServer 5.2.  For the most 
+part the map file setup for WCS 1.1.0 is similar to WCS 1.0.0, but the actual protocol is
+substantially changed.
+
+GetCapabilities
+---------------
+
+The GetCapabilities request is the same as WCS 1.0 but with a different VERSION value::
+
+   SERVICE=WCS&VERSION=1.1.0&REQUEST=GetCapabilities
+
+The format of the returned capabilities document is substantially altered from WCS 1.0, 
+and makes use of OWS 1.0 format for service descriptions.
+
+
+DescribeCoverage
+----------------
+
+The DescribeCoverage request is similar to WCS 1.0, but the IDENTIFIER keyword is used
+instead of COVERAGE to name the coverage being requested::
+
+  SERVICE=WCS&VERSION=1.1.0&REQUEST=DescribeCoverage&IDENTIFIER=spaceimaging
+
+
+GetCoverage
+-----------
+
+The format for GetCoverage is substantially changed from 1.0.  The following is a list of 
+GetCoverage required parameters:
+
+   **VERSION=version:** Request version
+
+   **REQUEST=GetCoverage:** Request name
+
+   **IDENTIFIER=coverage_name:** Name of an available coverage, as stated in the GetCapabilities
+
+   **BOUNDINGBOX=minx,miny,maxx,maxy,crs:** Bounding box corners (lower left, upper right), and the CRS they are in.  The CRS is described using a URN. 
+   
+   **FORMAT=output_format:** Output format (mime type) of grid product, as stated in the GetCapabilities.
+
+If an alternate spatial resolution is desired, then the following set of keywords must
+be used to specify the sample origin and step size of the output grid to be produced.  The
+produced grid will be of a number of pixels and lines as can be fit in the BOUNDINGBOX starting
+at GridOrigin, at GridOffsets resolution.
+
+   **GRIDBASECRS=crs:** The grid base CRS (URN). 
+
+   **GRIDCS=crs:** The grid CRS (URN).
+
+   **GridType=urn:ogc:def:method:WCS:1.1:2dGridIn2dCrs:** This is the only supported value for MapServer.
+
+   **GridOrigin=x_origin,y_origin:** The sample point for the top left pixel.
+
+   **GridOffsets=xstep,ystep:** The x and y step size for grid sampling (resolution). Both are positive. 
+
+As well, the following optional parameters are available.
+
+   **RangeSubset=selection:** Selects a range subset, and interpolation method.  Currently only subsetting on bands are allowed.  Depending on rangeset names, this might take the form "BandsName[bands[1]]" to select band 1, or "BandsName:bilinear[bands[1]]" to select band 1 with bilinear interpolation. 
+
+So a simple GetCoverage might look like::
+
+  SERVICE=WCS&VERSION=1.1.0&REQUEST=GetCoverage&IDENTIFIER=dem&FORMAT=image/tiff
+    &BOUNDINGBOX=43,33,44,34,urn:ogc:def:crs:EPSG::4326
+
+A more complex request might look like::
+
+  SERVICE=WCS&VERSION=1.1.0&REQUEST=GetCoverage&IDENTIFIER=dem&FORMAT=image/tiff
+    &BOUNDINGBOX=33,43,34,44,urn:ogc:def:crs:EPSG::4326
+    &GridBaseCRS=urn:ogc:def:crs:EPSG::4326&GridCS=urn:ogc:def:crs:EPSG::4326
+    &GridType=urn:ogc:def:method:WCS:1.1:2dGridIn2dCrs
+    &GridOrigin=33,44&GridOffsets=0.01,0.01
+    &RangeSubset=BandsName:bilinear[bands[1]]
+
+It should also be noted that return results from WCS 1.1 GetCoverage requests are in multi-part mime format.  Typically this consists of a first part with an xml document referencing the other parts of the message, and an image file part.  However, for output formats that return multiple files, each will be a separate part.  For instance, this means it is possible to return a jpeg file with a world file, the OUTPUTFORMAT is appropriately configured.
+
+URNs
+----
+
+In WCS 1.1 protcol coordinate systems are referenced by URN.  Some typical URNs are::
+
+  urn:ogc:def:crs:EPSG::4326
+  urn:ogc:def:crs:EPSG:27700
+  urn:ogc:def:crs:OGC::CRS84
+
+The first two are roughly equivelent to EPSG:4326, and EPSG:27700 while the third
+is a CRS defined by OGC (essentially WGS84).  One critical thing to note is that
+WCS 1.1 follows EPSG defined axis/tuple ordering for geographic coordinate systems. 
+This means that coordinates reported, or provided in urn:ogc:def:EPSG::4326 (WGS84)
+are actually handled as lat, long, not long,lat.  So, for instance the BOUNDINGBOX
+for an area in California might look like::
+
+  BOUNDINGBOX=34,-117,35,-116,urn:ogc:def:crs:EPSG::4326
+
+And, likewise the bounds reported by GetCapabilities, and DescribeCoverage will be
+in this ordering as appropriate.  
+
+
 Reference Section
 =================
 
@@ -249,6 +355,10 @@ The following metadata are available in the setup of the mapfile:
 
 Web Object Metadata
 -------------------
+
+**wcs_abstract**
+
+- *Description:* (Optional) A brief description of the service, maps to ows:Abstract (WCS 1.1+ only). 
 
 **wcs_accessconstraints**
 
@@ -297,7 +407,6 @@ Web Object Metadata
 
 - *Description:* (Optional) A name for the server. 
 
-
 **wcs_responsibleparty_address_administrativearea, wcs_responsibleparty_address_city, 
 wcs_responsibleparty_address_country, wcs_responsibleparty_address_deliverypoint, 
 wcs_responsibleparty_address_electronicmailaddress, wcs_responsibleparty_address_postalcode,
@@ -310,6 +419,10 @@ wcs_responsibleparty_phone_voice, wcs_responsibleparty_postionname**
 
 Layer Object Metadata
 ---------------------
+
+**wcs_abstract**
+
+- *Description:* (Optional) A brief description of the service, maps to ows:Abstract (WCS 1.1+ only). 
 
 **wcs_description**
 
@@ -409,9 +522,8 @@ You may of course extend that basic support using the naming conventions below.
 
 **wcs_timeposition**
 
-- *Description:* (Optional) A list of the start and end time of a given
-  coverage (i.e. "2000-11-11T11:11:11Z,2001-11-11T11:11:11Z"), used when
-advertising GetCapabilities.
+- *Description:* (Optional) A list of the start and end time of a given coverage (i.e. "2000-11-11T11:11:11Z,2001-11-11T11:11:11Z"), used when advertising GetCapabilities.
+
 
 Rules for handling SRS in a MapServer WCS
 =========================================
@@ -526,8 +638,8 @@ responsibility for that:  proceed with caution.
 
 .. _`Open GIS Consortium's (OGC) Web Coverage Server Interfaces Implementation Specification version 1.0.0`: https://portal.opengeospatial.org/files/?artifact_id=3837
 .. _`WCS 1.0.0 specification`: https://portal.opengeospatial.org/files/?artifact_id=3837
+.. _`WCS 1.1.1c1 specification`: http://portal.opengeospatial.org/files/?artifact_id=22560
 .. _`Open Geospatial Consortium (OGC)`: http://www.opengeospatial.org/
 .. _`MapServer UNIX Compilation and Installation HOWTO`: http://mapserver.gis.umn.edu/docs/howto/compiling_on_unix/
 .. _`MapServer for Windows (MS4W)`: http://www.maptools.org/ms4w/index.phtml
 .. _`WMS Server HOWTO`: http://mapserver.gis.umn.edu/docs/howto/wms_server/
-

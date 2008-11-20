@@ -2,7 +2,9 @@
 
 :Author: Frank Koormann
 :Contact: frank.koormann(at)intevation.de
-:Last Updated: 2005/07/27
+:Author: Jeff McKenna
+:Contact: jmckenna(at)gatewaygeomatics.com
+:Last Updated: 2008/07/18
 
 --------
 
@@ -37,12 +39,12 @@ Notes
 
 - All `CGI parameters`_ can be referenced in template substitutions, MapServer 
   specific parameters as well as user defined ones. In principle parameters are 
-  handed through by the MapServer 1:1. This feature is essential for implementing 
-  MapServer applications.
+  handed through by the MapServer 1:1. This feature is essential for
+  implementing MapServer applications.
 
   The reference below only lists special template substitution strings which are 
-  needed to obtain information modified by the MapServer, e.g. a new scale, query 
-  results, etc.
+  needed to obtain information modified by the MapServer, e.g. a new scale,
+  query results, etc.
 
 - Template substitution strings are case sensitive.
 
@@ -50,8 +52,8 @@ Notes
   dbase file.
 
 - ArcView and ArcInfo generally produce dbase files with item names that are all 
-  uppercase. Appropriate URL encoding (i.e. ' ' to '+') is applied when templates 
-  are URLs.
+  uppercase. Appropriate URL encoding (i.e. ' ' to '+') is applied when
+  templates are URLs.
 
 - Some substitutions are also available in escaped form (i.e. URL encoded).
 
@@ -76,12 +78,12 @@ General
 
 [version]
      The MapServer version number. 
-
 [id]
-     Unique session id. The id can be passed in via a form but is more commonly generated 
-     by the software. In that case the id is a concatenation of UNIX time (or NT equivalent) 
-     and the process id. Unless you're getting more requests in a second than the system 
-     has process ids the id can be considered unique. ;-> 
+     Unique session id. The id can be passed in via a form but is more commonly
+     generated 
+     by the software. In that case the id is a concatenation of UNIX time (or NT
+     equivalent) and the process id. Unless you're getting more requests in a 
+     second than the system has process ids the id can be considered unique. ;-> 
   
 [host]
      Hostname of the web server. 
@@ -90,12 +92,12 @@ General
      Port the web server is listening to. 
   
 [post or get variable name], [post or get variable name_esc]
-     The contents of any variables passed to the MapServer, whether they were used or not, 
-     can be echoed this way. One use might be to have the user set a map title or north 
-     arrow style in an interactive map composer. The system doesn't care about the values, 
-     but they might be real important in creating the final output, e.g. if you specified 
-     a CGI parameter like myvalue=.... you can access this in the template file 
-     with [myvalue].
+     The contents of any variables passed to the MapServer, whether they were
+     used or not, can be echoed this way. One use might be to have the user set 
+     a map title or north arrow style in an interactive map composer. The system 
+     doesn't care about the values, but they might be real important in creating 
+     the final output, e.g. if you specified a CGI parameter like myvalue=.... 
+     you can access this in the template file with [myvalue].
 
      Also available as escaped version. 
   
@@ -105,7 +107,8 @@ General
      Also available as escaped version. 
 
 [errmsg], [errmsg_esc]
-     Current error stack output. Various error messages are delimited by semi-colons.
+     Current error stack output. Various error messages are delimited by 
+     semi-colons.
 
      Also available as escaped version. 
      
@@ -137,7 +140,7 @@ File Reference
      Path to the query file (if savequery was set as a `CGI Parameter`_). 
 
 [map]
-     Path to the map file (if savemap was set as a `CGI Parameter`_).       
+     Path to the map file (if savemap was set as a `CGI Parameter`_).   
      
 Image Geometry
 --------------
@@ -157,10 +160,17 @@ Image Geometry
 [mapwidth], [mapheight]
      Current image width or height. 
 
-[scale]
-     Current image scale. The exact value is not appropriate for user information 
-     but essential for some applications. The value can be rounded e.g. using 
-     JavaScript or server side post processing. 
+[scaledenom]
+     Current image scale. The exact value is not appropriate for user 
+     information but essential for some applications. The value can be rounded 
+     e.g. using JavaScript or server side post processing. 
+
+[scale] - deprecated 
+     Since MapServer 5.0 the proper parameter to use is [scaledenom]
+     instead.  The deprecated [scale] is the current image scale. The exact
+     value is not appropriate for user information but essential for some
+     applications. The value can be rounded e.g. using JavaScript or server side
+     post processing. 
      
 [cellsize]
      Size of an pixel in the current image in map units. Useful for distance 
@@ -175,7 +185,50 @@ Map Geometry
 [mapext], [mapext_esc]
      Full mapextent (separated by spaces).
 
-     Also available as escaped version. 
+     Also available as escaped version. (mapext_esc is deprecated in MapServer 
+     5.2.  You should use the "escape=" argument instead)
+
+     The default template [mapext] returns coordinates in the format of:
+     mixx miny maxx maxy
+
+     Available arguments:
+
+     - escape=
+             Escape the coordinates returned.  Default is "none".  Valid values
+             are:
+
+             - "url"
+                    Use URL escape codes to encode the coordinates returned.
+
+             - "none"
+                    Do not escape.
+
+     - expand=
+             Expand the bounds of the extents by a specific value.  Specified in
+             map coordinates.
+             For example, [mapext] might return:
+
+             ::
+
+               123456 123456 567890 567890
+
+             and [mapext expand=1000] would therefore return:
+
+             ::
+
+               122456 122456 568890 568890
+
+     - format=
+             Format of the coordinates.  Default is "$minx $miny $maxx $maxy".
+             For example, to add commas to the coordinates you would use:
+
+             ::
+
+               [mapext format="$minx,$miny,$maxx,$maxy"]
+    
+     - precision=
+             The number of decimal places to output for coordinates (default is 
+             0).   
      
 [minx], [miny], [maxx], [maxy]
      Minimum / maximum X or Y coordinate of new map extent. 
@@ -186,13 +239,55 @@ Map Geometry
      Useful for creating cachable extents (i.e. 0 0 dx dy) with legends and scalebars 
 
 [rawext], [rawext_esc]
-     Raw mapextent, that is the extent before fitting to a window size (separated 
-     by spaces). In cases where input came from imgbox (via Java or whatever) rawext 
-     refers to imgbox coordinates transformed to map units.
-
-     Also available as escaped version.
-
+     Raw mapextent, that is the extent before fitting to a window size
+     (separated by spaces). In cases where input came from imgbox (via Java or 
+     whatever) rawext refers to imgbox coordinates transformed to map units.
      Useful for spatial query building. 
+
+     Also available as escaped version. (rawext_esc is deprecated in MapServer 
+     5.2.  You should use the "escape=" argument instead)
+
+     The default template [rawext] returns coordinates in the format of:
+     mixx miny maxx maxy
+
+     Available arguments:
+
+     - escape=
+             Escape the coordinates returned.  Default is "none".  Valid values
+             are:
+
+             - "url"
+                    Use URL escape codes to encode the coordinates returned.
+
+             - "none"
+                    Do not escape.
+
+     - expand=
+             Expand the bounds of the extents by a specific value.  Specified in
+             map coordinates.
+             For example, [rawext] might return:
+
+             ::
+
+               123456 123456 567890 567890
+
+             and [rawext expand=1000] would therefore return:
+
+             ::
+
+               122456 122456 568890 568890
+
+     - format=
+             Format of the coordinates.  Default is "$minx $miny $maxx $maxy".
+             For example, to add commas to the coordinates you would use:
+
+             ::
+
+               [rawext format="$minx,$miny,$maxx,$maxy"]
+    
+     - precision=
+             The number of decimal places to output for coordinates (default is 
+             0).  
 
 [rawminx], [rawminy], [rawmaxx], [rawmaxy]
      Minimum / maximum X or Y coordinate of a raw map/search extent. 
@@ -204,9 +299,53 @@ PROJ support and a projection is defined in the `mapfile`_.
      Longitude / latitude value of mouse click. Available only when projection enabled. 
 
 [mapext_latlon], [mapext_latlon_esc]
-     Full mapextent (separated by spaces). Available only when projection enabled.
+     Full mapextent (separated by spaces). Available only when projection
+     enabled.
 
-     Also available as escaped version. 
+     Also available as escaped version.  (mapext_latlon_esc is deprecated in
+     MapServer 5.2.  You should use the "escape=" argument instead)
+
+     The default template [mapext_latlon] returns coordinates in the format of:
+     mixx miny maxx maxy
+
+     Available arguments:
+
+     - escape=
+             Escape the coordinates returned.  Default is "none".  Valid values
+             are:
+
+             - "url"
+                    Use URL escape codes to encode the coordinates returned.
+
+             - "none"
+                    Do not escape.
+
+     - expand=
+             Expand the bounds of the extents by a specific value.  Specified in
+             map coordinates.
+             For example, [mapext_latlon] might return:
+
+             ::
+
+               123456 123456 567890 567890
+
+             and [mapext_latlon expand=1000] would therefore return:
+
+             ::
+
+               122456 122456 568890 568890
+
+     - format=
+             Format of the coordinates.  Default is "$minx $miny $maxx $maxy".
+             For example, to add commas to the coordinates you would use:
+
+             ::
+
+               [mapext_latlon format="$minx,$miny,$maxx,$maxy"]
+    
+     - precision=
+             The number of decimal places to output for coordinates (default is 
+             0).   
 
 [minlon], [minlat], [maxlon] [maxlat]
      Minimum / maximum longitude or latitude value of mapextent. Available only when 
@@ -215,10 +354,55 @@ PROJ support and a projection is defined in the `mapfile`_.
 [refext], [refext_esc]
      Reference map extent (separated by spaces).
 
-     Also available as escaped version.
+     This template has been added with version 4.6 on behalf of an enhancement
+     request. See the thread in the `MapServer ticket#1102`_ for potential use
+     cases.
 
-     This template has been added with version 4.6 on behalf of an enhancement request. 
-     See the thread in the `MapServer bug#1102`_ for potential use cases. 
+     Also available as escaped version.  (refext_esc is deprecated in MapServer 
+     5.2.  You should use the "escape=" argument instead)
+
+     The default template [refext] returns coordinates in the format of:
+     mixx miny maxx maxy
+
+     Available arguments:
+
+     - escape=
+             Escape the coordinates returned.  Default is "none".  Valid values
+             are:
+
+             - "url"
+                    Use URL escape codes to encode the coordinates returned.
+
+             - "none"
+                    Do not escape.
+
+     - expand=
+
+             Expand the bounds of the extents by a specific value.  Specified in
+             map coordinates.
+             For example, [refext] might return:
+
+             ::
+
+               123456 123456 567890 567890
+
+             and [refext expand=1000] would therefore return:
+
+             ::
+
+               122456 122456 568890 568890
+
+     - format=
+             Format of the coordinates.  Default is "$minx $miny $maxx $maxy".
+             For example, to add commas to the coordinates you would use:
+
+             ::
+
+               [refwext format="$minx,$miny,$maxx,$maxy"]
+    
+     - precision=
+             The number of decimal places to output for coordinates (default is 
+             0).     
 
 Layer
 -----
@@ -267,8 +451,50 @@ The following substitutions are only available when the template is processed as
 a result of a query.
 
 [shpext], [shpext_esc]
-     Extent of current shape plus a 5 percent buffer. Available only when processing 
-     query results. 
+     Extent of current shape plus a 5 percent buffer. Available only when
+     processing query results. 
+
+     The default template [shpext] returns coordinates in the format of:
+     mixx miny maxx maxy
+
+     Available arguments:
+
+     - escape=
+             Escape the coordinates returned.  Default is "none".  Valid values
+             are:
+
+             - "url"
+                    Use URL escape codes to encode the coordinates returned.
+
+             - "none"
+                    Do not escape.
+
+     - expand=
+             Expand the bounds of the extents by a specific value.  Specified in
+             map coordinates.
+             For example, [shpext] might return:
+
+             ::
+
+               123456 123456 567890 567890
+
+             and [shpext expand=1000] would therefore return:
+
+             ::
+
+               122456 122456 568890 568890
+
+     - format=
+             Format of the coordinates.  Default is "$minx $miny $maxx $maxy".
+             For example, to add commas to the coordinates you would use:
+
+             ::
+
+               [shpext format="$minx,$miny,$maxx,$maxy"]
+    
+     - precision=
+             The number of decimal places to output for coordinates (default is 
+             0).      
      
 [shpminx], [shpminy], [shpmaxx], [shpmaxy]
      Minimum / maximum X or Y coordinate of shape extent. Available only when 
@@ -298,28 +524,34 @@ a result of a query.
 
      Available attributes (h = header, f=footer, s=seperator):
 
-         cs=
+     - cs=
              Coordinate seperator, default is comma (","). 
     
-         xh=, xf=
-             Characters to put before and after the x coordinates (defaults are xh="" and xf=" "). 
+     - xh=, xf=
+             Characters to put before and after the x coordinates (defaults are
+             xh="" and xf=" "). 
          
-         yh= yf=
-             Characters to put before and after the y coordinates (defaults are no characters). 
+     - yh= yf=
+             Characters to put before and after the y coordinates (defaults are
+             no characters). 
     
-         ph=, pf=, ps=
-             Characters to put before and after and seperators between feature parts (e.g. 
-             holes, defaults are no characters). 
+     - ph=, pf=, ps=
+             Characters to put before and after and seperators between feature 
+             parts (e.g. holes, defaults are no characters). 
      
-         sh=, sf=
-             Characters to put before and after a feature (defaults are no characters) 
+     - sh=, sf=
+             Characters to put before and after a feature (defaults are no 
+
+             characters) 
     
-         precision=
-             The number of decimal places to output for coordinates (default is 0). 
+     - precision=
+             The number of decimal places to output for coordinates (default is 
+             0). 
     
-         proj=
-             The output projection definition for the coordinates (default is none), 
-             a special value of "image" will convert to image coordinates. 
+     - proj=
+             The output projection definition for the coordinates (default is 
+             none), a special value of "image" will convert to image 
+             coordinates. 
 
      As a simple example:
      ::
@@ -392,8 +624,7 @@ Example Template
 
 A small example to give an idea how to work with templates. Note that it covers 
 MapServer specific templates (e.g. the [map], [mapext]) and user defined templates 
-(e.g. [htmlroot] or [program]) used to store application settings.  It also uses the 
-new method in MapServer 5.0 to set the map's WEB object values.
+(e.g. [htmlroot] or [program]) used to store application settings.
 
 ::
 
@@ -412,14 +643,15 @@ new method in MapServer 5.0 to set the map's WEB object values.
 
         <!-- CGI MapServer applications are server stateless in principle,
              all information must be "stored" in the client. This includes
-             some basic settings as below.-->
+             some basic settings as below.
+             The example is based on the pan and zoom test suite:
+             http://maps.dnr.state.mn.us/mapserver_demos/tests36/           -->
           <input type="hidden" name="map" value="[map]">
           <input type="hidden" name="imgext" value="[mapext]">
           <input type="hidden" name="imgxy" value="149.5 199.5">
           <input type="hidden" name="program" value="[program]">
           <input type="hidden" name="htmlroot" value="[htmlroot]">
-          <input type="hidden" name="map_size" value="600 400">
-          <input type="hidden" name="map_web" value="imagepath /ms4w/tmp/ms_tmp/ imageurl /ms_tmp/">
+          <input type="hidden" name="map_web" value="[map_web]">
 
           <!-- A table for minimal page formatting. -->
           <table border=0 cellpadding=5>
@@ -468,13 +700,13 @@ About This Document
 Copyright Information
 ---------------------
 
-Copyright (c) 2008, Frank Koormann, Steve Lime.
+Copyright (c) 2008 Frank Koormann, Steve Lime.
                 
 This documentation is covered by the same Open Source license as the MapServer 
 software itself.  See MapServer's `License and Credits`__ page for the complete 
 text.
             
-__ http://mapserver.gis.umn.edu/license.html   
+__ http://mapserver.gis.umn.edu/License  
 
 Disclaimer
 ----------
@@ -492,4 +724,4 @@ responsibility for that:  proceed with caution.
 .. _`CGI Parameter`: http://mapserver.gis.umn.edu/docs/reference/cgi
 .. _`mapfile`: http://mapserver.gis.umn.edu/docs/reference/mapfile
 .. _`HTML Legend howto`: http://mapserver.gis.umn.edu/docs/howto/html_legend
-.. _`MapServer bug#1102`: http://mapserver.gis.umn.edu/bugs/show_bug.cgi?id=1102
+.. _`MapServer ticket#1102`: http://trac.osgeo.org/mapserver/ticket/1102

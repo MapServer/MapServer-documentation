@@ -1,37 +1,92 @@
+PostGIS/PostgreSQL
+------------------
+
+`PostGIS`_ spatially enables the Open Source `PostgreSQL`_ database.
+
+.. _`PostGIS`: http://postgis.refractions.net/
+.. _`PostgreSQL`: http://www.postgresql.org/
+
+
+Data Access /Connection Method
+------------------------------
+
 PostGIS is supported directly by MapServer and must be compiled into MapServer to work.
 
 In most cases, PostgreSQL and PostGIS libraries (.dll or .so) must be present in the system's path environment for functionality to be present.  This includes the libpq and libpostgis libraries.
 
-Map File Example
-Specify::
-	
-	CONNECTIONTYPE POSTGIS
+The CONNECTION parameter must be used to specify the parameters to connect to the database.  CONNECTION  parameters can be in any order.  Most are optional.  dbname is required.  host defaults to localhost, port defaults to 5432 - the standard port for PostgreSQL.
 
-Specify::
+The DATA parameter must be used to specify the name of the geometry column, the table name, and any other information.  The geometry column could be named "the_geom" if the shp2pgsql utility is used to load data, or "wkb_geometry" if ogr2ogr was used.
 
-	CONNECTION "host=yourhostname dbname=yourdatabasename user=yourdbusername password=yourdbpassword port=yourpgport"
+::
+  
+  CONNECTIONTYPE POSTGIS
+  CONNECTION "host=yourhostname dbname=yourdatabasename user=yourdbusername password=yourdbpassword port=yourpgport"
+  DATA "geometrycolumn from yourtablename"
 
-CONNECTION  parameters can be in any order.  Most are optional.  dbname is 
-required.  host defaults to localhost, port defaults to 5432 - the standard 
-port for PostgreSQL.
+OGRINFO Examples
+----------------
 
-Specify::
-	
-	DATA "geometrycolumn from yourtablename".  
+First you should make sure that your GDAL/OGR build contains the PostgreSQL driver, by using the '--formats' command:
 
-MapServer had a bug related to the keyword from.  Specify it in lower case 
-to avoid problems.  Geometrycolumn could be the_geom if the shp2pgsql 
-utility is used to load data, or wkb_geometry if ogr2ogr was used.
+::
 
-Complete Mapfile example::
+  >ogrinfo --formats
+    Loaded OGR Format Drivers:
+    ...
+    -> "PGeo" (readonly)
+    -> "PostgreSQL" (read/write)
+    -> "MySQL" (read/write)
+    ...
+
+If you don't have the driver, you might want to try the `FWTools`_ or `MS4W`_ packages, which include the driver.
+
+.. _`FWTools`: http://fwtools.maptools.org
+.. _`MS4W`: http://www.maptools.org
+
+Once you have the driver you are ready to try an ogrinfo command on your database to get a list of spatial tables:
+
+::
+
+  >ogrinfo PG:"host=127.0.0.1 user=postgres password=postgres dbname=canada port=5432"
+        using driver `PostgreSQL' successful.
+        1: province (Multi Polygon)
+
+Now use ogrinfo to get information on the structure of the spatial table:
+
+::
+
+  >ogrinfo PG:"host=127.0.0.1 user=postgres password=postgres dbname=canada port=5432" province -summary
+   INFO: Open of `PG:host=127.0.0.1 user=postgres password=postgres dbname=canada'
+      using driver `PostgreSQL' successful.
+
+    Layer name: province
+    Geometry: Multi Polygon
+    Feature Count: 1068
+    Extent: (-2340603.750000, -719746.062500) - (3009430.500000, 3836605.250000)
+    Layer SRS WKT:
+    (unknown)
+    FID Column = gid
+    Geometry Column = the_geom
+    area: Real (0.0)
+    island: String (30.0)
+    island_e: String (30.0)
+    island_f: String (30.0)
+    name: String (30.0)
+    ...
+
+Mapfile Example
+---------------
+
+::
 
   LAYER
-    NAME pg_test
+    NAME "province"
     STATUS ON
     TYPE POLYGON
     CONNECTIONTYPE POSTGIS
-    CONNECTION "host=mapserver.com dbname=gmap user=julio"
-    DATA "wkb_geometry FROM province"
+    CONNECTION "host=127.0.0.1 port=5432 dbname=canada user=postgres password=postgres"
+    DATA "the_geom FROM province"
     CLASS
        ...
     END

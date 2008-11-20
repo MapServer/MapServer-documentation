@@ -1,10 +1,10 @@
 ..
 
 :Author: Jeff McKenna
-:Contact: jmckenna(at)dmsolutions.ca
+:Contact: jmckenna(at)gatewaygeomatics.com
 :Author: Yewondwossen Assefa
 :Contact: assefa(at)dmsolutions.ca
-:Last Updated: 2006/10/06
+:Last Updated: 2008/07/18
 
 ----------
 
@@ -22,11 +22,11 @@ Introduction
 ============
 
 This document describes the procedures for taking advantage of the Styled 
-Layer Descriptor (SLD) support in WMS GetMap requests for MapServer 4.6.
-SLD support has been developed for the server side support (ability to 
+Layer Descriptor (SLD) support in WMS GetMap requests with MapServer.
+SLD support exists for the server side (ability to 
 read an SLD and apply it with a GetMap request) and for the client side 
 (includes sending SLD requests to server and generate SLD files on the fly 
-from MapServer map file).
+from MapServer map file). SLD support was added to MapServer in version 4.2.
 
 This document assumes that you are already familiar with the following 
 aspects of MapServer:
@@ -45,8 +45,8 @@ Links to SLD-related Information
 - `Open GIS Consortium (OGC) home page`_.
 
 .. _`Styled Layer Descriptor Implementation Specification`: http://www.opengeospatial.org/docs/02-070.pdf
-.. _`MapServer WMS Client HOWTO`: http://ms.gis.umn.edu/docs/howto/wms_client
-.. _`MapServer WMS Server HOWTO`: http://ms.gis.umn.edu/docs/howto/wms_server
+.. _`MapServer WMS Client HOWTO`: /docs/howto/wms_client
+.. _`MapServer WMS Server HOWTO`: /docs/howto/wms_server
 .. _`MapServer OGC Web Services Workshop`: http://ms-ogc-workshop.maptools.org/
 .. _`Open GIS Consortium (OGC) home page`: http://www.opengeospatial.org
 
@@ -102,9 +102,9 @@ The SLD in the above request follows:
         
 When MapServer gets a valid SLD through a request, it parses this SLD to extract 
 all the styles attached to the NamedLayers, and then it applies these styles to 
-the map before it is returned to the client. When applying the SLD, MapServer 
-compares the names used in the map files with the names of the NamedLayers in 
-the SLD document.
+the map before it is returned to the client.  When applying the SLD, MapServer compares the <Name> parameter of the NamedLayers in the SLD document to the WMS layer names (WMS layer names are available in a `GetCapabilities`_ request).
+
+.. _`GetCapabilities`: /howto/wms_server/#validate-the-capabilities-metadata
 
 Note: All the examples given in this document are live uses of valid SLDs and 
 a MapServer installation with SLD support.
@@ -147,7 +147,7 @@ User Layers  No
 ============ ========= =====
 Features     Supported Notes
 ============ ========= =====
-Named Styles No  
+Named Styles Yes 
 User Styles  Yes  
 ============ ========= =====
 
@@ -352,9 +352,9 @@ Font(font-family)        Yes       Font names used are those available in MapSer
 Font-style (Italic, ...) Yes  
 Font-weight              Yes  
 Font-size                Yes       If true-type fonts are not used, default bitmap sizes are given
-LabelPlacement           Yes       Only PointPlacement is supported
-Halo                     No        Only solid color is available
-Fill                     No        Only solid color is available
+LabelPlacement           Yes       PointPlacement is supported. LinePlacement is supported for versions >=5.2.1.
+Halo                     Yes        Supported (fill converted to outlinecolor, and radius is converted to outlinewidth. Note that outlinewidth is only available for AGG in >=5.2)
+Fill                     Yes        Only solid color is available
 ======================== ========= ==========================================================================================================================
 
 Notes on the TextSymbolizer:
@@ -377,6 +377,10 @@ Notes on the TextSymbolizer:
 - PointPacement: a point placement includes AnchorPoint (which is translated to 
   Position in MapServer) Displacement (which is translated to Offset) and Angle 
   (which is translated to Angle). 
+
+- Angle setting: by default the angle parameter is set to AUTO. For point features,
+  users can use the PointPlacement to alter the value. For line features, the user can
+  add a LinePlacement: If an 'empty' LinePlacement is part of the SLD, the angle will be set to to FOLLOW, If a LinePlacement contains the PerpendicualarOffset parameter, the angle withh be set to 0 and the PerpendicualarOffset will be used to set the offset values in the label object.  
 
 The following are examples of valid requests using the TextSymbolizer:
 
@@ -512,7 +516,7 @@ The following is a small script that calls the generateSLD() function to create 
 
   // define variables
   define( "MAPFILE", "D:/ms4w/apps/cadastra/map/cadastra.map" );
-  define( "MODULE", "php_mapscript_48.dll" );
+  define( "MODULE", "php_mapscript.dll" );
 
   // load the mapscript module
   if (!extension_loaded("MapScript")) dl(MODULE);
@@ -532,6 +536,47 @@ The following is a small script that calls the generateSLD() function to create 
   fclose($fp);
 
   ?>
+
+Named Styles support
+====================
+
+Named styles support are introduced in Mapserver 5.2. The support is base on `RFC 39`_ 
+
+.. _`RFC 39`: /development/rfc/ms-rfc-39/
+
+Mapserver 5.2 introduces the possibility to assign a group to a series of classes defined on a  layer object using two new non-mandatory keywords CLASSGROUP (at the layer level) and GROUP at the class level:
+
+::
+
+ LAYER
+ ...
+ CLASSGROUP "group1"
+ ...
+ CLASS
+   NAME "name1"
+   GROUP "group1"
+   ...
+ END
+ CLASS
+   NAME "name2"
+   GROUP "group2"
+   ...
+ END
+ CLASS
+   NAME "name3"
+   GROUP "group1"
+   ...
+ END
+ ...
+
+
+At rendering time, if the CLASSGROUP is defined, only classes that have the same group name would be used. 
+Based on this concept, WMS/SLD support uses the class groups as named styles. Each group of classes is considered equivalent to a named style: 
+   
+- The GetCapbilities request will output all the styles that are available
+- The GetMap request can use the STYLES parameter to specify a named style
+- The GetLegendGraphic can use the STYLES parameter to specify a named style
+
 
 Other Items Implemented
 =======================
@@ -555,13 +600,13 @@ About This Document
 Copyright Information
 ---------------------
 
-Copyright (c) 2005, Yewondwossen Assefa, Jeff McKenna.
+Copyright (c) 2008, Yewondwossen Assefa, Jeff McKenna.
                 
 This documentation is covered by the same Open Source license as the MapServer 
 software itself.  See MapServer's `License and Credits`__ page for the complete 
 text.
             
-__ http://mapserver.gis.umn.edu/license.html   
+__ http://mapserver.gis.umn.edu/License  
 
 Disclaimer
 ----------

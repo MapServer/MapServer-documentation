@@ -6,6 +6,11 @@ CLASS
 CLASSITEM [attribute]
     Item name in attribute table to use for class lookups.
 
+CLASSGROUP  [string]
+    Specify the class's group that would be considered at rendering time.  
+    The `CLASS`_ object's GROUP parameter must be used in combination with
+    CLASSGROUP.
+    
 CONNECTION [string]
     Database connection string to retrieve remote data.
 
@@ -42,12 +47,76 @@ DATA [filename]|[sde parameters][postgis table/column][oracle table/column]
     submitted by forcing an error, for instance by submitting a DATA parameter 
     you know won't work, using for example a bad column name.
     
-DEBUG [on|off]
-    Enables debugging of the layer object. Verbose output is generated and 
-    sent to the standard error output (STDERR) or the MapServer logfile if 
-    one is set using the LOG parameter in the `WEB`_ object.
+DEBUG [off|on|0|1|2|3|4|5]
+    Enables debugging of a layer in the current map. 
 
-.. _`WEB`: /docs/reference/mapfile/web
+    *Debugging with MapServer versions >= 5.0:*
+
+    Verbose output is generated and sent to the standard error output (STDERR)
+    or the MapServer errorfile if one is set using the "MS_ERRORFILE" environment
+    variable.  You can set the environment variable by using the CONFIG parameter
+    at the MAP level of the mapfile, such as:
+
+    ::
+
+      CONFIG "MS_ERRORFILE" "/ms4w/tmp/ms_error.txt"
+
+    You can also set the environment variable in Apache by adding the following
+    to your httpd.conf:
+
+    ::
+
+      SetEnv MS_ERRORFILE "/ms4w/tmp/ms_error.txt"
+
+    Once the environment variable is set, the DEBUG mapfile parameter can be
+    used to control the level of debugging output.  Here is a description of the
+    possible DEBUG values:
+
+    ::
+
+      DEBUG O or OFF - only msSetError() calls are logged to MS_ERRORFILE. No
+                       msDebug() output at all. This is the default and
+                       corresponds to the original behavior of MS_ERRORFILE in
+                       MapServer 4.x
+
+      DEBUG 1 or ON  - includes all output from DEBUG 0 plus msDebug() warnings
+                       about common pitfalls, failed assertions or non-fatal
+                       error situations (e.g. missing or invalid values for some
+                       parameters, missing shapefiles in tileindex, timeout
+                       error from remote WMS/WFS servers, etc.)
+
+      DEBUG 2        - includes all output from DEBUG 1 plus notices and timing
+                       information useful for tuning mapfiles and applications
+
+      DEBUG 3        - all of DEBUG 2 plus some debug output useful in
+                       troubleshooting problems such as WMS connection URLs
+                       being called, database connection calls, etc.  This is 
+                       the recommended level for debugging mapfiles.
+
+      DEBUG 4        - DEBUG 3 plus even more details...
+
+      DEBUG 5        - DEBUG 4 plus any msDebug() output that might be more
+                       useful to the developers than to the users.
+
+    You can also set the debug level by using the "MS_DEBUGLEVEL" environment
+    variable.
+
+    The DEBUG setting can also be specified for the entire map, by setting the
+    DEBUG parameter in the `MAP`_ object.
+
+    .. _`MAP`: /docs/reference/mapfile/mapObj
+
+    For more details on this debugging mechanism, please see `RFC 28`_.
+
+    .. _`RFC 28`: /development/rfc/ms-rfc-28
+
+    *Debugging with MapServer versions < 5:*
+
+    Verbose output is generated and sent to the standard error output (STDERR)
+    or the MapServer logfile if one is set using the LOG parameter in the WEB
+    object.  Apache users will see timing details for drawing in Apache's
+    error_log file.  Requires MapServer to be built with the DEBUG=MSDEBUG
+    option (--with-debug configure option).
 
 DUMP [true|false]
     Switch to allow mapserver to return data in GML format. Usefull when 
@@ -90,6 +159,11 @@ HEADER [filename]
     Template to use *before* a layer's set of results have been sent. 
     Multiresult query modes only.
 
+JOIN
+    Signals the start of a `JOIN`_ object.
+
+.. _`JOIN`: /docs/reference/mapfile/join
+
 LABELANGLEITEM [attribute]
     Item name in attribute table to use for class annotation angles. 
     Values should be in degrees.
@@ -103,11 +177,29 @@ LABELCACHE [on|off]
 LABELITEM [attribute]
     Item name in attribute table to use for class annotation (i.e. labeling).
 
-LABELMAXSCALE [double]
-    Maximum scale at which the layer is labeled.
+LABELMAXSCALEDENOM [double]
+    Maximum scale at which this LAYER is labeled.  Scale is given as the
+    denominator of the actual scale fraction, for example for a map at a scale
+    of 1:24,000 use 24000.  Implemented in MapServer 5.0, to replace the
+    deprecated LABELMAXSCALE parameter.
 
-LABELMINSCALE [double]
-    Minimum scale at which the layer is labeled.
+LABELMAXSCALE [double] - deprecated
+    Since MapServer 5.0 the proper parameter to use is LABELMAXSCALEDENOM
+    instead.  The deprecated LABELMAXSCALE is the maximum scale at which this
+    LAYER is labeled.  Scale is given as the denominator of the actual scale
+    fraction, for example for a map at a scale of 1:24,000 use 24000.
+
+LABELMINSCALEDENOM [double]
+    Minimum scale at which this LAYER is labeled.  Scale is given as the
+    denominator of the actual scale fraction, for example for a map at a scale
+    of 1:24,000 use 24000.  Implemented in MapServer 5.0, to replace the
+    deprecated LABELMINSCALE parameter.
+
+LABELMINSCALE [double] - deprecated
+    Since MapServer 5.0 the proper parameter to use is LABELMINSCALEDENOM
+    instead.  The deprecated LABELMINSCALE is the minimum scale at which this
+    LAYER is labeled.  Scale is given as the denominator of the actual scale
+    fraction, for example for a map at a scale of 1:24,000 use 24000.
 
 .. _LABELREQUIRES:
 
@@ -133,8 +225,17 @@ MAXFEATURES [integer]
     the CURRENT window. Has some interesting uses with annotation and with 
     sorted data (i.e. lakes by area).
 
-MAXSCALE [double]
-    Maximum scale at which this layer is drawn.
+MAXSCALEDENOM [double]
+    Maximum scale at which this LAYER is drawn.  Scale is given as the
+    denominator of the actual scale fraction, for example for a map at a scale
+    of 1:24,000 use 24000.  Implemented in MapServer 5.0, to replace the
+    deprecated MAXSCALE parameter.
+
+MAXSCALE [double] - deprecated
+    Since MapServer 5.0 the proper parameter to use is MAXSCALEDENOM instead.
+    The deprecated MAXSCALE is the maximum scale at which this LAYER is drawn.  
+    Scale is given as the denominator of the actual scale fraction, for example
+    for a map at a scale of 1:24,000 use 24000.
 
 METADATA
     This keyword allows for arbitrary data to be stored as name value pairs. 
@@ -151,8 +252,17 @@ METADATA
             author "Me!"
         END
 
-MINSCALE [double]
-    Minimum scale at which this layer is drawn.
+MINSCALEDENOM [double]
+    Minimum scale at which this LAYER is drawn.  Scale is given as the
+    denominator of the actual scale fraction, for example for a map at a scale
+    of 1:24,000 use 24000.  Implemented in MapServer 5.0, to replace the
+    deprecated MINSCALE parameter.
+
+MINSCALE [double] - deprecated
+    Since MapServer 5.0 the proper parameter to use is MINSCALEDENOM
+    instead.  The deprecated MINSCALE is the minimum scale at which this LAYER
+    is drawn.  Scale is given as the denominator of the actual scale fraction,
+    for example for a map at a scale of 1:24,000 use 24000.
 
 NAME [string]
     Short name for this layer. Limit is 20 characters. This name is the link 
@@ -163,6 +273,19 @@ NAME [string]
 
 OFFSITE [r] [g] [b]
     Sets the color index to treat as transparent for raster layers.
+
+OPACITY [integer|alpha]
+    Sets the opacity level (or the inability to see through the layer) of all
+    classed pixels for a given layer. The value can either be an integer in the
+    range (0-100) or the named symbol "ALPHA". A value of 100 is opaque and 
+    0 is fully transparent.  Implemented in MapServer 5.0, to replace the
+    deprecated TRANSPARENCY parameter.
+
+    The "ALPHA" symbol directs the MapServer rendering code to honor the 
+    indexed or alpha transparency of pixmap symbols used to style a layer. 
+    This is only needed in the case of RGB output formats, and should be used 
+    only when necessary as it is expensive to render transparent pixmap 
+    symbols onto an RGB map image.
 
 POSTLABELCACHE [true|false]
     Tells MapServer to render this layer after all labels in the cache have 
@@ -222,11 +345,23 @@ STYLEITEM [attribute]
     Item to use for feature specific styling. This is *very* experimental and 
     OGR only at the moment.
 
-SYMBOLSCALE [double]
-    The scale at which symbols and/or text appear full size. This allows for 
-    dynamic scaling of objects based on the scale of the map. If not set then 
-    this layer will always appear at the same size. Scaling only takes place 
-    within the limits of MINSIZE and MAXSIZE as described above.
+SYMBOLSCALEDENOM [double]
+    The scale at which symbols and/or text appear full size. This allows for
+    dynamic scaling of objects based on the scale of the map. If not set then
+    this layer will always appear at the same size. Scaling only takes place
+    within the limits of MINSIZE and MAXSIZE as described above.  Scale is given
+    as the denominator of the actual scale fraction, for example for a map at a
+    scale of 1:24,000 use 24000.  Implemented in MapServer 5.0, to replace the
+    deprecated SYMBOLSCALE parameter.
+
+SYMBOLSCALE [double] - deprecated
+    Since MapServer 5.0 the proper parameter to use is SYMBOLSCALEDENOM
+    instead.  The deprecated SYMBOLSCALE is the scale at which symbols and/or
+    text appear full size. This allows for dynamic scaling of objects based on
+    the scale of the map. If not set then this layer will always appear at the
+    same size. Scaling only takes place within the limits of MINSIZE and MAXSIZE
+    as described above.  Scale is given as the denominator of the actual scale
+    fraction, for example for a map at a scale of 1:24,000 use 24000.
 
 .. _TEMPLATE:
 
@@ -267,12 +402,13 @@ TOLERANCE [double]
 TOLERANCEUNITS [pixels|feet|inches|kilometers|meters|miles|dd]
     Units of the TOLERANCE_ value. Default is pixels.
 
-TRANSPARENCY [integer|alpha]
-    Sets the transparency level of all classed pixels for a given layer. The 
-    value can either be an integer in the range (0-100) or the named symbol 
-    "ALPHA". Although this parameter is named "transparency", the integer 
-    values actually parameterize layer opacity. A value of 100 is opaque and 
-    0 is fully transparent.
+TRANSPARENCY [integer|alpha] - deprecated
+    Since MapServer 5.0 the proper parameter to use is OPACITY instead.  The
+    deprecated TRANSPARENCY parameter sets the transparency level of all classed
+    pixels for a given layer.   The value can either be an integer in the range
+    (0-100) or the named symbol "ALPHA". Although this parameter is named
+    "transparency", the integer values actually parameterize layer opacity. A
+    value of 100 is opaque and 0 is fully transparent.
 
     The "ALPHA" symbol directs the mapserver rendering code to honor the 
     indexed or alpha transparency of pixmap symbols used to style a layer. 
@@ -341,4 +477,8 @@ TYPE [point|line|polygon|circle|annotation|raster|query|chart]
             COLOR 0 0 255
           END
         END
-     END                 
+      END                 
+
+UNITS [feet|inches|kilometers|meters|miles|dd|pixels|percentages]
+    Units of the layer. Percentages was added in MapServer 4.10 and is mostly
+    geared for inline features.
