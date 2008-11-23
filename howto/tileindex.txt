@@ -1,2 +1,101 @@
-<h2>What is a tileindex and how do I make one?</h2>A tileindex is a shapefile that ties together several datasets into a single layer. Therefore, you don't need to create separate layers for each piece of imagery or each county's road data; make a tileindex and let Mapserver piece the mosaic together on the fly.<br /><br />Making a tileindex is easy using <i>gdaltindex</i> for GDAL data sources (rasters) and <i>ogrtindex</i> for OGR data sources (vectors). You just run them, specifying the index file to create and the list of data sources to add to the index.<br /><br />For example, to make a mosaic of several TIFFs:<br /><pre>gdaltindex imagery.shp imagery/*.tif</pre>And to make a mosaic of vectors:<br /><pre>ogrtindex strees.shp tiger/CA/*.shp tiger/NV/*.shp</pre><br />Note: ogrtindex and gdaltindex <i><b>add</b></i> the specified files to the index. Sometimes you'll have to delete the index file to avoid creating duplicate entries.<br /><br /><br /><h2>Using the tileindex in your mapfile</h2>Using a tileindex as a layer is best explained by an example:<br /><br />LAYER<br />   NAME Roads<br />   STATUS ON<br />   TYPE LINE<br />   TILEINDEX "tiger/index.shp"<br />  
-TILEITEM "LOCATION"<br />END<br /><br />There are two items of note here: TILEINDEX and TILEITEM. TILEINDEX is simply the path to the index file, and TILEITEM specifies the field in the shapefile which contains the filenames referenced by the index. The TILEITEM will usually be "LOCATION" unless you specified the <i>-tileindex </i>option when running gdaltindex or ogrtindex.<br /><br />Two important notes about the pathnames:<br /><ul><li>The path to TILEINDEX follows the same conventions as for any other data source, e.g. using the SHAPEPATH or else being relative to the location of the mapfile.</li><li>The filenames specified on the command line to gdaltindex or ogrtindex will be used with the same conventions as well, following the SHAPEPATH or else being relative to the mapfile's location. I find it very useful to change into the SHAPEPATH directory and then run ogrtindex/gdaltindex from there; this ensures that I specify the correct pathnames.<br /></li></ul><br /><br /><h2>Tileindexes may make your map faster</h2>A tileindex is often a performance boost for two reasons: a) It's more efficient than having several separate layers. b) Mapserver will examine the tileindex to determine which datasets fall into the map's view, and will open only those datasets. This can result in a great savings for a large dataset, especially for use cases where most of the time only a very small spatial region of the data is being used. (for example, citywide maps with nationwide street imagery)<br /><br />A tileindex will not help in the case where all/most of the data sources will usually be opened anyway (e.g. street data by county, showing states or larger regions). In that case, it may even result in a decrease in performance performance, since it may be slower to open 100 files than to open one giant file.<br /><br />The ideal case for a tileindex is when the most typically requested map areas fall into very few tiles. For example, if you're showing state and larger regions, try fitting your data into state-sized blocks instead of county-sized blocks; and if you're showing cities and counties, go for county-sized blocks.<br /><br />You'll just have to experiment with it and see what works best for your use cases.<br /><br /><br />
+*****************************************************************************
+ Tileindexes: On the fly mosaics for ease and performance 
+*****************************************************************************
+
+:Author:        HostGIS 
+:Revision: $Revision$
+:Date: $Date$
+:Last Updated: 2007/08/03
+
+.. sectnum::
+
+.. contents:: Table of Contents
+    :depth: 2
+    :backlinks: top
+
+Introduction
+------------
+An introduction to tileindexes, Mapserver's method for doing on-the-fly mosaicing.
+
+What is a tileindex and how do I make one?
+------------------------------------------
+A tileindex is a shapefile that ties together several datasets into a single layer. 
+Therefore, you don't need to create separate layers for each piece of imagery or 
+each county's road data; make a tileindex and let Mapserver piece the mosaic 
+together on the fly.
+
+Making a tileindex is easy using 'gdaltindex' for GDAL data sources (rasters) and 
+'ogrtindex' for OGR data sources (vectors). You just run them, specifying the 
+index file to create and the list of data sources to add to the index.
+
+For example, to make a mosaic of several TIFFs:
+
+::
+
+    gdaltindex imagery.shp imagery/*.tif
+    
+And to make a mosaic of vectors:
+
+::
+
+    ogrtindex strees.shp tiger/CA/*.shp tiger/NV/*.shp
+    
+Note: ogrtindex and gdaltindex **add** the specified files to the index. Sometimes 
+you'll have to delete the index file to avoid creating duplicate entries.
+
+Using the tileindex in your mapfile
+-----------------------------------
+
+Using a tileindex as a layer is best explained by an example:
+
+::
+
+    LAYER
+    Â Â  NAME Roads
+       STATUS ON
+       TYPE LINE
+       TILEINDEX "tiger/index.shp"
+       TILEITEM "LOCATION"
+    END   Â Â 
+
+There are two items of note here: TILEINDEX and TILEITEM. TILEINDEX is simply 
+the path to the index file, and TILEITEM specifies the field in the shapefile 
+which contains the filenames referenced by the index. The TILEITEM will usually 
+be "LOCATION" unless you specified the *-tileindex* option when running gdaltindex 
+or ogrtindex.
+
+Two important notes about the pathnames:
+  
+  * The path to TILEINDEX follows the same conventions as for any other data
+    source, e.g. using the SHAPEPATH or else being relative to the location of
+    the mapfile.
+  * The filenames specified on the command line to gdaltindex or ogrtindex will
+    be used with the same conventions as well, following the SHAPEPATH or else
+    being relative to the mapfile's location. I find it very useful to change
+    into the SHAPEPATH directory and then run ogrtindex/gdaltindex from there;
+    this ensures that I specify the correct pathnames.
+  
+Tileindexes may make your map faster
+------------------------------------
+
+A tileindex is often a performance boost for two reasons: 
+  
+  * It's more efficient than having several separate layers. 
+  * Mapserver will examine the tileindex to determine which datasets fall into
+    the map's view, and will open only those datasets. This can result in a
+    great savings for a large dataset, especially for use cases where most of
+    the time only a very small spatial region of the data is being used. (for
+    example, citywide maps with nationwide street imagery)
+  
+A tileindex will not help in the case where all/most of the data sources will
+usually be opened anyway (e.g. street data by county, showing states or larger
+regions). In that case, it may even result in a decrease in performance, since
+it may be slower to open 100 files than to open one giant file.
+
+The ideal case for a tileindex is when the most typically requested map areas
+fall into very few tiles. For example, if you're showing state and larger
+regions, try fitting your data into state-sized blocks instead of county-sized
+blocks; and if you're showing cities and counties, go for county-sized blocks.
+
+You'll just have to experiment with it and see what works best for your use
+cases.
