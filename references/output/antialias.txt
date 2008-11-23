@@ -1,0 +1,140 @@
+<p>What needs to be done.<br>
+1. Change (or add) IMAGETYPE keyword in MAP object to PNG24 (24-bit PNG output) or JPEG<br>
+<PRE>MAP
+  ...
+  IMAGETYPE PNG24
+  ...
+END</PRE>
+
+<br>2. Add TRANSPARENCY to the LAYER object and set value to ALPHA<br>
+<PRE>MAP
+  ...
+  IMAGETYPE PNG24
+  ...
+
+  LAYER
+    ...
+    TRANSPARENCY ALPHA
+    ...
+  END
+END</PRE>
+
+<br>3. Add ANTIALIAS keyword to the STYLE object within the CLASS object within the LAYER and set value to TRUE<br>
+<PRE>MAP
+  ...
+  IMAGETYPE PNG24
+  ...
+
+  LAYER
+    ...
+    TRANSPARENCY ALPHA
+    ...
+    CLASS
+      ...
+      STYLE
+        ...
+        ANTIALIAS TRUE
+        ...
+      END
+      ...
+    END # end class
+  END # end layer
+END # end map</PRE>
+
+Tips: Don't use the SYMBOL or the SIZE keywords within the CLASS object, instead use WIDTH to specify width of line or polygon outline.  Don't use WIDTH unless you have to.  If you must define a SYMBOL, use symbol of type CARTOLINE or ELLIPSE--it supports antialiasing.</p>
+
+<p>Here's an example of a real-world mapfile:<br>
+<PRE>MAP
+  NAME 'ms101'
+  EXTENT -2198022.00 -2444920.25 2707932.00 1234545.25  # CONUS LAEA (US)
+  SIZE 640 480
+  SHAPEPATH 'data'
+  SYMBOLSET 'symbols/symbols.txt'
+
+  IMAGETYPE PNG24
+
+  PROJECTION
+    "init=epsg:2163"
+  END
+  
+  # The layer below will be rendered as 1-pixel wide, antialiased line
+  # If you'd like to change the line thickness add the WIDTH keyword
+  # in the STYLE object with a value of 3 or greater.
+  LAYER # begin antialiased country boundary (line) layer
+    NAME 'country_line'
+    DATA 'shapefile/WorldCountryBorders'
+    TYPE LINE
+    STATUS ON
+    TRANSPARENCY ALPHA
+    
+    PROJECTION
+      "init=epsg:4326"
+    END
+
+    CLASS
+      NAME 'Country Boundary'
+      STYLE
+        COLOR 96 96 96
+        ANTIALIAS TRUE
+      END
+    END
+  END # end country boundary layer
+
+  # The layer below shows one way to draw a polygon with antialiased outline
+  LAYER # begin antialiased country boundary (polygon) layer
+    NAME 'country_line'
+    DATA 'shapefile/Countries_area'
+    TYPE POLYGON
+    STATUS ON
+    TRANSPARENCY ALPHA
+    
+    PROJECTION
+      "init=epsg:4326"
+    END
+
+    CLASS
+      NAME 'Country Boundary'
+      STYLE
+        COLOR 212 212 212
+        OUTLINECOLOR 96 96 96
+        WIDTH 3
+        ANTIALIAS TRUE
+      END
+    END
+  END # end country boundary polygon layer
+
+  # The layer below shows one way to draw a polygon with antialiased outline
+  LAYER # begin antialiased state boundary (line) layer
+    NAME 'state_line'
+    DATA 'shapefile/us_states'
+    TYPE LINE
+    STATUS ON
+    TRANSPARENCY ALPHA
+    
+    PROJECTION
+      "init=epsg:4326"
+    END
+
+    CLASS
+      NAME 'State Boundary'
+      STYLE
+        COLOR 144 144 144
+        SYMBOL 'cartoline'
+        ANTIALIAS TRUE
+      END
+    END
+  END # end state line layer
+END # end of map file</PRE>
+</p>
+
+<p>Here's how the 'cartoline' symbol is defined:<br>
+<PRE>SYMBOL
+  NAME 'cartoline'
+  TYPE CARTOLINE
+  LINECAP round
+  LINEJOIN round
+  LINEJOINMAXSIZE 3
+END</PRE><br>
+
+NOTE: The examples provided here are for illustrative purposes only--keep your map file definitions simple.  Antialiasing adds computing overhead on the server and could slow/degrade its performance.  Don't use it unless you must and certainly don't use symbols with it unless you really have to.
+
