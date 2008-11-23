@@ -93,7 +93,11 @@ MapServer site, located at http://mapserver.gis.umn.edu/download.
   different vector formats.  
 * `GDAL <http://www.gdal.org/>`__: GDAL provides access to at least 
   42 different raster formats.
-    
+* `AGG <http://antigrain.com>`__: AGG (Anti-Grain Geometry) is an optional
+  dependency to enable high quality antialiased output for vector data.
+  Currently versions 2.4 and 2.5 are identical featurewise, and only vary in
+  their licence (2.4 is BSD, 2.5 is GPL)
+
 -----------------------------------------------------------------------------
  Optional External Libraries
 -----------------------------------------------------------------------------
@@ -259,6 +263,14 @@ font support.  Configure should autodetect if you have a sufficient
 libgd and TrueType support to be able to use this feature.
 
 =============================================================================
+Anti-Grain Geometry Support
+=============================================================================
+Since version 5.0 MapServer supports the AGG rendering backend.
+Download the 2.4 tarball from the antigrain website and just type make in
+the root directory. If you intend on using mapscript, you must beforehand 
+tweak the agg makefile to add -fPIC to the compiler options.
+
+=============================================================================
  OGC Support
 =============================================================================
 MapServer provides support for many `OGC <http://www.opengeospatial.org>`__ 
@@ -379,9 +391,11 @@ objects to the `PostgreSQL <http://www.postresql.org>`__ object-relational
 database. In effect, PostGIS "spatially enables" the PostgreSQL server, 
 allowing it to be used as a backend spatial database for geographic 
 information systems (GIS), much like ESRI's SDE or Oracle's Spatial extension.
+PostGIS is included in many distributions' packaging system, but you can also 
+roll your own if needed.
 
-MapServer can use PostGIS as a data source. In order to do so simply 
-use "--with-postgis" when running your configure script.
+MapServer can use PostGIS as a data source. In order to do so simply use 
+"--with-postgis" when running your configure script.
 
 ::
 
@@ -415,27 +429,6 @@ variable set to have it configure things correctly.
 
     --with-oraclespatial=/opt/oracle
 
------------------------------------------------------------------------------
- MyGIS
------------------------------------------------------------------------------
-*NOTE* This driver has not been actively maintained since the 4.0 release 
-of MapServer and is possibly broken. An excellent way to use MySQL data 
-with MapServer is the utilize the MySQL spatial (and non-spatial through VRT) 
-support available in OGR.  More details about this method can be found in 
-`this document </docs/howto/ogrmysql>`__.
-
-MapServer supports data from a non-spatially enabled 
-`MySQL <http://www.mysql.com/>`__ server.  Both 3.x and 4.x versions of MySQL 
-should work.  In order to connect to it, you need to compile MapServer 
-against the MySQL libraries by passing the "--with-mygis" argument to 
-your configure script.  It is unknown as of 5.0 whether or not this 
-driver still works.
-
-::
-
-    --with-mygis=/usr/local/bin/my_config
-
-
 =============================================================================
  Compiling
 =============================================================================
@@ -455,7 +448,7 @@ usually use:
 2. Compile GDAL/OGR.  Describing how to compile GDAL/OGR is beyond the scope
    of this document.  If you have requirements for lots of different formats,
    make sure to install those libraries first.  I often find that building 
-   up a GDAL/OGR library often takes as long as compiling MapServer itself!
+   up a GDAL/OGR library often takes as long as compiling MapServer itself!   
 
 3. Compile Proj.4.  Proj.4 is a straight-forward configure/make/make install 
    library.  
@@ -463,14 +456,15 @@ usually use:
 4. Compile libcurl.  libcurl is a straight-forward configure/make/make install
    library.
 
-5. Compile/install optional libraries.  These might include SDE, PostGIS, 
-   Oracle Spatial, Ming, PDFlib, or MyGIS.  Mix and match as you need them.
+5. Compile/install optional libraries.  These might include SDE, PostGIS,
+   Oracle Spatial, AGG, Ming, PDFlib, or MyGIS.  Mix and match as you need
+   them.
 
 6. Unpack the MapServer tarball and cd into the mapserver directory:
 
    ::
    
-      [user@host user]$ tar -zxvf mapserver-4.2.3.tar.gz
+      [user@host user]$ tar -zxvf mapserver-X.Y.Z.tar.gz
 
 7. Configure your environment using "configure".  I often place my configure
    command in its own file and changes its mode to be executable (+x) to save 
@@ -501,6 +495,7 @@ usually use:
                       --with-libiconv=/usr \ # new in 4.8
                       --with-xml2-config=/usr/bin/xml2-config \ # new in 4.10
                       --with-sos \ # new in 4.10
+                      --with-agg=/path/to/agg-2.4
                       
 
 8. Now that you have configured your build options and selected all the 
