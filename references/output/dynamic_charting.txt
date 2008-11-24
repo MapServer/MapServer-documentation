@@ -8,8 +8,6 @@
 :Date: $Date$
 :Last Updated: 2007/10/23
 
-.. sectnum::
-
 .. contents:: Table of Contents
     :depth: 2
     :backlinks: top
@@ -37,8 +35,8 @@ especially with small graphs, due to the lack of subpixel rendering functions.
 
 Output from AGG and GD Renderers
 
-.. image:: renderer-agg.png
-.. image:: gd-renderer.png
+.. image:: ../../images/renderer-agg.png
+.. image:: ../../images/gd-renderer.png
    
 
 Adding a Chart Layer to a Mapfile
@@ -52,11 +50,11 @@ layer, use
 
 ::
 
-LAYER
-...
-    TYPE CHART
+    LAYER
     ...
-END
+        TYPE CHART
+        ...
+    END
 
 No other specific keywords have been added in order to keep the number of 
 different keywords to a minimum in the mapfile syntax, therefore all the 
@@ -72,12 +70,12 @@ pixels.
 
 ::
 
-LAYER
-    TYPE CHART
-    PROCESSING "CHART_SIZE=21" # specify size of the chart for pie or bar graphs
-    #PROCESSING "CHART_SIZE=20 10" # specify width and height for bar graphs
-    ...
-END
+    LAYER
+        TYPE CHART
+        PROCESSING "CHART_SIZE=21" # specify size of the chart for pie or bar graphs
+        #PROCESSING "CHART_SIZE=20 10" # specify width and height for bar graphs
+        ...
+    END
 
 For those living on the bleeding edge, the diameter of a pie chart can be bound 
 to an attribute starting from trunk version of 2007-10-20. Details located at http://trac.osgeo.org/MapServer/ticket/2136
@@ -95,24 +93,24 @@ with attribute binding.
 
 ::
 
-LAYER
-...
-    CLASS
-        # include a NAME keyword if you want this class to be included 
-        # in the legend
-        NAME "value 1"
-        STYLE
-            # specify which value from the data source will be used as the 
-            # value for the graph
-            SIZE [attribute]
+    LAYER
+    ...
+        CLASS
+            # include a NAME keyword if you want this class to be included 
+            # in the legend
+            NAME "value 1"
+            STYLE
+                # specify which value from the data source will be used as the 
+                # value for the graph
+                SIZE [attribute]
+                ...
+            END
+        END
+        CLASS
             ...
         END
+    ...
     END
-    CLASS
-        ...
-    END
-...
-END
 
 At least 2 CLASS blocks must be specified before charting can occur (but 
 you already knew this if you want your charts to convey at least *some* 
@@ -127,23 +125,23 @@ be silently ignored. Only a subset of the styling keywords are supported:
 
 ::
 
-STYLE
-    SIZE [attribute]
-    # specify the fill color
-    COLOR r g b 
+    STYLE
+        SIZE [attribute]
+        # specify the fill color
+        COLOR r g b 
     
-    # if present will draw an outline around the corresponding bar or slice
-    OUTLINECOLOR r g b 
+        # if present will draw an outline around the corresponding bar or slice
+        OUTLINECOLOR r g b 
     
-    #specify the width of the outline if OUTLINECOLOR is present (defaults to 1)
-    WIDTH w
+        #specify the width of the outline if OUTLINECOLOR is present (defaults to 1)
+        WIDTH w
     
-    # only for pie charts. 'a' is the number of pixels the corresponding 
-    # slice will be offset relative to the center of the pie. This is useful 
-    # for emphasizing a specific value in each chart. 'b' is required by the 
-    # mapfile parser but is ignored.
-    OFFSET a b
-END
+        # only for pie charts. 'a' is the number of pixels the corresponding 
+        # slice will be offset relative to the center of the pie. This is useful 
+        # for emphasizing a specific value in each chart. 'b' is required by the 
+        # mapfile parser but is ignored.
+        OFFSET a b
+    END
 
 Pie Charts
 -------------------------------------------------------------------------------
@@ -153,7 +151,7 @@ specifically set with a PROCESSING keyword in the layer attributes:
 
 ::
 
-PROCESSING "CHART_TYPE=PIE"
+    PROCESSING "CHART_TYPE=PIE"
 
 For each shape in the layer's datasource, the STYLE SIZE is used to set 
 the relative size (value) of each pie slice, with the  angles of the slices 
@@ -161,37 +159,37 @@ that are automatically computed so as to form a full pie. For example:
 
 ::
 
-LAYER
-    NAME "Ages"
-    TYPE CHART
-    CONNECTIONTYPE postgis
-    CONNECTION "blabla"
-    DATA "the_geom from demo"
-    PROCESSING "CHART_TYPE=pie"
-    PROCESSING "CHART_SIZE=30"
-    STATUS ON
-    CLASS
-        NAME "Population Age 0-19"
-        STYLE
-            SIZE [v1006]
-            COLOR 255 244 237
+    LAYER
+        NAME "Ages"
+        TYPE CHART
+        CONNECTIONTYPE postgis
+        CONNECTION "blabla"
+        DATA "the_geom from demo"
+        PROCESSING "CHART_TYPE=pie"
+        PROCESSING "CHART_SIZE=30"
+        STATUS ON
+        CLASS
+            NAME "Population Age 0-19"
+            STYLE
+                SIZE [v1006]
+                COLOR 255 244 237
+            END
+        END
+        CLASS
+            NAME "Population Age 20-39"
+            STYLE
+                SIZE [v1007]
+                COLOR 255 217 191
+            END
+        END
+        CLASS
+            NAME "Population Age 40-59"
+            STYLE
+                SIZE [v1008]
+                COLOR 255 186 140
+            END
         END
     END
-    CLASS
-        NAME "Population Age 20-39"
-        STYLE
-            SIZE [v1007]
-            COLOR 255 217 191
-        END
-    END
-    CLASS
-        NAME "Population Age 40-59"
-        STYLE
-            SIZE [v1008]
-            COLOR 255 186 140
-        END
-    END
-END
 
 In the example above, if for a given shape we have v1006=1000, v1007=600 and 
 v1008=400 then the actual pie slices for each class will be respectively 
@@ -204,7 +202,7 @@ Bar graph drawing is set with a PROCESSING keyword in the layer attributes:
 
 ::
 
-PROCESSING "CHART_TYPE=BAR"
+    PROCESSING "CHART_TYPE=BAR"
 
 For each shape in the layer's datasource, the STYLE SIZE is used to set the 
 relative size (value) of each bar in the graph. By default, the vertical axis 
@@ -224,12 +222,12 @@ the same scale:
 
 ::
 
-PROCESSING "CHART_BAR_MINVAL=val"
-PROCESSING "CHART_BAR_MAXVAL=val"
+    PROCESSING "CHART_BAR_MINVAL=val"
+    PROCESSING "CHART_BAR_MAXVAL=val"
 
 Values in the datasource that are above CHART_BAR_MAXVAL or below 
 CHART_BAR_MINVAL will be clipped respectively to these values. If only one of 
 these directives is included, the other will be automatically adjusted for 
 each shape to include at least the origin, i.e. the graphs for all the 
-shapes will be in the same scale <i>only if </i>all the values are of the 
+shapes will be in the same scale *only if* all the values are of the 
 same sign (positive or negative).
