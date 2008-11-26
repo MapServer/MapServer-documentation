@@ -28,15 +28,41 @@ Implementation Details
 The "item" tag would have the following properties.
 
  - name: the name of the attribute to be exposed
- - format: a simple string containing the token(s) $value
+ - format: a simple string containing the token(s) $value, default format is the result of any processing
  - nullformat: string to return if value is NULL or empty (length=0)
  - uc: convert string to upper case
  - lc: convert string to lower case
- - substr: perform a perl-like substring operation by providing offset, and optionally length
- - commify: add commas to a numeric string (12345 would become 12,345)
- - escape: what type of escaping to do (default is html), permissible values would be html, url, raw
+ - substr: perform a perl-like substring operation by providing offset, and optionally length (un-implemented as of 3/13/07)
+ - commify: add commas to a numeric string (12345 would become 12,345), note, supports only North American notation at the momment
+ - escape: what type of escaping to do (default is html), permissible values would be html, url, none
+ - precision: number of decimals to retain after the decimal point
+ - pattern: regular expression that must validate (against the column value) to process the tag
 
 We could add simple case statement support at a later date but the above would more than meet my needs at the momment.  
+
+Examples
+~~~~~~~~
+
+Display no decimal places, and commify: 
+
+  [item name=foo commity=true precision=0] - 12345.6789 output as 12,345
+
+Conditional display an item if its value contains 'bar':
+
+  [item name=foo pattern=bar]
+
+Escape a value for inclusion in a URL, and convert to upper case:
+
+  [item name=foo uc=true escape=url] - "hello world" output as "HELLO%20WORLD"
+
+Apply a custom format to an item, and display a message if the item is empty:
+
+  [item name=foo format="foo=$value" nullformat="foo is not found"]
+
+Notes
+~~~~~
+
+Item tags are processed after other column tags (e.g. [foo]) so you can include substitution strings within the item tag itself.
 
 Bug ID
 ~~~~~~~~

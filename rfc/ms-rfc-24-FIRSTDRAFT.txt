@@ -6,10 +6,12 @@ MS RFC 24: Mapscript memory management
 :Author: Umberto Nicoletti
 :Contact: umberto.nicoletti@gmail.com
 :Last Edited: 2006/12/31
-:Status: Done
+:Status: Proposed
 :Version: Mapserver 5.0
-:Tracker: http://trac.osgeo.org/mapserver/ticket/2032
-:Tracker 3.2: http://trac.osgeo.org/mapserver/ticket/2442
+
+0. Warning!
+-----------
+*IMPORTANT: this is the first and obsolete version fo the rfc, which is kept here only for reference purposes and for a limited time.*
 
 1. Overview
 -----------
@@ -121,229 +123,80 @@ Please note that this issue can be difficult to reproduce, credits go to Tamas
 for pointing it out.
 
 3. Proposed implementation
---------------------------
+-------------------------- 
 To solve the problems shown at items 2.1, 2.2 and 2.3 this RCF proposes that:
 
-1. a reference counter is added to each mapserver data structure that can be manipulated directly with mapscript AND inserted/added to another object (i.e. a layerObj)
+1. each mapscript wrapper objects acting as a container or as content will have its mapscript language class augmented to mantain references to the contained objects and, when it is available, to the container object. These references allow the GC to make better informed decisions on which objects can be freed. From now on, and only for the purpose of this RFC, we will call *cache* these references.
 
-2. setters, getters and insert methods increase the counter whenever a reference to a mapserver data structure is created by mapscript
+2. getters must be wrapped so that they look up references in the *cache* first and setters/mutators must be wrapped so that they keep the references in the *cache* up to date when they are changed
 
-3. all mapscript objects be always owned by SWIG or, more exactly, by the wrapper objects (*swigCMemOwn* is always true)
-
-4. the mapserver free* methods be modified so that the the underlying data structure is freed only when the counter is zero and decrease it otherwise
-
-5. wrapper objects be augmented to mantain a reference to their parents only and prevent early garbage collection
-
-6. all arrays of structures (map->layers and so on) be changed to arrays of pointers to eliminate the need for a copy operation on insert methods
-
-By preliminary discussion it has been decided to drop the requirement to fully support object equality.
-As a result 2.1 will be implemented so that *only* the first comparison returns true.
+3. when an object has a non-null parent its memory must be *disowned* (in SWIG terms) and *owned* when it is removed from the parent
 
 This RFC should be applicable (with the necessary modifications) to all mapscript languages.
 Examples will be given for Perl or Java because of the author familiarity with these languages.
 
-The items above are described in more detail in the following subsections. Subsections 3.4 and 3.5 offer an implementation
+The three items above are described in more detail in the following subsections. Subsections 3.4 and 3.5 offer an implementation
 example for the layerObj class. Please note that in the following we limit the scope of our analysis to
 the classes/layer relationship.
 
-3.1 Implement a reference counter
-+++++++++++++++++++++++++++++++++
-The mapscript objects implementing this rfc will get a new *int* member 
-called *refcount*.
-
-Mapscript will keep read-only access to the reference counter which is useful
-for debugging
-
-The reference counter increment and decrement will be implemented by the following
-macros:
-::
-
-	#define MS_REF_INCR(obj) obj->refcount++
-	#define MS_REF_DECR(obj) (--(obj->refcount))
-
-An alternative could be to keep the reference counting in a global hashmap, keyed by memory address.
-This will eliminate the need for a change to *every* object but might present
-a greater impact on performance. In particular the hash function must be choosen carefully.
-
-http://en.wikipedia.org/wiki/Hash_table
-
-The example implementation proposed at the tracker bug #2032 adopts the first strategy.
-
-3.1.1 RefCounting in the CGI
-****************************
-The rfc should be modified to propose that the USE_MAPSCRIPT
-requirement is dropped on the following motivations:
-
-a. with the advent of use_mapscript the compilation process will be
-different if the user needs to build mapscript rather than the cgi.
-While this should not be a big deal for individuals it might place
-some extra burden on those maintaining binary distros like ms4w or
-fwtools
-
-b. having refcounting enabled does not harm the cgi which should only
-experience a tini tiny (if any at all) performance drop because of the
-extra if and ++
-
-c. we can always opt to introduce USE_MAPSCRIPT later
-
-d. it simplifies the build process maintaining exactly like it's been until now
-
-e. it simplifies the developer's life because of one less define to mantain
-
-The following is the text (now obsolete) documenting USE_MAPSCRIPT.
-
-Since this member will not be used by the CGI this RFC proposes that:
-
-1. it is wrapped by a new define USE_MAPSCRIPT
-
-2. a new *configure* option is added that is called *--enable-mapscript*
-
-3. starting from 5.0 on it will be required to specify *--enable-mapscript* to build any mapscript (with the exception of php, maybe)
-
-Example:
-::
-
-	/* CLASS OBJECT - basic symbolization and classification information */
-	typedef struct class_obj{
-	#ifndef USE_MAPSCRIPT
-		#ifdef SWIG
-		%immutable;
-		#endif /* SWIG */
-		int refcount;
-		#ifdef SWIG
-		%mutable;
-		#endif /* SWIG */
-	#endif
-		expressionObj expression; /* the expression to be matched */
-	#endif
-
-Votes count:
-
-+1: Umberto, Tamas and Daniel
-
-
-3.2 Add references to the mapscript wrapper object
+3.1 Add references to the mapscript wrapper object
 ++++++++++++++++++++++++++++++++++++++++++++++++++
 The mapscript objects will be modified so that they keep a reference to
-the other mapscript objects they are added to, like
-the C struct already does. This object can be hereafter referred to as the *parent object*.
+the other mapscript objects added to them or they are added to, exactly like
+the C struct does.
 
 In example, in the case of the layerObj the layerObj class will be extended to contain
 
 - a reference to the mapObj that contains the layer
 
-The purpose of these changes is that the hosting language knows of the relationships
-between these objects and we solve the early garbage collection problem. This is also important
-to avoid unexpected crashes in the hosting language when the layer dereferences its parent object
-(*grep 'layer->map' *.c* reports 105 usages).
+- an array of classObjs
 
-As stated earlier, it has been decided to drop the requirement to fully support object equality/identity.
+The purpose of these changes is that whenever a class is added to the layer
+the corresponding object is also added to the class array (the *cache*). The same when a classObj is returned
+as a result to getClass. By doing so the hosting language knows of the web of relations
+between these objects and we solve the early garbage collection problem.
 
-This item will be implemented in a second phase, after the basic refcounting is in place. Also the rfc proposes to implement a parent not-null check for the layer operations that use the parent map reference.
+The problem of object equality/identity is also resolved if we modify the getClass method to look first
+in the class array (the *cache*) and only after in the C data structures, as shown above.
 
-3.3 Change arrays of structures in arrays of pointers
-+++++++++++++++++++++++++++++++++++++++++++++++++++++
-This change will occurr at the C-level and is quite an undertaking. Initially and for the purpose of
-this RFC the size of the arrays will still be fixed as it is now. The modification of the code
-will be made a way that future RFC addressing dynamically-sized arrays can build upon.
-
-The strategy is as follows:
-
-1. all accesses to array elements could be wrapped by a convenient C macro. In this way implementation is abstracted away from the client code
-2. struct definitions and free/init methods will be modified to implement the new feature
-3. the macro will be modified to suit the implementation at previous item
-
-To implement item 1 we will use a perl pie like the following:
-::
-
-	perl -pi -e "s/([mM])ap->layers\[(.*?)\]\]\./GET_LAYER(\1ap, \2\])->/g" *.c
-	perl -pi -e "s/([mM])ap->layers\[(.*?)\]\./GET_LAYER(\1ap, \2)->/g" *.c
-	perl -pi -e "s/([mM])ap->layers\[(.*?)\]\]/GET_LAYER(\1ap, \2\])/g" *.c
-	perl -pi -e "s/([mM])ap->layers\[(.*?)\]/GET_LAYER(\1ap, \2)/g" *.c
-	perl -pi -e "s/dst->layers\[(.*?)\]\./GET_LAYER(dst, \1)->/g" *.c 
-	perl -pi -e "s/src->layers\[(.*?)\]\./GET_LAYER(src, \1)->/g" *.c
-	perl -pi -e "s/dst->layers\[(.*?)\]/GET_LAYER(dst, \1)/g" *.c 
-	perl -pi -e "s/src->layers\[(.*?)\]/GET_LAYER(src, \1)/g" *.c
-
-and this is the macro that will be used:
-::
-
-	#define GET_LAYER(map, pos) map->layers[pos]
-	
-
-This will leave only very few occurrences (about 4 or 5) out that must be edited by hand. The same approach will be used with
-other arrays of structures (classes and styles).
-
-This item has been implemented for the classes without using the GET_CLASS macro.
-
-3.4 Keep parent references and C internal structure in sync
-+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+3.2 Keep *cache* and C internal structure in sync
++++++++++++++++++++++++++++++++++++++++++++++++++
 For the mechanism described at the previous item to work some functions in the mapscript objects and in the native code must
 be modified so that the mapscript objects and the C data structures stay in sync.
 
 Returning to the example of the layerObj the *insertClass*, *getClass* and *removeClass* methods
-will have to be modified to keep the parent reference in sync with the C data structures.
+will have to be modified to keep the *cache* in sync with the C data structures.
 The current methods will be modified by using specific typemaps.
 The constructor will also need to be modified to store the reference to the mapObj.
 Eventually also the native code actually performing the copy-and-insert operation must be modified to
 only perform the insert operation (*layerobject.c*, line 52, function *msInsertClass*).
 
-The mapscript API will be backward compatible.
+The API will be kept backward compatible whenever possible.
 
-3.5 Destructors obey the reference counter
-++++++++++++++++++++++++++++++++++++++++++
-The various free* methods must check the counter before freeing memory. This will be implemented in the
-native code as in the following example:
-::
+3.3 Disown memory allocated by swig for objects with non-null parents
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+The patch suggested by Tamas (bug 1743) must be extended so that memory is disowned also when a layer is inserted
+into a map and ported to all mapscript languages.
 
-	void msFreeMap(mapObj *map) {
-		if(!map) return;
-		if ( MS_REF_DECR(obj) > 0) return;
-		// go on destroying the object as usual
-	}
-
-This will ensure that children will not be freed in case the parent is garbage collected
-before them. To avoid that the parent attempts to double free some of its children:
-
-a. if the parent is destroyed before its children the parent should NULLify its pointer in the children
-
-b. viceversa, when the children are GC'ed earlier than their parent, they must NULLify their pointers in the parent (we are evaluating whether this could ever happen once the parent reference is in place)
-
-3.6 Always give object ownership to SWIG
-++++++++++++++++++++++++++++++++++++++++
-For the reference count to work all object ownership must be given to SWIG. This
-is quite different from how it is today. The change however is straightforward
-because SWIG will acquire object ownership by default and is only a matter of removing
-all *%newobject* statements in the swig interface files.
-
-At the moment there are 58 *%newobject* statements.
-
-C# must also change the following three lines in *csmodule.i*:
-::
-
-	csharp/csmodule.i:375:  if (map != null) this.swigCMemOwn = false;$excode
-	csharp/csmodule.i:379:  if (layer != null) this.swigCMemOwn = false;$excode
-	csharp/csmodule.i:383:  if (parent_class != null) this.swigCMemOwn = false;$excode
-
-or drop the contructor customization altogether.
-
-3.7 JAVA: mapscript code example for layerObj
+3.4 JAVA: mapscript code example for layerObj
 +++++++++++++++++++++++++++++++++++++++++++++
-
-Tamas has proposed a more object oriented approach to this problem, which can be adopted for those languages that support OOrientation.
 
 Code example for layerObj (*javamodule.i*):
 ::
 
 	/*
 	   Modified constructor according to:
+	   - bug#1743, item 3.3
 	   - cache population and sync, item 3.2
 	*/
 	%typemap(javaconstruct) layerObj(mapObj map) %{ {
 		this($imcall, true);
 		if (map != null) {
-			/* Store parent reference, item 3.2 */
+			this.swigCMemOwn = false;
+			/* Store reference in field member*/
 			this.map=map;
+			/* Add myself to the layers array of the map */
+			map.layers[this.getIndex()];
 		}
 	}
 	%}
@@ -352,27 +205,53 @@ Code example for layerObj (*javamodule.i*):
 		// call the C API, which needs to be modified
 		// so that the classObj is not copied anymore
 		int actualIndex=$jnicall;
-		/* Store parent reference, item 3.2 */
-		classobj.layer=this;
+		classes[actualIndex]=classobj;
+		// disown the classObj just inserted, item 3.3
+		classobj.swigCMemOwn=false;
 		return actualIndex;
 	}
+	
+	%typemap(javaout) classObj *getClass {
+			if (classes[i]!=null)
+				return classes[i];
 			
+			long cPtr = $jnicall;
+			classObj result = (cPtr == 0) ? null : new classObj(cPtr, false);
+			
+			if (result!=null)
+				classes[i]=result;
+			return result;
+	}
+		
 	%typemap(javacode) layerObj %{
-		/* parent reference, item 3.2 */
+		/* an array of classes to keep referenced objects alive and prevent
+		   their garbage collection, item 3.1
+		*/
+		classObj[] classes=new classObj[mapscriptConstants.MS_MAXCLASSES];
+		/* same for the map, item 3.1
+		*/
 		mapObj map=null;
 	%}
 	
-	%typemap(javacode) classObj %{
-		/* parent reference, item 3.2 */
-		layerObj layer=null;
-	%}
 
-
-3.8 PERL: mapscript code example for layerObj
+3.5 PERL: mapscript code example for layerObj
 +++++++++++++++++++++++++++++++++++++++++++++
 Code example for layerObj (*plmodule.i*):
 ::
 
+	%feature("shadow") ~mapObj() %{
+	sub DESTROY {
+		return unless $_[0]->isa('HASH');
+		my $self = tied(%{$_[0]});
+		return unless defined $self;
+		delete $ITERATORS{$self};
+		if (exists $OWNER{$self}) {
+			mapscriptc::delete_mapObj($self);
+			delete $OWNER{$self};
+		}
+		delete $mapscript::MAPLAYERS{$self};
+	}
+	%}
 	
 	%feature("shadow") layerObj(mapObj *map)
 	%{
@@ -381,8 +260,9 @@ Code example for layerObj (*plmodule.i*):
 		my $self = mapscriptc::new_layerObj(@_);
 		bless $self, $pkg if defined($self);
 		if (defined($_[0])) {
-			# parent reference
+			$self->DISOWN();
 			mapscript::LAYER_ADD_MAP_REF($self, $_[0]);
+			mapscript::MAP_ADD_LAYER_REF($_[0], $self);
 		}
 		return $self;
 	}
@@ -395,8 +275,10 @@ Code example for layerObj (*plmodule.i*):
 		my $self = tied(%{$_[0]});
 		return unless defined $self;
 		delete $ITERATORS{$self};
-		mapscriptc::delete_layerObj($self);
-		# remove parent reference
+		if (exists $OWNER{$self}) {
+			mapscriptc::delete_layerObj($self);
+			delete $OWNER{$self};
+		}
 		delete $mapscript::LAYERMAP{$self};
 	}
 	%}
@@ -407,6 +289,28 @@ Code example for layerObj (*plmodule.i*):
 			my ($layer, $map)=@_;
 			#print "MAP key=" . tied(%$layer) . "\n";
 			$LAYERMAP{ tied(%$layer) }=$map;
+		}
+		
+		%MAPLAYERS={};
+		sub MAP_ADD_LAYER_REF {
+			my ($map, $layer)=@_;
+			my $layers=$MAPLAYERS{ tied(%$map) };
+			if (defined($layers)) {
+				$layers->{$layer->{index}}=$layer;
+			} else {
+				$layers={};
+				$layers->{$layer->{index}}=$layer;
+			}
+			$MAPLAYERS{tied(%$map)}= $layers;
+		}
+		
+		sub map_get {
+			my $layer=@_[0];
+			#print "GET MAP key" . $layer . "\n";
+			if ( $LAYERMAP{ $layer } ) {
+				return \%{$LAYERMAP{$layer}};
+			}
+			return mapscriptc::layerObj_map_get(@_);
 		}
 		
 		##################
@@ -422,12 +326,16 @@ Code example for layerObj (*plmodule.i*):
 		}
 	%}
 
+Note: this example implements a bidirectional *cache* (map->layers and layer->map), but this
+does not play well with Perl reference-count based GC and will cause memory leaks.
+To address this limitation Perl mapscript will only implement the layer->map or child->parent side of the
+*cache* as described in 4.3.
 
 4. Implementation plan
 ----------------------
 It seems that for most mapscripts (java, csharp, perl and python) there
 is enough functionality in SWIG to implement the features described in this RFC.
-For ruby we'll probably have to go a different route and implement the *%trackobjects* feature to achieve 3.2.
+For ruby we'll probably have to go a different route and implement the *%trackobjects* feature.
 As of Tcl I currently don't know if it's possible.
 
 The two following section describe in detail the required SWIG-mapscript
@@ -449,7 +357,7 @@ Swig provides the equivalent of *%javacode* for the following languages:
 5. swig-Tcl doesn't support a %tclcode construct
 
 This swig construct will be used to inject in the wrapper the definition for
-the references described in 3.2 and the wrapper methods.
+the references described in 3.1 and the wrapper methods.
 
 4.1 Checking SWIG-Mapscript capabilites: constructor customization
 ++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
@@ -459,7 +367,8 @@ is only available in csharp and java.
 It should be possible to simulate its behaviour with *%pythonprepend* or *%pythonprepend*
 in python and with *%perlcode* or *%feature("shadow")* in perl.
 
-This swig construct will be used to populate parent backreferences.
+This swig construct will be used to disown memory allocated by SWIG when the object has
+a reference to a valid parent (bug 1743).
 
 4.2 Java and C-Sharp
 ++++++++++++++++++++
@@ -467,9 +376,7 @@ SWIG-Java and SWIG-CSharp share a common ground and are therefore very similar.
 The names of SWIG-Java constructs can be roughly translated into their C-Sharp equivalents by changing the *java*
 prefix into *cs* (i.e. *javacode* in *cscode*, *javaconstruct* in *csconstruct* and *javaout* in *csout*).
 
-The implementation should follow exactly this RCF or be based on the proposal made by Tamas in the last discussion thread.
-
-*Note* : as of Jan 2008 Tamas decided to write his own implementation of RFC24 for C#
+The implementation should follow exactly this RCF.
 
 4.3 Perl
 ++++++++
@@ -477,28 +384,38 @@ The implementation should follow exactly this RCF or be based on the proposal ma
 As in the example above most of the perl customization can be done
 with the use of the *shadow* construct.
 
-The implementation will follow this RFC exactly.
+The implementation will differ from the RFC in the following manners:
+
+1) the Perl wrapper will mantain references only in one direction (layer -> map, or generally
+contained -> container)
+and not both because of the implementation of the Perl GC (http://www.perl.com/doc/manual/html/pod/perlobj.html).
+If we had circular references this *island* of objects would normally never be garbage collected.
+
+2) to wrap the *layerObj->{map}* invocation we must edit the *mapscript.pm* file manually.
+To overcome this limitation and automate find/replace we will use perl *pies* in the Makefile
+like the following two:
+::
+
+	perl -pi -e "s/\*swig_map_get = \*mapscriptc::layerObj_map_get/\*swig_map_get = \*mapscript::map_get/" mapscript.pm
+	perl -pi -e "s/\*getMap = \*mapscriptc::layerObj_getMap/\*swig_map_get = \*mapscript::map_get/" mapscript.pm
+
 
 4.4 Python
 ++++++++++
 Python enjoys first-grade support in SWIG so the RFC should be implemented exactly
 as described.
+Differently from Perl Python's GC can find and free cycles of objects (http://arctrix.com/nas/python/gc/).
 
 4.5 Ruby
 ++++++++
 Needs investigation, probably we'll have to use rb_gc_* funtions to mark objects
 and prevent their garbage collection or use *%trackobjects*.
-Ruby will not implement this RFC as of item 3.2.
+Ruby will not implement this RFC.
 
 4.6 Tcl
 +++++++
 Needs investigation and a Tcl expert.
-At the time of this writing Tcl will probably not implement this RFC as of item 3.2.
-
-4.7 PHP
-+++++++
-PHP mapscript does not rely on SWIG, but since most of the code is native it should be
-possibile to adopt this RFC.
+At the time of this writing Tcl will probably not implement this RFC.
 
 5.1 Implementation checklist
 ----------------------------
@@ -507,21 +424,22 @@ There is a table for each mapscript object and when a language has implemented t
 for a given object the mantainer will populate the relative cell with one of the following
 marks:
 
-- < if the child->parent reference has been implemented
+- > if *cache* and wrappers have been implemented in the parent->child direction
 
-- a plus sign (+) if object has had the reference counter increased (under the CNT=Counter column)
+- < if *cache* and wrappers have been implemented in the child->parent direction
 
-- a minus sign (-) if object has had the reference counter decreased  (under the CNT=Counter column)
+- <> if *cache* and wrappers have been implemented in both directions
 
-- =1 if the reference counter has been reset to 1  (under the CNT=Counter column)
+- a plus sign (+) if object has been disowned
+
+- a minus sign (-) if object has been owned
 
 5.2 mapObj
 ++++++++++
 
-=====================  =======  =============  ============  ============  =============  ==========  =============
-Method            	 CNT        java         C#             perl         python         tcl         ruby
-=====================  =======  =============  ============  ============  =============  ==========  =============
-mapObj (contructor)       \+
+=====================  =============  ============  ============  =============  ==========  =============
+Method            	       java         C#             perl         python         tcl         ruby
+=====================  =============  ============  ============  =============  ==========  =============
 getSymbolset
 getFontset
 getLabelcache
@@ -536,10 +454,10 @@ getLegend
 getQuerymap
 getWeb
 getConfigoptions
-insertLayer               \+        <                             <              <
-removeLayer               \-
-getLayer                  \+        <                             <              <
-getLayerByName            \+        <                             <              <
+insertLayer
+removeLayer
+getLayer
+getLayerByName
 prepareImage
 setOutputFormat
 draw
@@ -552,49 +470,48 @@ nextLabel
 getOutputFormatByName
 appendOutputFormat
 removeOutputFormat
-clone                     =1
-=====================  =======  =============  ============  ============  =============  ==========  =============
+=====================  =============  ============  ============  =============  ==========  =============
 
 5.3 layerObj
 ++++++++++++
 
-=======================  =======  =============  ============  ============  =============  ==========  =============
-Method            	   CNT        java         C#             perl         python         tcl         ruby
-=======================  =======  =============  ============  ============  =============  ==========  =============
-layerObj (constructor)     \+         <                             <              <
+=======================  =============  ============  ============  =============  ==========  =============
+Method            	         java         C#             perl         python         tcl         ruby
+=======================  =============  ============  ============  =============  ==========  =============
+layerObj (constructor)
 getMap
 getOffsite
 getMetadata
-cloneLayer                 =1
-insertClass                \+         <                             <              <
-removeClass                \-
+cloneLayer
+insertClass
+removeClass
 nextShape
 getFeature
 getShape
 getResult
-getClass                   \+         <                             <              <
+getClass
 getResults
 addFeature
 getExtent
-=======================  =======  =============  ============  ============  =============  ==========  =============
+=======================  =============  ============  ============  =============  ==========  =============
 
 5.4 classObj
 ++++++++++++
 
-=======================  =======  =============  ============  ============  =============  ==========  =============
-Method            	   CNT        java         C#             perl         python         tcl         ruby
-=======================  =======  =============  ============  ============  =============  ==========  =============
-classObj (constructor)     \+         <                             <              <
+=======================  =============  ============  ============  =============  ==========  =============
+Method            	         java         C#             perl         python         tcl         ruby
+=======================  =============  ============  ============  =============  ==========  =============
+classObj (constructor)
 getLabel
 getMetadata
 getLayer
-clone                      =1
+clone
 createLegendIcon
 drawLegendIcon
-getStyle                   \+
-insertStyle                \+
-removeStyle                \-
-=======================  =======  =============  ============  ============  =============  ==========  =============
+getStyle
+insertStyle
+removeStyle
+=======================  =============  ============  ============  =============  ==========  =============
 
 5.5 webObj
 ++++++++++
@@ -614,10 +531,10 @@ getMetadata
 For styleObjs it is enough to disown them when they are fetched from the container object.
 It is not necessary to add the reference pointing back to the container object.
 
-=======================  =======  =============  ============  ============  =============  ==========  =============
-Method            	   CNT          java         C#             perl         python         tcl         ruby
-=======================  =======  =============  ============  ============  =============  ==========  =============
-styleObj (constructor)     \+
+=======================  =============  ============  ============  =============  ==========  =============
+Method            	         java         C#             perl         python         tcl         ruby
+=======================  =============  ============  ============  =============  ==========  =============
+styleObj (constructor)
 setColor
 getColor
 getBackgroundcolor
@@ -628,8 +545,8 @@ getMincolor
 setMincolor
 getMaxcolor
 setMaxcolor
-clone                      =1
-=======================  =======  =============  ============  ============  =============  ==========  =============
+clone
+=======================  =============  ============  ============  =============  ==========  =============
 
 5.6 labelObj
 ++++++++++++
@@ -741,77 +658,41 @@ toShape
 +++++++++++++++++
 For symbolsetObjs it is not necessary to add the reference pointing back to the map.
 
-==========================  =======  =============  ============  ============  =============  ==========  =============
-Method            	      CNT          java         C#             perl         python         tcl         ruby
-==========================  =======  =============  ============  ============  =============  ==========  =============
+==========================  =============  ============  ============  =============  ==========  =============
+Method            	           java         C#             perl         python         tcl         ruby
+==========================  =============  ============  ============  =============  ==========  =============
 symbolsetObj (constructor)
-setSymbol(symbolObj value)   
-getSymbol                      \+
-getSymbol(int i)               \+
-getSymbolByName                \+
+setSymbol(symbolObj value)
+getSymbol
+getSymbol(int i)
+getSymbolByName
 index
-appendSymbol                   \+
-removeSymbol                   \-
-==========================  =======  =============  ============  ============  =============  ==========  =============
+appendSymbol
+removeSymbol
+==========================  =============  ============  ============  =============  ==========  =============
 
 5.14 symbolObj
 +++++++++++++++++
 For symbolObjs it is enough to set ownership properly when they are fetched from or added to the container object.
 It is not necessary to add the reference pointing back to the container object.
 
-==========================  =======  =============  ============  ============  =============  ==========  =============
-Method            	      CNT         java         C#             perl         python         tcl         ruby
-==========================  =======  =============  ============  ============  =============  ==========  =============
-symbolObj (constructor)       \+   
+==========================  =============  ============  ============  =============  ==========  =============
+Method            	           java         C#             perl         python         tcl         ruby
+==========================  =============  ============  ============  =============  ==========  =============
+symbolObj (constructor)
 setPoints
 getPoints
 getImage
 setImage
-==========================  =======  =============  ============  ============  =============  ==========  =============
+==========================  =============  ============  ============  =============  ==========  =============
 
 6. Open issues
 --------------
-The following issues should be discussed after this rfc has been adopted/implemented.
-
-6.1 Multiple owners for an object
-+++++++++++++++++++++++++++++++++
-It is the case of  layer that is added to more than one map. This should be prohibited
-because the layer has only one parent reference.
-On insertion the code should check whether the C parent reference is not null and in that
-case raise a *errorObj* which will be transformed by the hosting language in an exception.
-
-Workaround: the user should instead clone the object and the add the clone to the second map.
-
-7. API Compatibility
---------------------
-It is a top priority of this RFC to preserve the investment made by mapscript users by mantaining the API backwards compatible in both terms of method signatures and usage (i.e. order of invocation, types, return codes, etc).
-
-If there will be any exception to this rule it will have to be justified and be described under this section.
+Fetching an object from a map and then adding it to another map is likely to cause a segfault.
+The solution would be to remove it from the first map and then add it the second or implement a
+check before updating the reference to its parent and bail out (throw and exception).
 
 7. Status
 ---------
 RFC opened for comments on Jan, the 10th 2007 with a post on mapserver-dev.
-
 RFC undergoing revision after discussion on mapserver-dev.
-
-New revision published on mapserver web.
-
-RFC adopted with voting closed on April 4, 2007:
-
-+1: Umberto, Pericles S. Nacionales, Howard Butler, Stephen Woodbridge
-
-+0: Frank Warmerdam
-
-8. Activity
------------
-The bug#2032 will be used to track activity related to this rfc.
-
-2/20/2007: attached patch that converts map->layers in array of pointers with dynamic allocation (item 3.3)
-
-2/24/2007: vote proposed on mapserver-dev
-
-4/4/2007: RFC Adopted, undergoing implementation
-
-1/10/2008: RFC implementation completed
-
-
