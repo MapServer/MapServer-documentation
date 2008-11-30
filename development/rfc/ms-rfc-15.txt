@@ -1,75 +1,140 @@
 .. _rfc15:
 
 ======================================================================
-MS RFC 15: Support for thread neutral operation of mapserver/mapscript
+MS RFC 15: Support for thread neutral operation of MapServer/MapScript
 ======================================================================
 
 :Date:  2006/05/01
 :Author: Tamas Szekeres
 :Contact: szekerest at gmail.com
 :Last Edited: $Date$
-:Status: Preliminary
+:Status: Draft
 :Version: Not assigned yet
 
 1. Overview
 -----------
 
-By this time the core mapserver code has become widely used by many of the different application models. The extended usage of mapscript causes the possibility that the execution of the code is carried out by multiple threads, standing a fair chance portions of the code being called by the different threads simultaneously. The threading model of the application may fall beyond the control of the mapserver code, at the worst case even the host process of the application is beyond the programmer's scope. For example a WEB mapping application may be executed by a pre-existing host process ensuring to serve the user requests and calling the mapserver code by different threads from a pool of threads. The usage of processwide global variables and resources within mapserver may require the need to serialize of the access to the variable by the multiple threads by using locks. The current approach uses processwide locks to ensure the safe access to these variables causing performance degradation in multithreaded environments. Currently this behaviour may be controlled by the USE_THREAD compilation switch.
+By this time the core MapServer code has become widely used by many of the 
+different application models. The extended usage of MapScript causes the 
+possibility that the execution of the code is carried out by multiple 
+threads, standing a fair chance portions of the code being called by the 
+different threads simultaneously. The threading model of the application 
+may fall beyond the control of the MapServer code, at the worst case even 
+the host process of the application is beyond the programmer's scope. For 
+example a web mapping application may be executed by a pre-existing host 
+process ensuring to serve the user requests and calling the MapServer code 
+by different threads from a pool of threads. The usage of process-wide global 
+variables and resources within MapServer may require the need to serialize 
+of the access to the variable by the multiple threads by using locks. The
+current approach uses process-wide locks to ensure the safe access to these 
+variables causing performance degradation in multithreaded environments. 
+Currently this behavior may be controlled by the USE_THREAD 
+compilation switch.
 
 2. Purpose
 ----------
 
-The purpose of this change is to get a significant performance boost by removing "big locks" from the code. It would add a significal improvement of the applications having high number of multiple threads executed simultaneously. This activity could bring in a more feasible support for some application models not really aimed at now like Microsoft ASP.NET. May result in higher clarity of the code by determining the code segments affected by multiple threads.
+The purpose of this change is to get a significant performance boost by 
+removing "big locks" from the code. It would add a significant improvement of 
+the applications having high number of multiple threads executed 
+simultaneously. This activity could bring in a more feasible support for 
+some application models not really aimed at now like Microsoft ASP.NET. May 
+result in higher clarity of the code by determining the code segments 
+affected by multiple threads.
 
 2. General principles of the solution
 -------------------------------------
 
-This RFC is in a special situation since wide area of the code is to be reviewed and extensive developer support is needed. The proposal will reach the proposed state only if all of the open issues are classified and  properly handled. 
-Changing of the modules of mapserver should be in accordance of the primary maintainer. The mainatiner may reserve the right to commit the changes proposed by this RFC during the implementation phase. Otherwise the primary author Tamas Szekeres will be resposible to make the changes.
-The problems of the current implementation and the proposed changes will be enumerated later. To handle these issues the following options will be considered ordering by the expediency. The latter is the less expedient.
+This RFC is in a special situation since wide area of the code is to be 
+reviewed and extensive developer support is needed. The proposal will reach 
+the proposed state only if all of the open issues are classified and  
+properly handled. 
+
+Changing of the modules of MapServer should be in accordance of the 
+primary maintainer. The maintainer may reserve the right to commit the 
+changes proposed by this RFC during the implementation phase. Otherwise the 
+primary author Tamas Szekeres will be responsible to make the changes.
+
+The problems of the current implementation and the proposed changes will be 
+enumerated later. To handle these issues the following options will be 
+considered ordering by the expediency. The latter is the less expedient.
 
 2.1 Not changing the code (Considering as safe without locks)
 -------------------------------------------------------------
 
-Some of the processwide global variables store invariant data - like enumerations - having been initialized at compilation time. Since these variables can be simultaneously read by multiple threads there is nothing to be done and even the locks should be removed - if exist - ensuring the thread isolation to be realized. Might be redeclared as "static const".
+Some of the process-wide global variables store invariant data - like 
+enumerations - having been initialized at compilation time. Since these 
+variables can be simultaneously read by multiple threads there is nothing 
+to be done and even the locks should be removed - if exist - ensuring the 
+thread isolation to be realized. Might be redeclared as "static const".
 
 2.2 Retaining the variable, but reconsidering the initialization code
 ---------------------------------------------------------------------
 
-Some of the global variables store invariant data but the initial value is assigned at run time during the module initialization phase. In this situation we should ensure that the initialization will be done before the subsequent access is receivable to prevent from the possibility of race conditions. msSetup() is designated as a suitable place to make module level initialization of the variables. Mapscript language bindings are encouraged to provide calling msSetup automatically at module startup. The current locking strategy should be reviewed and the locks should be restricted to the initialization code.
+Some of the global variables store invariant data but the initial value is 
+assigned at run time during the module initialization phase. In this situation 
+we should ensure that the initialization will be done before the subsequent 
+access is receivable to prevent from the possibility of race conditions. 
+msSetup() is designated as a suitable place to make module level initialization 
+of the variables. Mapscript language bindings are encouraged to provide 
+calling msSetup automatically at module startup. The current locking 
+strategy should be reviewed and the locks should be restricted to the 
+initialization code.
 
 2.3 Rewriting the code to eliminate the need of the global variable
 -------------------------------------------------------------------
 
-If the global variable could be eliminated by changing the code structure we will consider to make these changes. The locks related to these variables should be removed.
+If the global variable could be eliminated by changing the code structure we 
+will consider to make these changes. The locks related to these variables 
+should be removed.
 
 2.4 Using thread local variable instead of the global one
 ---------------------------------------------------------
 
-When the usage of the global variable cannot be eliminated easily we will consider to use thread local variables instead. To implement thread local variables, theoretically we have at least 2 options to do:
+When the usage of the global variable cannot be eliminated easily we will 
+consider to use thread local variables instead. To implement thread local 
+variables, theoretically we have at least 2 options to do:
 
-1. By modifying the variable declaration we could use storage specifiers like Microsoft specific "__declspec(thread)" or "__thread" on the POSX environments.
-2. By implementing the allocation of the thread local memory utilizing the platform dependent TLS APIs like the Windows TLS or the unix Pthreads implementation.
+1. By modifying the variable declaration we could use storage specifiers like 
+   Microsoft specific "__declspec(thread)" or "__thread" on 
+   the POSX environments.
+2. By implementing the allocation of the thread local memory utilizing the 
+   platform dependent TLS APIs like the Windows TLS or the unix 
+   Pthreads implementation.
 
-The first one is not applicable for Mapserver since the Microsoft implementation does not allow delay loading of the dll containing variables declared with __declspec(thread). 
-The second approach is applicable, however rewriting the existing code may be more difficult. GDAL has a sample implementation for it might be taken over.  
+The first one is not applicable for Mapserver since the Microsoft 
+implementation does not allow delay loading of the dll containing variables 
+declared with __declspec(thread). 
+
+The second approach is applicable, however rewriting the existing code may be 
+more difficult. GDAL has a sample implementation for it might be taken over.  
 
 2.5 Not changing the code (Marking as safe with locks, will be reconsidered later)
 ----------------------------------------------------------------------------------
 
-Some of the mapserver code and/or the related external libraries may not be modifyed easily and will be protected by locks in this phase of the realization. These issues will be kept open and the solution for the thread isolation might be reconsidered later. The open issues will be enumerated and documented along with the mapserver source files and the thread safety FAQ
+Some of the MapServer code and/or the related external libraries may not be 
+modified easily and will be protected by locks in this phase of the 
+realization. These issues will be kept open and the solution for the thread 
+isolation might be reconsidered later. The open issues will be enumerated and 
+documented along with the MapServer source files and the thread safety FAQ
 
 http://mapserver.gis.umn.edu/docs/faq/thread_safety
  
 2.6 Not changing the code (Marking as unsafe, will be deprecated and unsupported)
 ---------------------------------------------------------------------------------
 
-Having lack of support of portions of the existing code may keep from changing the code easily. These portions of the code will not be modified in this phase of the realization. These issues will be kept open and might be reconsidered later. The open issues will be enumerated and documented along with the mapserver source files and the thread safety FAQ.
+Having lack of support of portions of the existing code may keep from changing 
+the code easily. These portions of the code will not be modified in this 
+phase of the realization. These issues will be kept open and might be 
+reconsidered later. The open issues will be enumerated and documented 
+along with the MapServer source files and the thread safety FAQ.
 
 3. Issues of the Mapserver/Mapscript code
 -----------------------------------------
 
-This chapter will enumerate the sections of the exisiting code should be reconsidered according to the options mentioned previously. The line numbers may slightly change according to the developers work.
+This chapter will enumerate the sections of the existing code should be 
+reconsidered according to the options mentioned previously. The line 
+numbers may slightly change according to the developers work.
 
 ::
 
@@ -77,7 +142,9 @@ This chapter will enumerate the sections of the exisiting code should be reconsi
 
 This variable is set in eppreset using the following code
 { union { long i; char c[4]; } u; u.i=1; REVERSE=(u.c[0]==0); }
-should be set during the initialization or by the makefile as a predefinied constant. Also the mapserver configure script may include byte order detection. This constant might be used by other modules.
+should be set during the initialization or by the makefile as a predefined 
+constant. Also the MapServer configure script may include byte order 
+detection. This constant might be used by other modules.
 
 SDL: This constant is limited to epplib.c...
 
@@ -85,7 +152,9 @@ SDL: This constant is limited to epplib.c...
 
  mapcpl.c(57):static char     szStaticResult[MS_PATH_BUF_SIZE]; 
 
-FrankW: In fact this code carried over from GDAL was later remodelled in GDAL.  It looks like msGetBasename() is only used in a few places and we should remodel those to avoid using a static buffer.
+FrankW: In fact this code carried over from GDAL was later remodelled in GDAL.  
+It looks like msGetBasename() is only used in a few places and we should 
+remodel those to avoid using a static buffer.
 
 ::
 
@@ -165,7 +234,7 @@ Imagemap support is not widely used, will be handled as 2.6 for now. Still waiti
  mapio.c(74):static msIOContext current_stdout_context;
  mapio.c(75):static msIOContext current_stderr_context;
 
-FrankW: Currently there is only one process wide set of "io handlers" for io.  This will almost certainly need to change at some point to be thread local in some fashion.  I hope to address this when I work on the redirectable OWS services accessable from mapscript this spring.
+FrankW: Currently there is only one process wide set of "io handlers" for io.  This will almost certainly need to change at some point to be thread local in some fashion.  I hope to address this when I work on the redirectable OWS services accessable from MapScript this spring.
 
 ::
 
@@ -189,7 +258,8 @@ FrankW: Currently there is only one process wide set of "io handlers" for io.  T
  maplexer.c(1887):static int yy_start_stack_depth = 0;
  maplexer.c(1888):static int *yy_start_stack = 0;
 
-According to Steve's suggestions we will address this with newer versions flex and bison invoked appropriately.
+According to Steve's suggestions we will address this with newer versions 
+flex and bison invoked appropriately.
 
 ::
 
@@ -233,7 +303,8 @@ TODO
  mapparser.c(491):static const yysigned_char yycheck[] =
  mapparser.c(519):static const unsigned char yystos[] =
 
-According to Steve's suggestions we will address this with newer versions flex and bison invoked appropriately.
+According to Steve's suggestions we will address this with newer versions 
+flex and bison invoked appropriately.
 
 ::
 
@@ -276,7 +347,8 @@ TODO
 
  mapserv.c(1196):        static int nRequestCounter = 1;
 
-Considering safe without locks (2.1). The mapserv application does not involved in multiple threads. 
+Considering safe without locks (2.1). The :ref:`mapserv` application does not 
+involved in multiple threads. 
 
 ::
 
@@ -474,7 +546,11 @@ TODO
 
 4. Considerations for the future development
 --------------------------------------------
-Developers should keep in mind that their code may be called by multiple threads simultaneously. Using processwide global variables modified at run time will be discouraged in the future. If the usage is inevitable the variables should be protected by using mutual exclusion properly depending on the USE_THREAD constant.
+Developers should keep in mind that their code may be called by multiple 
+threads simultaneously. Using process-wide global variables modified at run 
+time will be discouraged in the future. If the usage is inevitable the 
+variables should be protected by using mutual exclusion properly depending 
+on the USE_THREAD constant.
 
 5. Backwards compatibility issues
 ---------------------------------
@@ -485,11 +561,14 @@ The compatibility of the mapscript interface might be kept.
 Bug ID
 ------
 
-The following bug is added as a primary source for collecting the developer and user response. Nevertheless the mapserver users and developers list will also be monitored and the RFC will be updated accordingly by the primary author.
+The following bug is added as a primary source for collecting the developer
+ and user response. Nevertheless the MapServer users and developers list 
+ will also be monitored and the RFC will be updated accordingly by the 
+ primary author.
 
 Bug 1764_
  
-.. _1764: http://mapserver.gis.umn.edu/bugs/show_bug.cgi?id=1764
+.. _1764: http://trac.osgeo.org/mapserver/tickets/1764
 
 
 Voting history
