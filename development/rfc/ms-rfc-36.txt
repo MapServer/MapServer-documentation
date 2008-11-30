@@ -15,13 +15,17 @@ Overview
  
 Problem:
 
-1) Currently a driver like GML isn't available to the CGI as a means of presenting query results
+1) Currently a driver like GML isn't available to the CGI as a means of
+   presenting query results
 
-2) The templating scheme (HEADER/TEMPLATE/FOOTER) for queries isn't user friendly nor is it ammenable to multple presentation formats. That is, one layer => one template set
+2) The templating scheme (HEADER/TEMPLATE/FOOTER) for queries isn't user
+   friendly nor is it ammenable to multple presentation formats. That is, one
+   layer => one template set
 
 Solution:
 
-1) Use output format objects to define formats that can be used to output query results in addition to drawing images. For example:
+1) Use output format objects to define formats that can be used to output
+   query results in addition to drawing images. For example:
 
 ::
 
@@ -31,13 +35,24 @@ Solution:
     MIMETYPE 'text/xml; subtype=gml/3.2.1'
   END
 
-Might need to extend that object to discriminate between map rendering and query formatters but that can happen in mapdraw.c and mapserv.c too. That is, drivers are explicitly referenced in those places so if someone tries to draw a map with a GML3 driver it would throw an error.
+Might need to extend that object to discriminate between map rendering and
+query formatters but that can happen in mapdraw.c and mapserv.c too. That is,
+drivers are explicitly referenced in those places so if someone tries to draw
+a map with a GML3 driver it would throw an error.
 
-2) Use the webObj QUERYFORMAT property to reference formats: 'QUERYFORMAT gml3'. Right now that property carries a mime-type but it could be used to reference a format too.
+2) Use the webObj QUERYFORMAT property to reference formats: 
+   'QUERYFORMAT gml3'. Right now that property carries a mime-type but it 
+   could be used to reference a format too.
 
-3) Also allow applicable modes (i.e. WFS, WMS, SOS), to utilize DRIVER/TEMPLATE type formats (i.e. advertise in GetCapabilities responses, support through API [e.g. request=GetFeature&outputFormat=text/xml; subtype=gml/3.2.1]), mapped from OUTPUTFORMAT/MIMETYPE. Presently the WCS driver requires the developer to explicitly define supported output formats, other services could do the same and could reference templated output. 
+3) Also allow applicable modes (i.e. WFS, WMS, SOS), to utilize
+   DRIVER/TEMPLATE type formats (i.e. advertise in GetCapabilities responses,
+   support through API [e.g. request=GetFeature&outputFormat=text/xml;
+   subtype=gml/3.2.1]), mapped from OUTPUTFORMAT/MIMETYPE. Presently the WCS
+   driver requires the developer to explicitly define supported output formats,
+   other services could do the same and could reference templated output.
 
-4) Define a TEMPLATE driver. Basically this would just invoke the normal query templating scheme. For example:
+4) Define a TEMPLATE driver. Basically this would just invoke the normal query
+   templating scheme. For example:
 
 ::
 
@@ -55,7 +70,11 @@ Might need to extend that object to discriminate between map rendering and query
     TEMPLATE 'myTemplate.js'
   END
 
-5) Note that in the above examples we reference a file, so I'm thinking of supporting a single template system for queries in addition to the current mechanism. To do this I'd propose 4 new template tags: [resultset],  [feature], [join] (for one-to-many joins), and [include] (to support code sharing between templates). All but the include tag would be blocks. An example might be:
+5) Note that in the above examples we reference a file, so I'm thinking of
+   supporting a single template system for queries in addition to the current
+   mechanism. To do this I'd propose 4 new template tags: [resultset], [feature],
+   [join] (for one-to-many joins), and [include] (to support code sharing between
+   templates). All but the include tag would be blocks. An example might be:
 
 ::
 
@@ -145,46 +164,90 @@ A GeoJSON example might be:
  }
  [/resultset]
 
-This would allow for relatively complex text files of any sort to be built from multiple layers. All the normal template tags would still be supported but those normally available for query results would only be valid inside a [feature]...[/feature]. These tags would work with existing system too but just wouldn't be as useful as with the 1 template idea.
+This would allow for relatively complex text files of any sort to be built
+from multiple layers. All the normal template tags would still be supported
+but those normally available for query results would only be valid inside a
+[feature]...[/feature]. These tags would work with existing system too but
+just wouldn't be as useful as with the 1 template idea.
 
-Note 1: that it is often a problem to have trailing record separator characters after the final record. For example, in the JSON template above the trailing comma in the [feature] block causes problems with Internet Explorer. So I propose supporting a "trim" attribute that tells the template processor to remove that string from the end of the output for the last feature processed.
+.. note::
+    It is often a problem to have trailing record separator
+    characters after the final record. For example, in the JSON template above the
+    trailing comma in the [feature] block causes problems with Internet Explorer.
+    So I propose supporting a "trim" attribute that tells the template processor
+    to remove that string from the end of the output for the last feature
+    processed.
 
-Note 2: a resultset could be applied to multiple layers so the name attribute will take a comma delimited list of layers. The order listed is the order they results will be presented. It's possible that groups could be used as well but at this point that seems like a fairly rare use case.
+.. note::
+    A resultset could be applied to multiple layers so the name attribute
+    will take a comma delimited list of layers. The order listed is the order they
+    results will be presented. It's possible that groups could be used as well but
+    at this point that seems like a fairly rare use case.
 
-Note 3: a resultset will also take a maxresults attribute so that the number of features processed can be limited.
+.. note::
+
+    A resultset will also take a maxresults attribute so that the number
+    of features processed can be limited.
 
 Additional Mapfile Changes
 --------------------------
 
-By moving templates out of a layer we lose the ability mark layers as queryable. Dan proposed adding a QUERYABLE TRUE/FALSE option to layerObj's. That could be put in place as part of this RFC, although it is not required. We could continue to leverage dummy template values. Adding it would require the normal changes to support a new keyword, and a small change to function in mapquery.c that tests to see if a layer is queryable. Basically a layer would be queryable if: 1) it has a template or 2) QUERYABLE is TRUE (default would be FALSE).
+By moving templates out of a layer we lose the ability mark layers as
+queryable. Dan proposed adding a QUERYABLE TRUE/FALSE option to layerObj's.
+That could be put in place as part of this RFC, although it is not required.
+We could continue to leverage dummy template values. Adding it would require
+the normal changes to support a new keyword, and a small change to function in
+mapquery.c that tests to see if a layer is queryable. Basically a layer would
+be queryable if: 1) it has a template or 2) QUERYABLE is TRUE (default would
+be FALSE).
 
 Documentation
 -------------
 
-Documentation detailing the new templated output capabilities will be added to the mapfile reference guide (OUTPUTFORMAT and WEB objects) and to the template reference guide (new [resultset], [feature], [join] and [include] tags).
+Documentation detailing the new templated output capabilities will be added to
+the mapfile reference guide (OUTPUTFORMAT and WEB objects) and to the template
+reference guide (new [resultset], [feature], [join] and [include] tags).
 
 Implementation
 --------------
 
-mapoutput.c: No changes necessary (I think), no need to define a default format, nor do I think we need to extend the outputFormatObj structure.
+mapoutput.c: No changes necessary (I think), no need to define a default
+format, nor do I think we need to extend the outputFormatObj structure.
 
-mapfile.c/maplexer.l: Allow changing webObj QUERYFORMAT from a URL. (todo: add support for setting a layer as queryable)
+mapfile.c/maplexer.l: Allow changing webObj QUERYFORMAT from a URL. (todo: add
+support for setting a layer as queryable)
 
-maptemplate.c: Add processor functions for the new tags. Update process line to recognize the [resultset] and [join] tags (the [feature] tag would only be valid within a [resultset] block. Write a new single template processing function similar to msReturnQuery() in that same source file, something like msReturnSingleTemplateQuery().
+maptemplate.c: Add processor functions for the new tags. Update process line
+to recognize the [resultset] and [join] tags (the [feature] tag would only be
+valid within a [resultset] block. Write a new single template processing
+function similar to msReturnQuery() in that same source file, something like
+msReturnSingleTemplateQuery().
 
-mapserv.c: Add code at the end of the query processing switch statement to look at the value of web->queryformat. If it references an existing output format by name then use the file the format points to with msReturnSingleTemplateQuery(), otherwise process as currently done.
+mapserv.c: Add code at the end of the query processing switch statement to
+look at the value of web->queryformat. If it references an existing output
+format by name then use the file the format points to with
+msReturnSingleTemplateQuery(), otherwise process as currently done.
 
-Caveats: to simplify tag parsing (at least initially) I propose requiring that start and end tags exist on their own lines in the template file (is this a requirement for legend templates?). Depending on the legend template block parsing this requirement could be removed once some implementation work is done.
+Caveats: to simplify tag parsing (at least initially) I propose requiring that
+start and end tags exist on their own lines in the template file (is this a
+requirement for legend templates?). Depending on the legend template block
+parsing this requirement could be removed once some implementation work is
+done.
 
 MapScript
 ---------
 
-No changes are anticipated in mapscript at this time although we may choose to expose templated output as an option at a later date.
+No changes are anticipated in MapScript at this time although we may choose to
+expose templated output as an option at a later date.
 
 Backwards Compatibility Issues
 ------------------------------
 
-No other compatibility issues are anticipated. The current templating mechanism would continue to function. In the event the QUERYFORMAT does not reference an outputFormatObj the current system would kick in. In fact, the current system can use several of the new proposed tags, specifically [join] and [include] tags.
+No other compatibility issues are anticipated. The current templating
+mechanism would continue to function. In the event the QUERYFORMAT does not
+reference an outputFormatObj the current system would kick in. In fact, the
+current system can use several of the new proposed tags, specifically [join]
+and [include] tags.
 
 Bug ID
 ------
