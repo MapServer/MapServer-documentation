@@ -6,43 +6,49 @@ MS RFC 48: GEOTRANSFORM Geometry operations
 
 :Date: 2008/11/01
 :Authors: Stephen Lime, Thomas Bonfort
-:Contact: Steve.Lime@DNR.State.MN.US, thomas.bonfort@camptocamp.com
+:Contact: Steve.Lime at DNR.State.MN.US, thomas.bonfort at camptocamp.com
 :Status: Draft
 :Version: MapServer 5.4
-:Funding: Camptocamp
 
 
-1. Summary
-###################
+Summary
+------------------------------------------------------------------------------
 
-The purpose of this RFC is to add the ability to Mapserver to interpret the 
-geometries based on a user-defined GEOMETRYTRANSFORM keyword, and to render the interpreted
-geometry with the selected styling
+The purpose of this RFC is to add the ability to Mapserver to interpret the
+geometries based on a user-defined GEOMETRYTRANSFORM keyword, and to render
+the interpreted geometry with the selected styling
 
 An example usage would be:
 
-GEOMETRYTRANSFORM "centroid(geom)"
+::
 
-to treat the underlying geometry as a point rendered at the centroid of current feature.
+    GEOMETRYTRANSFORM "centroid(geom)"
 
-The directive to activate this behavior is the GEOMETRYTRANSFORM keyword, that 
-intially belongs to the STYLE object. Further developments could be to enable the 
-keyword at the LAYER level.
+to treat the underlying geometry as a point rendered at the centroid of
+current feature.
 
-Usages of this parameter include drawing bounding boxes of underlying 
+The directive to activate this behavior is the GEOMETRYTRANSFORM keyword, that
+initially belongs to the STYLE object. Further developments could be to enable
+the keyword at the LAYER level.
+
+Usages of this parameter include drawing bounding boxes of underlying
 geometries, or adding arrowheads/tails to lines.
 
-Further developments would allow complex expressions to be passed to the keyword,
-allowing nested transformations to the underlying geometry, eg:
+Further developments would allow complex expressions to be passed to the
+keyword, allowing nested transformations to the underlying geometry, eg:
 
-GEOMETRYTRANSFORM "difference(geom,buffer(geom,10))"
+::
+
+    GEOMETRYTRANSFORM "difference(geom,buffer(geom,10))"
 
 and binding to attributes, eg:
 
-GEOMETRYTRANSFORM "buffer(geom,[distance])"
+::
 
-2. Detailed functionality
-#########################
+    GEOMETRYTRANSFORM "buffer(geom,[distance])"
+
+Detailed functionality
+------------------------------------------------------------------------------
 
 The GEOMETRYTRANSFORM keyword initially accepts these parameters :
 
@@ -62,8 +68,8 @@ The GEOMETRYTRANSFORM keyword initially accepts these parameters :
   The option keyword, specifies if the start and or end vertices should also be 
   included in the transformation.
 
-3. Implementation Details
-#########################
+Implementation Details
+------------------------------------------------------------------------------
 
 Apart from the parsing and internal storage of which type should be used,
 the modifications of this RFC only affect the high-level rendering functions
@@ -83,8 +89,8 @@ There are two main modifications:
   shape (types start, end, vertices, centroid) after having adjusted the
   orientation accordingly.
 
-4. Affected Files
-#################
+Affected Files
+------------------------------------------------------------------------------
 
 - mapdraw.c
 - maplexer.c/.l
@@ -93,26 +99,26 @@ There are two main modifications:
 - one or more files may be added for the parsing of the transform expression, and
   the transformation itself.
 
-5. Mapscript implications
-#########################
+MapScript implications
+------------------------------------------------------------------------------
 
 Getters and setters will have to be added to the different mapscripts.
 
 A possible enhancement could also be to expose the transformation function to
-mapscript.
+MapScript.
 
-6. Documentation
-################
+Documentation
+------------------------------------------------------------------------------
 
 TBD post implementation
 
-7. Backwards Incompatibility Issues
-###################################
+Backwards Incompatibility Issues
+------------------------------------------------------------------------------
 
 none expected.
 
-8. Bug ID
-##########
+Bug ID
+------------------------------------------------------------------------------
 
 http://trac.osgeo.org/mapserver/ticket/xxxx
 

@@ -14,9 +14,13 @@ MS RFC 39: Support of WMS/SLD Named Styles
 Overview
 --------
 
-When WMS and SLD support was added in MapServer few years back, one of features that was not integrated was the ability to specify named styles through WMS GetMap request using the STYLES parameter or through the <NamedStyle> parameter in an SLD document.  
+When WMS and SLD support was added in MapServer few years back, one of
+features that was not integrated was the ability to specify named styles
+through WMS GetMap request using the STYLES parameter or through the
+<NamedStyle> parameter in an SLD document.
 
-Using named styles, the WMS client has the ability to render a specified layer using styles predefined by the WMS server.
+Using named styles, the WMS client has the ability to render a specified layer
+using styles predefined by the WMS server.
 
 Example of this would be:
 
@@ -36,15 +40,25 @@ Example of this would be:
       </NamedLayer>
     </StyledLayerDescriptor>
 
-The main reason this functionality is not yet supported is that It is not currently possible to defined in MapServer several mutually exclusive 'styles' on a layer   The intention of this RFC is to introduce a simple mechanism that would allow MapServer to define mutually exclusive 'Styles'. This would then allow for MapServer to advertise and support named styles through the WMS interface
+The main reason this functionality is not yet supported is that It is not
+currently possible to defined in MapServer several mutually exclusive 'styles'
+on a layer The intention of this RFC is to introduce a simple mechanism that
+would allow MapServer to define mutually exclusive 'Styles'. This would then
+allow for MapServer to advertise and support named styles through the WMS
+interface
 
 
 Proposed Changes
 ----------------
 
-The MapServer architecture (layer. class, styles) does not fit well the SLD model where it assumes that you can define mutually exclusive styles on a layer and be able to switch between them.
- 
-One possible solution which is reasonably non disruptive would be to introduce the concept of group names at the class object level and have at a layer level a parameter that can be used to specify the classes to use. Something like this is what is proposed:
+The MapServer architecture (layer. class, styles) does not fit well the SLD
+model where it assumes that you can define mutually exclusive styles on a
+layer and be able to switch between them.
+
+One possible solution which is reasonably non disruptive would be to introduce
+the concept of group names at the class object level and have at a layer level
+a parameter that can be used to specify the classes to use. Something like
+this is what is proposed:
 
 ::
    
@@ -69,25 +83,42 @@ One possible solution which is reasonably non disruptive would be to introduce t
      END
      ...
 
-- This introduces two new keywords, CLASSGROUP at the layer level and GROUP name in the class object.
+- This introduces two new keywords, CLASSGROUP at the layer level and GROUP
+  name in the class object.
 - These parameters are optional 
-- If the CLASSGROUP parameter is set, only classes that have the same group name would be considered at rendering time. If it is not set, all classes (current behavior) would be used.
-- Note that CLASSGROUP is acting as the default style if there are classes within the same LAYER with different GROUPs defined. The idea is that STYLES parameter through a wms request (or cgi URL variable) would override the value of the CLASSGROUP.  In the example above, only classes "name1" and "name3" would be considered for rendering (if STYLES= or STYLES=default), unless the client overrides this value using STYLES=group2.
+- If the CLASSGROUP parameter is set, only classes that have the same group
+  name would be considered at rendering time. If it is not set, all classes
+  (current behavior) would be used.
+- Note that CLASSGROUP is acting as the default style if there are classes
+  within the same LAYER with different GROUPs defined. The idea is that STYLES
+  parameter through a wms request (or cgi URL variable) would override the
+  value of the CLASSGROUP. In the example above, only classes "name1" and
+  "name3" would be considered for rendering (if STYLES= or STYLES=default),
+  unless the client overrides this value using STYLES=group2.
 
 
 
 Affected/Added functionalities in MapServer
 -------------------------------------------
 
-1. MapServer vector rendering (function msShapeGetClass) would use the setting of the classgroup if it is available 
+1. MapServer vector rendering (function msShapeGetClass) would use the setting
+   of the classgroup if it is available
 
-2. Raster rendering (function msGetClass) : would use the setting of the classgroup if it is available 
+2. Raster rendering (function msGetClass) : would use the setting of the
+   classgroup if it is available
 
-3. Possibility to use the URL variables to modify the value of the classgroup (something like this would be valid : ...&map.layer[layername]=classgroup+group2. This would allow through the cgi to switch representation of a layer if needed
- 
+3. Possibility to use the URL variables to modify the value of the classgroup
+   (something like this would be valid :
+   ...&map.layer[layername]=classgroup+group2. This would allow through the cgi
+   to switch representation of a layer if needed
+
 4. WMS related functionalities:
 
-- Advertise STYLES through the GetCapabilities: styles would be based on the different group names of the classes defined in the layer.  If all classes do not have the GROUP set, the current behavior (returning the STYLE element with the 'default' name) will be kept. If one or more classes have the GROUP set, It is proposed to output something like this for each "group":
+- Advertise STYLES through the GetCapabilities: styles would be based on the
+different group names of the classes defined in the layer. If all classes do
+not have the GROUP set, the current behavior (returning the STYLE element with
+the 'default' name) will be kept. If one or more classes have the GROUP set,
+It is proposed to output something like this for each "group":
 
 ::
 
@@ -101,15 +132,25 @@ Affected/Added functionalities in MapServer
         </Style> 
 
 
-- Support Named Styles in SLD. This would have the effect of setting the layer level CLASSGROUP. We throw an exception if an invalid style is passed.
+- Support Named Styles in SLD. This would have the effect of setting the layer
+  level CLASSGROUP. We throw an exception if an invalid style is passed.
+- Support style names in the STYLES parameter for the WMS GetMap request. We
+  would still support the empty style names as well as the “default” keyword
+  used for STYLES. We throw an exception if an invalid style is passed.
+- GetLegendGraphic would be extended to support names in the STYLES
+  parameter. The if STYLE parameter is present and the value is not empty, we
+  would throw an exception is the style passes is not valid.
+- GetStyles : the current behavior is to return all the classes as UserStyle
+  elements. the sld 1.0 specification does not seem to be clear on how to deal
+  when multiple styles are available : section 13.1 specifies "...All
+  requested styles that can in fact be described by SLD will be returned as
+  UserStyle elements, and styles that cannot be will returned as NamedStyle
+  elements. ...". The proposed approach is to keep the current beahviour if
+  the CLASSGROUP is not set and if set, to return UserStyle elements on
+  specified classes only.
 
-- Support style names in the STYLES parameter for the WMS GetMap request. We would still support  the empty style names as well as the “default” keyword used for STYLES. We throw an exception if an invalid style is passed.
-
-- GetLegendGraphic would be extended to support names in the STYLES parameter. The if STYLE parameter is present and the value is not empty, we would throw an exception is the style passes is not valid. 
-
-- GetStyles : the current behavior is to return all the classes as UserStyle elements. the sld 1.0 specification does not seem to be clear on how to deal when multiple styles are available : section 13.1 specifies "...All requested styles that can in fact be described by SLD will be returned as UserStyle elements, and styles that cannot be will returned as NamedStyle elements. ...". The proposed approach is to keep the current beahviour if the CLASSGROUP is not set and if set, to return UserStyle elements on specified classes only.
-
-5. Legend drawing would need to use the setting of the classgroup if it is available 
+5. Legend drawing would need to use the setting of the classgroup if it is
+  available
 
 
 Other Considerations
@@ -137,23 +178,26 @@ Files Affected
 MapScript
 ---------
 
-Need to update set function (at least in the php mapscript) to set the two new parameters at the layer and class level. Need to check if there is anything to be done for swig mapscript.
+Need to update set function (at least in the php MapScript) to set the two new
+parameters at the layer and class level. Need to check if there is anything to
+be done for swig MapScript.
 
 Backwards Compatibility
 -----------------------
 
-All work described in this RFC will provide optional capabilities to MapServer and no backward compatibility issues are expected. 
-
+All work described in this RFC will provide optional capabilities to MapServer
+and no backward compatibility issues are expected.
 
 Documentation
 -------------
 
-SLD HowTO, WMS Server Howto and Mapserver map reference documents will be upgraded.
+:ref:`sld`, :ref:`wms_server`, and :ref:`mapfile` documents will be upgraded.
 
 Testing
 -------
 
-Addition of a test in msauto to validate the support of names STYLES parameter through a GetMap request 
+Addition of a test in msauto to validate the support of names STYLES parameter 
+through a GetMap request 
 
 
 Bug ID
