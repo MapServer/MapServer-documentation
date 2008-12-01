@@ -10,28 +10,45 @@ MS RFC 22a: Feature cache for long running processes and query processing
 :Last Edited: 2007/06/24
 :Status: Discussion Draft
 :Version: Mapserver 5.0
+:Id: $Id$
 
 1. Overview
 -----------
 
-Currently the various query operations involve multiple accesses to the data providers which may cause a significant performance impact depending on the providers. In the first phase all of the features in the given search area are retrieved and the index of the relevant shapes are stored in the result cache. In the second phase the features in the result cache are retrieved form the provider one by one. Retaining the shapes in the memory we could eliminate the need of the subsequent accesses to the providers and increase the overall performance of the query.
-Implementing the cache requires a transformation of the data between the data provider and the client. From this aspect it is desirable to provide a framework to implement this transformation in a higher level of abstraction.
+Currently the various query operations involve multiple accesses to the data
+providers which may cause a significant performance impact depending on the
+providers. In the first phase all of the features in the given search area are
+retrieved and the index of the relevant shapes are stored in the result cache.
+In the second phase the features in the result cache are retrieved form the
+provider one by one. Retaining the shapes in the memory we could eliminate the
+need of the subsequent accesses to the providers and increase the overall
+performance of the query. Implementing the cache requires a transformation of
+the data between the data provider and the client. From this aspect it is
+desirable to provide a framework to implement this transformation in a higher
+level of abstraction.
 
 2. Purpose
 ----------
 
-The main purpose of this RFC is to implement a feature cache and retain the shapes in the memory for the further retrievals during a query operation.
-However I would also want to create a mechanism so that a layer could use another layer as a data source. This outer layer could apply transformations on the shapes coming from the base layer or even retain the shapes in the memory for the subsequent fetches.
-Here are some other examples where this framework would provide a solution:
+The main purpose of this RFC is to implement a feature cache and retain the
+shapes in the memory for the further retrievals during a query operation.
+However I would also want to create a mechanism so that a layer could use
+another layer as a data source. This outer layer could apply transformations
+on the shapes coming from the base layer or even retain the shapes in the
+memory for the subsequent fetches. Here are some other examples where this
+framework would provide a solution:
  
  a. Constructing geometries based on feature attributes
  b. Modifying the geometries or the feature attribute values
  c. Geometry transformations (like GEOS operations)
  d. Feature cache
- e. Providing default layer style based on external style information, or attribute based styling
+ e. Providing default layer style based on external style information, or
+    attribute based styling
  f. Providing custom data filters
  
-Setting up a proper layer hierarchy one can solve pretty complex issues without the need of creating additional (eg. mapscript) code. Later on - as a live example - I'll show up the solution of the following scenario:
+Setting up a proper layer hierarchy one can solve pretty complex issues
+without the need of creating additional (eg. mapscript) code. Later on - as a
+live example - I'll show up the solution of the following scenario:
  
  a. The user will select one or more shapes in one layer (by attibute selection in this case).
  b. Cascaded transformations will be applied on the selected shapes (I'll use the GEOS convexhull and buffer operations)
