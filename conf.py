@@ -166,7 +166,7 @@ htmlhelp_basename = 'MapServerdoc'
 # (source start file, target name, title, author, document class [howto/manual]).
 latex_documents = [
   ('index', 'MapServer.tex', ur'MapServer Documentation',
-   ur'Steve Lime', 'manual'),
+   ur'Steve Lime', 'manual', False),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -175,7 +175,7 @@ latex_logo = './images/mapserver.jpg'
 
 # For "manual" documents, if this is true, then toplevel headings are parts,
 # not chapters.
-latex_use_parts = True
+latex_use_parts = False
 
 # Additional stuff for the LaTeX preamble.
 #latex_preamble = ''
