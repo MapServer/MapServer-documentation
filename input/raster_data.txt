@@ -18,18 +18,18 @@
 Introduction
 ============
 
-MapServer supports rendering a variety of raster file formats in maps. The 
-following describes some of the supported formats, and what capabilities are 
+MapServer supports rendering a variety of raster file formats in maps. The
+following describes some of the supported formats, and what capabilities are
 supported with what formats.
 
-This document assumes that you are already familiar with setting up MapServer 
-`map files`_, but does explain the raster specific aspects of map files. 
+This document assumes that you are already familiar with setting up MapServer
+`map files`_, but does explain the raster specific aspects of map files.
 
 How are rasters added to a Map file?
 ====================================
 
-A simple raster layer declaration looks like this. The DATA file is interpreted 
-relative to the SHAPEPATH, much like shapefiles.
+A simple raster layer declaration looks like this. The DATA file is
+interpreted relative to the SHAPEPATH, much like shapefiles.
 
 ::
 
@@ -40,20 +40,21 @@ relative to the SHAPEPATH, much like shapefiles.
       STATUS ON
     END
 
-Though not shown rasters can have PROJECTION, METADATA, PROCESSING, MINSCALE, and 
-MAXSCALE information. It cannot have labels, CONNECTION, CONNECTIONTYPE, or FEATURE 
-information.
+Though not shown rasters can have PROJECTION, METADATA, PROCESSING, MINSCALE,
+and MAXSCALE information. It cannot have labels, CONNECTION, CONNECTIONTYPE,
+or FEATURE information.
 
 Classifying Rasters
 -------------------
 
-Rasters can be classified in a manner similar to vectors, with a few exceptions.
+Rasters can be classified in a manner similar to vectors, with a few
+exceptions.
 
-There is no need to specify a CLASSITEM. The raw pixel value itself ("[pixel]") 
-and, for paletted images, the red, green and blue color associated with that pixel 
-value ("[red]", "[green]" and "[blue]") are available for use in classifications. 
-When used in an evaluated expression the pixel, red, green and blue keywords must 
-be in lower case.
+There is no need to specify a CLASSITEM. The raw pixel value itself
+("[pixel]") and, for paletted images, the red, green and blue color associated
+with that pixel value ("[red]", "[green]" and "[blue]") are available for use
+in classifications. When used in an evaluated expression the pixel, red, green
+and blue keywords must be in lower case.
 
 ::
 
@@ -94,49 +95,51 @@ be in lower case.
       END
     END
 
-As usual, CLASS definitions are evaluated in order from first to last, and the 
-first to match is used. If a CLASS has a NAME attribute it may appear in a LEGEND. 
-Only the COLOR, EXPRESSION and NAME parameters within a CLASS definition are utilized 
-for raster classifications. The other styling or control information is ignored.
+As usual, CLASS definitions are evaluated in order from first to last, and the
+first to match is used. If a CLASS has a NAME attribute it may appear in a
+LEGEND. Only the COLOR, EXPRESSION and NAME parameters within a CLASS
+definition are utilized for raster classifications. The other styling or
+control information is ignored.
 
-Raster classifications always take place on only one raster band. It defaults to 
-the first band in the referenced file, but this can be altered with the BANDS 
-PROCESSING directive. In particular this means that including even a single CLASS 
-declaration in a raster layer will result in the raster layer being rendered using 
-the one band classification rules instead of other rules that might have applied 
-(such as 3 band RGB rendering).
+Raster classifications always take place on only one raster band. It defaults
+to the first band in the referenced file, but this can be altered with the
+BANDS PROCESSING directive. In particular this means that including even a
+single CLASS declaration in a raster layer will result in the raster layer
+being rendered using the one band classification rules instead of other rules
+that might have applied (such as 3 band RGB rendering).
 
 Classifying Non-8bit Rasters
 ****************************
 
-As of MapServer 4.4 support has been added for classifying non-8bit raster inputs. 
-That is input rasters with values outside the range 0-255. Mostly this works 
-transparently but there are a few caveats and options to provide explicit control.
+As of MapServer 4.4 support has been added for classifying non-8bit raster
+inputs. That is input rasters with values outside the range 0-255. Mostly this
+works transparently but there are a few caveats and options to provide
+explicit control.
 
-Classifying raster data in MapServer is accomplished by pre-classifying all expected 
-input values and using that table of classification results to lookup each pixel 
-as it is rendered. This is done because evaluating a pixel value against a series 
-of CLASS definitions is relatively expensive to do for the hundreds of thousands of 
-pixels in a typical rendered image.
+Classifying raster data in MapServer is accomplished by pre-classifying all
+expected input values and using that table of classification results to lookup
+each pixel as it is rendered. This is done because evaluating a pixel value
+against a series of CLASS definitions is relatively expensive to do for the
+hundreds of thousands of pixels in a typical rendered image.
 
-For simple 8bit inputs, only 256 input values need to be pre-classified. But for 
-non-8bit inputs more values need to be classified. For 16bit integer inputs all 65536 
-possible input values are pre-classified. For floating point and other input data 
-types, up to 65536 values are pre-classified based on the maximum expected range of 
-input values.
+For simple 8bit inputs, only 256 input values need to be pre-classified. But
+for non-8bit inputs more values need to be classified. For 16bit integer
+inputs all 65536 possible input values are pre-classified. For floating point
+and other input data types, up to 65536 values are pre-classified based on the
+maximum expected range of input values.
 
-The PROCESSING directive can be used to override the range of values to be 
-pre-classified, or the number of values (aka Buckets) in that range to classify. 
-The SCALE=min,max PROCESSING directive controls the range. The SCALE_BUCKETS PROCESSING 
-directive controls the number of buckets. In some cases rendering can be accelerated 
-considerable by selecting a restricted range of input values and a reduced number of 
-scaling values (buckets).
+The PROCESSING directive can be used to override the range of values to be
+pre-classified, or the number of values (aka Buckets) in that range to
+classify. The SCALE=min,max PROCESSING directive controls the range. The
+SCALE_BUCKETS PROCESSING directive controls the number of buckets. In some
+cases rendering can be accelerated considerable by selecting a restricted
+range of input values and a reduced number of scaling values (buckets).
 
-The following example classifies a floating raster, but only 4 values over the range 
--10 to 10 are classified. In particular, the values classified would be -7.5, -2.5, 2.5, 
-and 7.5 (the middle of each "quarter" of the range). So those four value are classified, 
-and one of the classification results is selected based on which value is closest to 
-the pixel value being classified.
+The following example classifies a floating raster, but only 4 values over the
+range -10 to 10 are classified. In particular, the values classified would be
+-7.5, -2.5, 2.5, and 7.5 (the middle of each "quarter" of the range). So those
+four value are classified, and one of the classification results is selected
+based on which value is closest to the pixel value being classified.
 
 ::
 
@@ -173,20 +176,21 @@ the pixel value being classified.
 Supported Formats
 =================
 
-What raster formats are supported by MapServer is largely controlled by configuration 
-time options. Some formats are considered to be built-in while the remainder are 
-handled by the optional GDAL raster library.
+What raster formats are supported by MapServer is largely controlled by
+configuration time options. Some formats are considered to be built-in while
+the remainder are handled by the optional GDAL raster library.
 
-More information on GDAL can be found at http://www.gdal.org, including the `supported 
-formats list`_. Some of the advanced MapServer raster features, such as resampling, 
-RGB color cube generation and automatic projection capture only work with raster 
-formats used through GDAL. GDAL is normally built and installed separately from 
-MapServer, and then enabled during the build of MapServer using the *--with-gdal* 
-configuration switch.
+More information on GDAL can be found at http://www.gdal.org, including the
+`supported formats list`_. Some of the advanced MapServer raster features,
+such as resampling, RGB color cube generation and automatic projection capture
+only work with raster formats used through GDAL. GDAL is normally built and
+installed separately from MapServer, and then enabled during the build of
+MapServer using the *--with-gdal* configuration switch.
 
-To find out what is built into a particular MapServer executable, use the -v flags 
-to discover what build options are enabled. To find out what gdal formats are 
-available, the "gdalinfo --formats" command may be used. For example:
+To find out what is built into a particular MapServer executable, use the -v
+flags to discover what build options are enabled. To find out what GDAL
+formats are available, the "gdalinfo --formats" command may be used. For
+example:
 
 ::
 
@@ -207,70 +211,73 @@ available, the "gdalinfo --formats" command may be used. For example:
 The following formats are potential builtins:
 
 **TIFF/GeoTIFF** 
-   If built with INPUT=TIFF MapServer will have builtin support for 
-   reading TIFF or GeoTIFF files. The builtin TIFF support has some limitations 
-   with regard to the organization of files that can be read (no tiled, 16bit, 
-   RGB, or odd color models). This driver supports world files, or simple builtin 
+   If built with INPUT=TIFF MapServer will have builtin support for reading
+   TIFF or GeoTIFF files. The builtin TIFF support has some limitations with
+   regard to the organization of files that can be read (no tiled, 16bit, RGB,
+   or odd color models). This driver supports world files, or simple builtin
    GeoTIFF coordinates for georeferencing.
 
-   Full featured TIFF/GeoTIFF support is available through GDAL. Note that only 
-   GDAL supports tiled TIFF files and TIFF files with overviews. Tiled TIFF files 
-   with overviews pre-built are one of the highest performance ways of serving 
-   large raster images.
+   Full featured TIFF/GeoTIFF support is available through GDAL. Note that
+   only GDAL supports tiled TIFF files and TIFF files with overviews. Tiled
+   TIFF files with overviews pre-built are one of the highest performance ways
+   of serving large raster images.
 
 **GIF** 
-   If GD is configured with GIF (OUTPUT=GIF) support, then MapServer will 
-   also be able to read GIF files for raster layers. The only way to georeference 
+   If GD is configured with GIF (OUTPUT=GIF) support, then MapServer will also
+   be able to read GIF files for raster layers. The only way to georeference
    GIF files is with a world file.
 
    If GD is not configured with GIF support, it may still be available in GDAL.
 
 **PNG** 
-   If GD is configured with PNG (OUTPUT=PNG) support, then MapServer will also 
-   be able to read PNG files for raster layers. The only way to georeference PNG 
-   files is with a world file.
-
-   If GD is not configured with PNG support, it may still be available in GDAL.
+   If GD is configured with PNG (OUTPUT=PNG) support, then MapServer will also
+   be able to read PNG files for raster layers. The only way to georeference
+   PNG files is with a world file.
+   
+   If GD is not configured with PNG support, it may still be available in
+   GDAL.
 
 **JPEG** 
-   If MapServer is built with JPEG (INPUT=JPEG) support then greyscale JPEG 
-   files may be rendered in raster layers. RGB files (the more common kind) will 
-   not be able to be displayed. Georeferencing is via world files.
-
-   If MapServer is not built with native JPEG support, GDAL may still support the 
-   format. In this case RGB files are also supported (via the RGB color cube 
-   mechanism). Georeferencing is still via world file.
+   If MapServer is built with JPEG (INPUT=JPEG) support then greyscale JPEG
+   files may be rendered in raster layers. RGB files (the more common kind)
+   will not be able to be displayed. Georeferencing is via world files.
+   
+   If MapServer is not built with native JPEG support, GDAL may still support
+   the format. In this case RGB files are also supported (via the RGB color
+   cube mechanism). Georeferencing is still via world file.
 
 **Erdas .LAN/.GIS** 
-   If configured with INPUT=EPPL7 (the default) MapServer will 
-   support one band eight bit Erdas LAN/GIS files. The .trl file is read for a 
-   colormap, and if not found the layer is treated as greyscale. Georeferencing 
-   is read from the file.
+   If configured with INPUT=EPPL7 (the default) MapServer will support one
+   band eight bit Erdas LAN/GIS files. The .trl file is read for a colormap,
+   and if not found the layer is treated as greyscale. Georeferencing is read
+   from the file.
 
-If MapServer is built with GDAL it is generally better to access all possible formats 
-through GDAL rather than via the built-in drivers. The built-in drivers are less 
-featureful, and not as well maintained. 
+If MapServer is built with GDAL it is generally better to access all possible
+formats through GDAL rather than via the built-in drivers. The built-in
+drivers are less featureful, and not as well maintained.
 
 Rasters and Tile Indexing
 =========================
 
-When handling very large raster layers it is often convenient, and higher performance 
-to split the raster image into a number of smaller images. Each file is a tile of the 
-larger raster mosaic available for display. The list of files forming a layer can be 
-stored in a shapefile with polygons representing the footprint of each file, and the 
-name of the files. This is called a TILEINDEX and works similarly to the same feature 
-in vector layers. The result can be represented in the MAP file as one layer, but 
-MapServer will first scan the tile index, and ensure that only raster files overlapping 
-the current display request will be opened.
+When handling very large raster layers it is often convenient, and higher
+performance to split the raster image into a number of smaller images. Each
+file is a tile of the larger raster mosaic available for display. The list of
+files forming a layer can be stored in a shapefile with polygons representing
+the footprint of each file, and the name of the files. This is called a
+TILEINDEX and works similarly to the same feature in vector layers. The result
+can be represented in the MAP file as one layer, but MapServer will first scan
+the tile index, and ensure that only raster files overlapping the current
+display request will be opened.
 
-The following example shows a simple example. No DATA statement is required because 
-MapServer will fetch the filename of the raster files from the Location attribute column 
-in the hp2.dbf file for records associated with polygons in hp2.shp that intersect the 
-current display region. The polygons in hp2.shp should be rectangles representing the 
-footprint of the corresponding file. Note that the files do not have to be all the 
-same size, the formats can vary and they can even overlap (later files will be drawn 
-over earlier ones); however, they must all be in the same coordinate system (projection) 
-as the layer.
+The following example shows a simple example. No DATA statement is required
+because MapServer will fetch the filename of the raster files from the
+Location attribute column in the hp2.dbf file for records associated with
+polygons in hp2.shp that intersect the current display region. The polygons in
+hp2.shp should be rectangles representing the footprint of the corresponding
+file. Note that the files do not have to be all the same size, the formats can
+vary and they can even overlap (later files will be drawn over earlier ones);
+however, they must all be in the same coordinate system (projection) as the
+layer.
 
 ::
 
@@ -282,104 +289,114 @@ as the layer.
     TYPE RASTER
   END
 
-The filenames in the tileindex are
-searched for relative to the SHAPEPATH or map file, not relative to the tileindex.  Great care should be taken when establishing the paths put 
-into the tileindex to ensure they will evaluate properly in use.  Often 
-it is easiest to place the tileindex in the SHAPEPATH directory, and to 
-create the tileindex with a path relative to the SHAPEPATH directory.  
-When all else fails, absolute paths can be used in tileindex, but then they
-cannot be so easily moved from system to system. 
+The filenames in the tileindex are searched for relative to the SHAPEPATH or
+map file, not relative to the tileindex. Great care should be taken when
+establishing the paths put into the tileindex to ensure they will evaluate
+properly in use. Often it is easiest to place the tileindex in the SHAPEPATH
+directory, and to create the tileindex with a path relative to the SHAPEPATH
+directory. When all else fails, absolute paths can be used in tileindex, but
+then they cannot be so easily moved from system to system.
 
-While there are many ways to produce TILEINDEX shapefiles for use with this command, 
-one option is the `gdaltindex`_ program, part of the GDAL utility suite. The gdaltindex 
-program will automatically generate a tile index shapefile from a list of GDAL supported 
-raster files passed on the command line.  
+While there are many ways to produce TILEINDEX shapefiles for use with this
+command, one option is the `gdaltindex`_ program, part of the GDAL utility
+suite. The gdaltindex program will automatically generate a tile index
+shapefile from a list of GDAL supported raster files passed on the command
+line.
 
 
 ::
 
     Usage: gdaltindex [-tileindex field_name] index_file [gdal_file]*
 
-    eg.
-      % gdaltindex doq_index.shp doq/*.tif
+::
+    
+    % gdaltindex doq_index.shp doq/*.tif
 
-NOTES:
-  - The shapefile (index_file) will be created if it doesn't already exist.
-  - The default tile index field is 'location'.
-  - Raster filenames will be put in the file exactly as they are specified
-    on the commandline.
-  - Simple rectangular polygons are generated in the same
-    coordinate system as the rasters.
+Tile Index Notes
+-------------------
 
-The gdaltindex program is built as part of GDAL. Prebuilt binaries for GDAL including 
-the gdaltindex program can be downloaded as part of the `FWTools`_ distribution, and are
-also included in `MS4W`_. 
+- The shapefile (index_file) will be created if it doesn't already exist.
+- The default tile index field is 'location'.
+- Raster filenames will be put in the file exactly as they are specified
+  on the commandline.
+- Simple rectangular polygons are generated in the same
+  coordinate system as the rasters.
+
+The gdaltindex program is built as part of GDAL. Prebuilt binaries for GDAL
+including the gdaltindex program can be downloaded as part of the `FWTools`_
+distribution, and are also included in `MS4W`_.
 
 Raster Warping
 ==============
 
-MapServer is able to resample GDAL rasters on the fly into new projections. Non-GDAL 
-rasters may only be up or down sampled without any rotation or warping.
+MapServer is able to resample GDAL rasters on the fly into new projections.
+Non-GDAL rasters may only be up or down sampled without any rotation or
+warping.
 
-Raster warping kicks in if the projection appears to be different for a raster 
-layer than for the map being generated. Warped raster layers are significantly 
-more expensive to render than normal raster layers with rendering time being perhaps 
-2-4 times long than a normal layer. The projection and datum shifting transformation 
-is computed only at selected points, and generally linearly interpolated along the 
-scanlines (as long as the error appears to be less than 0.333 pixels.
+Raster warping kicks in if the projection appears to be different for a raster
+layer than for the map being generated. Warped raster layers are significantly
+more expensive to render than normal raster layers with rendering time being
+perhaps 2-4 times long than a normal layer. The projection and datum shifting
+transformation is computed only at selected points, and generally linearly
+interpolated along the scanlines (as long as the error appears to be less than
+0.333 pixels.
 
-In addition to reprojecting rasters, the raster warping ability can also apply 
-rotation to GDAL rasters with rotational coefficients in their georeferencing 
-information. Currently rotational coefficients won't trigger raster warping unless 
-the map and layer have valid (though matching is fine) projection definitions.
+In addition to reprojecting rasters, the raster warping ability can also apply
+rotation to GDAL rasters with rotational coefficients in their georeferencing
+information. Currently rotational coefficients won't trigger raster warping
+unless the map and layer have valid (though matching is fine) projection
+definitions.
 
 24bit RGB Rendering
 ===================
 
-Traditionally MapServer has been used to produce 8 bit pseudo-colored map displays 
-generated from 8bit greyscale or pseudocolored raster data. However, if the raster 
-file to be rendered is actually 24bit (a red, green and blue band) then additional
-considerations come into play. Currently rendering of 24bit imagery is only supported 
-via the GDAL renderer. The built-in PNG, JPEG and other drivers do not support 
-24bit input images.
+Traditionally MapServer has been used to produce 8 bit pseudo-colored map
+displays generated from 8bit greyscale or pseudocolored raster data. However,
+if the raster file to be rendered is actually 24bit (a red, green and blue
+band) then additional considerations come into play. Currently rendering of
+24bit imagery is only supported via the GDAL renderer. The built-in PNG, JPEG
+and other drivers do not support 24bit input images.
 
-If the output is still 8bit pseudo-colored (the IMAGEMODE is PC256 in the associated 
-OUTPUT format declaration) then the full 24bit RGB colors for input pixels will be 
-converted to a color in the colormap of the output image. By default a color cube 
-is used. That is a fixed set of 175 colors providing 5 levels of red, 7 levels of 
-green and 5 levels of blue is used, plus an additional 32 greyscale color entries. 
-Colors in the input raster are mapped to the closest color in this color cube on the 
-fly. This substantial degrades color quality, especially for smoothly changing images. 
-It also fills up the colors table, limited to 256 colors, quite quickly.
+If the output is still 8bit pseudo-colored (the IMAGEMODE is PC256 in the
+associated OUTPUT format declaration) then the full 24bit RGB colors for input
+pixels will be converted to a color in the colormap of the output image. By
+default a color cube is used. That is a fixed set of 175 colors providing 5
+levels of red, 7 levels of green and 5 levels of blue is used, plus an
+additional 32 greyscale color entries. Colors in the input raster are mapped
+to the closest color in this color cube on the fly. This substantial degrades
+color quality, especially for smoothly changing images. It also fills up the
+colors table, limited to 256 colors, quite quickly.
 
-A variation on this approach is to dither the image during rendering. Dithering 
-selects a color for a pixel in a manner that "diffuses error" over pixels. In an area 
-all one color in the source image, a variety of output pixel colors would be selected 
-such that the average of the pixels would more closely approximate the desired color. 
-Dithering also takes advantage of all currently allocated colors, not just those in 
-the color cube. Dithering requires GDAL 1.1.9 or later, and is enabled by providing 
-the PROCESSING "DITHER=YES" option in the mapfile. Dithering is more CPU intensive 
-than using a simple color cube, and should be avoided if possible in performance 
+A variation on this approach is to dither the image during rendering.
+Dithering selects a color for a pixel in a manner that "diffuses error" over
+pixels. In an area all one color in the source image, a variety of output
+pixel colors would be selected such that the average of the pixels would more
+closely approximate the desired color. Dithering also takes advantage of all
+currently allocated colors, not just those in the color cube. Dithering
+requires GDAL 1.1.9 or later, and is enabled by providing the PROCESSING
+"DITHER=YES" option in the mapfile. Dithering is more CPU intensive than using
+a simple color cube, and should be avoided if possible in performance
 sensitive situations.
 
-The other new possibility for handling 24bit input imagery in MapServer 4.0 or later, 
-is to produce 24bit output images. The default "IMAGETYPE png24" or "IMAGETYPE jpeg" 
-declaration may be used to produce a 24bit PNG output file, instead of the more common 
-8bit pseudo-colored PNG file. The OUTPUTFORMAT declaration provides for detailed 
-control of the output format. The IMAGEMODE RGB and IMAGEMODE RGBA options produce 
-24bit and 32bit (24bit plus 8bit alpha/transparency) for supported formats. 
+The other new possibility for handling 24bit input imagery in MapServer 4.0 or
+later, is to produce 24bit output images. The default "IMAGETYPE png24" or
+"IMAGETYPE jpeg" declaration may be used to produce a 24bit PNG output file,
+instead of the more common 8bit pseudo-colored PNG file. The OUTPUTFORMAT
+declaration provides for detailed control of the output format. The IMAGEMODE
+RGB and IMAGEMODE RGBA options produce 24bit and 32bit (24bit plus 8bit
+alpha/transparency) for supported formats.
 
 Special Processing Directives
 =============================
 
-As of MapServer 4.0, the PROCESSING parameter was added to the `LAYER object`_ of the 
-mapfile. It is primariliy used to pass specialized raster processing options to the 
-GDAL based raster renderer. The following processing options are supported in
-MapServer 4.0 and newer.
+As of MapServer 4.0, the PROCESSING parameter was added to the `LAYER object`_
+of the mapfile. It is primariliy used to pass specialized raster processing
+options to the GDAL based raster renderer. The following processing options
+are supported in MapServer 4.0 and newer.
 
 **DITHER=YES**
-    This turns on error diffusion mode, used to convert 24bit images to 8bit with 
-    error diffusion to get better color results.
+    This turns on error diffusion mode, used to convert 24bit images to 8bit
+    with error diffusion to get better color results.
 
     Example:
   
@@ -388,10 +405,10 @@ MapServer 4.0 and newer.
        PROCESSING "DITHER=YES"
       
 **BANDS=red_or_grey[,green,blue[,alpha]]**
-    This directive allows a specific band or bands to be selected from a raster file. 
-    If one band is selected, it is treated as greyscale. If 3 are selected, they are 
-    treated as red, green and blue. If 4 are selected they are treated as red, green, 
-    blue and alpha (opacity).
+    This directive allows a specific band or bands to be selected from a
+    raster file. If one band is selected, it is treated as greyscale. If 3 are
+    selected, they are treated as red, green and blue. If 4 are selected they
+    are treated as red, green, blue and alpha (opacity).
 
     Example:
   
@@ -400,14 +417,15 @@ MapServer 4.0 and newer.
        PROCESSING "BANDS=4,2,1"
       
 **SCALE[_n]=AUTO or min,max**
-    This directive instructs the GDAL reader to pre-scale the incoming raster data. 
-    It is primarily used to scale 16bit or floating point data to the range 0-255, 
-    but can also be used to constrast stretch 8bit data. If an explicit min/max are 
-    provided then the input data is stretch (or squished) such that the minimum value 
-    maps to zero, and the maximum to 255. If AUTO is used instead, a min/max is 
-    automatically computed. To control the scaling of individual input bands, use 
-    the SCALE_1, SCALE_2 and SCALE_3 keywords (for red, green and blue) instead of 
-    SCALE which applies to all bands.
+    This directive instructs the GDAL reader to pre-scale the incoming raster
+    data. It is primarily used to scale 16bit or floating point data to the
+    range 0-255, but can also be used to constrast stretch 8bit data. If an
+    explicit min/max are provided then the input data is stretch (or squished)
+    such that the minimum value maps to zero, and the maximum to 255. If AUTO
+    is used instead, a min/max is automatically computed. To control the
+    scaling of individual input bands, use the SCALE_1, SCALE_2 and SCALE_3
+    keywords (for red, green and blue) instead of SCALE which applies to all
+    bands.
   
     Example:
   
@@ -420,11 +438,11 @@ MapServer 4.0 and newer.
        PROCESSING "SCALE_3=339,1004"
       
 **LUT[_n]=<lut_spec>**
-    This directive (MapServer 4.9+) instructs the GDAL reader to apply a custom 
-    LUT (lookup table) to one or all color bands as a form of on the fly color
-    correction. If LUT is used, the LUT is applied to all color bands.  If LUT_n 
-    is used it is applied to one color band (n is 1 for red, 2 for green, 3 for 
-    blue, 4 for alpha).  
+    This directive (MapServer 4.9+) instructs the GDAL reader to apply a
+    custom LUT (lookup table) to one or all color bands as a form of on the
+    fly color correction. If LUT is used, the LUT is applied to all color
+    bands. If LUT_n is used it is applied to one color band (n is 1 for red, 2
+    for green, 3 for blue, 4 for alpha).
 
     The LUT can be specified inline in the form::
  
@@ -468,17 +486,18 @@ MapServer 4.0 and newer.
       
 
 **COLOR_MATCH_THRESHOLD=n**
-    Alter the precision with which colors need to match an entry in the color table to 
-    use it when producing 8bit colormapped output (IMAGEMODE PC256). Normally colors 
-    from a raster colormap (or greyscale values) need to match exactly. This relaxes 
-    the requirement to being within the specified color distance. So a 
-    COLOR_MATCH_THRESHOLD of 3 would mean that an existing color entry within 3 
-    (sum of difference in red, green and blue) would be used instead of creating a 
-    new colormap entry. Especially with greyscale raster layers, which would normally 
-    use all 256 color entries if available, this can be a good way to avoid "stealing" 
-    your whole colormap for a raster layer. Normally values in the range 2-6 will give 
-    good results.
-  
+    Alter the precision with which colors need to match an entry in the color
+    table to use it when producing 8bit colormapped output (IMAGEMODE PC256).
+    Normally colors from a raster colormap (or greyscale values) need to match
+    exactly. This relaxes the requirement to being within the specified color
+    distance. So a COLOR_MATCH_THRESHOLD of 3 would mean that an existing
+    color entry within 3 (sum of difference in red, green and blue) would be
+    used instead of creating a new colormap entry. Especially with greyscale
+    raster layers, which would normally use all 256 color entries if
+    available, this can be a good way to avoid "stealing" your whole colormap
+    for a raster layer. Normally values in the range 2-6 will give good
+    results. 
+    
     Example:
     
     ::
@@ -486,18 +505,20 @@ MapServer 4.0 and newer.
        PROCESSING "COLOR_MATCH_THRESHOLD=3"
   
 **RESAMPLE=NEAREST/AVERAGE/BILINEAR**
-    This option can be used to control the resampling kernel used sampling raster images.  
-    The default (and fastest) is NEAREST.  AVERAGE will perform compute the average pixel 
-    value of all pixels in the region of the disk file being mapped to the output pixel
-    (or possibly just a sampling of them).  BILINEAR will compute a linear interpolation of
-    the four pixels around the target location.  This topic is discussed in more detail in
-    :ref:`rfc4`.  
+    This option can be used to control the resampling kernel used sampling
+    raster images. The default (and fastest) is NEAREST. AVERAGE will perform
+    compute the average pixel value of all pixels in the region of the disk
+    file being mapped to the output pixel (or possibly just a sampling of
+    them). BILINEAR will compute a linear interpolation of the four pixels
+    around the target location. This topic is discussed in more detail in
+    :ref:`rfc4`.
 
-    Resampling options other than NEAREST result in use of the generalized warper and can
-    dramatically slow down raster processing.  Generally AVERAGE can be desirable for 
-    reducing noise in dramatically downsampled data, and can give something approximating
-    antialiasing for black and white linework.  BILINEAR can be helpful when oversampling 
-    data to give a smooth appearance. 
+    Resampling options other than NEAREST result in use of the generalized
+    warper and can dramatically slow down raster processing. Generally AVERAGE
+    can be desirable for reducing noise in dramatically downsampled data, and
+    can give something approximating antialiasing for black and white
+    linework. BILINEAR can be helpful when oversampling data to give a smooth
+    appearance.
 
     Example (chose one):
   
@@ -510,24 +531,25 @@ MapServer 4.0 and newer.
 Raster Query
 ============
 
-A new feature added in MapServer 4.4 is the ability to perform queries on rasters 
-in a manner similar to queries against vector layers. Raster queries on raster 
-layers return one point feature for each pixel matching the query. The point 
-features will have attributes indicating the value of different bands at that 
-pixel, the final rendering color and the class name. The resulting feature can 
-be directly access in MapScript, or processed through templates much like normal 
-vector query results. Only raster layers with a query TEMPLATE associated can be 
-queried, even for the query methods that don't actually use the query template 
-(much like vector data).
+A new feature added in MapServer 4.4 is the ability to perform queries on
+rasters in a manner similar to queries against vector layers. Raster queries
+on raster layers return one point feature for each pixel matching the query.
+The point features will have attributes indicating the value of different
+bands at that pixel, the final rendering color and the class name. The
+resulting feature can be directly access in MapScript, or processed through
+templates much like normal vector query results. Only raster layers with a
+query TEMPLATE associated can be queried, even for the query methods that
+don't actually use the query template (much like vector data).
 
-Raster query supports QueryByPoint, QueryByRect, and QueryByShape. QueryByPoint 
-supports single and multiple result queries. Other query operations such as QueryByIndex, 
-QueryByIndexAdd, QueryByAttributes and QueryByFeature are not supported for raster 
-layers. 
+Raster query supports QueryByPoint, QueryByRect, and QueryByShape.
+QueryByPoint supports single and multiple result queries. Other query
+operations such as QueryByIndex, QueryByIndexAdd, QueryByAttributes and
+QueryByFeature are not supported for raster layers.
 
 Raster layers do **not** support saving queries to disk, nor **query maps**.
 
-Raster queries return point features with some or all of the following attributes:
+Raster queries return point features with some or all of the following
+attributes:
 
 :x: georeferenced X location of pixel.
 
@@ -548,27 +570,27 @@ Raster queries return point features with some or all of the following attribute
 
 :blue: blue component of the display color for this pixel.
 
-The red, green and blue attribute are intended to be the final color the pixel would 
-be rendered with, but in some subtle cases it can be wrong (ie. classified floating 
-point results). The selected bands are normally the band that would be used to render 
-the layer. For a pure query-only layer BANDS PROCESSING directive can be used to 
-select more bands than could normally be used in a render operation. For instance 
-for a 7 band landsat scene a PROCESSING "BANDS=1,2,3,4,5,6,7" directive could be 
-used to get query results for all seven bands in results to a query operation.
+The red, green and blue attribute are intended to be the final color the pixel
+would be rendered with, but in some subtle cases it can be wrong (ie.
+classified floating point results). The selected bands are normally the band
+that would be used to render the layer. For a pure query-only layer BANDS
+PROCESSING directive can be used to select more bands than could normally be
+used in a render operation. For instance for a 7 band landsat scene a
+PROCESSING "BANDS=1,2,3,4,5,6,7" directive could be used to get query results
+for all seven bands in results to a query operation.
 
-Care should be taken to avoid providing a large query area (selecting alot of pixels) 
-as each selected pixel requires over 100 bytes of memory for temporary caching. The
-RASTER_QUERY_MAX_RESULT PROCESSING item can be used to restrict the maximum number of 
-query results that will be returned. The default is one million which would take on 
-the order of 100MB of RAM.
+Care should be taken to avoid providing a large query area (selecting alot of
+pixels) as each selected pixel requires over 100 bytes of memory for temporary
+caching. The RASTER_QUERY_MAX_RESULT PROCESSING item can be used to restrict
+the maximum number of query results that will be returned. The default is one
+million which would take on the order of 100MB of RAM.
 
-Query results can be returned as HTML via the normal substitution into query template 
-HTML. Query results are also accessable via WMS GetFeatureInfo calls, and from MapScript. 
-The following example shows executing a feature query from Python MapScript and 
+Query results can be returned as HTML via the normal substitution into query
+template HTML. Query results are also accessable via WMS GetFeatureInfo calls,
+and from MapScript. The following example shows executing a feature query from
+Python MapScript and fetching back the results:
 
-fetching back the results:
-
-::
+.. code-block:: python
 
   map = mapscript.Map('rquery.map')
   layer = map.getLayer(0)
