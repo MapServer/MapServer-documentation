@@ -28,21 +28,21 @@ initial implementation had some limitations and is not covered in this document.
 
 This document assumes that you are already familiar with certain aspects of MapServer:
 
-- MapServer application development and especially setting up `.map files`_.
+- MapServer application development and especially setting up :ref:`.map files <mapfile>`.
 
-- Some compilation skills if you don't have ready access to a precompiled installation 
+- Some compilation skills if you don't have ready access to a pre-compiled installation 
   and need to compile your own copy of MapServer with OGR support. 
   
 - access to OGR utilities, such as *ogrinfo*, which are available in the `FWTools`_ and 
   `MS4W`_ packages.
                       
-Readers should also check out the `Vector Data Access Guide`_, which has lots of 
+Readers should also check out the :ref:`Vector Data Access Guide <vector>`, which has lots of 
 examples of how to access specific vector formats.
                         
 What is OGR?
 ============
 
-The OGR Simple Features Library is a C++ open source library (and commandline 
+The OGR Simple Features Library is a C++ open source library (and command-line 
 tools) providing read (and sometimes write) access to a variety of vector file 
 formats including ESRI Shapefiles, and MapInfo mid/mif and TAB formats.  
 
@@ -87,15 +87,19 @@ formats. At the date this document was written, the following formats were suppo
 - `US Census TIGER/Line`_
 - `VRT - Virtual Datasource`_
 
-*Note1: Some of the above formats (e.g. OGDI) have external dependencies and are 
-not always included in the pre-compiled binary distributions of MapServer with 
-OGR support.*
+.. note:: 
 
-*Note2: Some of the above formats are not well suited for random access by nature, 
-that's the case of MapInfo MIF/MID files which is a TEXT format and will give very 
-poor performance for a web application. On the other hand, some binary formats such 
-as MapInfo TAB are better suited for random access and will give performance comparable 
-to native shapefile access in MapServer.*
+    Some of the above formats (e.g. OGDI) have external dependencies and are
+    not always included in the pre-compiled binary distributions of MapServer
+    with OGR support.*
+
+.. note::
+
+    Some of the above formats are not well suited for random access by nature,
+    that's the case of MapInfo MIF/MID files which is a TEXT format and will
+    give very poor performance for a web application. On the other hand, some
+    binary formats such as MapInfo TAB are better suited for random access and
+    will give performance comparable to native shapefile access in MapServer.*
 
 How to Get More Information on the OGR Project
 ----------------------------------------------
@@ -112,11 +116,8 @@ How to Get More Information on the OGR Project
   on IRC see the `MapServer IRC page`_.
 
 
-The main developer of the OGR library is Frank Warmerdam <warmerdam(at)pobox.com>.
-        
-
-The integration of OGR within MapServer was done by Daniel Morissette
-<dmorissette(at)mapgears.com>.
+The main developer of the OGR library is Frank Warmerdam and the 
+integration of OGR within MapServer was done by Daniel Morissette.
 
 Obtaining and Compiling MapServer with OGR Support
 ==================================================
@@ -125,44 +126,45 @@ Obtaining and Compiling MapServer with OGR Support
 
 - Obtain the MapServer source from: http://mapserver.gis.umn.edu/download. 
 
-For UNIX users, see the README.CONFIGURE file in the MapServer source, or see 
-the `UNIX Compilation and Installation`_ howto. If GDAL/OGR is normally installed 
-it should be sufficient to add --with-ogr to the configure line before 
-(re)building MapServer.  Linux users might want to try `FGS`_, a Linux
+For UNIX users, see the README.CONFIGURE file in the MapServer source, or see
+the :ref:`UNIX Compilation and Installation <unix>`. If GDAL/OGR is normally
+installed it should be sufficient to add --with-ogr to the configure line
+before (re)building MapServer. Linux users might want to try `FGS`_, a Linux
 installer for MapServer.
 
-For Windows users, it is recommended to look for a precompiled binary on the 
-`MapServer site`_ (`MS4W`_ is recommended). If you want to compile your own 
+For Windows users, it is recommended to look for a pre-compiled binary on the
+`MapServer site`_ (`MS4W`_ is recommended). If you want to compile your own
 then see the README.WIN32 file in the MapServer source.
 
 Integrating OGR Support with MapServer Applications
 ===================================================
 
-The only change that is needed to integrate OGR support with a MapServer 
-application is with the .map file. The LAYER's DATA parameter is expanded to 
+The only change that is needed to integrate OGR support with a MapServer
+application is with the .map file. The LAYER's DATA parameter is expanded to
 three parameters (CONNECTIONTYPE OGR, CONNECTION and DATA).
 
-The syntax for this differs depending on the type of data being used (the `Vector
-Data Access Guide`_ is an excellent resource for this). In OGR, a data source can 
-be either a set of files that share a common basename (e.g. .shp/.shx/.dbf for 
-ArcView Shapefiles, or .tab/.map/.dat/.ind/.id for MapInfo TAB files) or a whole 
-directory of files (e.g. TIGER).
+The syntax for this differs depending on the type of data being used (the
+:ref:`Vector Data Access Guide <vector>` is an excellent resource for this).
+In OGR, a data source can be either a set of files that share a common
+basename (e.g. .shp/.shx/.dbf for ArcView Shapefiles, or
+.tab/.map/.dat/.ind/.id for MapInfo TAB files) or a whole directory of files
+(e.g. TIGER).
 
-Let's call the former "File-based data sources" and the later "Directory-based 
-data sources". When accessing a **file-based data source** you specify the filename 
-of one of the files in the set (e.g. roads.shp or roads.tab) and when accessing a 
-**directory-based data source** you specify the directory name and OGR reads all 
-the files in the directory as a single data source with potentially several 
-layers (e.g. TIGER files).
+Let's call the former "File-based data sources" and the later "Directory-based
+data sources". When accessing a **file-based data source** you specify the
+filename of one of the files in the set (e.g. roads.shp or roads.tab) and when
+accessing a **directory-based data source** you specify the directory name and
+OGR reads all the files in the directory as a single data source with
+potentially several layers (e.g. TIGER files).
 
-Some OGR drivers (e.g. SHP, TAB) can have dual behaviors, that is if they're 
-pointed to a single file then they behave as a file-based data source and if 
-they're pointed to a directory then they will behave as a directory-based data 
-source and then every file in the directory becomes a new layer in the data 
+Some OGR drivers (e.g. SHP, TAB) can have dual behaviors, that is if they're
+pointed to a single file then they behave as a file-based data source and if
+they're pointed to a directory then they will behave as a directory-based data
+source and then every file in the directory becomes a new layer in the data
 source.
 
-See the `OGR formats page`_ for more info on the specific file format you're using.
-(Click on the format name for more specific driver info on that format)
+See the `OGR formats page`_ for more info on the specific file format you're
+using. (Click on the format name for more specific driver info on that format)
 
 Using OGR Data Sources in the Map File
 --------------------------------------
@@ -180,44 +182,49 @@ The .map file LAYER definition for file-based sources is as follows:
       END
               
 
-**<datasource_name>** is the name of the datasource to read from and is prefixed by 
-the CONNECTION keyword. The exact organization depends on the format driver 
-in use. The format driver to use is automatically selected by OGR based on the 
-nature of the string passed as the datasource, and/or the format of the 
-file referenced by it.
+**<datasource_name>** is the name of the datasource to read from and is
+prefixed by the CONNECTION keyword. The exact organization depends on the
+format driver in use. The format driver to use is automatically selected by
+OGR based on the nature of the string passed as the datasource, and/or the
+format of the file referenced by it.
 
 
-  - For file based datasources this is the name of the file, including the extension, 
-    using an absolute path, or a relative path. Relative paths are interpreted 
-    relative to the SHAPEPATH first, if not found then we try again relative to the 
-    .map file location. (Note: before version 4.1 the SHAPEPATH used ignored for 
-    OGR datasources).
+  - For file based datasources this is the name of the file, including the
+    extension, using an absolute path, or a relative path. Relative paths are
+    interpreted relative to the SHAPEPATH first, if not found then we try
+    again relative to the .map file location. 
+    
+    .. note:: 
+        
+        Before version 4.1 the SHAPEPATH was ignored for OGR datasources.
 
-  - For directory based datasources, such as TIGER/Line, or Arc/Info Binary Coverages 
-    this is the name of the directory containing the files. If the path is relative 
-    it is interpreted relative to the .map file.
+  - For directory based datasources, such as TIGER/Line, or Arc/Info Binary
+    Coverages this is the name of the directory containing the files. If the
+    path is relative it is interpreted relative to the .map file.
 
-  - For virtual datasources such as database systems, and OGDI this is the service 
-    connection string and is generally not related to the filesystem. For instance, 
-    for Oracle Spatial this might be "OCI:warmerda/Password@gdal800.velocet.ca".
+  - For virtual datasources such as database systems, and OGDI this is the
+    service connection string and is generally not related to the filesystem.
+    For instance, for Oracle Spatial this might be
+    "OCI:warmerda/Password@gdal800.velocet.ca".
 
-**<layer_definition>** is the name, number or SQL definition of the layer to use 
-from the datasource. It is indicated via the DATA keyword in the map file.
+**<layer_definition>** is the name, number or SQL definition of the layer to
+use from the datasource. It is indicated via the DATA keyword in the map file.
 
-  - Layer Name: The (case insenstive) layer name may be used to select a layer.
+  - Layer Name: The (case insenstive) layer name may be used to select a
+    layer.
 
-  - Layer Number: The layer number (starting from 0 for the first layer) may be used 
+  - Layer Number: The layer number (starting from 0 for the first layer) may
+    be used to select a layer. Generally the layer name is preferred to this
+    since it is more self describing.
 
+  - Omitted: If no DATA keyword is provided, this is equivalent to selecting
+    layer 0.
 
-    to select a layer. Generally the layer name is preferred to this since it is 
-    more self describing.
-
-  - Omitted: If no DATA keyword is provided, this is equivelent to selecting layer 0.
-
-  - SQL SELECT: If an SQL SELECT statement is used, it is interpreted in a driver 
-    specific manner to try and generate a temporary pseudo-layer. For some formats 
-    this a restricted subset of SQL is interpreted within OGR. For RDBMS based drivers 
-    (such as PostGIS and Oracle) this is passed through to the underlying database. 
+  - SQL SELECT: If an SQL SELECT statement is used, it is interpreted in a
+    driver specific manner to try and generate a temporary pseudo-layer. For
+    some formats this a restricted subset of SQL is interpreted within OGR.
+    For RDBMS based drivers (such as PostGIS and Oracle) this is passed
+    through to the underlying database.
 
 The OGRINFO utility can be used to find out the list of layers and their names in a 
 data source. 
@@ -225,8 +232,8 @@ data source.
 Examples of Layer Definitions Using OGR
 ---------------------------------------
 
-Please see the `Vector Data Access Guide`_ for details and examples of each data 
-format supported.
+Please see the :ref:`Vector Data Access Guide <vector>` for details and
+examples of each data format supported.
 
 **Example 1. MapInfo TAB file**
 
@@ -246,8 +253,8 @@ format supported.
                
 **Example 2. Microstation DGN file using <layer_index>**
 
-The entire DGN file is represented in OGR as one layer (see the `DGN driver page`_
-for more details):
+The entire DGN file is represented in OGR as one layer (see the `DGN driver
+page`_ for more details):
 
 ::
 
@@ -461,27 +468,29 @@ The following is a simple example of a point layer using a tile index.
      END
    END
 
-OGR tileindex layers should support all normal query and attribute fetching mechanisms, 
-including from MapScript; however, this has not been heavily tested as of April/2002. 
-Please report problems via the MapServer Bugzilla. If auto projection support is used 
-for tileindexed OGR layers, the tileindex is read for the projection (not the component 
-tiles). Problems may (or may not) be encountered if the component tiles have differing 
-schemas (different sets of attributes).
+OGR tileindex layers should support all normal query and attribute fetching
+mechanisms, including from MapScript; however, this has not been heavily
+tested as of April/2002. Please report problems via the MapServer Trac. If
+auto projection support is used for tileindexed OGR layers, the tileindex is
+read for the projection (not the component tiles). Problems may (or may not)
+be encountered if the component tiles have differing schemas (different sets
+of attributes).
 
 Connection Pooling
 ------------------
 
-For some OGR supported formats, connecting to the dataset is quite expensive in terms of 
-CPU use and amount of disk IO. For instance, establishing access to an S-57 dataset 
-results in a complete read into memory of the data files. Connection pooling control 
-aims at reducing this overhead in situations where the same file is used for several 
-different map layers.
+For some OGR supported formats, connecting to the dataset is quite expensive
+in terms of CPU use and amount of disk IO. For instance, establishing access
+to an S-57 dataset results in a complete read into memory of the data files.
+Connection pooling control aims at reducing this overhead in situations where
+the same file is used for several different map layers.
 
-To ensure that an OGR supported dataset is only opened once per map render (instead 
-of seperately for each map LAYER referencing the dataset, use the CLOSE_CONNECTION 
-PROCESSING option. The default value is for CLOSE_CONNECTION is NORMAL, but if set 
-to DEFER the dataset will be kept open till the map render is complete. It will be 
-reused by any other layers with using the same datasource.
+To ensure that an OGR supported dataset is only opened once per map render
+(instead of separately for each map LAYER referencing the dataset, use the
+CLOSE_CONNECTION PROCESSING option. The default value is for CLOSE_CONNECTION
+is NORMAL, but if set to DEFER the dataset will be kept open till the map
+render is complete. It will be reused by any other layers with using the same
+datasource.
 
 **Example 9. Preserve S-57 connection for two layers**
 
@@ -530,9 +539,12 @@ till layer. In the second (or last) layer we request NORMAL connection handling
 STYLEITEM "AUTO" - Rendering Layers Using Style Information from the OGR File
 =============================================================================
 
-*NOTE: This feature is only supported with MapInfo TAB and Microstation DGN files 
-at the moment, but eventually other formats that carry colors and styles at the 
-shape-level may also be supported through OGR.*
+
+.. note::
+
+    This feature is only supported with MapInfo TAB and Microstation DGN files
+    at the moment, but eventually other formats that carry colors and styles
+    at the shape-level may also be supported through OGR.*
 
 In MapServer, ArcView, and other shapefile-based applications, colors and styles 
 are usually defined at the layer level. This means that all the shapes in a given 
@@ -774,36 +786,12 @@ FAQ / Common Problems
     return to MapServer. Look at the "Style" string in the ogrinfo output for each 
     shape that is read. 
 
-About This Document
-===================
 
-Copyright Information
----------------------
-
-Copyright (c) 2008, Jeff McKenna.
-                
-This documentation is covered by the same Open Source license as the MapServer 
-software itself.  See MapServer's `License and Credits`__ page for the complete 
-text.
-            
-__ http://mapserver.gis.umn.edu/License  
-
-Disclaimer
-----------
-
-No liability for the contents of this document can be accepted.
-Use the concepts, examples and other content at your own risk.
-As this is a new edition of this document, there may be errors
-and inaccuracies that may be damaging to your system.
-Although this is highly unlikely, the author(s) do not take any 
-responsibility for that:  proceed with caution.
 
 .. #### rST Link Section ####
 
-.. _`.map files`: http://mapserver.gis.umn.edu/docs/reference/mapfile
 .. _`FWTools`: http://fwtools.maptools.org/
 .. _`MS4W`: http://www.maptools.org/ms4w/
-.. _`Vector Data Access Guide`: http://mapserver.gis.umn.edu/docs/reference/vector_data
 .. _`ArcInfo Coverages`: http://www.gdal.org/ogr/drv_avc.html
 .. _`Comma Separated Value (.csv)`: http://www.gdal.org/ogr/drv_csv.html
 .. _`DODS/OPeNDAP`: http://www.gdal.org/ogr/drv_dods.html
@@ -830,8 +818,6 @@ responsibility for that:  proceed with caution.
 .. _`GDAL mailing list`: http://lists.osgeo.org/mailman/listinfo/gdal-dev
 .. _`MapServer IRC page`: http://mapserver.gis.umn.edu/community/irc/
 .. _`OGR page`: http://www.gdal.org/ogr/
-.. _`UNIX Compilation and Installation`: http://mapserver.gis.umn.edu/docs/howto/compiling_on_unix
-.. _`MapServer site`: http://mapserver.gis.umn.edu/download/current/windows/
 .. _`FGS`: http://www.maptools.org/fgs/
 .. _`OGR formats page`: http://www.gdal.org/ogr/ogr_formats.html
 .. _`DGN driver page`: http://www.gdal.org/ogr/drv_dgn.html
