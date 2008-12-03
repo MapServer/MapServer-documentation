@@ -1,0 +1,97 @@
+.. _rfc49:
+
+======================================================================
+MS RFC 49: Symbology, Labeling, and Cartography Improvements
+======================================================================
+
+:Date: 2008/12/03
+:Authors: Thomas Bonfort, Stephen Lime
+:Contact: Thomas.Bonfort at camptocamp.com , Steve.Lime at DNR.State.MN.US
+:Status: Draft
+:Version: MapServer 5.4
+:Id: $Id$
+
+Purpose
+-------------------------------------------------------------------------
+This RFC regroups a few minor additions or changes to the MapServer rendering
+or mapfile syntax.
+
+
+
+Fractional values for SIZE and WIDTH
+-------------------------------------------------------------------------
+AGG can deal with fractional widths and sizes but styleObj's define those
+properties as int's.  Shouldn't be a big deal since both GD and AGG don't use
+those values directly, rather they use scaled values with are cast or rounded
+to an int if necessary. 
+
+http://trac.osgeo.org/mapserver/ticket/2766
+
+
+MINSCALEDENOM / MAXSCALEDENOM for STYLEs and LABELS
+-------------------------------------------------------------------------
+These keywords can reduce mapfile size and maintainance, by avoiding
+creating multiple layers or classes.
+
+
+OUTLINEWIDTH on line layers
+------------------------------------------------------------------------
+It is currently impossible to draw a outlined line with a scale-dependant
+width.  We propose to add the OUTLINWIDTH keyword to the STYLE block, that
+indicates the width in pixels that should be rendered around the main line
+color.
+
+The implementation of this lies in mapdraw.c. When a line's style block has an
+outlinewidth, the underlying shape is actually drawn twice: once with it's
+width adapted to account for the outlinewidth, and once normally. The current
+caching mechanism for lines is preserved.
+
+example usage:
+
+::
+
+  LAYER
+    TYPE LINE
+    SIZEUNITS meters
+    CLASS
+      STYLE
+        COLOR 255 0 0
+        OUTLINECOLOR 0 0 0
+        OUTLINEWIDTH 1
+        WIDTH 25 #this is in meters (ground units)
+        MINWIDTH 1 #minimal width (in pixels) for far zoomed maps
+        MAXWIDTH 20 #maximal width (in pixels) for close zoomed maps
+      END
+    END
+  END
+  
+whatever the map extent or scale, this line layer would always be rendered by a
+red line with a one pixel black outline.
+
+
+add LABELMETHOD to layerObj
+------------------------------------------------------------------------------
+The current algorithm ensures that a label point is *in* a polygon, but that
+point is not always optimal. A better approach would be to compute a true
+centroid or center of gravity instead of using the bbox center. 
+
+
+(or perhaps just method to labelObj?)
+ 
+- this would allow users to choose label placement algorithms that meet their
+  needs. For example, in D2 below improving label placement will come with a
+  reduction in performance. In some situations simply using a shapes bounding
+  box center is perfectly adequate.
+
+- The default would be the improved placement.
+
+http://trac.osgeo.org/mapserver/ticket/2793
+
+
+
+add LABEL to layersObj
+--------------------------------------------------------------------------------
+so that a default can be defined for all classes (sort of like templates). A
+class label would take precedent.
+
+
