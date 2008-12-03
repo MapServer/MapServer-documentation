@@ -1,255 +1,178 @@
-<p>
-Oracle Spatial is a spatial cartridge for the Oracle database. Remember that all Oracle databases come with Locator, which has less features than Oracle Spatial. The differences between Locator and Spatial can be found in the <a href="http://www.orafaq.com/faqsdo.htm">Oracle Spatial FAQ</a>.
-</p>
+<p> Oracle Spatial is a spatial cartridge for the Oracle database. Remember
+that all Oracle databases come with Locator, which has less features than
+Oracle Spatial. The differences between Locator and Spatial can be found in
+the <a href="http://www.orafaq.com/faqsdo.htm">Oracle Spatial FAQ</a>. </p>
 
 <H4>What MapServer 4.4 or new currently supports with Oracle Spatial:</H4>
-<ul>
-<li>mode=map
-<li>query modes: query, nquery, itemnquery
-<li>mapscript query functions such as querybyattributes
-<li>OGC:WMS, GetCapabilities, GetMap, GetFeatureInfo, DescribeLayer
-<li>OGC:WFS, GetCapabilities, DescribeFeatureType, GetFeature
-</ul>
+<ul> <li>mode=map <li>query modes: query, nquery, itemnquery <li>mapscript
+query functions such as querybyattributes <li>OGC:WMS, GetCapabilities,
+GetMap, GetFeatureInfo, DescribeLayer <li>OGC:WFS, GetCapabilities,
+DescribeFeatureType, GetFeature </ul>
 
-<H4>Binaries</H4>
-<p>
-Mapserver Windows binaries with Oracle spatial support can be downloaded from the mapserver download site. But you need Oracle client software in the server on which you are running mapserver. Oracle client software can be obtained for development purposes from the Oracle website, but you need to register, which by the way is free. The most recent version is Oracle Database 10g Release 1 Client. The ORACLE TECHNOLOGY NETWORK DEVELOPMENT LICENSE AGREEMENT applies to this software. The instant client will be satisfactory, you can download the instant client from <a href="http://www.oracle.com/technology/software/tech/oci/instantclient/index.html">this location</a>. Make sure though your Mapserver is compiled against the same version as your Oracle client, for compiling you need a full client install, not just the instant client.
+<H4>Binaries</H4> <p> Mapserver Windows binaries with Oracle spatial support
+can be downloaded from the mapserver download site. But you need Oracle client
+software in the server on which you are running mapserver. Oracle client
+software can be obtained for development purposes from the Oracle website, but
+you need to register, which by the way is free. The most recent version is
+Oracle Database 10g Release 1 Client. The ORACLE TECHNOLOGY NETWORK
+DEVELOPMENT LICENSE AGREEMENT applies to this software. The instant client
+will be satisfactory, you can download the instant client from <a
+href="http://www.oracle.com/technology/software/tech/oci/instantclient/index.html">this
+location</a>. Make sure though your Mapserver is compiled against the same
+version as your Oracle client, for compiling you need a full client install,
+not just the instant client. </p>
+
+<H4>Setting environment variables</H4> <p> The native support for Oracle
+Spatial requires setting some environent variables. These variables tell the
+MapServer where the Oracle client binaries, libs and tnsnames.ora information
+can be found. It's related with access to Oracle files and you should check
+these enviroment variables!. The more important enviroments is: </p> <ul>
+<li>ORACLE_HOME - "oracle client home directory" <li>ORACLE_SID - "default
+database sid from tnsnames.ora" <li>TNS_ADMIN - "folder where the tnsnames.ora
+exist" </ul>
+
+<p> An example for the Apache httpd.conf file: </p>
+
+<ul> <li>SetEnv TNS_ADMIN "f:/oracle/ora92/network/admin" <li>SetEnv PATH
+"f:/oracle/ora92/bin" </ul>
+
+<H5>Note</H5> If you receive errormessage like "Error: .". It's relate that
+Mapserver can't access or locate the ORACLE_HOME. </p>
+
+<H4>Two options for using Oracle Spatial with Mapserver</H4> Oracle Spatial
+layers in mapserver can be used through 2 interfaces: <ul> <li>The native
+built-in support through maporaclespatial.c <li>OGR, but watch out: OGR is not
+compiled with Oracle Spatial support so it won't work without compiling in OCI
+(Oracle client) yourself. This requires both recompiling GDAL/OGR as well as
+recompiling Mapserver itself against the new GDAL/OGR !!!! </ul>
+
+<H4>Mapfile syntax for native Oracle Spatial support</H4> The DATA statement
+for a LAYER of CONNECTIONTYPE oraclespatial can now have 4 options. This
+change is backwards compatible, i.e. the old ways of specifying DATA still
+work. The new options are an extension to the old DATA statements, as they
+needed to include identification of the primary key to be used for the query
+modes (UNIQUE).
+
+<H5>The following options are valid DATA statements:</H5> <pre> "[geom_column]
+FROM [table]| [( SELECT [...] FROM [table]|[Spatial Operator] [WHERE
+condition] )] [USING [UNIQUE column] | [SRID #srid] | [FUNCTION] | [VERSION
+#version] ]" </pre>
+
+<h5>Example 1</h5> The most simple DATA statement, in this case you only need
+to define one geometry column and one table. This option assumes you do not
+have an SRID defined. <pre> LAYER .. CONNECTIONTYPE oraclespatial DATA
+"MYGEOMETRY FROM MYTABLE" .. END </pre>
+
+<h5>Example 2</h5> It's composed of the first option plus the USING UNIQUE
+parameter. These new features are necessary when you want to use any query
+function. When it is used you must pass a numeric column type. This option
+assumes you do not have an SRID defined.
+
+<pre> LAYER .. CONNECTIONTYPE oraclespatial DATA "MYGEOMETRY FROM MYTABLE
+USING UNIQUE MYTABLE_ID" .. END </pre>
+
+<h5>Exmaple 3</h5> This option is an extension to the first option. In this
+mode you must define the USING SRID parameter when the SRID value in your data
+is different from NULL. <pre> LAYER .. CONNECTIONTYPE oraclespatial DATA
+"MYGEOMETRY FROM MYTABLE USING SRID 90112" .. END </pre>
+
+<h5>Example 4</h5> This option is a combination of examples 2 and 3. <pre>
+LAYER .. CONNECTIONTYPE oraclespatial DATA "MYGEOMETRY FROM MYTABLE USING
+UNIQUE MYTABLE_ID SRID 90112" .. END </pre>
+
+<h4>Using subselects in the DATA statement</h4> It is possible to define the
+source of the date as a subselect and not only as a table. As source of data,
+used in FROM token, you can define any SQL, table, function, or operator that
+returns a SDO_GEOMETRY. For example: <pre> DATA "[geom_column] FROM (SELECT
+[columns] FROM [table]|[Spatial function])" </pre> <p> If the LAYER definition
+contains a CLASSITEM, LABELITEM or FILTER, it is necessary that the fields
+used are returned by the query. When you define CLASSITEM you can use an
+expression without any problems. </p>
+
+<h4>Additional keywords - [FUNCTION]</h4> You can add three keywords to the
+DATA statement for [FUNCTION] option that influence the query which will be
+executed in Oracle:
+
+<H5>USING FILTER</H5> Example: <pre> "[geom_column] FROM [table]|([Subselect])
+USING FILTER" </pre> <p> Using this keyword triggers Mapserver to use the
+Oracle Spatial SDO_FILTER operator. This operator executes only the Oracle
+Spatial primary filter over your query data. In the Oracle User guide they
+explain: The primary filter compares geometric approximations, it returns a
+superset of exact result. The primary filter therefore should be as efficient
+(that is, selective yet fast) as possible. This operator uses the spatial
+index, so you need to define your spatial index correctly to retrieve an exact
+result. If the result of the query is not exact you can try the next option.
 </p>
 
-<H4>Setting environment variables</H4>
-<p>
-The native support for Oracle Spatial requires setting some environent variables. These variables tell the MapServer where the Oracle client binaries, libs and tnsnames.ora information can be found. It's related with access to Oracle files and you should check these enviroment variables!. The more important enviroments is:
-</p>
-<ul>
-<li>ORACLE_HOME - "oracle client home directory"
-<li>ORACLE_SID - "default database sid from tnsnames.ora"
-<li>TNS_ADMIN - "folder where the tnsnames.ora exist"
-</ul>
+<H5>USING RELATE</H5> Example: <pre> "[geom_column] FROM [table]|([Subselect])
+USING RELATE" </pre> <p> Using this keyword triggers Mapserver to use the
+Oracle Spatial SDO_RELATE operator. This operator applies the primary and
+secondary Oracle Spatial filters. It's performance can be slightly slow but
+the result is extremely correct. You can use this mode when you want a perfect
+result or when you can't readjust the spatial index. </p>
 
-<p>
-An example for the Apache httpd.conf file:
-</p>
+<H5>USING GEOMRELATE</H5> Example: <pre> "[geom_column] FROM
+[table]|([Subselect]) USING GEOMRELATE" </pre> <p> Using this keyword triggers
+Mapserver to use the geometry function SDO_GEOM.RELATE, a function that
+searches the relations between geometries. SDO_GEOM.RELATE does not use the
+spatial index and your performance is more slow than operators but it's very
+accurate. You can use this mode when you can't use the spatial index or when
+it doesn't exist. </p>
 
-<ul>
-<li>SetEnv TNS_ADMIN "f:/oracle/ora92/network/admin"
-<li>SetEnv PATH "f:/oracle/ora92/bin"
-</ul>
+<H5>USING NONE</H5> Example: <pre> "[geom_column] FROM [table]|([Subselect])
+USING NONE" </pre> <p> Using this keyword triggers Mapserver to don't use any
+geometry function or spatial operator. So, the internal SQL don't retrict,
+bases in the extent, the data from source. All the data from source will be
+returned for Mapserver. The NONE token is very useful when the source of the
+data don't contains any spatial index. It's usually occur when the source is a
+function like SDO_BUFFER, SDO_XOR, SDO_INTERSECTION...... So this mode is
+recomended when you can't use the spatial index or when it doesn't exist. </p>
 
-<H5>Note</H5>
-If you receive errormessage like "Error: .".  It's relate that Mapserver can't access or locate the ORACLE_HOME.
-</p>
+<h4>Additional keywords - [VERSION]</h4> You can define what version of
+database you are using to improve the internal sql. This is very useful when
+using geodetic SRIDs and Mapserver functions that retrieve the extent from
+data.
 
-<H4>Two options for using Oracle Spatial with Mapserver</H4>
-Oracle Spatial layers in mapserver can be used through 2 interfaces:
-<ul>
-<li>The native built-in support through maporaclespatial.c
-<li>OGR, but watch out: OGR is not compiled with Oracle Spatial support so it won't work without compiling in OCI (Oracle client) yourself. This requires both recompiling GDAL/OGR as well as recompiling Mapserver itself against the new GDAL/OGR !!!!
-</ul>
+<H5>USING VERSION 8i</H5> Example: <pre> "[geom_column] FROM
+[table]|([Subselect]) USING VERSION 8i" </pre> <p> This indicates Mapserver to
+use a internal SQL that it's compatible with Oracle 8i version. </p>
 
-<H4>Mapfile syntax for native Oracle Spatial support</H4>
-The DATA statement for a LAYER of CONNECTIONTYPE oraclespatial can now have 4 options. This change is backwards compatible, i.e. the old ways of specifying DATA still work. The new options are an extension to the old DATA statements, as they needed to include identification of the primary key to be used for the query modes (UNIQUE).
+<H5>USING VERSION 9i</H5> Example: <pre> "[geom_column] FROM
+[table]|([Subselect]) USING VERSION 9i" </pre> <p> The second indicates
+Mapserver to use 9i version, is recommended to use this parameter if you are
+using 9i version because the internal SQL will use specific spatial functions
+that is need to retrieve data correctly from 9i Oracle Spatial versions. </p>
 
-<H5>The following options are valid DATA statements:</H5>
-<pre>
-"[geom_column] 
- FROM 
-    [table]| [(
-                SELECT [...] 
-                FROM [table]|[Spatial Operator] 
-                [WHERE condition]
-             )] 
- [USING [UNIQUE column] 
-        | [SRID #srid] 
-        | [FUNCTION] 
-        | [VERSION #version]
- ]"
-</pre>
+<H5>USING VERSION 10g</H5> Example: <pre> "[geom_column] FROM
+[table]|([Subselect]) USING VERSION 10g" </pre> <p> This indicates Mapserver
+to use a internal SQL that it's compatible with Oracle 8i version. </p>
 
-<h5>Example 1</h5>
-The most simple DATA statement, in this case you only need to define one geometry column and one table. This option assumes you do not have an SRID defined.
-<pre>
-LAYER
-  ..
-  CONNECTIONTYPE oraclespatial
-  DATA "MYGEOMETRY FROM MYTABLE"
-  ..
-END
-</pre>
+<h4>More information</h4> <ul> <li>You can define any PROJECTION to your LAYER
+without problem, can be used for data with or without an SRID in Oracle.
+<li>The native support for Oracle Spatial supports the defaults definition for
+SDO_GEOMETRY in database, the Oracle Spatial SDO package. <li>Information
+about the primary and secondary Oracle Spatial filters can be found in the
+Oracle Spatial User Guide (the "Query Model" section). Information about the
+SDO_FILTER and SDO_RELATE operators can be found in the "Spatial Operators"
+section, and information about the SDO_GEOM.RELATE function can be found in
+the "Geometry Function" section of the Oracle Spatial User Guide. </ul>
 
+<h4>Example of a LAYER</h4> <pre> LAYER NAME kwadranten TYPE POLYGON
+CONNECTIONTYPE oraclespatial CONNECTION "user/pwd" DATA "GEOMETRIE FROM
+KWADRANTEN USING SRID 90112" DUMP TRUE CLASS STYLE OUTLINECOLOR 0 0 0 COLOR 0
+128 128 END END END </pre>
 
-<h5>Example 2</h5>
-It's composed of the first option plus the USING UNIQUE parameter. These new features are necessary when you want to use any query function. When it is used you must pass a numeric column type. This option assumes you do not have an SRID defined.
+<p> You can specifie the SID for your database, the SID alias needs to be
+supplied in the tnsnames.ora file of the Oracle client, e.g. </p>
 
-<pre>
-LAYER
-  ..
-  CONNECTIONTYPE oraclespatial
-  DATA "MYGEOMETRY FROM MYTABLE USING UNIQUE MYTABLE_ID"
-  ..
-END
-</pre>
+<p> Example for tnsnames.ora: </p> <pre> MYDB = (DESCRIPTION = (ADDRESS_LIST =
+(ADDRESS = (PROTOCOL = TCP)(HOST = server_ip)(PORT = 1521)) ) (CONNECT_DATA =
+(SERVICE_NAME = DB1) ) ) </pre>
 
-<h5>Exmaple 3</h5>
-This option is an extension to the first option. In this mode you must define the USING SRID parameter when the SRID value in your data is different from NULL.
-<pre>
-LAYER
-  ..
-  CONNECTIONTYPE oraclespatial
-  DATA "MYGEOMETRY FROM MYTABLE USING SRID 90112"
-  ..
-END
-</pre>
+<p> So after this you can define you layer connection as: </p> <pre>
+CONNECTION "user/pwd@MYDB" </pre>
 
-<h5>Example 4</h5>
-This option is a combination of examples 2 and 3.
-<pre>
-LAYER
-  ..
-  CONNECTIONTYPE oraclespatial
-  DATA "MYGEOMETRY FROM MYTABLE USING UNIQUE MYTABLE_ID SRID 90112"
-  ..
-END
-</pre>
-
-<h4>Using subselects in the DATA statement</h4>
-It is possible to define the source of the date as a subselect and not only as a table. As source of data, used in FROM token, you can define any SQL, table, function, or operator that returns a SDO_GEOMETRY. For example:
-<pre>
-DATA "[geom_column] FROM (SELECT [columns] FROM [table]|[Spatial function])"
-</pre>
-<p>
-If the LAYER definition contains a CLASSITEM, LABELITEM or FILTER, it is necessary that the fields used are returned by the query. When you define CLASSITEM you can use an expression without any problems.
-</p>
-
-<h4>Additional keywords - [FUNCTION]</h4>
-You can add three keywords to the DATA statement for [FUNCTION] option that influence the query which will be executed in Oracle:
-
-<H5>USING FILTER</H5>
-Example:
-<pre>
-"[geom_column] FROM [table]|([Subselect]) USING FILTER"
-</pre>
-<p>
-Using this keyword triggers Mapserver to use the Oracle Spatial SDO_FILTER operator. This operator executes only the Oracle Spatial primary filter over your query data. In the Oracle User guide they explain: The primary filter compares geometric approximations, it returns a superset of exact result. The primary filter therefore should be as efficient (that is, selective yet fast) as possible. This operator uses the spatial index, so you need to define your spatial index correctly to retrieve an exact result. If the result of the query is not exact you can try the next option.
-</p>
-
-<H5>USING RELATE</H5>
-Example: 
-<pre>
-"[geom_column] FROM [table]|([Subselect]) USING RELATE"
-</pre>
-<p>
-Using this keyword triggers Mapserver to use the Oracle Spatial SDO_RELATE operator. This operator applies the primary and secondary Oracle Spatial filters. It's performance can be slightly slow but the result is extremely correct. You can use this mode when you want a perfect result or when you can't readjust the spatial index.
-</p>
-
-<H5>USING GEOMRELATE</H5>
-Example:
-<pre>
-"[geom_column] FROM [table]|([Subselect]) USING GEOMRELATE"
-</pre>
-<p>
-Using this keyword triggers Mapserver to use the geometry function SDO_GEOM.RELATE, a function that searches the relations between geometries. SDO_GEOM.RELATE does not use the spatial index and your performance is more slow than operators but it's very accurate. You can use this mode when you can't use the spatial index or when it doesn't exist. 
-</p>
-
-<H5>USING NONE</H5>
-Example:
-<pre>
-"[geom_column] FROM [table]|([Subselect]) USING NONE"
-</pre>
-<p>
-Using this keyword triggers Mapserver to don't use any geometry function or spatial operator. So, the internal SQL don't retrict, bases in the extent, the data from source. All the data from source will be returned for Mapserver. The NONE token is very useful when the source of the data don't contains any spatial index. It's usually occur when the source is a function like SDO_BUFFER, SDO_XOR, SDO_INTERSECTION...... So this mode is recomended when you can't use the spatial index or when it doesn't exist. 
-</p>
-
-<h4>Additional keywords - [VERSION]</h4>
-You can define what version of database you are using to improve the internal sql. This is very useful when using geodetic SRIDs and Mapserver functions that retrieve the extent from data.
-
-<H5>USING VERSION 8i</H5>
-Example:
-<pre>
-"[geom_column] FROM [table]|([Subselect]) USING VERSION 8i"
-</pre>
-<p>
-This indicates Mapserver to use a internal SQL that it's compatible with Oracle 8i version.
-</p>
-
-<H5>USING VERSION 9i</H5>
-Example:
-<pre>
-"[geom_column] FROM [table]|([Subselect]) USING VERSION 9i"
-</pre>
-<p>
-The second indicates Mapserver to use 9i version, is recommended to use this parameter if you are using 9i version because the internal SQL will use specific spatial functions that is need to retrieve data correctly from 9i Oracle Spatial versions.
-</p>
-
-<H5>USING VERSION 10g</H5>
-Example:
-<pre>
-"[geom_column] FROM [table]|([Subselect]) USING VERSION 10g"
-</pre>
-<p>
-This indicates Mapserver to use a internal SQL that it's compatible with Oracle 8i version.
-</p>
-
-<h4>More information</h4>
-<ul>
-<li>You can define any PROJECTION to your LAYER without problem, can be used for data with or without an SRID in Oracle.
-<li>The native support for Oracle Spatial supports the defaults definition for SDO_GEOMETRY in database, the Oracle Spatial SDO package.
-<li>Information about the primary and secondary Oracle Spatial filters can be found in the Oracle Spatial User Guide (the "Query Model" section). Information about the SDO_FILTER and SDO_RELATE operators can be found in the "Spatial Operators" section, and information about the SDO_GEOM.RELATE function can be found in the "Geometry Function" section of the Oracle Spatial User Guide.
-</ul>
-
-
-<h4>Example of a LAYER</h4>
-<pre>
-  LAYER
-    NAME kwadranten
-    TYPE POLYGON
-    CONNECTIONTYPE oraclespatial
-    CONNECTION "user/pwd"
-    DATA "GEOMETRIE FROM KWADRANTEN USING SRID 90112"
-    DUMP TRUE
-    CLASS 
-     STYLE
-       OUTLINECOLOR 0 0 0
-       COLOR 0 128 128
-     END
-    END 
-  END
-</pre>
-
-<p>
-You can specifie the SID for your database, the SID alias needs to be supplied in the tnsnames.ora file of the Oracle client, e.g.
-</p>
-
-<p>
-Example for tnsnames.ora:
-</p>
-<pre>
-  MYDB =
-   (DESCRIPTION =
-    (ADDRESS_LIST =
-      (ADDRESS = (PROTOCOL = TCP)(HOST = server_ip)(PORT = 1521))
-    )
-    (CONNECT_DATA =
-      (SERVICE_NAME = DB1)
-    )
-  )
-</pre>
-
-<p>
-So after this you can define you layer connection as:
-</p>
-<pre>
-CONNECTION "user/pwd@MYDB"
-</pre>
-
-<p>
-<h4>Mapfile syntax for  OGR Oracle Spatial support</h4>
-Syntax for your MAP file:
-</p>
-<pre>
-  CONNECTION "OCI:user/pwd@service"
-  CONNECTIONTYPE OGR
-  DATA "Tablename"
-</pre>
-<p>
-Make sure you set the wms_extent METADATA for the LAYER, as otherwise the "Getcapabilities" request takes a lot of time.
-</p>
+<p> <h4>Mapfile syntax for OGR Oracle Spatial support</h4> Syntax for your MAP
+file: </p> <pre> CONNECTION "OCI:user/pwd@service" CONNECTIONTYPE OGR DATA
+"Tablename" </pre> <p> Make sure you set the wms_extent METADATA for the
+LAYER, as otherwise the "Getcapabilities" request takes a lot of time. </p>
