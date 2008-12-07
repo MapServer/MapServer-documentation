@@ -51,12 +51,19 @@ How to make a connection to SDE:
     PROCESSING "QUERYORDER=ATTRIBUTE" # <-- MapServer 4.10 and above
 
     # Within database one-to-one join support
-    PROCESSING "JOINTABLE=SDE_MASTER.GEOSERVWRITE.JOINTABLE" # <-- MapServer 5.0 and above
-    CLASSITEM "SDE_MASTER.GEOSERVWRITE.JOINTABLE.VAL" # <-- MapServer 5.0 and above
-    FILTER "SDE_MASTER.GEOSERVWRITE.JOINTABLE.AQ_TAG=SDE_MASTER.GEOSERVWRITE.JOINTESTLAYER.AQ_TAG" #<-- MapServer 5.0 and above
+    
+    # MapServer 5.0 and above
+    PROCESSING "JOINTABLE=SDE_MASTER.GEOSERVWRITE.JOINTABLE" 
+    
+    # MapServer 5.0 and above
+    CLASSITEM "SDE_MASTER.GEOSERVWRITE.JOINTABLE.VAL" 
+
+    # MapServer 5.0 and above
+    FILTER "SDE_MASTER.GEOSERVWRITE.JOINTABLE.AQ_TAG=SDE_MASTER.GEOSERVWRITE.JOINTESTLAYER.AQ_TAG" 
 
     # ObjectID column manipulation
-    PROCESSING "OBJECTID=OBJECTID"  # <-- MapServer 5.0 and above 
+    # MapServer 5.0 and above
+    PROCESSING "OBJECTID=OBJECTID"   
  
     TEMPLATE '/where/the/template/file/is/located'
     CLASS
@@ -72,42 +79,45 @@ How to make a connection to SDE:
 CONNECTION - Order is important!
 ...............................................................................
 
-* **sdemachine.iastate.edu** - The name of the machine you are connecting to.  
-  In some instances, this may need to be the IP address of the machine rather 
-  than the name if the server running MapServer is not configured to cascade DNS lookups
-* **port:5151** - The port number of SDE.  The *port:* is important as SDE expects you 
-  to define the **service** in this slot, and it can be other names like **sde:oracle** 
-  (for direct connect) or **esri_sde** (for systems with port 5151 defined as 
-  esri_sde in /etc/services)
-* **sde** - The database username that the SDE server is using to connect to your 
-  database.  It is often only important for SDE setups that are connecting to 
-  Oracle (and even then, not so important).  Just leave it as **sde** if you don't 
-  know what it should be.
-* **username** - The username that will be connecting to SDE.  This user must have 
-  been granted rights to select the layer that you will be specifying in the *DATA* 
-  directive.  You can use ArcCatalog or the SDE command-line utilities to grant 
-  the appropriate rights to layers.
+* **sdemachine.iastate.edu** - The name of the machine you are connecting to.
+  In some instances, this may need to be the IP address of the machine rather
+  than the name if the server running MapServer is not configured to cascade
+  DNS lookups
+* **port:5151** - The port number of SDE. The *port:* is important as SDE
+  expects you to define the **service** in this slot, and it can be other
+  names like **sde:oracle** (for direct connect) or **esri_sde** (for systems
+  with port 5151 defined as esri_sde in /etc/services)
+* **sde** - The database username that the SDE server is using to connect to
+  your database. It is often only important for SDE setups that are connecting
+  to Oracle (and even then, not so important). Just leave it as **sde** if you
+  don't know what it should be.
+* **username** - The username that will be connecting to SDE. This user must
+  have been granted rights to select the layer that you will be specifying in
+  the *DATA* directive. You can use ArcCatalog or the SDE command-line
+  utilities to grant the appropriate rights to layers.
 * **password** - Password of the user connecting to SDE.  **Case Sensitive**.
 
 DATA - Order is important!
 ...............................................................................
 
-* **HOBU.STATES_LAYER** - The layer name you are querying.  This the *full* 
-  name of the table in which the layer resides.  If you are using Oracle or 
-  Microsoft SQL Server as the DB for SDE, the schema name must also be supplied.
-* **SHAPE** - The column that contains the geometry.  SDE technically allows 
-  for storage of multiple geometry types in the same layer, but in practice 
-  this isn't desirable.  Also, expect to have problems if there are invalid 
-  or null geometries in the layer (or versions of the layer).
-* **SDE.DEFAULT** - As of MapServer 4.2, you can query against a specific 
-  version of the layer.  SDE supports multi-user editing with versions.  If a 
-  layer has been Registered with the GeoDatabase and Registered as Versioned 
-  (ArcGIS terms), MapServer can query against specified versions of those edits.  
-  If not specified, *SDE.DEFAULT* will be used for all queries. **Case Sensitive**.
+* **HOBU.STATES_LAYER** - The layer name you are querying. This the *full*
+  name of the table in which the layer resides. If you are using Oracle or
+  Microsoft SQL Server as the DB for SDE, the schema name must also be
+  supplied.
+* **SHAPE** - The column that contains the geometry. SDE technically allows
+  for storage of multiple geometry types in the same layer, but in practice
+  this isn't desirable. Also, expect to have problems if there are invalid or
+  null geometries in the layer (or versions of the layer).
+* **SDE.DEFAULT** - As of MapServer 4.2, you can query against a specific
+  version of the layer. SDE supports multi-user editing with versions. If a
+  layer has been Registered with the GeoDatabase and Registered as Versioned
+  (ArcGIS terms), MapServer can query against specified versions of those
+  edits. If not specified, *SDE.DEFAULT* will be used for all queries. **Case
+  Sensitive**.
 
 .. note::
-    Note! this is located in a different spot than MapServer 4.2, which had 
-    it on the CONNECTION string. 
+    The version parameter is located in a different spot than MapServer 4.2,
+    which had it on the CONNECTION string.
 
 TEMPLATE
 ...............................................................................
@@ -136,20 +146,21 @@ Within-database Join Support
 ...............................................................................
 
 
-MapServer's SDE driver, as of MapServer 5.0, allows you to join a single 
-attribute table that has no geometries to the layer that you are rendering.  This 
-feature allows you to use the data in the joined table much as you would in a 
-composite query that was made with something like PostGIS or Oracle Spatial.  
-That is, the columns in the right table of the join are available for CLASSITEM, 
-LABELITEM and so on.  The biggest constraint, however, is that **fully qualified** 
-names must be used or it most likely will not work.  The join support is 
-activated through PROCESSING options.
+MapServer's SDE driver, as of MapServer 5.0, allows you to join a single
+attribute table that has no geometries to the layer that you are rendering.
+This feature allows you to use the data in the joined table much as you would
+in a composite query that was made with something like PostGIS or Oracle
+Spatial. That is, the columns in the right table of the join are available for
+CLASSITEM, LABELITEM and so on. The biggest constraint, however, is that
+**fully qualified** names must be used or it most likely will not work. The
+join support is activated through PROCESSING options.
 
 
-* **PROCESSING "JOINTABLE=SDE_MASTER.GEOSERVWRITE.JOINTABLE"** - The JOINTABLE 
-  processing option tells the driver which table you are joining the current layer to.
-* **CLASSITEM "SDE_MASTER.GEOSERVWRITE.JOINTABLE.VAL"** - A CLASSITEM or LABELITEM 
-  for a joined table using this mechanism must be fully qualified.
+* **PROCESSING "JOINTABLE=SDE_MASTER.GEOSERVWRITE.JOINTABLE"** - The JOINTABLE
+  processing option tells the driver which table you are joining the current
+  layer to.
+* **CLASSITEM "SDE_MASTER.GEOSERVWRITE.JOINTABLE.VAL"** - A CLASSITEM or
+  LABELITEM for a joined table using this mechanism must be fully qualified.
 * **FILTER "SDE_MASTER.GEOSERVWRITE.JOINTABLE.AQ_TAG=SDE_MASTER.GEOSERVWRITE.JOINTESTLAYER.AQ_TAG"** - 
   An important part of the join is defining how the join is to be made.  
   Use a FILTER to do so.
