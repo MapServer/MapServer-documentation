@@ -31,10 +31,10 @@ of a typical MapServer application.
 MapServer can be greatly extended and customized.  It can be built to support 
 many different input data formats and output types.  This is done at the time 
 the MapServer binary is compiled.  See the 
-`MapServer Home Page <http://ms.gis.umn.edu>`__ for a 
+`MapServer Home Page <http://mapserver.osgeo.org>`__ for a 
 full list of current features.  Many of the features that are not 'built-in', 
 are enabled through the use of 
-`OGR <http://ms.gis.umn.edu/docs/howto/ogr_howto/>`__.
+:ref:`OGR`.
 
 =========================================================================
 MapScript
@@ -43,8 +43,8 @@ MapScript
 MapScript provides a scripting interface for MapServer for the construction 
 of Web and stand-alone applications.  MapScript is used independently of 
 CGI MapServer, it is a loadable module that adds MapServer capability to 
-your favorite scripting language.  MapScript currently exists in Php, 
-Perl, Python, Ruby, Tcl, Java, and C# flavors.  (Describe how SWIG fits in).  
+your favorite scripting language.  MapScript currently exists in :ref:`php`, 
+Perl, :ref:`python`, Ruby, Tcl, Java, and C# flavors.
 
 This New User Guide will not explicitly discuss MapScript, check out the
 :ref:`MapScript Reference <mapscript>` for more information.
@@ -59,11 +59,17 @@ A simple MapServer application consists of:
   application.  It defines the area of your map, tells the MapServer program 
   where your data is and where to output images.  It also defines your map 
   layers, including their data source, projections, and symbology.  
-  It usually as a .map extension.
+  It must have a .map extension or MapServer will not recognize it.
+  
+  .. seealso::
+    :ref:`MapServer Mapfile Reference <mapfile>`
  
 * **Geographic Data** - MapServer can utilize many geographic data source types. 
   The default format is the ESRI shapefile.  Many other data formats can be 
   supported, this is discussed further below in `Adding data to your site`_.
+  
+  .. seealso::
+    :ref:`Vector Input Reference <vector>`
  
 * **HTML Pages** - the interface between the user and MapServer .  
   They normally sit in Web root.  In it's simplest form, MapServer can be called 
@@ -132,7 +138,9 @@ You need a working and properly configured HTTP (Web) server, such as
 Server, on the machine on which you are installing MapServer.  If you are on 
 a Windows machine, and you don't have a HTTP server installed, you may want 
 to check out `MS4W <http://www.maptools.org/ms4w/index.phtml>`__, which will 
-install a preconfigured HTTP server, MapServer, and more.  The `FGS Linux Installer <http://www.maptools.org/fgs/>`__ provides similar functionality for several Linux distributions.   
+install a pre-configured HTTP server, MapServer, and more. The `FGS Linux
+Installer <http://www.maptools.org/fgs/>`__ provides similar functionality for
+several Linux distributions.
 
 You will also need a Web browser, and a text editor (vi, emacs, 
 notepad, homesite) to modify your html and Map files.  
@@ -162,20 +170,20 @@ Build your first MapServer Application
 Get MapServer Running
 ------------------------------
 
-Download the appropriate source code or pre-compiled binaries for 
-your operating system from 
-`OSGeo <http://download.osgeo.org/mapserver/>`__ or 
-`MapTools <http://www.maptools.org/ms4w/index.phtml?page=downloads.html>`__.  `FGS <http://www.maptools.org/fgs/>`__ from maptools.org provides a stand-alone environment that includes Apache http server, MapServer, and PHP MapScript.
+Download the appropriate source code or pre-compiled binaries for your
+operating system from `OSGeo <http://download.osgeo.org/mapserver/>`__ or
+`MapTools <http://www.maptools.org/ms4w/index.phtml?page=downloads.html>`__.
+`FGS <http://www.maptools.org/fgs/>`__ from maptools.org provides a
+stand-alone environment that includes Apache http server, MapServer, and PHP
+MapScript.
 
-Compilation instructions are available for 
-:ref:`Unix/Linux <unix>` and 
-:ref:`Windows <win32>`, with 
-additional `Build Notes for 
-RedHat <http://ms.gis.umn.edu/docs/howto/RedHat9andMapServer40>`__.  
-`Refractions Research Inc <http://www.refractions.net/>`__ also maintains a set 
-of `Linux RPMs <http://postgis.refractions.net/rpms/>`__.  If you are on the 
-Windows platform, compilation can be quite challenging, for your first application, 
-it is recommended that you utilize pre-compiled Windows binaries.     
+Compilation instructions are available for :ref:`Unix/Linux <unix>` and
+:ref:`Windows <win32>`, with additional `Build Notes for RedHat
+<http://ms.gis.umn.edu/docs/howto/RedHat9andMapServer40>`__. `Refractions
+Research Inc <http://www.refractions.net/>`__ also maintains a set of `Linux
+RPMs <http://postgis.refractions.net/rpms/>`__. If you are on the Windows
+platform, compilation can be quite challenging, for your first application, it
+is recommended that you utilize pre-compiled Windows binaries.
 
 Once MapServer is installed, there are two ways that you can test it.  First, 
 at the command line, type 'mapserv -v', you should see a message describing 
@@ -183,15 +191,15 @@ your MapServer install, something like:
 
 ::
 
-   MapServer version 4.8.0-beta2 OUTPUT=GIF OUTPUT=PNG
+   MapServer version 5.2 OUTPUT=GIF OUTPUT=PNG
    OUTPUT=JPEG OUTPUT=WBMP SUPPORTS=PROJ SUPPORTS=FREETYPE
    SUPPORTS=WMS_SERVER INPUT=SHAPEFILE DEBUG=MSDEBUG  
 
-You can also send a HTTP request directly to the MapServer CGI program without 
-passing any configuration variables  
-(e.g. http://your.domain.name/cgi-bin/ms4/mapserv.exe).  If you receive the 
-message, 'No query information to decode. QUERY_STRING not set.', your 
-installation is working.
+You can also send a HTTP request directly to the MapServer CGI program without
+passing any configuration variables (e.g.
+http://your.domain.name/cgi-bin/ms4/mapserv.exe). If you receive the message,
+'No query information to decode. QUERY_STRING not set.', your installation is
+working.
 
 ------------------------------
 Get Demo Running
@@ -214,17 +222,15 @@ geographic data layers.  (You will probably want to delete the existing layers
 or set their status to OFF.)
 
 Unless you are adding layers that fall within the same geographic area as the 
-demo, modify `MAP <http://ms.gis.umn.edu/docs/reference/mapfile/mapObj>`__ EXTENT 
+demo, modify :ref:`MAP` EXTENT 
 to match the extent of your data.  To determine the extent of your data, you can 
-use `OGRInfo <http://www.remotesensing.org/gdal/ogr/ogr_utilities.html>`__.  
-If you have access to a GIS, you could use that as well.  Map EXTENT needs to 
+use `ogrinfo <http://www.remotesensing.org/gdal/ogr/ogr_utilities.html>`__.  
+If you have access to a GIS, you could use that as well.  The MAP EXTENT needs to 
 be in the units of your output projection.
 	
 If you add geographic data layers of different projections, you will need to 
-modify your Map File to add a PROJECTION block to the 
-`MAP Object <http://ms.gis.umn.edu/docs/reference/mapfile/mapObj>`__ 
-(output projection ) and each of the 
-`LAYER <http://ms.gis.umn.edu/docs/reference/mapfile/layer>`__ (existing layer projection).
+modify your Map File to add a :ref:`PROJECTION` block to the :ref:`map`
+(output projection ) and each of the :ref:`layer` (existing layer projection).
 
 ------------------------------
 Adding Data to Your Site
@@ -243,11 +249,9 @@ support spatially enabled databases such as
 `PostgreSQL-PostGIS <http://postgis.refractions.net/>`__, 
 `Geography Markup Language (GML) <https://portal.opengeospatial.org/files/?artifact_id=7174>`__, 
 `MapInfo <http://www.mapinfo.com/>`__, delimited text files, and more formats with 
-`OGR <http://ogr.maptools.org/ogr_formats.html>`__.  See the 
-`OGR HowTo <http://ms.gis.umn.edu/docs/howto/ogr_howto>`__ for more info. 
+:ref:`ogr`.
 
-See the `Vector Data Reference Guide 
-<http://ms.gis.umn.edu/docs/reference/vector_data>`__ for examples on how to add different 
+See the :ref:`Vector Data Reference Guide <vector>` for examples on how to add different 
 geographic data sources to your MapServer project.    
 
 Raster Data
@@ -259,7 +263,7 @@ supports GRASS, Jpeg2000, ArcInfo Grids, and
 `more formats <http://gdal.maptools.org/formats_list.html>`__.  If you do compile 
 MapServer with GDAL, which includes tiff support, do not compile with native tiff 
 support, as this will cause a conflict.  More specific information can be found in 
-the `Raster Data HowTo <http://ms.gis.umn.edu/docs/howto/raster_data>`__.
+the :ref:`Raster Data HowTo <raster>`.
 
 ------------------------------
 Projections
@@ -279,10 +283,10 @@ With MapServer, if you keep all of your spatial data sets in the same projection
 projection info in your Map File.  In building your first MapServer 
 application, this simplification is recommended.  
 
-On-the-fly projection can be accomplished when MapServer is compiled with 
-`Proj.4 <http://ms.gis.umn.edu/docs/howto/raster_data>`__ support.  
-Instructions on how to enable Proj.4 support on Windows can be found 
-on the old `Wiki <http://mapserver.gis.umn.edu/cgi-bin/wiki.pl?WindowProjHowTo>`__.
+On-the-fly projection can be accomplished when MapServer is compiled with
+:term:`Proj.4` support. Instructions on how to enable Proj.4 support on
+Windows can be found on the old `Wiki
+<http://mapserver.gis.umn.edu/cgi-bin/wiki.pl?WindowProjHowTo>`__.
 
 =========================================================================
 Enhancing your site
@@ -292,18 +296,14 @@ Enhancing your site
 Adding Query Capability
 ------------------------------
 
-There are two primary ways to query spatial data.  Both methods return data 
-through the use of templates and CGI variable replacement.  A 
-`QUERYMAP <http://ms.gis.umn.edu/docs/reference/mapfile/querymap>`__ can be 
-used to map the results of the query. 
+There are two primary ways to query spatial data. Both methods return data
+through the use of templates and CGI variable replacement. A :ref:`QUERYMAP`
+can be used to map the results of the query.
 
-To be queryable, each mapfile 
-`LAYER <http://ms.gis.umn.edu/docs/reference/mapfile/layer>`__ must 
-have a TEMPLATE defined, or each 
-`CLASS <http://ms.gis.umn.edu/docs/reference/mapfile/class>`__ within 
-the LAYER must have a TEMPLATE defined.  More information about the CGI 
-variables used to define queries can be found in the 
-`MapServer CGI Reference <http://ms.gis.umn.edu/docs/reference/cgi>`__.
+To be queryable, each mapfile :ref:`LAYER` must have a :ref:`TEMPLATE
+<template>` defined, or each :ref:`CLASS` within the LAYER must have a
+TEMPLATE defined. More information about the CGI variables used to define
+queries can be found in the :ref:`MapServer CGI Reference <cgi>`.
 
 Attribute queries
 -----------------------------
@@ -347,6 +347,8 @@ are available for download.
 `JBox <http://ms.gis.umn.edu/docs/howto/jbox>`__ is a Java applet for 
 building MapServer interfaces. 
 
+Talk about OpenLayers http://openlayers.org
+
 ------------------------------	
 Data Optimization
 ------------------------------
@@ -374,7 +376,7 @@ performance.  Here are a few rules:
   `gdaltindex <http://www.remotesensing.org/gdal/gdal_utilities.html#gdaltindex>`__.
           
 * **Pre-Classify Your Data** - MapServer allows for the use of quite 
-  complex `EXPRESSIONs <http://ms.gis.umn.edu/docs/reference/mapfile/class>`__ 
+  complex :ref:`EXPRESSIONs <expressions>` 
   to classify data. However, using logical and regular expressions is more 
   resource intensive than string comparisons.  To increase efficiency, you 
   can divide your data into classes ahead of time, create a field to use as 
@@ -383,11 +385,11 @@ performance.  Here are a few rules:
   string comparison for the class EXPRESSION.
 
 * **Pre-Process Your Images** - Do resource intensive processing up front.  
-  See the `Raster HowTo <http://ms.gis.umn.edu/docs/howto/raster_data/#preprocessing>`__
+  See the :ref:`Raster HowTo <raster>` for more info.
 
 * **Generalize for Overview** - create a more simple, generalized data layer 
   to display at small scales, and then use scale-dependent layers utilizing 
-  `LAYER <http://ms.gis.umn.edu/docs/reference/mapfile/layer>`__ MINSCALE and 
+  :ref:`LAYER` MINSCALE and 
   LAYER MAXSCALE to show more detailed data layers as the user zooms in.  
   This same concept applies to images.  
 
@@ -399,19 +401,6 @@ How do I get Help?
 Documentation
 ------------------------------
 
-MapServer documentation takes many forms
-
-`References <http://mapserver.gis.umn.edu/docs/reference>`__  
--formal documentation for syntax, structure, etc.
-    
-`HowTo's <http://mapserver.gis.umn.edu/docs/howto>`__ 
--step by step instructions 
-    
-`Tutorials <http://mapserver.gis.umn.edu/docs/tutorial>`__   - detailed tutorials
-    
-`FAQ's <http://mapserver.gis.umn.edu/docs/faq>`__  - frequently asked questions
-    
-`Error Reference <http://mapserver.gis.umn.edu/docs/error>`__ 
 
 ------------------------------
 List Archives
@@ -434,16 +423,18 @@ Register and post questions to the
 `MapServer Users <http://ms.gis.umn.edu/community/mailinglists/mapserver-users/>`__ listserv.   
 Questions to the list are usually answered quickly and often by the developers themselves.  A few things to remember:  
 
-1. Search the archives for your answer first, people get tired of answering the same questions over and over.
-2. Provide version and configuration information for your MapServer installation, and relevant snippets of your map and template files.
-3. Always post your responses back to the whole list, as opposed to just the person who replied to your question.
+1. Search the archives for your answer first, people get tired of answering
+the same questions over and over.
+2. Provide version and configuration information for your MapServer
+installation, and relevant snippets of your map and template files.
+3. Always post your responses back to the whole list, as opposed to just the
+person who replied to your question.
 
 IRC
 ------------------------------
 
 mapserver users and developers can be found on Internet Relay Chat.  The
-channel is #mapserver on irc.freenode.net.  `More
-Information <http://ms.gis.umn.edu/community/irc>`__
+channel is #mapserver on irc.freenode.net.  
 
 ------------------------------
 Examples
