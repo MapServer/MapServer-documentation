@@ -4,7 +4,7 @@
  LAYER
 *****************************************************************************
 
-CLASS
+:ref:`CLASS`
     Signals the start of a :ref:`CLASS` object.
 
 .. index::
@@ -31,10 +31,18 @@ CONNECTION [string]
     "user=nobody password=****** dbname=dbname host=localhost port=5432"
 
     An Oracle connection string: user/pass[@db]
+    
+    .. seealso::
+        See :ref:`vector` for specific connection information for various
+        data sources.
 
 CONNECTIONTYPE [local|sde|ogr|postgis|oraclespatial|wms]
     Type of connection. Default is local. See additional documentation for 
     any other type.
+
+    .. seealso::
+        See :ref:`vector` for specific connection information for various
+        data sources.
 
 DATA [filename]|[sde parameters][postgis table/column][oracle table/column]
     Full filename of the spatial data to process. No file extension is 
@@ -55,6 +63,10 @@ DATA [filename]|[sde parameters][postgis table/column][oracle table/column]
     MapServer's FILTER_ whenever possible instead. You can also see the SQL 
     submitted by forcing an error, for instance by submitting a DATA parameter 
     you know won't work, using for example a bad column name.
+
+    .. seealso::
+        See :ref:`vector` for specific connection information for various
+        data sources.
 
 .. index::
     pair: DEBUG; LAYER
@@ -84,31 +96,27 @@ DEBUG [off|on|0|1|2|3|4|5]
     used to control the level of debugging output.  Here is a description of the
     possible DEBUG values:
 
-    ::
+    - **DEBUG O or OFF** - only msSetError() calls are logged to MS_ERRORFILE. No
+      msDebug() output at all. This is the default and corresponds to the
+      original behavior of MS_ERRORFILE in MapServer 4.x
 
-      DEBUG O or OFF - only msSetError() calls are logged to MS_ERRORFILE. No
-                       msDebug() output at all. This is the default and
-                       corresponds to the original behavior of MS_ERRORFILE in
-                       MapServer 4.x
+    - **DEBUG 1 or ON** - includes all output from DEBUG 0 plus msDebug() warnings
+      about common pitfalls, failed assertions or non-fatal error situations
+      (e.g. missing or invalid values for some parameters, missing shapefiles
+      in tileindex, timeout error from remote WMS/WFS servers, etc.)
 
-      DEBUG 1 or ON  - includes all output from DEBUG 0 plus msDebug() warnings
-                       about common pitfalls, failed assertions or non-fatal
-                       error situations (e.g. missing or invalid values for some
-                       parameters, missing shapefiles in tileindex, timeout
-                       error from remote WMS/WFS servers, etc.)
+    - **DEBUG 2** - includes all output from DEBUG 1 plus notices and timing
+      information useful for tuning mapfiles and applications
 
-      DEBUG 2        - includes all output from DEBUG 1 plus notices and timing
-                       information useful for tuning mapfiles and applications
+    - **DEBUG 3** - all of DEBUG 2 plus some debug output useful in
+      troubleshooting problems such as WMS connection URLs being called,
+      database connection calls, etc. This is the recommended level for
+      debugging mapfiles.
 
-      DEBUG 3        - all of DEBUG 2 plus some debug output useful in
-                       troubleshooting problems such as WMS connection URLs
-                       being called, database connection calls, etc.  This is 
-                       the recommended level for debugging mapfiles.
+    - **DEBUG 4** - DEBUG 3 plus even more details...
 
-      DEBUG 4        - DEBUG 3 plus even more details...
-
-      DEBUG 5        - DEBUG 4 plus any msDebug() output that might be more
-                       useful to the developers than to the users.
+    - **DEBUG 5** - DEBUG 4 plus any msDebug() output that might be more useful to
+      the developers than to the users.
 
     You can also set the debug level by using the "MS_DEBUGLEVEL" environment
     variable.
@@ -127,10 +135,10 @@ DEBUG [off|on|0|1|2|3|4|5]
     option (--with-debug configure option).
 
 DUMP [true|false]
-    Switch to allow mapserver to return data in GML format. Usefull when 
+    Switch to allow MapServer to return data in GML format. Useful when 
     used with WMS GetFeatureInfo operations. "false" by default.
 
-FEATURE
+:ref:`FEATURE`
     Signals the start of a :ref:`FEATURE` object.
 
 .. _FILTER:
@@ -151,7 +159,7 @@ FOOTER [filename]
     Template to use *after* a layer's set of results have been sent. 
     Multiresult query modes only.
 
-GRID
+:ref:`GRID`
     Signals the start of a :ref:`GRID` object.
 
 GROUP [name]
@@ -163,7 +171,7 @@ HEADER [filename]
     Template to use *before* a layer's set of results have been sent. 
     Multiresult query modes only.
 
-JOIN
+:ref:`JOIN`
     Signals the start of a :ref:`JOIN` object.
 
 LABELANGLEITEM [attribute]
@@ -171,6 +179,8 @@ LABELANGLEITEM [attribute]
     the :ref:`LABEL` object's ANGLE parameter)
     For MapServer versions < 5.0, this is the item name in attribute table 
     to use for class annotation angles. Values should be in degrees.
+    
+    .. deprecated:: 5.0
 
 LABELCACHE [on|off]
     Specifies whether labels should be drawn as the features for this layer 
@@ -181,11 +191,18 @@ LABELCACHE [on|off]
 LABELITEM [attribute]
     Item name in attribute table to use for class annotation (i.e. labeling).
 
+.. index::
+    pair: LABELMAXSCALEDENOM; LAYER
+
 LABELMAXSCALEDENOM [double]
     Maximum scale at which this LAYER is labeled.  Scale is given as the
     denominator of the actual scale fraction, for example for a map at a scale
     of 1:24,000 use 24000.  Implemented in MapServer 5.0, to replace the
     deprecated LABELMAXSCALE parameter.
+
+    .. seealso::
+        
+        :term:`Map scale`
 
 LABELMAXSCALE [double] - deprecated
     Since MapServer 5.0 the proper parameter to use is LABELMAXSCALEDENOM
@@ -195,11 +212,18 @@ LABELMAXSCALE [double] - deprecated
     
     .. deprecated:: 5.0
 
+.. index::
+    pair: LABELMINSCALEDENOM; LAYER
+
 LABELMINSCALEDENOM [double]
     Minimum scale at which this LAYER is labeled.  Scale is given as the
     denominator of the actual scale fraction, for example for a map at a scale
     of 1:24,000 use 24000.  Implemented in MapServer 5.0, to replace the
     deprecated LABELMINSCALE parameter.
+
+    .. seealso::
+        
+        :term:`Map scale`
 
 LABELMINSCALE [double] - deprecated
     Since MapServer 5.0 the proper parameter to use is LABELMINSCALEDENOM
@@ -229,17 +253,26 @@ LABELSIZEITEM [attribute]
     the :ref:`LABEL` object's SIZE parameter)
     For MapServer versions < 5.0, this is the item name in attribute table to 
     use for class annotation sizes. Values should be in pixels.
+    
+    .. deprecated:: 5.0
 
 MAXFEATURES [integer]
     Specifies the number of features that should be drawn for this layer in 
     the CURRENT window. Has some interesting uses with annotation and with 
     sorted data (i.e. lakes by area).
 
+.. index::
+    pair: MAXSCALEDENOM; LAYER
+
 MAXSCALEDENOM [double]
     Maximum scale at which this LAYER is drawn.  Scale is given as the
     denominator of the actual scale fraction, for example for a map at a scale
     of 1:24,000 use 24000.  Implemented in MapServer 5.0, to replace the
     deprecated MAXSCALE parameter.
+
+    .. seealso::
+        
+        :term:`Map scale`
 
 MAXSCALE [double] - deprecated
     Since MapServer 5.0 the proper parameter to use is MAXSCALEDENOM instead.
@@ -250,10 +283,10 @@ MAXSCALE [double] - deprecated
     .. deprecated:: 5.0
 
 METADATA
-    This keyword allows for arbitrary data to be stored as name value pairs. 
-    This is used with OGC WMS to define things such as layer title. It can 
-    also allow more flexibility in creating templates, as anything you put in 
-    here will be accessible via template tags.
+    This keyword allows for arbitrary data to be stored as name value pairs.
+    This is used with :ref:`OGC WMS <wms_server>` to define things such as
+    layer title. It can also allow more flexibility in creating templates, as
+    anything you put in here will be accessible via template tags.
 
     Example:
     
@@ -264,11 +297,18 @@ METADATA
             author "Me!"
         END
 
+.. index::
+    pair: MINSCALEDENOM; LAYER
+
 MINSCALEDENOM [double]
     Minimum scale at which this LAYER is drawn.  Scale is given as the
     denominator of the actual scale fraction, for example for a map at a scale
     of 1:24,000 use 24000.  Implemented in MapServer 5.0, to replace the
     deprecated MINSCALE parameter.
+
+    .. seealso::
+        
+        :term:`Map scale`
 
 MINSCALE [double] - deprecated
     Since MapServer 5.0 the proper parameter to use is MINSCALEDENOM
@@ -288,6 +328,8 @@ NAME [string]
 OFFSITE [r] [g] [b]
     Sets the color index to treat as transparent for raster layers.
 
+.. _OPACITY:
+
 OPACITY [integer|alpha]
     Sets the opacity level (or the inability to see through the layer) of all
     classed pixels for a given layer. The value can either be an integer in the
@@ -306,6 +348,8 @@ POSTLABELCACHE [true|false]
     been drawn. Useful for adding neatlines and similar elements. 
     Default is false.
 
+.. index:: PROCESSING, Raster options, Special options
+
 PROCESSING [string]
     Passes a processing directive to be used with this layer. The supported 
     processing directives vary by layer type, and the underlying driver that 
@@ -318,13 +362,13 @@ PROCESSING [string]
         PROCESSING "SCALE=AUTO"
         PROCESSING "BANDS=3,2,1"
 
-    This is also where you can enable connection pooling for certain layer 
-    layer types.  Connection pooling will allow MapServer to share the 
-    handle to an open database or layer connection throughout a single 
-    map draw process.  Additionally, if you have FastCGI enabled, the 
-    connection handle will stay open indefinitely, or according to the 
-    options specified in the FastCGI configuration.  Oracle, ArcSDE, OGR
-    and PostGIS currently support this approach.
+    This is also where you can enable connection pooling for certain layer
+    layer types. Connection pooling will allow MapServer to share the handle
+    to an open database or layer connection throughout a single map draw
+    process. Additionally, if you have FastCGI enabled, the connection handle
+    will stay open indefinitely, or according to the options specified in the
+    :ref:`FastCGI <fastcgi>` configuration. :ref:`oci`, :ref:`arcsde`,
+    :ref:`ogr` and :ref:`input_postgis` currently support this approach.
 
     ::
 
@@ -345,20 +389,26 @@ SIZEUNITS [pixels|feet|inches|kilometers|meters|miles|
 STATUS [on|off|default]
     Sets the current status of the layer. Often modified by MapServer itself. 
     Default turns the layer on permanently.
+    
+    .. note::
+        
+        In :ref:`CGI <cgi>` mode, layers with STATUS DEFAULT cannot be turned
+        off using normal mechanisms. It is recommended to set layers to STATUS
+        DEFAULT while debugging a problem, but set them back to ON/OFF in
+        normal use.
+    
+    .. note::
 
-    Some notes regarding the STATUS values:
-
-    - In CGI mode, layers with STATUS DEFAULT cannot be turned off using
-      normal mechanisms. It is recommended to set layers to STATUS DEFAULT
-      while debugging a problem, but set them back to ON/OFF in normal use.
-
-    - For WMS, layers in the server mapfile with STATUS DEFAULT are always
-      sent to the client.
+        For :ref:`WMS <wms_server>`, layers in the server mapfile with STATUS
+        DEFAULT are always sent to the client.
 
 
 STYLEITEM [attribute]
     Item to use for feature specific styling. This is *very* experimental and 
     OGR only at the moment.
+
+.. index::
+    pair: SYMBOLSCALEDENOM; LAYER
 
 SYMBOLSCALEDENOM [double]
     The scale at which symbols and/or text appear full size. This allows for
@@ -368,6 +418,10 @@ SYMBOLSCALEDENOM [double]
     as the denominator of the actual scale fraction, for example for a map at a
     scale of 1:24,000 use 24000.  Implemented in MapServer 5.0, to replace the
     deprecated SYMBOLSCALE parameter.
+
+    .. seealso::
+        
+        :term:`Map scale`
 
 SYMBOLSCALE [double] - deprecated
     Since MapServer 5.0 the proper parameter to use is SYMBOLSCALEDENOM
@@ -383,7 +437,7 @@ SYMBOLSCALE [double] - deprecated
 :ref:`TEMPLATE <template>` [file|url]
     Used as a global alternative to CLASS TEMPLATE.
 
-TILEINDEX [filename|layername]
+:ref:`TILEINDEX <tileindex>` [filename|layername]
     Name of the tileindex file or layer.  A tileindex is similar to 
     an ArcInfo library index.  The tileindex contains polygon features for 
     each tile. The item that contains the location of the tiled data is given 
@@ -397,9 +451,10 @@ TILEINDEX [filename|layername]
     directly referring to a file, but any supported feature source can
     be used (ie. postgres, oracle).
 
-    **NOTE**: All files in the tileindex should have the same coordinate
-    system, and for vector files the same set of attributes in the same
-    order.
+    .. note::
+    
+        All files in the tileindex should have the same coordinate system, and
+        for vector files the same set of attributes in the same order.
 
 TILEITEM [attribute]
     Item that contains the location of an individual tile, default is 
@@ -418,14 +473,14 @@ TOLERANCEUNITS [pixels|feet|inches|kilometers|meters|miles|dd]
     Units of the TOLERANCE value. Default is pixels.
 
 TRANSPARENCY [integer|alpha] - deprecated
-    Since MapServer 5.0 the proper parameter to use is OPACITY instead.  The
+    Since MapServer 5.0 the proper parameter to use is OPACITY.  The
     deprecated TRANSPARENCY parameter sets the transparency level of all classed
     pixels for a given layer.   The value can either be an integer in the range
     (0-100) or the named symbol "ALPHA". Although this parameter is named
     "transparency", the integer values actually parameterize layer opacity. A
     value of 100 is opaque and 0 is fully transparent.
 
-    The "ALPHA" symbol directs the mapserver rendering code to honor the 
+    The "ALPHA" symbol directs the MapServer rendering code to honor the 
     indexed or alpha transparency of pixmap symbols used to style a layer. 
     This is only needed in the case of RGB output formats, and should be used 
     only when necessary as it is expensive to render transparent pixmap 
@@ -433,6 +488,10 @@ TRANSPARENCY [integer|alpha] - deprecated
 
     .. deprecated:: 5.0
 
+    .. seealso::
+        
+        :ref:`OPACITY <opacity>`
+        
 TRANSFORM [true|false ul|uc|ur|lc|cc|lr|ll|lc|lr]
     Tells MapServer whether or not a particular layer needs to be transformed 
     from some coordinate system to image coordinates. Default is true. This 
@@ -443,7 +502,7 @@ TRANSFORM [true|false ul|uc|ur|lc|cc|lr|ll|lc|lr]
     the image, contrary to most map coordinate systems.
 
     Version 4.10 introduces the ability to define features with coordinates
-    given in pixels (or percentatges, see UNITS), most often inline features,
+    given in pixels (or percentages, see UNITS), most often inline features,
     relative to something other than the UL corner of an image. That is what 
     'TRANSFORM FALSE' means. By setting an alternative origin it allows you
     to anchor something like a copyright statement to another portion of the
@@ -463,14 +522,14 @@ TYPE [point|line|polygon|circle|annotation|raster|query|chart]
     of the line. Query only means the layer can be queried but not drawn.
 
     In order to differentiate between POLYGONs and POLYLINEs (which do not 
-    exist as a type), simply respectively use or ommit the COLOR keyword when 
+    exist as a type), simply respectively use or omit the COLOR keyword when 
     classifying. If you use it, it's a polygon with a fill color, otherwise 
     it's a polyline with only an OUTLINECOLOR.
 
-    For CHART layers, see the :ref:`Dynamic Charting<dynamic_charting>` howto.
+    
 
-    A circle must be defined by a a minimum bounding rectangle. That is, 2 
-    points that define the smallest square that can contain it. These 2 points 
+    A circle must be defined by a a minimum bounding rectangle. That is, two
+    points that define the smallest square that can contain it. These two points 
     are the two opposite corners of said box.
 
     The following is an example using inline points to draw a circle:
@@ -492,8 +551,13 @@ TYPE [point|line|polygon|circle|annotation|raster|query|chart]
             COLOR 0 0 255
           END
         END
-      END                 
+      END
+
+    .. seealso::
+        
+        For CHART layers, see the :ref:`Dynamic Charting<dynamic_charting>`
+        HowTo.
 
 UNITS [feet|inches|kilometers|meters|miles|dd|pixels|percentages]
-    Units of the layer. Percentages was added in MapServer 4.10 and is mostly
+    Units of the layer. `Percentages` was added in MapServer 4.10 and is mostly
     geared for inline features.
