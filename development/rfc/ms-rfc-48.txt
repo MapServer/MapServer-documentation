@@ -7,7 +7,8 @@ MS RFC 48: GEOTRANSFORM Geometry operations
 :Date: 2008/11/01
 :Authors: Stephen Lime, Thomas Bonfort
 :Contact: Steve.Lime at DNR.State.MN.US, thomas.bonfort at camptocamp.com
-:Status: Proposed
+:Status: Adopted (2008/12/08)
+:Last Edited: 2008/12/08
 :Version: MapServer 5.4
 :Id: $Id$
 
@@ -22,9 +23,9 @@ An example usage would be:
 
 ::
 
-    GEOMETRYTRANSFORM "centroid(geom)"
+    GEOMETRYTRANSFORM "start([geom])"
 
-to treat the underlying geometry as a point rendered at the centroid of
+to treat the underlying geometry as a point rendered on the first vertex
 current feature.
 
 The directive to activate this behavior is the GEOMETRYTRANSFORM keyword, that
@@ -39,26 +40,21 @@ keyword, allowing nested transformations to the underlying geometry, eg:
 
 ::
 
-    GEOMETRYTRANSFORM "difference(geom,buffer(geom,10))"
+    GEOMETRYTRANSFORM "difference([geom],buffer([geom],10))"
 
 and binding to attributes, eg:
 
 ::
 
-    GEOMETRYTRANSFORM "buffer(geom,[distance])"
+    GEOMETRYTRANSFORM "buffer([geom],[distance])"
 
 Detailed functionality
 ------------------------------------------------------------------------------
 
-The GEOMETRYTRANSFORM keyword initially accepts these parameters :
+The GEOMETRYTRANSFORM keyword initially implements these parameters :
 
 - *bbox([geom])* : render a shapeObj representing the bounding box of the 
-  underlying geometry. Not initially implemented.
-- *buffer([geom],distance)* : render a shapeObj representing the buffered geometry.
-  "distance" specifies the buffer distance, in layer units. Not initially implemented.
-- *centroid([geom])* : render a pointObj at the location of the centroid of the
-  geometry
-- *convexhull([geom])* : not initially implemented
+  underlying geometry.
 - *start/end([geom])* : render a point symbol at the first/last vertex of the
   underlying geometry. By default, the symbol is oriented to match the 
   orientation of the corresponding geometry segment. This would be used
@@ -66,6 +62,16 @@ The GEOMETRYTRANSFORM keyword initially accepts these parameters :
 - *vertices([geom])* : render a point symbol at each vertex of the geometry.
   The default orientation matches the half angle of the corresponding segments. 
   The start and end vertices are not included in the transformation.
+
+These transforms are not initially implemented, but could be supported in the future:
+
+- *buffer([geom],distance)* : render a shapeObj representing the buffered geometry.
+  "distance" specifies the buffer distance, in layer units.
+- *centroid([geom])* : render a pointObj at the location of the centroid of the
+  geometry
+- *labelpoint([geom])* : render a pointObj at the location of the at the point
+  where the geometry will/would be labelled.
+- *convexhull([geom])* 
 
 Implementation Details
 ------------------------------------------------------------------------------
@@ -135,5 +141,12 @@ none expected.
 Bug ID
 ------------------------------------------------------------------------------
 
-http://trac.osgeo.org/mapserver/ticket/xxxx
+http://trac.osgeo.org/mapserver/ticket/2825
 
+Voting History
+------------------------------------------------------------------------------
+
+Vote completed on 2008/12/08:
+
+- +1: Lime, Szekeres, Woodbridge, Nacionales, Morissette
+- +0: Nicoletti
