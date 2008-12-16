@@ -35,7 +35,7 @@ source_suffix = '.txt'
 #source_encoding = 'utf-8'
 
 # The master toctree document.
-master_doc = 'index'
+master_doc = 'documentation'
 
 # General information about the project.
 project = u'MapServer'
