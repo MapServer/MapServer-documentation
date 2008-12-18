@@ -35,7 +35,7 @@ source_suffix = '.txt'
 #source_encoding = 'utf-8'
 
 # The master toctree document.
-master_doc = 'documentation'
+master_doc = 'contents'
 
 # General information about the project.
 project = u'MapServer'
@@ -165,7 +165,7 @@ htmlhelp_basename = 'MapServerdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
 latex_documents = [
-  ('documentation', 'MapServer.tex', ur'MapServer Documentation',
+  ('contents', 'MapServer.tex', ur'MapServer Documentation',
    ur'The MapServer Team', 'manual', False),
 ]
 
