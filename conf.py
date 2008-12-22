@@ -35,7 +35,7 @@ source_suffix = '.txt'
 #source_encoding = 'utf-8'
 
 # The master toctree document.
-master_doc = 'contents'
+master_doc = 'documentation'
 
 # General information about the project.
 project = u'MapServer'
@@ -95,10 +95,10 @@ html_style = 'sphinx.css'
 
 # The name for this set of Sphinx documents.  If None, it defaults to
 # "<project> v<release> documentation".
-#html_title = None
+html_title = "MapServer " + release + " documentation"
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
-#html_short_title = None
+html_short_title = "Documentation"
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
@@ -165,7 +165,7 @@ htmlhelp_basename = 'MapServerdoc'
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
 latex_documents = [
-  ('contents', 'MapServer.tex', ur'MapServer Documentation',
+  ('documentation', 'MapServer.tex', ur'MapServer Documentation',
    ur'The MapServer Team', 'manual', False),
 ]
 
