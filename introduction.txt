@@ -245,8 +245,342 @@ projections. As your applications get more complex, skills in SQL,
 DHTML/Javascript, Java, databases, expressions, compiling, and scripting may
 be very useful.
 
-Building your first MapServer Application
+
+Introduction to the :ref:`Mapfile <mapfile>`
 -------------------------------------------------------------------------------
+
+The .map file is the basic configuration file for data access and styling for
+MapServer. The file is an ASCII text file, and is made up of different
+objects. Each object has a variety of parameters available for it. All .map
+file (or mapfile) parameters are documented at :ref:`mapfile`. A simple
+mapfile example displaying only one layer follows, as well as the map image
+output:
+
+::
+
+    NAME "sample"
+    STATUS ON
+    SIZE 600 400
+    SYMBOLSET "../etc/symbols.txt"
+    EXTENT -180 -90 180 90 
+    UNITS DD
+    SHAPEPATH "../data"
+    IMAGECOLOR 255 255 255
+    FONTSET "../etc/fonts.txt"
+    
+    #
+    # Start of web interface definition
+    #
+    WEB
+        IMAGEPATH "/ms4w/tmp/ms_tmp/" 
+        IMAGEURL "/ms_tmp/"
+    END
+
+    #
+    # Start of layer definitions
+    #
+    LAYER
+        NAME 'global-raster
+        TYPE RASTER
+        STATUS DEFAULT
+        DATA bluemarble.gif
+    END
+
+.. figure:: ./images/bluemarble-rendered.jpg
+    :alt: Rendered Bluemarble Image
+    
+    Rendered Bluemarble Image
+    
+
+
+.. note::
+
+    * Comments in a mapfile are specified with a '#' character
+    * MapServer parses mapfiles from top to bottom, therefore layers at the
+      end of the mapfile will be drawn last (meaning they will be displayed on
+      top of other layers)
+    * Using relative paths is always recommended
+    * Paths should be quoted (single or double quotes are accepted)
+
+
+:ref:`MAP` Object
+...............................................................................
+
+::
+
+    MAP
+        NAME                 "sample"
+        EXTENT        -180 -90 180 90 # Geographic
+        SIZE                  800 400
+        IMAGECOLOR        128 128 255
+    END
+
+* EXTENT is the output extent in the units of the output map
+* SIZE is the width and height of the map image in pixels
+* IMAGECOLOR is the default image background color
+
+:ref:`LAYER` Object
+...............................................................................
+
+* starting with MapServer 5.0, there is no limit to the number of layers in a
+  mapfile
+* DATA parameter is relative to the SHAPEPATH parameter the :ref:`MAP` object 
+* if no DATA extension is provided in the filename, MapServer will assume it is
+  an ESRI shapefile (.shp)
+
+Raster Layers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+::
+
+    LAYER
+        NAME bathymetry
+        TYPE RASTER
+        STATUS DEFAULT
+        DATA bath_mapserver.tif
+    END
+
+.. seealso::
+    
+    :ref:`raster`
+
+Vector Layers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+  
+Vector layers of TYPE point, line, or polygon can be displayed. The following
+example shows how to display only lines from a TYPE polygon layer, using the
+OUTLINECOLOR parameter:
+
+::
+
+    LAYER
+        NAME   "world_poly"
+        DATA         'shapefile/countries_area.shp'
+        STATUS       ON
+        TYPE         POLYGON
+        CLASS
+            NAME       'The World'
+            STYLE
+                OUTLINECOLOR    0 0 0
+            END
+        END
+    END # layer
+   
+.. seealso::
+    :ref:`vector`
+
+.. figure:: ./images/bluemarble-boundaries.jpg
+    :alt: Rendered Bluemarble Image
+    
+    Rendered Bluemarble image with vector boundaries
+    
+    
+:ref:`CLASS` and :ref:`STYLE` Objects
+...............................................................................
+
+* typical styling information is stored within the :ref:`CLASS` and
+  :ref:`STYLE` objects of a :ref:`LAYER`
+* starting with MapServer 5.0, there is no limit to the number of classes or
+  styles in a mapfile
+* the following example shows how to display a road line with two colors by
+  using overlayed STYLE objects
+
+::
+
+    CLASS
+    NAME "Primary Roads"
+    STYLE
+        SYMBOL "circle"
+        COLOR 178 114 1
+        SIZE 15
+    END #style1
+    STYLE
+        SYMBOL "circle"
+        COLOR 254 161 0
+        SIZE 7
+    END #style2
+    END
+
+.. figure:: ./images/bluemarble-style.jpg
+    :alt: Rendered Bluemarble Image
+    
+    Rendered Bluemarble image with styled roads
+
+
+:ref:`SYMBOLs <SYMBOL>`
+...............................................................................
+
+* can be defined directly in the mapfile, or in a separate file
+* the separate file method must use the SYMBOLSET parameter in the MAP object:
+
+::
+
+    MAP
+        NAME           "sample"
+        EXTENT        -180 -90 180 90 # Geographic
+        SIZE           800 400
+        IMAGECOLOR     128 128 255
+        SYMBOLSET      "../etc/symbols.txt"
+    END
+
+
+
+where symbols.txt might contain:
+
+::
+
+    Symbol
+        Name 'ski'
+        Type PIXMAP
+        IMAGE "ski.gif"
+    END
+
+and the mapfile would contain:
+
+::
+
+    LAYER
+        ...
+        CLASS
+        NAME "Ski Area"
+        STYLE
+            SYMBOL "ski"
+        END
+        END
+    END # layer
+
+
+
+.. figure:: ./images/bluemarble-ski.jpg
+    :alt: Rendered Bluemarble Image Skier
+    
+    Rendered Bluemarble image with skier symbol
+    
+.. seealso::
+    :ref:`sym_construction`, :ref:`sym_examples`, and :ref:`symbol`
+
+
+:ref:`LABEL`
+...............................................................................
+
+* defined within a :ref:`LAYER` object
+* the LABELITEM parameters in the :ref:`LAYER` object can be used to label by
+  a specific column in the data refer to a :ref:`FONTSET` file, that is set in
+  the :ref:`MAP` object, that contains a reference to the available font names
+
+An example :ref:`LABEL` object that references one of the above fonts might
+look like:
+
+::
+
+    LABEL
+        FONT "sans-bold"
+        TYPE truetype
+        SIZE 10
+        POSITION LC
+        PARTIALS FALSE
+        COLOR  100 100 100
+        OUTLINECOLOR 242 236 230
+    END # label
+
+.. figure:: ./images/bluemarble-ski-label.jpg
+    :alt: Rendered Bluemarble Image Skier
+    
+    Rendered Bluemarble image with skier symbol and a label
+
+.. seealso::
+    :ref:`label`, :ref:`fontset`
+
+:ref:`CLASS` :ref:`Expressions <expressions>`
+...............................................................................
+
+MapServer supports three types of :ref:`CLASS` expressions in a :ref:`LAYER`:
+
+1) String comparisons
+
+    ::
+    
+        (EXPRESSION "africa")
+
+2) Regular expressions 
+
+    ::
+    
+        (EXPRESSION /^9|^10/)
+
+3) Logical expressions 
+
+    ::
+    
+        ([POPULATION] > 50000 AND '[LANGUAGE]' eq 'FRENCH')
+
+An important note is that logical expressions should be avoided wherever
+possible as they are very costly in terms of drawing time.
+
+.. seealso::
+    :ref:`expressions`
+
+:ref:`INCLUDE` 
+...............................................................................
+
+Added to MapServer 4.10, any part of the mapfile can now be stored in a
+separate file and added to the main mapfile using the :ref:`INCLUDE`
+parameter. The filename to be included can have any extension, and it is
+always relative to the main .map file.
+Here are some potential uses:
+
+* :ref:`LAYER` s can be stored in files and included to any number of applications
+* :ref:`STYLE` s can also be stored and included in multiple applications
+
+The following is an example of using :ref:`mapfile <mapfile>` :ref:`includes
+<include>` to include a layer definition in a separate file:
+
+If 'shadedrelief.lay' contains:
+
+::
+
+    LAYER
+        NAME         'shadedrelief'
+        STATUS       ON
+        TYPE         RASTER
+        DATA         'GLOBALeb3colshade.jpg'
+    END 
+
+therefore the main mapfile would contain:
+
+::
+
+    MAP
+        ...
+        INCLUDE "shadedrelief.lay"
+        ...
+    END
+
+The following is an example of a mapfile where all :ref:`LAYER` s are in
+separate .lay files, and all other objects (:ref:`WEB`, :ref:`REFERENCE`,
+:ref:`SCALEBAR`, etc.) are stored in a ".ref" file:
+
+::
+
+    NAME "base"
+    #
+    # include reference objects
+    #
+    INCLUDE "../templates/template.ref"
+    #
+    # Start of layer definitions
+    #
+    INCLUDE "../layers/usa/usa_outline.lay"
+    INCLUDE "../layers/canada/base/1m/provinces.lay"
+    INCLUDE "../layers/canada/base/1m/roads_atlas_of_canada_1m.lay"
+    INCLUDE "../layers/canada/base/1m/roads_atlas_of_canada_1m_shields.lay"
+    INCLUDE "../layers/canada/base/1m/populated_places.lay"
+    END # Map File
+
+.. warning::
+    :ref:`Mapfiles <mapfile>` must end with the ``.map`` extension or 
+    MapServer will not recognize them.  Include files can have any extension
+    you want, however.
 
 Get MapServer Running
 ...............................................................................
