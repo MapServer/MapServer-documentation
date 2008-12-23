@@ -65,7 +65,7 @@ release = '5.2.1'
 
 # List of directories, relative to source directory, that shouldn't be searched
 # for source files.
-exclude_trees = ['howto']
+exclude_trees = ['howto', 'redirection', 'users-manual']
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
