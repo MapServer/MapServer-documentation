@@ -76,7 +76,7 @@ Example WCS Server Mapfile
 The following is an example of a simple WCS Server mapfile. Note the comments 
 for the required parameters.
 
-::
+.. code-block:: mapfile
         
 	NAME WCS_server
 	STATUS ON
@@ -532,52 +532,53 @@ TODO!
 Spatio/Temporal Indexes
 =======================
 
-MapServer has long supported a method of breaking a dataset into smaller, more 
-manageable pieces or tiles. In this case a shapefile is used to store the boundary 
-of each tile, and an attribute holds the location of the actual data. Within a 
-MapServer mapfile the layer keywords TILEINDEX and TILEITEM are used to activate 
-tiling.
+MapServer has long supported a method of breaking a dataset into smaller, more
+manageable pieces or tiles. In this case a shapefile is used to store the
+boundary of each tile, and an attribute holds the location of the actual data.
+Within a MapServer mapfile the layer keywords TILEINDEX and TILEITEM are used
+to activate tiling.
 
-Consider the example where an organization wants to serve hundreds or even thousands 
-of MODIS scenes. Five images cover the spatial extent and each group of five varies 
-by date of acquisition. This turns out to be a fairly common scenario for organizations 
-interested in WCS, one that the existing tiling support does not adequately address. 
-In previous versions of MapServer a developer would have to create one tile index and 
-one layer definition for each group of five images. This could result in configuration 
-files that are prohibitively long and difficult to manage.
+Consider the example where an organization wants to serve hundreds or even
+thousands of MODIS scenes. Five images cover the spatial extent and each group
+of five varies by date of acquisition. This turns out to be a fairly common
+scenario for organizations interested in WCS, one that the existing tiling
+support does not adequately address. In previous versions of MapServer a
+developer would have to create one tile index and one layer definition for
+each group of five images. This could result in configuration files that are
+prohibitively long and difficult to manage.
 
-In order to more efficiently support the WCS specification a new tiling scheme has 
-been implemented within MapServer. One that supports spatial sub-setting, but also 
-ad hoc sub-setting based on any attributes found within tile index. In many cases 
-a temporal attribute could be used, but sub-setting is not limited to that case. 
-The new scheme introduces the concept of tile index layers, that is, a separate 
-layer definition is used to describe the tile index dataset. With this we get all 
-the benefits of any MapServer layer, most importantly we can apply MapServer filters 
-to the data. Filters can be defined at runtime using MapServer CGI, MapScript or via 
-the WCS server interface. The syntax for the layer using the index remains unchanged 
-except that the value for TILEINDEX refers to the index layer instead of an external 
-shapefile.
+In order to more efficiently support the WCS specification a new tiling scheme
+has been implemented within MapServer. One that supports spatial sub-setting,
+but also ad hoc sub-setting based on any attributes found within tile index.
+In many cases a temporal attribute could be used, but sub-setting is not
+limited to that case. The new scheme introduces the concept of tile index
+layers, that is, a separate layer definition is used to describe the tile
+index dataset. With this we get all the benefits of any MapServer layer, most
+importantly we can apply MapServer filters to the data. Filters can be defined
+at runtime using MapServer CGI, MapScript or via the WCS server interface. The
+syntax for the layer using the index remains unchanged except that the value
+for :ref:`TILEINDEX` refers to the index layer instead of an external shapefile.
 
-So, looking at the example above again we can reduce our MapServer configuration to 
-two layer definitions, one for the tile index and one for the imagery itself. Extracting 
-a single dates worth of imagery is now a matter of setting the appropriate filter 
-within the tile index layer.
+So, looking at the example above again we can reduce our MapServer
+configuration to two layer definitions, one for the tile index and one for the
+imagery itself. Extracting a single dates worth of imagery is now a matter of
+setting the appropriate filter within the tile index layer.
 
 Building Spatio-Temporal Tile Indexes
 -------------------------------------
 
-Developing these tile indexes is more difficult than basic indexes simply because 
-there are no ready-made tools to do so. Fortunately we can leverage existing tool 
-available within MapServer or supporting libraries such as GDAL by post processing
-their output.
+Developing these tile indexes is more difficult than basic indexes simply
+because there are no ready-made tools to do so. Fortunately we can leverage
+existing tool available within MapServer or supporting libraries such as GDAL
+by post processing their output.
 
-Taking the above example, building an index is relatively simple task if you are 
-willing to roll up your sleeves and write a bit of code. First, the basic spatial 
-index needs to be built. The GDAL utility gdaltindex already does this. Simply 
-point gdaltindex at the directory containing the collection of MODIS images and 
-it will build a shapefile index suitable for use with MapServer. The next step 
-would be to add the temporal information. The pseudo code would look something 
-like:
+Taking the above example, building an index is relatively simple task if you
+are willing to roll up your sleeves and write a bit of code. First, the basic
+spatial index needs to be built. The GDAL utility gdaltindex already does
+this. Simply point gdaltindex at the directory containing the collection of
+MODIS images and it will build a shapefile index suitable for use with
+MapServer. The next step would be to add the temporal information. The pseudo
+code would look something like:
 
 - open the index .dbf file for reading
 
@@ -589,9 +590,10 @@ like:
 - close the index .dbf file
 
 This general approach could be used for many cases. A scripting language such
-as Perl, PHP or Python works well since they all have readily available modules 
-for manipulating .dbf files. A worst case would involve hand editing the resulting 
-.dbf file using a desktop tool such as Mircosoft Access or ESRI Arcview.
+as Perl, PHP or Python works well since they all have readily available
+modules for manipulating .dbf files. A worst case would involve hand editing
+the resulting .dbf file using a desktop tool such as Mircosoft Access or ESRI
+Arcview.
 
 To-do Items and Known Limitations
 =================================

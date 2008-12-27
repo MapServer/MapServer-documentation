@@ -19,14 +19,15 @@ An introduction to tileindexes, Mapserver's method for doing on-the-fly mosaicin
 
 What is a tileindex and how do I make one?
 ------------------------------------------
-A tileindex is a shapefile that ties together several datasets into a single layer. 
-Therefore, you don't need to create separate layers for each piece of imagery or 
-each county's road data; make a tileindex and let Mapserver piece the mosaic 
-together on the fly.
 
-Making a tileindex is easy using 'gdaltindex' for GDAL data sources (rasters) and 
-'ogrtindex' for OGR data sources (vectors). You just run them, specifying the 
-index file to create and the list of data sources to add to the index.
+A tileindex is a shapefile that ties together several datasets into a single
+layer. Therefore, you don't need to create separate layers for each piece of
+imagery or each county's road data; make a tileindex and let Mapserver piece
+the mosaic together on the fly.
+
+Making a tileindex is easy using 'gdaltindex' for GDAL data sources (rasters)
+and 'ogrtindex' for OGR data sources (vectors). You just run them, specifying
+the index file to create and the list of data sources to add to the index.
 
 For example, to make a mosaic of several TIFFs:
 
@@ -40,29 +41,31 @@ And to make a mosaic of vectors:
 
     ogrtindex strees.shp tiger/CA/*.shp tiger/NV/*.shp
     
-Note: ogrtindex and gdaltindex **add** the specified files to the index. Sometimes 
-you'll have to delete the index file to avoid creating duplicate entries.
+.. note::
+    ogrtindex and gdaltindex **add** the specified files to the index.
+    Sometimes you'll have to delete the index file to avoid creating duplicate
+    entries.
 
 Using the tileindex in your mapfile
 -----------------------------------
 
 Using a tileindex as a layer is best explained by an example:
 
-::
+.. code-block:: mapfile
 
     LAYER
-    Â Â  NAME Roads
-       STATUS ON
-       TYPE LINE
-       TILEINDEX "tiger/index.shp"
-       TILEITEM "LOCATION"
-    END   Â Â 
+        NAME "Roads"
+        STATUS ON
+        TYPE LINE
+        TILEINDEX "tiger/index.shp"
+        TILEITEM "LOCATION"
+    END 
 
-There are two items of note here: TILEINDEX and TILEITEM. TILEINDEX is simply 
-the path to the index file, and TILEITEM specifies the field in the shapefile 
-which contains the filenames referenced by the index. The TILEITEM will usually 
-be "LOCATION" unless you specified the *-tileindex* option when running gdaltindex 
-or ogrtindex.
+There are two items of note here: TILEINDEX and TILEITEM. TILEINDEX is simply
+the path to the index file, and TILEITEM specifies the field in the shapefile
+which contains the filenames referenced by the index. The TILEITEM will
+usually be "LOCATION" unless you specified the *-tileindex* option when
+running gdaltindex or ogrtindex.
 
 Two important notes about the pathnames:
   

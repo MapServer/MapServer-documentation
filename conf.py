@@ -185,3 +185,147 @@ latex_use_parts = False
 
 # If false, no module index is generated.
 #latex_use_modindex = True
+# 
+
+from pygments.lexer import RegexLexer, bygroups,combined, include
+from pygments.token import *
+from pygments import highlight
+from pygments.formatters import HtmlFormatter
+
+
+class WKTLexer(RegexLexer):
+    name = 'wkt'
+    aliases = ['wkt']
+    filenames = ['*.wkt']
+
+    tokens = {
+        'root': [
+            (r'\s+', Text),
+            (r'[{}\[\]();,-.]+', Punctuation),
+            (r'(PROJCS)\b', Generic.Heading),
+            (r'(PARAMETER|PROJECTION|SPHEROID|DATUM|GEOGCS|AXIS)\b', Keyword),
+            (r'(PRIMEM|UNIT|TOWGS84)\b', Keyword.Constant),
+            (r'(AUTHORITY)\b', Name.Builtin), 
+            (r'[$a-zA-Z_][a-zA-Z0-9_]*', Name.Other),
+            (r'[0-9][0-9]*\.[0-9]+([eE][0-9]+)?[fd]?', Number.Float),
+            (r'0x[0-9a-fA-F]+', Number.Hex),
+            (r'[0-9]+', Number.Integer),
+            (r'"(\\\\|\\"|[^"])*"', String.Double),
+            (r"'(\\\\|\\'|[^'])*'", String.Single),
+        ]
+    }
+
+import re
+builtins = (r'(ANNOTATION|'
+            r'AUTO|BEVEL|BITMAP|BUTT|CARTOLINE|CC|CENTER|'
+            r'CHART|CIRCLE|CL|CR|CSV|MYSQL|'
+            r'POSTGRESQL|DEFAULT|DD|ELLIPSE|EMBED|FALSE|FEET|FOLLOW|'
+            r'GIANT|HATCH|HILITE|INCHES|KILOMETERS|LARGE|LC|'
+            r'LEFT|LINE|LL|LR|MEDIUM|METERS|MILES|MITER|MULTIPLE|NONE|'
+            r'NORMAL|OFF|OGR|ON|ONE-TO-ONE|ONE-TO-MANY|ORACLESPATIAL|'
+            r'PERCENTAGES|PIXMAP|PIXELS|POINT|POLYGON|POSTGIS|MYGIS|'
+            r'PLUGIN|QUERY|RASTER|RIGHT|ROUNDE|SDE|SELECTED|SIMPLE|SINGLE|'
+            r'SMALL|SQUARE|TINY|TRIANGLE|TRUE|TRUETYPE|UC|UL|UR|VECTOR|'
+            r'WFS|WMS|ALPHA|'
+            r'GIF|JPEG|JPG|PNG|WBMP|SWF|PDF|GTIFF|PC256|RGB|RGBA|INT16|FLOAT32|GD|AGG'            
+            r')\b')
+
+keywords = (r'(ALIGN|'
+            r'ALPHACOLOR|ANGLE|ANTIALIAS|BACKGROUNDCOLOR|BACKGROUNDSHADOWCOLOR|'
+            r'BACKGROUNDSHADOWSIZE|BANDSITEM|BROWSEFORMAT|BUFFER|CHARACTER|CLASS|CLASSITEM|'
+            r'CLASSGROUP|COLOR|CONFIG|CONNECTION|CONNECTIONTYPE|DATA|DATAPATTERN|DEBUG|'
+            r'DRIVER|DUMP|EMPTY|ENCODING|END|ERROR|EXPRESSION|EXTENT|EXTENSION|FEATURE|'
+            r'FILLED|FILTER|FILTERITEM|FOOTER|FONT|FONTSET|FORCE|FORMATOPTION|FROM|GAP|'
+            r'GRID|GRATICULE|GROUP|HEADER|IMAGE|IMAGECOLOR|IMAGETYPE|IMAGEQUALITY|IMAGEPATH|'
+            r'IMAGEURL|INCLUDE|INDEX|INTERLACE|INTERVALS|JOIN|KEYIMAGE|KEYSIZE|KEYSPACING|LABEL|'
+            r'LABELCACHE|LABELFORMAT|LABELITEM|LABELMAXSCALE|LABELMAXSCALEDENOM|'
+            r'LABELMINSCALE|LABELMINSCALEDENOM|LABELREQUIRES|LATLON|LAYER|LEGEND|'
+            r'LEGENDFORMAT|LINECAP|LINEJOIN|LINEJOINMAXSIZE|LOG|MAP|MARKER|MARKERSIZE|'
+            r'MAXARCS|MAXBOXSIZE|MAXFEATURES|MAXINTERVAL|MAXSCALE|MAXSCALEDENOM|MINSCALE|'
+            r'MINSCALEDENOM|MAXGEOWIDTH|MAXLENGTH|MAXSIZE|MAXSUBDIVIDE|MAXTEMPLATE|'
+            r'MAXWIDTH|METADATA|MIMETYPE|MINARCS|MINBOXSIZE|MINDISTANCE|'
+            r'MINFEATURESIZE|MININTERVAL|MINSCALE|MINSCALEDENOM|MINGEOWIDTH'
+            r'MINLENGTH|MINSIZE|MINSUBDIVIDE|MINTEMPLATE|MINWIDTH|NAME|OFFSET|OFFSITE|'
+            r'OPACITY|OUTLINECOLOR|OUTLINEWIDTH|OUTPUTFORMAT|OVERLAYBACKGROUNDCOLOR|'
+            r'OVERLAYCOLOR|OVERLAYMAXSIZE|OVERLAYMINSIZE|OVERLAYOUTLINECOLOR|'
+            r'OVERLAYSIZE|OVERLAYSYMBOL|PARTIALS|PATTERN|POINTS|POSITION|POSTLABELCACHE|'
+            r'PRIORITY|PROCESSING|PROJECTION|QUERYFORMAT|QUERYMAP|REFERENCE|'
+            r'RELATIVETO|REQUIRES|RESOLUTION|SCALE|SCALEDENOM|SHADOWCOLOR|SHADOWSIZE|'
+            r'SHAPEPATH|SIZE|SIZEUNITS|STATUS|STYLE|STYLEITEM|SYMBOL|SYMBOLSCALE|'
+            r'SYMBOLSCALEDENOM|SYMBOLSET|TABLE|TEMPLATE|TEMPLATEPATTERN|TEXT|'
+            r'TILEINDEX|TILEITEM|TITLE|TO|TOLERANCE|TOLERANCEUNITS|TRANSPARENCY|'
+            r'TRANSPARENT|TRANSFORM|TYPE|UNITS|WEB|WIDTH|WKT|WRAP|IMAGEMODE'
+            r')\b')
+            
+class MapFileLexer(RegexLexer):
+    name = 'mapfile'
+    aliases = ['mapfile']
+    filenames = ['*.map']
+    
+    flags = re.IGNORECASE
+    tokens = {
+        'root': [
+            (r'\s+', Text),
+            (r'[{}\[\]();,-.]+', Punctuation),
+            (r'#.*', Comment),
+            (r'(AND|OR|NOT|EQ|GT|LT|GE|LE|NE|IN|IEQ)\b', Operator.Word),
+            (r'!=|==|<=|>=|=~|&&|\|\||[-~+/*%=<>&^|./\$]', Operator),
+            ('(?:[rR]|[uU][rR]|[rR][uU])"', String, 'dqs'),
+            ("(?:[rR]|[uU][rR]|[rR][uU])'", String, 'sqs'),
+            ('[uU]?"', String, combined('stringescape', 'dqs')),
+            ("[uU]?'", String, combined('stringescape', 'sqs')),
+#            (constants, Keyword.Constant),
+#            (r"""[]{}:(),;[]""", Punctuation),
+            # (r'(MAP)\b', Generic.Heading),
+            (keywords, Keyword),
+            # (r'(PRIMEM|UNIT|TOWGS84)\b', Keyword.Constant),
+            (builtins, Name.Builtin),
+            (r'[0-9][0-9]*\.[0-9]+([eE][0-9]+)?[fd]?', Number.Float),
+            (r'[0-9]+', Number.Integer),
+
+        ],
+        'dqs': [
+            (r'"', String, '#pop'),
+            (r'\\\\|\\"|\\\n', String.Escape), # included here again for raw strings
+            include('strings')
+        ],
+        'sqs': [
+            (r"'", String, '#pop'),
+            (r"\\\\|\\'|\\\n", String.Escape), # included here again for raw strings
+            include('strings')
+        ],
+        'tdqs': [
+            (r'"""', String, '#pop'),
+            include('strings'),
+            include('nl')
+        ],
+        'tsqs': [
+            (r"'''", String, '#pop'),
+            include('strings'),
+            include('nl')
+        ],
+        'strings': [
+            (r'%(\([a-zA-Z0-9_]+\))?[-#0 +]*([0-9]+|[*])?(\.([0-9]+|[*]))?'
+             '[hlL]?[diouxXeEfFgGcrs%]', String.Interpol),
+            (r'[^\\\'"%\n]+', String),
+            # quotes, percents and backslashes must be parsed one at a time
+            (r'[\'"\\]', String),
+            # unhandled string formatting sign
+            (r'%', String)
+            # newlines are an error (use "nl" state)
+        ],
+        'nl': [
+            (r'\n', String)
+        ],
+        'stringescape': [
+            (r'\\([\\abfnrtv"\']|\n|N{.*?}|u[a-fA-F0-9]{4}|'
+             r'U[a-fA-F0-9]{8}|x[a-fA-F0-9]{2}|[0-7]{1,3})', String.Escape)
+        ],
+    }
+
+
+def setup(app):
+    from sphinx.highlighting import lexers
+    lexers['wkt'] = WKTLexer() 
+    lexers['mapfile'] = MapFileLexer() 
+

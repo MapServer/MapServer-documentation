@@ -91,7 +91,7 @@ FastCGI-enabled.  You can verify this by testing it on with the command line:
     the connections and layer information on all layers for which connection 
     caching is desired - ie. all slow layers.
 
-    ::
+    .. code-block:: mapfile
        
        PROCESSING "CLOSE_CONNECTION=DEFER"
 
@@ -115,7 +115,10 @@ can be directed with the *FastCgiIpcDir* directive.
 MS4W Users
 ----------
 
-`MS4W (MapServer for Windows)`_ >= version 2.2.2 contains MapServer compiled with FastCGI support.  MS4W version >= 2.2.8 also contains the required Apache module (mod_fcgid), and users must follow the `README instructions`_ to setup FastCGI with their application.
+`MS4W (MapServer for Windows)`_ >= version 2.2.2 contains MapServer compiled
+with FastCGI support. MS4W version >= 2.2.8 also contains the required Apache
+module (mod_fcgid), and users must follow the `README instructions`_ to setup
+FastCGI with their application.
 
 .. _MS4W (MapServer for Windows): http://www.maptools.org/ms4w/
 .. _README instructions: http://www.maptools.org/ms4w/index.phtml?page=README_INSTALL.html#f-fastcgi
@@ -129,9 +132,14 @@ I used libfcgi-2.4.0 for use with Apache2 from http://www.fastcgi.com.
 Binary IO Patch
 ---------------
 
-It is critical that stdio be in binary mode when PNG and other binary images are written to it. To accomplish this for stdio handled through the FastCGI library, I had to do the following hack to libfcgi/fcgi_stdio.c within the fcgi-2.4.0 distribution.
+It is critical that stdio be in binary mode when PNG and other binary images
+are written to it. To accomplish this for stdio handled through the FastCGI
+library, I had to do the following hack to libfcgi/fcgi_stdio.c within the
+fcgi-2.4.0 distribution.
 
-In FCGI_Accept() made he following change::
+In FCGI_Accept() made he following change
+
+.. code-block:: c
 
       if(isCGI) {
         FCGI_stdin->stdio_stream = stdin;
@@ -150,27 +158,40 @@ In FCGI_Accept() made he following change::
 
       } else {
 
-Also, add the following just before the FCGI_Accept() function::
+Also, add the following just before the FCGI_Accept() function
+
+.. code-block:: c
 
     #ifdef _WIN32
     #include <fcntl.h>
     #include <io.h>
     #endif
 
-I'm sure there is a better way of accomplishing this. If you know how, please let me know!
+I'm sure there is a better way of accomplishing this. If you know how, please
+let me know!
 
 Building libfcgi
 ----------------
 
-The makefile.nt should be fine. Just ensure you have run VCVARS32.BAT (as is needed for building MapServer) and then issue the command::
+The makefile.nt should be fine. Just ensure you have run VCVARS32.BAT (as is
+needed for building MapServer) and then issue the command::
 
   nmake /f makefile.nt 
 
-Then the .lib and .dll will be in libfcgi/Debug?. Make sure you copy the DLL somewhere appropriate (such as your cgi-bin directory).
+Then the .lib and .dll will be in libfcgi/Debug?. Make sure you copy the DLL
+somewhere appropriate (such as your cgi-bin directory).
 
 Other Issues
 ------------
 
-1) FastCGI's receive a very limited environment on win32, seemingly even more restricted than normal cgi's started by apache. Make sure that all DLLs required are either in the fastcgi directory or in windows\system32. Any missing DLLs will result in very cryptic errors in the error_log, including stuff about Overlapping read requests failing or something like that.
+1) FastCGI's receive a very limited environment on win32, seemingly even more
+restricted than normal cgi's started by apache. Make sure that all DLLs
+required are either in the fastcgi directory or in windows\system32. Any
+missing DLLs will result in very cryptic errors in the error_log, including
+stuff about Overlapping read requests failing or something like that.
 
-2) Make sure you use a libfcgi.dll built against the same runtime library as your mapserv.exe (and possibly libmap_fcgi.dll) or you will suffer a world of pain! Different runtime libraries have different "environ" variables (as well as their own stdio and heaps). You can check that everything is using MSVCRT.DLL (or all using MSVCRTD.DLL) using the MS SDK Dependency Walker. 
+2) Make sure you use a libfcgi.dll built against the same runtime library as
+your mapserv.exe (and possibly libmap_fcgi.dll) or you will suffer a world of
+pain! Different runtime libraries have different "environ" variables (as well
+as their own stdio and heaps). You can check that everything is using
+MSVCRT.DLL (or all using MSVCRTD.DLL) using the MS SDK Dependency Walker.

@@ -73,7 +73,7 @@ Test the `remote SLD request`_.
 
 The SLD in the above request follows:
 
-::
+.. code-block:: guess
 
         <StyledLayerDescriptor version="1.0.0">
           <NamedLayer>
@@ -432,7 +432,7 @@ The following is an example of ColorMap usage.
 
 If we have following ColorMap in an SLD:
 
-::
+.. code-block:: guess
 
     <ColorMap>
       <ColorMapEntry color="#00ff00" quantity="22"/> 
@@ -512,32 +512,33 @@ PHP/Mapscript Example that Generates an SLD from a Mapfile
 The following is a small script that calls the generateSLD() function 
 to create an SLD for a specific layer in a mapfile:
 
-::
+.. code-block:: php
+    :linenos:
+    
+    <?php
 
-  <?php
+    // define variables
+    define( "MAPFILE", "D:/ms4w/apps/cadastra/map/cadastra.map" );
+    define( "MODULE", "php_mapscript.dll" );
 
-  // define variables
-  define( "MAPFILE", "D:/ms4w/apps/cadastra/map/cadastra.map" );
-  define( "MODULE", "php_mapscript.dll" );
+    // load the mapscript module
+    if (!extension_loaded("MapScript")) dl(MODULE);
 
-  // load the mapscript module
-  if (!extension_loaded("MapScript")) dl(MODULE);
+    // open map
+    $oMap = ms_newMapObj( MAPFILE );
 
-  // open map
-  $oMap = ms_newMapObj( MAPFILE );
+    // get the parcel layer
+    $oLayer = $oMap->getLayerByName("parcel");
 
-  // get the parcel layer
-  $oLayer = $oMap->getLayerByName("parcel");
+    // generate the sld for that layer
+    $SLD = $oLayer->generateSLD();
 
-  // generate the sld for that layer
-  $SLD = $oLayer->generateSLD();
+    // save sld to a file
+    $fp = fopen("parcel-sld.xml", "a");
+    fputs( $fp, $SLD );
+    fclose($fp);
 
-  // save sld to a file
-  $fp = fopen("parcel-sld.xml", "a");
-  fputs( $fp, $SLD );
-  fclose($fp);
-
-  ?>
+    ?>
 
 Named Styles support
 ====================
@@ -548,28 +549,28 @@ Mapserver 5.2 introduces the possibility to assign a group to a series of classe
 defined on a layer object using two new non-mandatory keywords
 CLASSGROUP (at the layer level) and GROUP at the class level:
 
-::
+.. code-block:: mapfile
 
- LAYER
- ...
- CLASSGROUP "group1"
- ...
- CLASS
-   NAME "name1"
-   GROUP "group1"
-   ...
- END
- CLASS
-   NAME "name2"
-   GROUP "group2"
-   ...
- END
- CLASS
-   NAME "name3"
-   GROUP "group1"
-   ...
- END
- ...
+    LAYER
+        ...
+        CLASSGROUP "group1"
+        ...
+        CLASS
+            NAME "name1"
+            GROUP "group1"
+            ...
+        END
+        CLASS
+            NAME "name2"
+            GROUP "group2"
+            ...
+        END
+        CLASS
+            NAME "name3"
+            GROUP "group1"
+            ...
+        END
+        ...
 
 
 At rendering time, if the CLASSGROUP is defined, only classes that have the same group name would be used. 
