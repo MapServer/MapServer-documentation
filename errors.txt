@@ -383,4 +383,50 @@ There are a few options available if you need to set the epsg location:
       SetEnv PROJ_LIB C:/somedir/proj/nad/
    
 
+msQueryByPoint: search returned no results
+-------------------------------------------------------------------------------
+
+Why do I get the message "msQueryByPoint(): Search returned no
+results. No matching record(s) found" when I query a feature known to
+exists?
+
+The query feature requires a TEMPLATE object in the CLASS object of
+your LAYER definition. The value points to a html fragment using
+MapServer template syntax.
+
+Example MapFile fragment:
+
+.. code-block:: mapfile
+
+  LAYER
+    NAME "Parcel9"
+    TYPE POLYGON
+    STATUS OFF
+    DATA "Parcels/area09_parcels"
+    CLASS
+      STYLE
+        OUTLINECOLOR 128 128 128
+        COLOR 153 205 255
+      END
+      TEMPLATE "templates/Parcels/area09_parcels.html"
+    END
+
+    HEADER "templates/Parcels/area09_parcels_header.html"
+    FOOTER "templates/Parcels/area09_parcels_footer.html"
+
+  END
+
+Example Template:
+
+:: 
+
+  <tr>
+    <td>[lrn]</td>
+    <td>[PIN]</td>
+  </tr>
+
+The [lrn] is a special keyword that indicates the resulting line
+number which starts at 1. [PIN] is the name of a feature attribute.
+
+
 
