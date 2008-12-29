@@ -71,7 +71,7 @@
 	ntf                            :ref:`NTF <ntf>`
 	oci                            :ref:`Oracle Spatial <oci>`
 	oci_install                    :ref:`Oracle Installation <oci_install>`
-	ogc                            :ref:`OGC Operation and Configuration <ogc>`
+	ogc                            :ref:`OGC Support and Configuration <ogc>`
 	ogr                            :ref:`OGR <ogr>`
 	online_resource_wms            :ref:`More About the Online Resource URL <online_resource_wms>`
 	optimization                   :ref:`Optimization <optimization>`
