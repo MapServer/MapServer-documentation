@@ -9,7 +9,7 @@ restrictedExtent: new OpenLayers.Bounds(243000,6236000,278000,6263000)
       });
   
         var wms = new OpenLayers.Layer.TileCache( "S3", 
-        ['http://mapserver-tile1.osgeo.org/tilecache',
+        ['http://mapserver-tile-1.osgeo.org/tilecache',
         'http://mapserver-tile-2.osgeo.org/tilecache'],
         'parisosm',
         {
