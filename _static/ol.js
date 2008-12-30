@@ -3,6 +3,31 @@ var lat = 6250266;
 var zoom = 7;
 var map;
 
+
+OpenLayers.Control.PanZoom.prototype.draw = function(px) {
+    // initialize our internal div
+      OpenLayers.Control.prototype.draw.apply(this, arguments);
+    px = this.position;
+
+      // place the controls
+      this.buttons = [];
+
+      var sz = new OpenLayers.Size(18,18);
+    var centered = new OpenLayers.Pixel(px.x+sz.w/2, px.y);
+
+      this._addButton("panup", "north-mini.png", centered, sz);
+    px.y = centered.y+sz.h;
+    this._addButton("panleft", "west-mini.png", px, sz);
+    this._addButton("panright", "east-mini.png", px.add(sz.w, 0), sz);
+    this._addButton("pandown", "south-mini.png",
+                        centered.add(0, sz.h*2), sz);
+    this._addButton("zoomin", "zoom-plus-mini.png",
+                        centered.add(0, sz.h*3.5+5), sz);
+    this._addButton("zoomout", "zoom-minus-mini.png",
+                        centered.add(0, sz.h*4.5+5), sz);
+    return this.div;
+};
+
 function olmapinit(){
   map = new OpenLayers.Map( 'olmap', {
 restrictedExtent: new OpenLayers.Bounds(243000,6236000,278000,6263000),
