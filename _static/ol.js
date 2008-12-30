@@ -5,8 +5,10 @@ var map;
 
 function olmapinit(){
   map = new OpenLayers.Map( 'olmap', {
-restrictedExtent: new OpenLayers.Bounds(243000,6236000,278000,6263000)
-      });
+restrictedExtent: new OpenLayers.Bounds(243000,6236000,278000,6263000),
+controls:[new OpenLayers.Control.Navigation(),
+new OpenLayers.Control.PanZoom()]
+});
   
         var wms = new OpenLayers.Layer.TileCache( "S3", 
         ['http://mapserver-tile-1.osgeo.org/tilecache',
