@@ -105,8 +105,8 @@
 	rfc21                          :ref:`MS RFC 21: MapServer Raster Color Correction <rfc21>`
 	rfc22a                         :ref:`MS RFC 22a: Feature cache for long running processes and query processing <rfc22a>`
 	rfc23                          :ref:`MS RFC 23: Technical Steering Committee Guidelines <rfc23>`
-	rfc24                          :ref:`MS RFC 24: Mapscript memory management <rfc24>`
-	rfc24first                     :ref:`MS RFC 24: Mapscript memory management <rfc24first>`
+	rfc24                          :ref:`MS RFC 24: MapScript memory management <rfc24>`
+	rfc24first                     :ref:`MS RFC 24: MapScript memory management <rfc24first>`
 	rfc25                          :ref:`MS RFC 25: Align MapServer pixel and extent models with OGC models <rfc25>`
 	rfc26                          :ref:`MS RFC 26: Version 5 Terminology Cleanup <rfc26>`
 	rfc27                          :ref:`MS RFC 27: Label Priority <rfc27>`

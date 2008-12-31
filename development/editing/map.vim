@@ -3,7 +3,7 @@
 " Maintainer:   Andreas Hirner <andreas.hirner@dlr.de>
 " Last Change:  $Date: 2004/05/25 19:19:37 $
 " Filenames:    *.map
-" Note:         The definitions below are taken from TextPad syntax definitions (*.syn) by Chris Thorne (thorne@dmsolutions.ca) as of May 2004, for version 4.0 Mapserver
+" Note:         The definitions below are taken from TextPad syntax definitions (*.syn) by Chris Thorne (thorne@dmsolutions.ca) as of May 2004, for version 4.0 MapServer
 
 " For version 5.x: Clear all syntax items
 " For version 6.x: Quit when a syntax file was already loaded
