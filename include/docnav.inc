@@ -1,6 +1,6 @@
 
 
-..   csv-table:: 
+..   csv-table:: Quick Links
 
     :ref:`introduction`,:ref:`installation`,:ref:`mapfile`
     :ref:`mapscript`,:ref:`input`,:ref:`output`
