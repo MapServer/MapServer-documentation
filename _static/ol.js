@@ -1,6 +1,6 @@
-var lon = 261330;
-var lat = 6250266;
-var zoom = 7;
+var lon = 16831422;
+var lat = -4011708;
+var zoom = 4;
 var map;
 
 
@@ -30,18 +30,18 @@ OpenLayers.Control.PanZoom.prototype.draw = function(px) {
 
 function olmapinit(){
   map = new OpenLayers.Map( 'olmap', {
-restrictedExtent: new OpenLayers.Bounds(243000,6236000,278000,6263000),
+restrictedExtent: new OpenLayers.Bounds(16770012,-4044490,16876903,-3980726),
 controls:[new OpenLayers.Control.Navigation(),
 new OpenLayers.Control.PanZoom()]
 });
   
-        var wms = new OpenLayers.Layer.TileCache( "S3", 
+        var wms = new OpenLayers.Layer.TileCache( "Sydney", 
         ['http://mapserver-tile-1.osgeo.org/tilecache',
         'http://mapserver-tile-2.osgeo.org/tilecache'],
-        'parisosm',
+        'osm',
         {
-          maxExtent: new OpenLayers.Bounds(-571405,5067685,1061388,6637184),
-          resolutions:[1763.8879363894034,881.9439681947017,352.7775872778807,176.38879363894034,88.19439681947017,35.27775872778806,17.63887936389403,8.819439681947015,3.527775872778806,1.763887936389403],
+          maxExtent: new OpenLayers.Bounds(-20000000,-20000000,20000000,20000000),
+          scales: [10000,25000,50000,100000,250000,500000,1000000,2500000,5000000,10000000],
           units: 'm',
           projection:new OpenLayers.Projection("EPSG:900913"),
           buffer:0,
