@@ -6,6 +6,12 @@
 
 .. index:: LABEL
 
+ALIGN [left|center|right]
+    Since version 5.4 . Specifies text alignment for multiline labels (see WRAP_)
+    Note that the alignment algorithm is far from precise, so don't expect
+    fabulous results (especially for *right* alignment) if you're not using
+    a fixed width font.
+
 ANGLE [double|auto|follow|attribute]
     - Angle, given in degrees, to draw the label.  
     - AUTO allows MapServer to compute the angle. Valid for LINE layers only. 
@@ -93,6 +99,20 @@ FORCE [true|false]
     Forces labels for a particular class on, regardless of collisions. 
     Available only for cached labels. Default is false.
 
+.. _MAXLENGTH:
+
+MAXLENGTH [integer]
+    Introduced in mapserver 5.4, this keyword interacts with the WRAP_
+    keyword so that line breaks only occur after the defined number of
+    characters
+
+    .. csv-table:: Interaction with WRAP_ keyword
+
+        "", **maxlength = 0** ,  **maxlength > 0**,  **maxlength < 0**
+        **wrap = ‘char’** ,always wrap at the WRAP_ character ,newline at the first WRAP_ character after MAXLENGTH_ characters, hard wrap (always break at exactly MAXLENGTH_ characters)
+        **no wrap** ,no processing,skip label if it contains more than MAXLENGTH_ characters , hard wrap (always break at exactly MAXLENGTH_ characters)
+
+    The associated RFC document for this feature is :ref:`RFC40`.
 MAXSIZE [integer]
     Maximum font size to use when scaling text (pixels). Default is 256.
 
@@ -197,6 +217,9 @@ TYPE [bitmap|truetype]
     TrueType fonts. However, TrueType fonts are scalable and available in a 
     variety of faces. Be sure to set the FONT parameter if you select TrueType.
 
+.. _WRAP:
+
 WRAP [character]
     Character that represents an end-of-line condition in label text, thus 
-    resulting in a multi-line label.
+    resulting in a multi-line label. Interacts with MAXLENGTH_ for conditional
+    line wrapping after a given number of characters
