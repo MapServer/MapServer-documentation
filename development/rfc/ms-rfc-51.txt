@@ -1,0 +1,146 @@
+.. _rfc51:
+
+======================================================================
+MS RFC 51: XML/BXML Mapfiles
+======================================================================
+
+:Date: 2009/01/16
+:Authors: Alan Boudreault
+:Contact: aboudreault at mapgears.com
+:Last Edited: 2009/01/16
+:Version: MapServer 5.4
+:Id:
+
+Overview
+------------------------------------------------------------------------------
+This RFC proposes the addition of XML/BXML Mapfiles support.
+
+Presently, MapServer supports only normal mapfiles that are parsed by Flex.
+The current mapfiles are parsed very fast by MapServer but can not be
+parsed by any other software due to the parser complexity. So, a client
+interface to build mapfiles is difficult to make.
+
+XML is seen as a solution that can provide a strict syntax to mapfiles to
+have a strong validation with XML Schema.
+
+Technical Solution
+------------------------------------------------------------------------------
+The main work is to write a XML Mapfile Schema to have a strict XML syntax
+tha will provide a strong validation and to code a new parser for the XML
+encoding as an alternative to the current mapfiles format. It will use a
+similar C API as the traditionnal. The Cubewerx's CWXML library
+(http://www.cubewerx.com/main/cwxml/) will be used for the new parser.
+
+Technical Issue
+------------------------------------------------------------------------------
+The main blocker for this feature so far has been the poor performance that
+we expect from parsing large XML documents at runtime. Fortunately, a
+Binary XML (BXML) discussion paper has been submitted to OGC and Cubewerx
+has released an open source library that implements it. The use of BXML
+addresses the potential performance issue and makes XML/Binary XML mapfiles
+a viable option.
+
+Technical Risk
+------------------------------------------------------------------------------
+There is a risk related to the maturity and stability of the CWXML library
+on which this implementation will be based: the library seems quite good on
+the surface but we will only know for sure once we have started working
+with it.
+
+Implementation Details
+------------------------------------------------------------------------------
+First, it is plan to write a schema and a parser that will simply allow us to
+do the same things that the traditionnal mapfile does. Each keyword will be
+almost the same, only the XML syntax will be different.
+
+Secondly, the XML Parser needs to support XML mapfiles as well as BXML
+mapfiles. This part should not be so difficult... keeping in mind that
+CWXML is supposed to have a similar API for both.
+
+
+ C API Changes
+------------------------------------------------------------------------------
+The major changes will be in the new file "mapfilexml.c" that contains the
+new parser. A few minor changes will be needed to determine which parser to
+use in the msLoadMap() method.
+
+- mapserv.c
+- mapfilexml.c (new file)
+
+Mapfiles
+------------------------------------------------------------------------------
+An example of XML mapfile layer definition (prototype): 
+
+::
+
+   <Layer>
+    <name>popplace</name>
+    <type>POINT</type> 
+    <debug>5</debug>
+    <status>ON</status>
+    <Metadata>
+      <item name="DESCRIPTION">Cities</item>
+      <item name="TEST">TESTING</item>
+      <item name="RESULT_FIELDS">NAME</item>
+    </Metadata>
+    <data>popplace</data>
+    <labelItem>Name</labelItem>
+    <classItem>Capital</classItem>
+
+    <Class>
+      <name>Cities</name>
+      <expression>1</expression>
+      <template>ttt_query.html</template>
+      <symbol>2</symbol>
+      <size>8</size>
+      <Label type="TRUETYPE">
+        <colorAttribute>[COULEUR]</colorAttribute>
+        <font>sans</font>
+        <angle>0</angle>
+        <size>8</size>
+        <outlineColor red="255" green="255" blue="255"/>
+      </Label>
+      <color red="0" green="255" blue="0"/>
+    </Class>
+
+    <Class>
+      <name>Cities</name>
+      <expression>/2|3/</expression>
+      <template>ttt_query.html</template>
+      <tolerance>5</tolerance>
+      <Label type="TRUETYPE">
+        <colorAttribute>[COULEUR]</colorAttribute>
+        <font>[FONT]</font>
+        <angle>[ANGLE]</angle>
+        <size>8</size>
+        <outlineColor red="255" green="255" blue="255"/>
+        <position>AUTO</position>
+        <partials>FALSE</partials>
+      </Label>
+      <Style>
+        <symbol>7</symbol>
+        <size>6</size>
+        <colorAttribute>[COULEUR]</colorAttribute>
+      </Style>
+    </Class>
+  </Layer>
+
+
+Future Enhancement
+------------------------------------------------------------------------------
+In the future, some enhancement could be good to added:
+
+  * Special tags for all WMS options (including styles)
+  * Reusable xml block with ID
+
+Documentation
+--------------------------------------------------------------------------------
+TBD
+
+Backwards Incompatibility
+--------------------------------------------------------------------------------
+No issues expected.
+
+Bug ID
+--------------------------------------------------------------------------------
+Not assigned.
