@@ -95,6 +95,32 @@ The SLD in the above request follows:
             </UserStyle>
           </NamedLayer>
         </StyledLayerDescriptor> 
+
+
+Veersion 1.1.0 of the same SLD
+
+.. code-block:: guess
+
+   <StyledLayerDescriptor version="1.1.0">
+          <NamedLayer>
+            <Name>WorldGen_Outline</Name>
+            <UserStyle>
+              <Name>xxx</Name>
+              <FeatureTypeStyle>
+                <Rule>
+                <LineSymbolizer>
+                 <Geometry>
+                   <PropertyName>center-line</PropertyName>
+                 </Geometry>
+                 <Stroke>
+                   <SvgParameter name="stroke">#0000ff</SvgParameter>
+                 </Stroke>
+                </LineSymbolizer>
+                </Rule>
+              </FeatureTypeStyle>
+            </UserStyle>
+          </NamedLayer>
+        </StyledLayerDescriptor> 
         
 When MapServer gets a valid SLD through a request, it parses this SLD to extract 
 all the styles attached to the NamedLayers, and then it applies these styles to 
@@ -248,7 +274,12 @@ Stroke (CssParameter): opacity              No        Not supported in MapServer
 Stroke (CssParameter): linejoin and linecap No        Not supported in MapServer
 Stroke (CssParameter): dasharray            Yes  
 Stroke (CssParameter): dashoffset           No 
+PerperdicularOffset (only in SLD 1.1.0)     Yes        Offset values of the style object will be set
+InitialGap(GraphicStroke SLD 1.1.0)         No        
+Gap (GraphicStroke parameter SLD 1.1.0)     No        
 =========================================== ========= ====================================================
+
+Note that SvgParameter instead of CssParameter are required for SLD 1.1.0.
 
 The following are examples of valid requests using the LineSymbolizer:
 
@@ -269,13 +300,15 @@ The following are examples of valid requests using the LineSymbolizer:
 
 **Table 8. PolygonSymbolizer**
 
-======== ========= ======================================================================
-Features Supported Notes
-======== ========= ======================================================================
-Geometry No   
-Stroke   Yes       Strokes are the same as for the LineSymbolizer
-Fill     Yes       Was developed to support symbol fill polygons in addition to solid fill
-======== ========= ======================================================================
+==================== ========= =======================================================================
+Features              Supported Notes
+==================== ========= =======================================================================
+Geometry             No   
+Stroke               Yes       Strokes are the same as for the LineSymbolizer
+Fill                 Yes       Was developed to support symbol fill polygons in addition to solid fill
+PerperdicularOffset  No        SLD 1.1.0 parameter
+Displacement         Yes       SLD 1.1.0 parameter. Sets offsetx/y in MapServer       
+==================== ========= =======================================================================
 
 A Fill can be a solid fill or be a Graphic Fill, which is either a well-known 
 Mark symbol (e.g., square, circle, triangle, star, cross, x) or an 
@@ -315,9 +348,11 @@ Features                 Supported Notes
 Geometry                 No   
 Graphic: Mark symbol     Yes       Well-known names (square, circle, triangle, star, cross, X) are supported
 Graphic: ExternalGraphic Yes       Was developed to support symbol fill polygons in addition to solid fill
-Opacity                  No        Not supported in MapServer
+Opacity                  Yes       Support added in Mapserver 5.4
 Size                     Yes       
-Rotation                 No        Not supported in MapServer
+Rotation                 Yes       Support added in MapServer 5.4
+Displacement             Yes       SLD 1.1.0 Paramater.  Support added in MapServer 5.4
+AnchorPoint              No
 ======================== ========= ========================================================================= 
 
 Note: refer to the PolygonSymbolizer notes for how the Mark and ExternalGraphic symbols are applied in MapServer.
@@ -350,7 +385,7 @@ Font(font-family)        Yes       Font names used are those available in MapSer
 Font-style (Italic, ...) Yes  
 Font-weight              Yes  
 Font-size                Yes       If true-type fonts are not used, default bitmap sizes are given
-LabelPlacement           Yes       PointPlacement is supported. LinePlacement is supported for versions >=5.2.1.
+LabelPlacement           Yes       PointPlacement is supported. LinePlacement is supported for versions >=5.2.1. Only PerperdicularOffset and IsAligned are suported for LinePlacement.
 Halo                     Yes        Supported (fill converted to outlinecolor, and radius is converted to outlinewidth. Note that outlinewidth is only available for AGG in >=5.2)
 Fill                     Yes        Only solid color is available
 ======================== ========= ==========================================================================================================================
@@ -378,7 +413,11 @@ Notes on the TextSymbolizer:
 
 - Angle setting: by default the angle parameter is set to AUTO. For point features,
   users can use the PointPlacement to alter the value. For line features, the user can
-  add a LinePlacement: If an 'empty' LinePlacement is part of the SLD, the angle will be set to to FOLLOW, If a LinePlacement contains the PerpendicualarOffset parameter, the angle withh be set to 0 and the PerpendicualarOffset will be used to set the offset values in the label object.  
+  add a LinePlacement: If an 'empty' LinePlacement is part of the SLD, the angle will be 
+  set to  FOLLOW, If a LinePlacement contains the PerpendicualarOffset parameter, the 
+  angle will be set to 0 and the PerpendicualarOffset will be used to set the offset values 
+  in the label object. SLD 1.1.0 introduces the IsAligned parameter for LinePlacement: if 
+  this parameter is set to false, the angle will be set to 0.  
 
 The following are examples of valid requests using the TextSymbolizer:
 
