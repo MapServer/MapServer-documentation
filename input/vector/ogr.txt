@@ -5,10 +5,9 @@
 *****************************************************************************
 
 :Author:       Jeff McKenna
-:Contact:      jeffmckenna at gmail.com
+:Contact:      jmckenna at gatewaygeomatics.com
 :Revision: $Revision$
 :Date: $Date$
-:Last Updated: 2008/06/20
 
 .. contents:: Table of Contents
     :depth: 2
@@ -70,20 +69,32 @@ See http://www.gdal.org/ogr/ogr_formats.html for the latest list of supported
 formats. At the date this document was written, the following formats were
 supported:
 
-- `ArcInfo Coverages`_
+- `ArcInfo Binary Coverages`_
+- `ArcInfo E00 Coverages`_
+- `Atlas BNA`_
 - `Comma Separated Value (.csv)`_
 - `DODS/OPeNDAP`_
+- `ESRI ArcSDE`_
 - `ESRI Personal GeoDatabase`_
 - `ESRI Shapefiles`_
 - `FMEObjects Gateway`_
+- `Géoconcept Export`_
+- `GeoJSON`_
+- `GeoRSS`_
 - `GML`_
+- `GMT`_  
 - `GRASS`_
+- `GPX`_
+- `Informix DataBlade`_
+- `INGRES`_
 - `INTERLIS`_
+- `KML`_
 - `MapInfo files`_
+- `Memory`_
 - `Microstation DGN files`_
 - `MySQL`_
-- `OGDI Vectors`_
 - `ODBC`_
+- `OGDI Vectors`_
 - `Oracle Spatial`_
 - `PostgreSQL`_
 - `SDTS`_
@@ -91,6 +102,7 @@ supported:
 - `UK.NTF (National Transfer Format)`_
 - `US Census TIGER/Line`_
 - `VRT - Virtual Datasource`_
+- `X-Plane/Flighgear aeronautical data`_
 
 .. note:: 
 
@@ -175,13 +187,13 @@ Using OGR Data Sources in the Map File
 
 The .map file LAYER definition for file-based sources is as follows:
 
-::
+.. code-block:: mapfile
 
       LAYER
          ...
          CONNECTIONTYPE OGR
          CONNECTION "<datasource_name>"
-               DATA "<layer_definition>"
+         DATA "<layer_definition>"
          ...
       END
               
@@ -241,7 +253,7 @@ examples of each data format supported.
 
 **Example 1. MapInfo TAB file**
 
-::
+.. code-block:: mapfile
 
       LAYER
          NAME "Builtup_Areas_tab"
@@ -260,7 +272,7 @@ examples of each data format supported.
 The entire DGN file is represented in OGR as one layer (see the `DGN driver
 page`_ for more details):
 
-::
+.. code-block:: mapfile
 
       LAYER
          NAME "dgn"
@@ -276,7 +288,7 @@ page`_ for more details):
                
 **Example 3. TIGER/Line file using <layer_name>**
 
-::
+.. code-block:: mapfile
 
       LAYER
          NAME "Roads_tig"
@@ -292,7 +304,7 @@ page`_ for more details):
                
 **Example 4. Directory of Shapefiles using SQL JOIN**
 
-::
+.. code-block:: mapfile
 
       LAYER
          NAME "Parks_cov"
@@ -455,7 +467,7 @@ ogrtindex. Details can be found on the `OGR Utilities Page`_.
 
 The following is a simple example of a point layer using a tile index.
 
-::
+.. code-block:: mapfile
 
    LAYER
      NAME "ogr_points"
@@ -464,9 +476,12 @@ The following is a simple example of a point layer using a tile index.
      TILEINDEX "PIP_ogr_tiles.shp,0"
      STATUS ON
      CLASS
-        SYMBOL "default-circle"
-        COLOR 255 0 0
-        SIZE 6
+        NAME "points"
+        STYLE
+          SYMBOL "default-circle"
+          COLOR 255 0 0
+          SIZE 6
+        END
      END
    END
 
@@ -501,7 +516,7 @@ avoid re-reading the dataset, we mark the first layer to defer closing the conne
 till layer. In the second (or last) layer we request NORMAL connection handling 
 (though this could have been left out as normal handling is the default).
 
-::
+.. code-block:: mapfile
 
     LAYER
        NAME "AdminAreas"
@@ -576,7 +591,8 @@ Examples
 
 **Example 10. Layer Definition Using STYLEITEM "AUTO" without a CLASSITEM**
 
-::
+.. code-block:: mapfile
+
 
     LAYER
        NAME "test_dgn"
@@ -597,7 +613,7 @@ Examples
 
 **Example 11. Layer Definition Using STYLEITEM "AUTO" with a CLASSITEM**
 
-::
+.. code-block:: mapfile
 
     LAYER
        NAME "Builtup_Areas_tab"
@@ -733,6 +749,61 @@ Text labels
           
     2. If TTF fonts are not supported or if all above cases failed, then BITMAP 
        MEDIUM font will be used. 
+       
+.. _styleitemauto-label-styles:
+
+Accessing OGR STYLEITEMAUTO Label Styles Through MapScript
+----------------------------------------------------------
+
+OGR STYLEITEMAUTO label styles can be accessed through MapScript, such as 
+PHP/MapScript's getshape() or getvalue() methods, by setting the LAYER's PROCESSING 
+parameter to "GETSHAPE_STYLE_ITEMS=all".  Therefore, the LAYER may contain: 
+
+.. code-block:: mapfile
+
+  LAYER
+    ...
+    PROCESSING "GETSHAPE_STYLE_ITEMS=all"
+    ...
+  END
+
+The following label styles are supported:
+
+==================  ===================================
+Label Style         Description   
+==================  ===================================
+OGR:LabelFont       Comma-delimited list of fonts names
+OGR:LabelSize       Numeric value with units
+OGR:LabelText       Label text string
+OGR:LabelAngle      Rotation angle (in degrees)
+OGR:LabelFColor     Foreground color
+OGR:LabelBColor     Background color
+OGR:LabelPlacement  How is the text drawn 
+                    relative to the feature's geometry
+OGR:LabelAnchor     A value from 1 to 12 defining the 
+                    label's position relative to the 
+                    point to which it is attached.
+OGR:LabelDx         X offset
+OGR:LabelDy         Y offset
+OGR:LabelPerp       Perpendicular offset
+OGR:LabelBold       Bold text
+OGR:LabelItalic     Italic text
+OGR:LabelUnderline  Underlined text
+OGR:LabelPriority   Numeric value defining the order 
+                    in which style parts should be 
+                    drawn.    
+OGR:LabelStrikeout  Strike out text
+OGR:LabelStretch    Stretch factor changes the width 
+                    of all characters in the font by 
+                    factor percent.
+OGR:LabelAdjHor     Horizontally adjacent text
+OGR:LabelAdjVert    Vertically adjacent text
+OGR:LabelHColor     Shadow color (gdal > 1.4.0)
+OGR:LabelOColor     Outline color (gdal > 1.6.0)   
+==================  ===================================
+
+Please see the `OGR Feature Style Specification`_ document for more details
+on those specific styles.
 
 Sample Sites Using OGR/MapServer
 ================================
@@ -794,18 +865,30 @@ FAQ / Common Problems
 
 .. _`FWTools`: http://fwtools.maptools.org/
 .. _`MS4W`: http://www.maptools.org/ms4w/
-.. _`ArcInfo Coverages`: http://www.gdal.org/ogr/drv_avcbin.html
+.. _`ArcInfo Binary Coverages`: http://www.gdal.org/ogr/drv_avcbin.html
+.. _`ArcInfo E00 Coverages`: http://www.gdal.org/ogr/drv_avce00.html
+.. _`Atlas BNA`: http://www.gdal.org/ogr/drv_bna.html
 .. _`Comma Separated Value (.csv)`: http://www.gdal.org/ogr/drv_csv.html
 .. _`DODS/OPeNDAP`: http://www.gdal.org/ogr/drv_dods.html
 .. _`DWG`: http://www.gdal.org/ogr/drv_dxfdwg.html
 .. _`DXF`: http://www.gdal.org/ogr/drv_dxfdwg.html
+.. _`ESRI ArcSDE`: http://www.gdal.org/ogr/drv_sde.html
 .. _`ESRI Personal GeoDatabase`: http://www.gdal.org/ogr/drv_pgeo.html
 .. _`ESRI Shapefiles`: http://www.gdal.org/ogr/drv_shapefile.html
 .. _`FMEObjects Gateway`: http://www.gdal.org/ogr/drv_fme.html
 .. _`GML`: http://www.gdal.org/ogr/drv_gml.html
+.. _`GMT`: http://www.gdal.org/ogr/drv_gmt.html
+.. _`Géoconcept Export`: http://www.gdal.org/ogr/drv_geoconcept.html
+.. _`GeoJSON`: http://www.gdal.org/ogr/drv_geojson.html
+.. _`GeoRSS`: http://www.gdal.org/ogr/drv_georss.html
+.. _`GPX`: http://www.gdal.org/ogr/drv_gpx.html
 .. _`GRASS`: http://www.gdal.org/ogr/drv_grass.html
+.. _`Informix DataBlade`: http://www.gdal.org/ogr/drv_idb.html
+.. _`INGRES`: http://www.gdal.org/ogr/drv_ingres.html
 .. _`INTERLIS`: http://www.gdal.org/ogr/drv_ili.html
+.. _`KML`: http://www.gdal.org/ogr/drv_kml.html
 .. _`MapInfo files`: http://www.gdal.org/ogr/drv_mitab.html
+.. _`Memory`: http://www.gdal.org/ogr/drv_memory.html
 .. _`Microstation DGN files`: http://www.gdal.org/ogr/drv_dgn.html
 .. _`MySQL`: http://www.gdal.org/ogr/drv_mysql.html
 .. _`OGDI Vectors`: http://www.gdal.org/ogr/drv_ogdi.html
@@ -817,11 +900,13 @@ FAQ / Common Problems
 .. _`UK.NTF (National Transfer Format)`: http://www.gdal.org/ogr/drv_ntf.html
 .. _`US Census TIGER/Line`: http://www.gdal.org/ogr/drv_tiger.html
 .. _`VRT - Virtual Datasource`: http://www.gdal.org/ogr/drv_vrt.html
+.. _`X-Plane/Flighgear aeronautical data`: http://www.gdal.org/ogr/drv_xplane.html
 .. _`GDAL mailing list`: http://lists.osgeo.org/mailman/listinfo/gdal-dev
 .. _`OGR page`: http://www.gdal.org/ogr/
 .. _`FGS`: http://www.maptools.org/fgs/
 .. _`OGR formats page`: http://www.gdal.org/ogr/ogr_formats.html
 .. _`DGN driver page`: http://www.gdal.org/ogr/drv_dgn.html
-.. _`OGR Utilities Page`: http://www.gdal.org/ogr/ogr_utilities.html
+.. _`OGR Utilities Page`: http://www.gdal.org/ogr_utilities.html
 .. _`GDAL Wiki`: http://trac.osgeo.org/gdal/wiki/
+.. _`OGR Feature Style Specification`: http://www.gdal.org/ogr/ogr_feature_style.html
 
