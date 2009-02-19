@@ -1,3 +1,10 @@
+2-18-2009 - MapServer 5.4 beta 1 is released
+..............................................................................
+
+MapServer 5.4 beta 1 has been released.  See the 
+`Changelog <http://trac.osgeo.org/mapserver/browser/tags/rel-5-4-0-beta1/mapserver/HISTORY.TXT>`__ 
+for more details and head to :ref:`download` to obtain a copy.  
+
 12-30-2008 - New MapServer website is now live
 ..............................................................................
 
@@ -19,12 +26,3 @@ includes ensuring items like code provenance and community contribution.
 See the `announcement`_ for more details.
 
 .. _`announcement`: http://lists.osgeo.org/pipermail/mapserver-announce/2008-December/000015.html
-
-12-08-2008 - MapServer 5.2.1 released
-..............................................................................
-
-MapServer 5.2.1 has been released.  See the `release notice`_ for more 
-information.  Navigate to :ref:`download` to obtain the source code or 
-binaries.
-
-.. _`release notice`: http://lists.osgeo.org/pipermail/mapserver-users/2008-December/058757.html
