@@ -68,3 +68,34 @@ allow run-time substitution (todo- add MapServer version):
 * LAYER: CONNECTION
 * LAYER: FILTER
 * CLASS EXPRESSION
+
+FILTERs
+..............................................................................
+
+You can use runtime substitutions to change values within a FILTER as you go.
+For example your FILTER could be written like so::
+
+    FILTER ("multimedia='[multimedia]' and seats >= [nseats] and Sound= '[sound]')
+
+Then (assuming you're using the CGI interface) you could pass in variables
+named multimedia, nseats and sound with values defined by the user in an HTML
+form.
+
+You should also define validation expressions on these variables to guard
+against unintentional SQL being submitted to postgis. Within the layer
+metadata you'd do the following:
+
+.. code-block:: mapfile
+
+    METADATA
+        'multimedia_validation_string' '^yes|no$'
+        'sound_validation_string' '^yes|no$'
+        'nseats_validation_string' '^[0-9]{1,2}$'
+        '... more metadata ...'
+    END
+
+The validation strings are regular expressions that are applied against the
+appropriate variable value before being added to the FILTER. The first two
+limit the value of multimedia and sound to yes or no. The third limits the
+value for nseats to a 2 digit integer.
+
