@@ -1,3 +1,10 @@
+2-25-2009 - MapServer 5.4 beta 2 is released
+..............................................................................
+
+MapServer 5.4 beta 2 has been released.  See the
+`Changelog <http://trac.osgeo.org/mapserver/browser/tags/rel-5-4-0-beta2/mapserver/HISTORY.TXT>`__
+for more details and head to :ref:`download` to obtain a copy.
+
 2-18-2009 - MapServer 5.4 beta 1 is released
 ..............................................................................
 
