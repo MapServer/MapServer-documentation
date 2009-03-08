@@ -1,0 +1,160 @@
+<html>
+  <head>
+    <title>MapServer 5.x Tutorial</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <link type="text/css" rel="stylesheet" href="ms35.css" />
+  </head>
+  <body bgcolor="#FFFFFF" text="#000000">
+    <table align="center" width="680" border="0">
+      <tr>
+        <td>
+          <h3 align="center">Example 1.5: Adding a Raster Layer</h3>
+          <div align="center">
+            <img border="1" src="/cgi-bin/mapserv.exe?map=/ms4w/apps/tutorial/htdocs/example1-5.map&layer=states&layer=states_line&layer=states_label&layer=modis&mode=map" />
+          </div>
+          <p align="left">In addition to vector data support (point, lines,
+            polygons, and annotations), MapServer can also display raster data.
+            Through the use of GDAL library, MapServer can input and output
+            multiple raster formats. Whereas in versions prior to 4.x raster
+            input is limited to single layer, grayscale or indexed color images,
+            MapServer now supports RGB and multispectral (multi-layer) images.
+            This example shows how to select what layers to display when using
+            multispectral data. There might be a noticeable performance hit when
+            using RGB and multispectral images.
+          </p>
+          <p align="left">Because MapServer 5.x uses GD version 2.0.x library to
+            generate output images, it supports RGB (24-bit or true color)
+            output as well. So, along with 8-bit (indexed color or grayscale)
+            PNG, you can now also use PNG24 (true color) for output. This
+            example uses PNG24 as IMAGETYPE. As with RGB input, there might be
+            a noticeable performance hit when using PNG24.
+          </p>
+          <p>MapServer can actually use GDAL to generate output images as well
+            but that's another topic.  If you want to know more about it, look
+            at the OUTPUTFORMAT object in the mapfile reference.
+          </p>
+          <hr>
+          <p align="left">This is what the mapfile looks like (Example1-5.map):
+            <br>
+            <iframe width="100%" src="example1-5.map"></iframe>
+          </p>
+          <hr align="center" width="300">
+          <p>The mapfile structure, by objects, looks like this:</p>
+          <pre>
+                                               MAP
+               LAYER #1-------------LAYER #2----|----LAYER #3--------LAYER #4
+            (states_poly)           (modis)       (states_line)   (states_label)
+               |                                     |               |
+  (land) CLASS-|-CLASS (water)                       |-CLASS         |-CLASS
+             |   |                                     |                 |
+       STYLE-|   |-STYLE                               |-STYLE     STYLE-|-LABEL
+
+</pre>
+
+          <hr align="center" width="300">
+          <p align="left">When you look at the mapfile, you'll see that the new 
+            LAYER object is added below (after) the state POLYGON layer. Why? 
+            MapServer displays layers in reverse order--last in, first out 
+            (LIFO). The first layer defined in the mapfile is drawn at the
+            bottom of the map.
+          </p>
+          <p>So, if we have drawn the state POLYGON layer, it would be on the 
+            bottom. Since the raster layer gets drawn on top of it, we won't 
+            see it. That's why the first layer gets the STATUS value of OFF. 
+            The state LINE layer is defined below the raster layer so it gets 
+            drawn on top (and you can see it). This is why we separated the
+            state LINE layer from the state POLYGON layer. Of course the labels 
+            get drawn on top of everything.
+          </p>
+          <p>MapServer can automatically turn layers on or off based on the 
+            status of other layers--say you want the states polygon layer 
+            turned off when the raster layer is turned on.  This is done by 
+            using the REQUIRES parameter.  Keep this in mind as you might want 
+            to use it once you start creating your own MapServer applications.
+          </p>
+          <p>Let's have a look at the new parameters introduced in the 
+            mapfile:
+          </p>
+          <p>IMAGETYPE<br>
+            This is not new but the value &quot;PNG24&quot; is. PNG24 is the 
+            24-bit or true-color version of the PNG format. Instead of being 
+            limited to 256 color combinations for our output image, MapServer 
+            now have millions. By the way, try changing this value back to PNG.
+            Notice the time it takes to generate the image using either formats.
+            In choosing between true color and indexed color, take into account 
+            the time it takes to generate the image.
+          </p>
+          <p>SYMBOLSET<br>
+            Points to the path of the symbol definition file. The symbols in 
+            this file are referenced by the SYMBOL parameter in the CLASS
+            object. It's not really needed at this point but I thought I'd 
+            throw this here now. Please refer to the
+            <a href="http://ms.gis.umn.edu/docs/reference/helpcenterreferencemanual.2005-03-29.3713415295">
+              SYMBOLOGY reference
+            </a> for further information.
+          </p>
+          <p>DATA &quot;raster/mod09a12003161_ugl_ll_8bit.tif&quot;<br>
+            In the newly added LAYER object, the DATA parameter points to a 
+            GeoTIFF image. Like vector datasets, MapServer supports multiple 
+            raster file formats. This support is accomplished through use of 
+            the GDAL library. For more information on the different raster 
+            formats supported by MapServer and for general discussion on the 
+            use of rasters in MapServer, please read the RASTER Data how-to at
+            <a href="http://ms.gis.umn.edu/docs/howto/raster_data">
+              http://ms.gis.umn.edu/docs/howto/raster_data
+            </a>.
+          </p>
+          <p>TYPE RASTER<br>
+            When using raster data (images) we use the value RASTER for the 
+            parameter TYPE, as opposed to the POLYGON, LINE, and POINT values 
+            for vector data and ANNOTATION for label IDs.
+          </p>
+          <p>PROCESSING &quot;BANDS=1,2,3&quot;<br>
+            This LAYER object parameter is new in MapServer 4.x. The PROCESSING 
+            keyword has many values but in this case we are using it to select 
+            which bands in a multispectral image to display. The values here 
+            are strings that will be passed to the GDAL library. Documentation 
+            for this is currently minimal but please see the Mapfile Reference 
+            for more examples of using the PROCESSING keyword.</p>
+          <p> OFFSITE<br>
+            This parameters tells MapServer what pixel values to render as
+            background (or ignore). You can get the pixel values using image 
+            processing or image manipulation programs (i.e. Imagine, Photoshop, 
+            Gimp).
+          </p>
+          <hr align="center" width="300">
+          <p>To compare map creation speed when using RGB image as opposed to 
+            indexed color image, replace the following lines in the mapfile:
+          </p>
+          <p>DATA &quot;raster/mod09a12003161_ugl_ll_8bit.tif&quot;<br>
+            STATUS DEFAULT <br>
+            TYPE RASTER <br>
+            PROCESSING &quot;BANDS=1,2,3&quot; <br>
+            OFFSITE 71 74 65
+          </p>
+          <p>with these:</p>
+          <p> DATA &quot;raster/mod09a12003161_ugl_ll_idxa.tif&quot;<br>
+            STATUS DEFAULT <br>
+            TYPE RASTER<br>
+            OFFSITE 70 74 66</p>
+          <p>Also, try changing the IMAGETYPE from PNG24 to PNG.</p>
+          <hr>
+          <p class="Small" align="center">
+            <a href="example1-4.html">
+              Back to Example 1.4
+            </a> |
+            <a href="section1.html">
+              Back to the Section 1
+            </a> |
+            <a href="sections.html">
+              Back to the Sections Page
+            </a> |
+            <a href="example1-6.html">
+              Proceed to Example 1.6
+            </a>
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
