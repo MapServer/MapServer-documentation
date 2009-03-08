@@ -1,0 +1,67 @@
+MS RFC 52: One-pass query processing
+======================================================================
+
+:Date: 2009/03/08
+:Authors: Steve Lime
+:Contact: sdlime at comcast.net
+:Last Edited: 2009/03/08
+:Version: MapServer 6.0
+:Id:
+
+Overview
+------------------------------------------------------------------------------
+This RFC proposes change(s) to the current of query (by point, by box, by shape, 
+etc...) processing in MapServer.
+
+Presently MapServer supports a very flexible query mechanism that utilizes two
+passes through the data. This works by caching a list of feature IDs (pass one)
+and then a second pass through the features for presentation (template, drawing,
+or retrieval via MapScript. The obvious problem is the performance hit incurred
+from the second pass (which can be quite steep with certain drivers).
+
+Technical Solution
+------------------------------------------------------------------------------
+There are two (obvious) possible solutions to the problem. The first, a brute
+force approach, would cache features (and their attributes) for presentation
+later. The primary benefit is that the current query and presentation functions
+could be retained. However, even moderately sized result sets could consume
+loads of system memory and this approach is impractical for very large data
+sets. One *could* apply limits on the number features allowed in the cache
+and fall back to the two-pass approach if necessary. However, that doesn't 
+help the worst case scenarios where the two-pass performance penalty is the
+greatest.
+
+Another approach would be to integrate the processing done by the query 
+functions into the mainstream feature retrieval system already in place for
+drawing and querying (e.g. msLayerWhichShapes() and msLayerNextShape()). The
+current query functions basically just operate before or after those functions
+anyway. For example, msQueryByAttributes() alters a layer's FILTER before
+calling msLayerWhichShapes(). All of the query functions so some post processing
+of features once retrieved. For example:
+
+  - make sure there is a template present (at class or layer level)
+  - doing basic intersection tests 
+
+If those steps could be done optionally in msLayerWhichShapes() and msLayerNextShape()
+then those functions could be used in lieu of the other query functions.
+
+For this to work we would have to encapsulate queries in a new object that
+could be passed to those functions to trigger pre- or post-processing as 
+necessary. For example, we might consider defining a new queryObj that would
+look like:
+
+::
+
+  typedef struct {
+    int type; /* one of a number of enumerated query types */
+
+    char **layers; /* these mimic the qxxxxxx CGI arguments used for querying */
+    char *string;
+    char *item;
+
+    featureListNodeObjPtr shape, currentshape; /* for querying by shape or other layer */
+
+    double mindist;
+  } queryObj;
+
+Query presentation code would simply 
