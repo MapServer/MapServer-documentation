@@ -1,3 +1,9 @@
+3-8-2009 - MapServer PSC Attend Toronto Code Sprint
+..............................................................................
+
+Members of the MapServer Project Steering Committee attend the `Toronto Code Sprint <http://wiki.osgeo.org/wiki/Toronto_Code_Sprint_2009>`__
+event, an international meeting of GDAL, PostGIS, OpenLayers, and MapServer development teams.
+
 3-5-2009 - MapServer 5.4 beta 3 is released
 ..............................................................................
 
