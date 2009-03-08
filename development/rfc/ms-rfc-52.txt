@@ -5,6 +5,7 @@ MS RFC 52: One-pass query processing
 :Authors: Steve Lime
 :Contact: sdlime at comcast.net
 :Last Edited: 2009/03/08
+:Status: Draft
 :Version: MapServer 6.0
 :Id:
 
@@ -27,13 +28,13 @@ later. The primary benefit is that the current query and presentation functions
 could be retained. However, even moderately sized result sets could consume
 loads of system memory and this approach is impractical for very large data
 sets. One *could* apply limits on the number features allowed in the cache
-and fall back to the two-pass approach if necessary. However, that doesn't 
+and fall back to the two-pass approach if necessary. However, this doesn't 
 help the worst case scenarios where the two-pass performance penalty is the
 greatest.
 
-Another approach would be to integrate the processing done by the query 
-functions into the mainstream feature retrieval system already in place for
-drawing and querying (e.g. msLayerWhichShapes() and msLayerNextShape()). The
+Another more performant approach would be to integrate the processing done by 
+the query functions into the mainstream feature retrieval system already in place 
+for drawing and querying (e.g. msLayerWhichShapes() and msLayerNextShape()). The
 current query functions basically just operate before or after those functions
 anyway. For example, msQueryByAttributes() alters a layer's FILTER before
 calling msLayerWhichShapes(). All of the query functions so some post processing
@@ -55,13 +56,80 @@ look like:
   typedef struct {
     int type; /* one of a number of enumerated query types */
 
+    rectObj extent;
+  
     char **layers; /* these mimic the qxxxxxx CGI arguments used for querying */
     char *string;
     char *item;
-
+ 
+    char *slayer;
     featureListNodeObjPtr shape, currentshape; /* for querying by shape or other layer */
-
-    double mindist;
   } queryObj;
 
-Query presentation code would simply 
+Query presentation code would simply open a layer, pass a query object to 
+msLayerWhichShapes() and then do msLayerNextShape() repeatedly. 
+
+Backwards Compatability Issues
+------------------------------------------------------------------------------
+The current two-pass system actually does present certain advantages and may be 
+difficult to overcome with the second techincal solution.
+
+1. We know if a query was successful or not *before* presentation takes place
+and can throw an error (e.g. using the EMPTY in the webObj) easily. While we
+still will know if a query returned no results, but we may be well into 
+presentation by that time and will need new ways to deal with this. The EMPTY
+parameter would probably become obsolete. Essentionally no results would not
+be an error condition- perhaps a good thing.
+
+2. Since the number of results found in each layer after the first pass is known
+we populate a number of counter variables (e.g. total number of results) that
+are accessible via template tags. While the counters would still work as normal
+the totals would not be available. There are workarounds in some cases but not
+in others.
+
+3. One of the most useful MapServer query modes is QUERY which finds the closest
+feature across one or more layers. It's the "more" that is problematic. The 
+functions msLayerWhichShapes() and msLayerNextShapes() operate on a single layer 
+while this particular query operates across layers. This type of query would have 
+to be handled as a special case through a msFindClosestFeature() function.
+
+4. The FEATUREQUERY modes in MapServer will provide a challenge. These are essentially
+two queries done one after the other. Features from one layer are used to select
+features from another (e.g. find all lakes within a county). This cannot be done 
+using a single msLayerWhichShapes() and msLayerNextShapes() iteration so we'd need 
+a function to move features from the initial query into a second queryObj for the 
+second. Special consideration would be necessary in template processing to optionally
+output the selection features.
+
+5. MapScript access to query functions. Presently, the various MapScript query
+methods are simply wrappers for the corresponding C function. Since the C functions
+essentionally go away this interface will undoubtedly need to change. We can 
+preserve the methods (they would just set queryObj members, perhaps more), but the 
+access to results would change. A typical usage would be:
+
+::
+
+  # do the query
+  $layer->queryByShape(...); # should open the layer(s) and call msLayerWhichShapes()
+  while($shape = $layer->nextShape()) {
+    # do something with it
+  }
+  $layer->close();
+
+I would propose adding a new method to handle the "closest" case that would just
+return a shapeObj (no more MS_SINGLE or MS_MULTIPLE).
+
+Files Impacted
+------------------------------------------------------------------------------
+
+* mapserver.h: new queryObj, new enumeration, various fuctions coming and going
+
+* maplayer.c: additions to msLayerWhichShapes(), msLayerNextShapes()
+
+* maptemplate.c: refatoring of code to process tempates (2 places)
+
+* mapgml.c: refactoring of code to output GML 2 & 3
+
+* mapquery.c: pretty much a complete gutting
+
+* mapdraw.c: refactoring of code that deals with drawing a querymap
