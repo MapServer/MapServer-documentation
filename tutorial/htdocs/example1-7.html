@@ -1,0 +1,172 @@
+<html>
+  <head>
+    <title>MapServer 5.x Tutorial</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <link type="text/css" rel="stylesheet" href="ms35.css" />
+  </head>
+  <body bgcolor="#FFFFFF" text="#000000">
+    <table align="center" width="680" border="0">
+      <tr>
+        <td>
+          <h3 align="center">Example 1.7: Adding OGC WMS Layers</h3>
+          <div align="center">
+	    <img border="1" src="/cgi-bin/mapserv.exe?map=/ms4w/apps/tutorial/htdocs/example1-7.map&layers=states+states_label+modis_jpl&mode=map" />
+          </div>
+          <p align="left">Another exciting feature of MapServer is its ability
+            to use layers from other map servers. In this case, a MapServer
+            application becomes a WMS (or WFS) client. MapServer can also share
+            (or serve up) the layers in the mapfile to other map servers. This
+            makes an application a WMS (or WFS) server. What is WMS or WFS?
+            These are "web-based interoperability service" specifications
+            published by the Open Geospatial Consortium (OGC). WMS stands for
+            Web Map Service and WFS for Web Feature Service. The difference
+            between these two specifications, in simple terms, is that WMS uses 
+            web raster formats (PNG, GIF, JPEG) to share layers while WFS uses 
+            GML, the Geography Markup Language. A third OGC interoperability 
+            specification is the Web Coverage Services specification or
+            WCS--MapServer supports this at the server level only. To find more 
+            information about WMS, WFS, and WCS go the the
+            <a href="http://www.opengeospatial.org">
+              OGC's web site</a> and look for the
+            <a href="http://www.opengeospatial.org/specs/?page=specs">
+              OGC Implementation Specifications</a> or
+            <a href="http://www.opengeospatial.org/specs/?page=abstract">
+              OGC Abstract Specifications</a>. The MapServer web site also has
+            <a href="http://mapserver.gis.umn.edu/doc.html">
+              documentation</a> and
+            <a href="http://mapserver.gis.umn.edu/cgi-bin/wiki.pl">
+              WIKI pages</a> for these specifications.
+          </p>
+          <p align="left">This example shows you how to add a WMS layer in your
+            mapfile.
+          </p>
+          <hr>
+          <p align="left">This is what the mapfile looks like (Example1-7.map):
+            <br>
+            <iframe width="100%" src="example1-7.map"></iframe>
+          </p>
+          <hr align="center" width="300">
+          <p>Let's have a look at the WMS layer:</p>
+          <p>LAYER # MODIS WMS map from JPL<br>
+            Marks the start of the WMS LAYER object.
+          </p>
+          <p>NAME modis_jpl<br>
+            The LAYER identifier.
+          </p>
+          <p>TYPE RASTER<br>
+            Since this the WMS layer is an image, we use RASTER as LAYER TYPE.
+          </p>
+          <p>OFFSITE 0 0 0 <br>
+            Ignore the black background color
+          </p>
+          <p> STATUS DEFAULT<br>
+            Turn this layer on by default.
+          </p>
+          <p>CONNECTIONTYPE WMS<br>
+            The type of LAYER connection to use. The default is LOCAL--if we
+            have to be explicit, we would add CONNECTIONTYPE LOCAL to all other
+            vector and raster layers in our mapfile. Instead we only define
+            connection types that are external. WMS is an external data layer,
+            coming from another map server.
+          </p>
+          <p>CONNECTION "http://mapus.jpl.nasa.gov/wms.cgi?"<br>
+            The connection string that allows us to &quot;get&quot; the data
+            from another server. In the case of WMS connections, this is a URL.
+            If we were using a PostGIS database, it would be an SQL statement.
+            Please note that the string has to be in a single line in your
+            mapfile.
+          </p>
+          <p> METADATA<br>
+            marks the beginning of the METADATA object for our WMS layer.
+            MapServer uses the parameters defined within this object along with
+            the CONNECTION parameter above to form a valid WMS request to the
+            WMS server.
+          </p>
+          <p>&quot;wms_srs&quot; &quot;epsg:4326&quot;<br>
+            The WMS projection.  Sometimes the WMS server supports more than one
+            projection.  If this is the case you might want to request the map
+            in your output projection (epsg:2163).  Unfortunately, the JPL
+            server doesn't support this projection.
+          </p>
+          <p>&quot;wms_name&quot; &quot;modis&quot;<br>
+            The WMS layer name. This is like adding the parameter
+            &quot;layers=modis&quot;.
+          </p>
+          <p>&quot;wms_server_version&quot; &quot;1.1.1&quot;<br>
+            The WMS version the server complies to. MapServer adheres to version
+            1.1.1.
+          </p>
+          <p>&quot;wms_format&quot; &quot;image/jpeg&quot; <br>
+            The image format we expect to be receiving from the WMS server.  You
+            can try replacing the value with &quot;image/png&quot; or something
+            else.
+          </p>
+          <p>END<br>
+            marks the end of the METADATA object
+          </p>
+          <p>To know more about adding WMS layers to your applications, please
+            visit the
+            <a href="http://mapserver.gis.umn.edu/doc/wms-client-howto.html">
+              WMS Client HOW-TO document</a>.
+          </p>
+          <hr align="center" width="300">
+          <p>In addition to adding the WMS layer object, there's also a new
+            object under MAP. This is the WEB object. Within the WEB object are
+            two parameters:
+          </p>
+          <p> IMAGEPATH '/data/tmp/'<br>
+            The absolute local path to a web accessible temporary directory. The
+            user running the web server processes should be able to write to
+            this directory. Make sure that the path includes a slash (/) at the 
+            end. (Your IMAGEPATH might look something like this: 
+            &quot;/home/apache/htdocs/tmp/&quot; or 
+            &quot;C:/Inetpub/wwwroot/tmp/&quot;.)
+          </p>
+          <p>IMAGEURL '/tmp/' <br>
+            This is how IMAGEPATH will appear relative to the web server's root 
+            directory. If we have to type the full URL for this, it will be 
+            &quot;http://terrasip.gis.umn.edu/tmp/&quot;. Make sure that the 
+            path includes a slash (/) at the end.
+          </p>
+          <p>Finally, within the MAP object, I added a new parameter: NAME. This
+            is the identifier for the MAP object. MapServer uses this as prefix 
+            to all images it creates and dumps to the &quot;tmp&quot; directory.
+            It's not needed at this point but it also doesn't hurt to have it.
+          </p>
+          <hr align="center" width="300">
+          <p>If you would like to share your data layers to other map servers, 
+            you will need to add METADATA objects within your MAP object and 
+            within each of the LAYER objects you would like to share. All the 
+            WMS layers that you added from another server will automatically be 
+            cascaded and will also become available to others. To know more 
+            about how to make your MapServer application become a WMS server, 
+            please read the 
+            <a href="http://mapserver.gis.umn.edu/doc/wms-server-howto.html">
+              WMS Server HOW-TO documentation</a>. Documentations also exist for
+            configuring MapServer application to support the WFS standard,
+            both as a
+            <a href="http://mapserver.gis.umn.edu/doc/wfs-server-howto.html">
+              server</a> and as a
+            <a href="http://mapserver.gis.umn.edu/doc/wfs-client-howto.html">
+              client</a>.
+          </p>
+          <hr>
+          <p class="Small" align="center">
+            <a href="example1-6.html">
+              Back to Example 1.6
+            </a> | 
+            <a href="section1.html">
+              Back to the Section 1
+            </a> | 
+            <a href="sections.html">
+              Back to the Sections Page
+            </a> | 
+            <a href="example1-8.html">
+              Proceed to Example 1.8
+            </a>
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

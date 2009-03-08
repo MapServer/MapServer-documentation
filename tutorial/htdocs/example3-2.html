@@ -1,0 +1,172 @@
+<html>
+<head>
+<title>MapServer 5.x Tutorial</title>
+<meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+<link type="text/css" rel="stylesheet" href="[root]/ms35.css" />
+</head>
+
+<body bgcolor="#FFFFFF" text="#000000">
+<h3 align="center">Example 3.2: Layer-specific Header and Footer Templates</h3>
+
+<!-- START OF MAPSERVER FORM -->
+<form name="mapserv" method="GET" action="[program]">
+
+<table width="680" border="0" align="center">
+  <tr>
+    <td>
+      <table width="600" border="1" align="center">
+	<tr>
+	  <td colspan="4">Select Layers:<br>
+<!-- SPECIFY VECTOR LAYERS -->
+	    <input type="checkbox" name="layer" value="states" [states_check]>
+	      State Boundaries&nbsp;
+	    <input type="checkbox" name="layer" value="counties" [counties_check]>
+	      County Boundaries&nbsp;
+	    <input type="checkbox" name="layer" value="cities" [cities_check]>
+	      Cities&nbsp;
+	    <input type="checkbox" name="layer" value="fedlands" [fedlands_check]>
+	      Federal/Indian Lands&nbsp;
+	    <input type="checkbox" name="layer" value="hydro" [hydro_check]>
+	      Water Features&nbsp;
+	    <input type="checkbox" name="layer" value="roads" [roads_check]>
+	      Roads<br>
+
+<!-- SPECIFY RASTER LAYERS -->
+	    Select Background:<br>
+	    <select name="layer">
+	      <option value=" " [ _select]>No Background</option>
+              <option value="landsat" [landsat_select]>Landsat 7 ETM+</option>
+	      <option value="modis" [modis_select]>MODIS Surface Reflectance</option>
+	      <option value="relief" [relief_select]>Shaded Relief</option>
+	    </select>
+	  </td>
+	</tr>
+	<tr>
+	  <td>
+
+<!-- SPECIFY MAP MODE -->
+	    <div align="center">Map Mode:<br>
+	    <select name="mode">
+	      <option value="browse" [browse_select]>Browse </option>
+	      <option value="query" [query_select]>Query Single Layer</option>
+	      <option value="nquery" [nquery_select]>Query Multiple Layers</option>
+            </select>
+	    </div>
+	  </td>
+	  <td>
+<!-- FORM SUBMIT BUTTON -->
+	    <div align="center">
+	      <input type="submit" name="submit" value="Refresh">
+	    </div>
+	  </td>
+	  <td>
+<!-- ZOOM/PAN CONTROLS -->
+	    <div align="center">Map Control: <br>
+              <select name="zoom">
+	        <option value="4" [zoom_4_select]>Zoom In 4x</option>
+                <option value="3" [zoom_3_select]>Zoom In 3x</option>
+		<option value="2" [zoom_2_select]>Zoom In 2x</option>
+		<option value="0" [zoom_0_select]>Recenter</option>
+		<option value="-2" [zoom_-2_select]>Zoom Out 2x</option>
+		<option value="-3" [zoom_-3_select]>Zoom Out 3x</option>
+		<option value="-4" [zoom_-4_select]>Zoom Out 4x</option>
+              </select>
+	    </div>
+	  </td>
+<!-- REFERENCE AND LEGEND COLUMN -->
+	  <td rowspan="2" valign="top">
+	    <p>Reference:<br>
+	      <img name="ref" src="[ref]">
+            </p>
+	    <p>Legend:<br>
+	      <img src="[legend]">
+            </p>
+          </td>
+	</tr>
+	<tr>
+<!-- DISPLAY THE MAPSERVER-CREATED MAP IMAGE -->
+	  <td colspan="3" align="center" valign="top">
+	    <input type="image" name="img" src="[img]" width="[mapwidth]"
+                   height="[mapheight]" border="0" alt="This is the map">
+	  </td>
+	</tr>
+      </table>
+      <hr>
+      <p>To see this example in action, open example3.map and uncomment the 
+        HEADER and FOOTER lines in the cities_poly layer.  Save the mapfile when
+        you finish.
+
+        <pre>
+        # The HEADER and FOOTER keywords within a layer object is used to define 
+        # the header and footer templates for the TEMPLATE keyword used in the 
+        # CLASS object.  Uncomment the two lines below and look at the template 
+        # files themselves to see how they work.
+        HEADER '../templates/cities_header.html'
+        FOOTER '../templates/cities_footer.html'
+        </pre>
+
+        Check the "Cities" layer in the application and click on the "Refresh" 
+        button.  Now select "Query Single Layer" or "Query Multiple Layers" on 
+        the "Map Mode" select box, and click on one of the cities.
+      </p>
+      <p>The result should now have a heading and should be presented in
+        tabular form.
+      </p>
+      <p>Here's what the cities_header.html looks like:
+        <pre>
+            &lt;b&gt;Layer: cities&lt;/b&gt;
+          &lt;p&gt;
+          &lt;table cellpadding=5 cellspacing=2 border=0&gt;
+            &lt;tr bgcolor=#CCCCCC&gt;
+              &lt;td bgcolor=#ffffff>&nbsp;&lt;/td&gt;
+              &lt;th>NAME&lt;/th&gt;
+              &lt;th>STATE&lt;/th&gt;
+            &lt;/tr&gt;
+        </pre>
+
+        Here again is the content of cities_query.html file:
+        <pre>
+            &lt;tr&gt;
+              &lt;td&gt;[lrn]&lt;/td&gt;
+              &lt;td&gt;[NAME]&lt;/td&gt;
+              &lt;td&gt;[STATE]&lt;/td&gt;
+            &lt;/tr&gt;
+        </pre>
+
+        And finally, here's what the cities_footer.html looks like:
+        <pre>
+          &lt;/table&gt;
+          &lt;p&gt;
+        </pre>
+
+        When MapServer processes the query for a particular layer, it first 
+        looks for a header template for that layer.  It will then process the 
+        records that it gets back from the database, applying the query template
+        for each record.  When the template has been applied to all records, it 
+        will again look for the footer template for the layer.  View the source
+        of the query result page to see how this works.
+      </p>
+      <p align="center"><a href="[root]/example3.map">View
+        the MapFile</a> | <a href="[root]/example3-2_template.html">View the 
+        HTML Template</a>
+      </p>
+    </td>
+  </tr>
+</table>
+<!-- HIDDEN MAPSERVER CGI VARIABLES -->
+<input type="hidden" name="imgxy" value="[center]">
+<input type="hidden" name="imgext" value="[mapext]">
+<input type="hidden" name="map" value="[map]">
+<input type="hidden" name="root" value="[root]">
+<input type="hidden" name="program" value="[program]">
+<input type="hidden" name="map_web" value="[map_web]">
+</form>
+<hr>
+<p class="Small" align="center"><a href="/cgi-bin/mapserv.exe?map=/ms4w/apps/tutorial/htdocs/example3.map&layer=states&mode=browse&zoom=0&root=/tutorial&program=/cgi-bin/mapserv.exe&map_web=template+example3-1.html">
+  Back to Example 3.1</a> | <a href="[root]/section3.html">Back to
+  Section 3</a> | <a href="[root]/sections.html">Back to the Sections
+  Page</a> | <a href="/cgi-bin/mapserv.exe?map=/ms4w/apps/tutorial/htdocs/example3.map&layer=states&mode=browse&zoom=0&root=/tutorial&program=/cgi-bin/mapserv.exe&map_web=template+example3-3.html+header+../templates/example3_header.html+footer+../templates/example3_footer.html">
+  Proceed to Example 3.3</a>
+</p>
+</body>
+</html>

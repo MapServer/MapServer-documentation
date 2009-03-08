@@ -1,0 +1,261 @@
+<html>
+  <head>
+    <title>MapServer 5.x Tutorial</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <link type="text/css" rel="stylesheet" href="ms35.css" />
+  </head>
+  <body bgcolor="#FFFFFF" text="#000000">
+    <table align="center" width="600" border="0">
+      <tr>
+        <td>
+          <h3 align="center"> Example 1.1: Map with a Single Layer</h3>
+          <div align="center">
+            <img border="1" src="/cgi-bin/mapserv.exe?map=/ms4w/apps/tutorial/htdocs/example1-1.map&layer=states&mode=map" />
+          </div>
+          <p align="left">MapServer can create an image and dump it to a local
+            directory or send it directly to the requesting web browser, as in
+            this example. You can view it without the need for an html page,
+            just enter this URL:
+            <a href="/cgi-bin/mapserv.exe?map=/ms4w/apps/tutorial/htdocs/example1-1.map&layer=states&mode=map">
+              http://&lt;insert hostname or IP address here&gt;/cgi-bin/mapserv.exe?
+              map=/ms4w/apps/tutorial/htdocs/example1-1.map&amp;layer=states&amp;mode=map</a>
+            (Remember to replace &quot;&lt;insert hostname or IP address here
+            &gt;&quot; with your web server's name, e.g. &quot;localhost&quot;,
+            or its IP address, e.g. &quot;127.0.0.1&quot;).
+          </p>
+          <p align="left">This URL can be
+            broken into three parts: the first part, http://&lt;insert hostname
+            or IP address here&gt;/cgi-bin/mapserv.exe?, calls the MapServer CGI
+            program. If you invoke it as is you will get this familiar message:
+          </p>
+
+          <blockquote align="left">
+            No query information to decode. QUERY_STRING is set, but empty.
+          </blockquote>
+
+          <p align="left">The next three parts are what make up the query
+            string.  The query string contains the CGI parameters (variables and their values), with each parameter separated by an ampersand (&amp;). So, looking at the query string, the first parameter "map" has a value "/ms4w/apps/tutorial/htdocs/example1-1.map"--this
+            tells the MapServer CGI program (mapserv or mapserv.exe) what
+            mapfile to process/parse. The
+            next parameter &quot;layer=states&quot;, tells mapserv.exe to "turn
+            on" the states layer--recall that we named our layer object
+            "states".  The last parameter, &quot;mode=map&quot;, tells
+            mapserv.exe what to do with the output from the mapfile. In this
+            case it tells mapserv.exe to dump the image directly to the web
+            browser (the client), without first creating a temporary image on
+            the server. The MapServer &quot;mode&quot; CGI variable takes
+            values other than &quot;map&quot;. For example if you use
+            &quot;mode=browse&quot;, MapServer will dump the image to a
+            temporary directory on the server. The browse mode will not work now
+            but we'll come back to it again later.
+          </p>
+          <hr>
+          <p align="left">This is what the mapfile looks like (Example1-1.map):
+             <br>
+            <iframe width="100%" src="example1-1.map"></iframe>
+          </p>
+          <hr align="center" width="300">
+          <p>The
+            <a href="http://mapserver.gis.umn.edu/doc/mapfile-reference.html">
+              mapfile
+            </a>
+            is MapServer's basic configuration mechanism. It is made up of
+            &quot;objects&quot; and each object can have keywords or other
+            objects. It has a hierarchical structure such that some objects fall
+            under other objects... on top of this hierarchy is the MAP object,
+            all other objects belong to it. This example shows a very
+            straightforward heirarchy of objects.  As you go through each
+            example, the complexity of these hierarchical trees will increase.
+          </p>
+          <p>A few quick notes about mapfiles: we define each object in the 
+            mapfile with the object name and we close it with &quot;END&quot; 
+            and we precede comments with a pound (#) sign.
+          </p>
+          <p>Let's break &quot;example1-1.map&quot; down by objects. Its 
+            structure looks like this:
+          </p>
+          <pre>
+      MAP
+       |-LAYER
+         |-CLASS
+           |-STYLE
+          </pre>
+          <hr align="center" width="300">
+          <p>Let's look at the keywords (parameters) within the MAP object: </p>
+          <p>MAP<br>
+            Every mapfile starts with the MAP object--the entire mapfile is the 
+            MAP object.
+          </p>
+          <p>IMAGETYPE<br>
+            The keyword IMAGETYPE is used to define which image format the
+            MapServer CGI program should use for output. In this case we are 
+            using indexed color PNG (similar to GIF). This could be GIF, if we 
+            compiled the GD library with GIF support, WBMP, or JPEG. We can also 
+            specify other output options (PDF, SWF, GeoTIFF) provided that we
+            compiled support for them and specify them with the OUTPUTFORMAT 
+            object. The OUTPUTFORMAT goes beyond the scope of this tutorial but 
+            you can find out more about by reading through documentations in the 
+            MapServer web site.
+          </p>
+          <p>EXTENT<br>
+            This parameter specifies the output extent of our map--the bounding 
+            box of our initial map.  The EXTENT values are given in this format: 
+            &lt;Lower Left X&gt; &lt;Lower Left Y&gt; &lt;Upper Right X&gt; 
+            &lt;Upper Right Y&gt;, with spaces separating each value. This needs
+            to be in the same units as the data or, if specifying a different
+            output projection, in the same units as the output projection.
+            <br>
+            <br>
+            In this example our data is in geographic projection so the units
+            are in decimal degrees.  You can use the utility
+            &quot;<a href="http://gdal.osgeo.org/ogr/ogr_utilities.html">ogrinfo</a>&quot;,
+            which is part of the GDAL/OGR library package, to get the extent of
+            a particular shapefile (or other supported vector formats).  Here is
+            the command I used to get the extent for this example:
+
+            <pre>ogrinfo -al -so states_ugl.shp</pre>
+            
+            This returned the following output:
+            
+            <pre>INFO: Open of `states_ugl.shp'
+using driver `ESRI Shapefile' successful.
+
+Layer name: states_ugl
+Geometry: Polygon
+Feature Count: 204
+Extent: (-97.238976, 41.619778) - (-82.122902, 49.385620)
+Layer SRS WKT:
+(unknown)
+AREA: Real (12.3)
+PERIMETER: Real (12.3)
+STATESP020: Real (11.0)
+STATE: String (20.0)
+STATE_FIPS: String (2.0)
+CLASS: String (5.0)</pre>
+
+            You can also use ArcView or other open source GIS packages--Quantum
+            GIS, Thuban, etc.<br>  Feel free to change the values of EXTENT to 
+            get a better understanding of how it changes your map.
+          </p>
+          <p>SIZE<br>
+            This is the size of the image (the map) that MapServer will 
+            generate, in pixels. So our map is 400 pixels wide by 300 pixels 
+            high.  Again, change this to your heart's content and see how it 
+            affects your map.
+          </p>
+          <p>SHAPEPATH<br>
+            This is the path to your data layers. You can provide absolute paths
+            (i.e. &quot;/ms4w/apps/tutorial/data&quot; or
+            &quot;C:/ms4w/apps/tutorial/data&quot;) or paths relative to your
+            mapfile's location (in this example, you'd use "../data"). This path
+            doesn't have to be web accessible, and probably shouldn't be unless
+            you want anyone to download your raw data. It has nothing directly 
+            to do with the web so don't even think of URLs here--just make sure 
+            that the user running the web server (usually &quot;nobody&quot; or
+            &quot;apache&quot; in the *nix world) can READ the data in 
+            the SHAPEPATH.
+          </p>
+          <p>IMAGECOLOR<br>
+            This is the background color of your map. The values are RGB values 
+            so 255 Red, 255 Green, and 255B which results in a white background. 
+            Go ahead and play with this values.
+          </p>
+          <hr align="center" width="300">
+          <p>Now let's look at the LAYER object parameters:</p>
+          <p>LAYER<br>
+            Marks the beginning of a LAYER within the MAP object. You can 
+            specify as many layers as you'd like although you are limited to
+            100, by default. To change this limit, you will have to edit the
+            map.h header file (in the soure tree) and recompile MapServer.
+          </p>
+          <p>NAME<br>
+            This is the layer identifier.  MapServer uses this name to toggle 
+            the layer on and off.  It won't work in this example as we have the 
+            layer STATUS set to default.  We will get back to this in later 
+            examples.
+          </p>
+          <p>DATA<br>
+            The name of the data (shapefile in this case). MapServer supports 
+            vector data formats other than ESRI's shapefile through the use of 
+            OGR library (part of the GDAL software package). Please visit the 
+            GDAL project web site at 
+            <a href="http://www.gdal.org/">
+              http://www.gdal.org/
+            </a> 
+            and read
+            <a href="http://www.gdal.org/ogr/index.html">
+              http://www.gdal.org/ogr/index.html
+            </a>
+            to know more about the different vector formats MapServer supports. 
+            In addition, Jeff McKenna and Tyler Mitchell have written a detailed 
+            guide to using vector data in MapServer.  You can download this 
+            guide (PDF) from 
+            <a href="http://dl.maptools.org/dl/docs/mapserv/">
+              http://dl.maptools.org/dl/docs/mapserv/
+            </a>.
+          </p>
+          <p>TYPE<br>
+            What type of data is it? If it's a vector data, you can specify
+            whether it is a POLYGON, LINE (you use LINE even if your data is
+            technically a POLYLINE), or a POINT. You can also specify RASTER or
+            ANNOTATION data. Here we want to display POLYGON.
+          </p>
+          <p>STATUS<br>
+            Layers are turned on or off based on their STATUS. DEFAULT is always
+            on. ON or OFF works when the LAYER name is passed as part of the
+            query string.
+          </p>
+          <hr align="center" width="300">
+          <p>Let's look at the CLASS object parameters:</p>
+          <p>CLASS<br>
+            Marks the beginning of a CLASS object within the LAYER object. You
+            can specify as many classes within a layer although you are limited
+            to 50 by default. You'll have to recompile MapServer to change this
+            default value.
+          </p>
+          <p>NAME<br>
+            The descriptive identifier for this CLASS. LAYER objects can have
+            multiple classes, just like MAP objects can have multiple layers.
+            CLASS names are used by MapServer as labels for the legend so make
+            sure to use an appropriate descriptive name when naming classes.
+            We will talk about legends later in this tutorial.
+          </p>
+          <hr align="center" width="300">
+          <p>And finally, let's look at the STYLE object parameters:</p>
+          <p>STYLE<br>
+            Marks the beginning of the STYLE object.  You can define multiple
+            styles within a class--this is useful when you want to overlay a
+            style over another.
+          </p>
+          <p>COLOR<br>
+            This is the fill color of the polygon. In case the TYPE is LINE,
+            this is the line color. The values are in RGB format.
+          </p>
+          <p>OUTLINECOLOR<br>
+            This is the outline color of the polygons. The values are in RGB
+            format.  MapServer doesn't draw polygon outlines by default, so if
+            you want to see polygon boundaries, you will want to define an
+            OUTLINECOLOR.
+          </p>
+          <hr align="center" width="300">
+          <p>This ends the first example in this tutorial. You are encouraged to
+            change the values of the keywords in the mapfile. It will help you
+            understand what these keywords do.
+          </p>
+          <hr>
+          <p class="Small" align="center">
+            <a href="section1.html">
+              Back to Section 1
+            </a> |
+            <a href="sections.html">
+              Back to the Sections Page
+            </a> |
+            <a href="example1-2.html">
+              Proceed to Example 1.2
+            </a>
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>

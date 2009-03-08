@@ -1,0 +1,145 @@
+<html>
+  <head>
+    <title>MapServer 5.x Tutorial</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=iso-8859-1">
+    <link type="text/css" rel="stylesheet" href="ms35.css" />
+  </head>
+  <body bgcolor="#FFFFFF" text="#000000">
+    <table align="center" width="680" border="0">
+      <tr>
+        <td>
+          <h3 align="center">Example 1.6: Defining Projections and Extents</h3>
+          <div align="center">
+	    <img border="1" src="/cgi-bin/mapserv.exe?map=/ms4w/apps/tutorial/htdocs/example1-6.map&layer=states&layer=states_label&layer=modis&mode=map" />
+          </div>
+          <p align="left">Whoa! What happened here?</p>
+          <p align="left">You've just experienced on-the-fly reprojection. When 
+            a PROJECTION object is defined in the mapfile, MapServer passes the
+            layer and projection info to the Proj.4 library which does the 
+            reprojection.  For more information about the Proj.4 library, please 
+            visit 
+            <a href="http://proj.maptools.org/">
+              http://proj.maptools.org/
+            </a>.
+          </p>
+          <p>This example attempts to shed some light on the projection support 
+            in MapServer.
+          </p>
+          <hr>
+          <p align="left">This is what the mapfile looks like (Example1-6.map):
+            <br>
+            <iframe width="100%" src="example1-6.map"></iframe>
+          </p>
+          <hr align="center" width="300">
+          <p>The first thing you might have noticed with our mapfile is the 
+            original EXTENT has been commented out and the new EXTENT values
+            don't look anything like latitude and longitude values. Also, we
+            have added a PROJECTION object near the top and within each of our
+            layers.
+          </p>
+          <p>Let's have a look at the new object and parameter:</p>
+          <p>EXTENT  201621.496941 -294488.285333 1425518.020722
+            498254.511514<br>
+            The extent we provide to MapServer needs to be in the same
+            units as the output projection.  Since Lambert Azimuthal
+            Equal-Area's units are in meters, we have to give the new extent in
+            meters.  We can calculate the new extent using ArcView or some
+            other GIS package, or you can use Proj.4's cs2cs utility.  The 
+            command below is what can be used to reproject the original extent 
+            values:
+          </p>
+<pre>
+cs2cs +proj=latlong +datum=WGS84 +to +proj=laea +ellps=clrk66 +lat_0=45 +lon_0=-100
+</pre>
+          <p>After typing the command, enter the southwestern coordinate pair
+            (the lower left coordinates), separated by a space:
+            &nbsp;-97.5 41.619778<br>
+            to which the "cs2cs" utility gives the values:</p>
+          <pre>
+            208398.01       -372335.44 0.000
+          </pre>
+          <p>I then type the northeastern coordinate pair (upper right corner
+            coordinates), again separated by space: &nbsp;-82.122902 49.38562
+            and the following values are returned:
+          <pre>
+            1285308.08      632638.93 0.000
+          </pre>
+          <p>You will notice that "cs2cs" returns a set of three values.  You
+            can ignore the third value, 0.000, as it means to represent altitute
+            (which we're not using).  Anyway, we can not present the EXTENT as:
+          </p>
+          <pre>
+            EXTENT 208398.01 -372335.44 1285308.08 632638.93
+          </pre>
+          <p>But it doesn't match up the extent above, you say.  Well, that's 
+            what usually happens when you reproject--the map doesn't
+            necessarily get centered as you'd expect.  You can fudge around it, 
+            taking a few thousand meters off to the left and adding a few to
+            the right.  Or, you can use a graphical GIS package to give you the 
+            extent.  
+            <a href="/tutorial/arcview_extent.html" target="_blank">
+              Here are the instructions
+            </a>
+            for getting EXTENT using ArcView.
+          <p>MapServer can take projection definitions in two ways. The first
+            is shown in the mapfile's output PROJECTION object (the first
+            PROJECTION block). This is the traditional way of passing
+            parameters to the Proj.4 library. The other way is to use the EPSG
+            codes. These codes are standard projection codes (or spatial
+            reference identifiers) as defined by the European Petroleum Survey 
+            Group (EPSG). In the case of our Lambert Azimuthal Equal-Area 
+            projection, it has a code of &quot;2163&quot;. If you comment out 
+            the four lines after PROJECTION and uncomment the line 
+            &quot;init=epsg:2163&quot;, this will provide the same information 
+            to Proj.4. If you want to learn more about EPSG codes, have a look 
+            at &quot;/usr/local/share/proj/epsg&quot; or 
+            &quot;C:/proj/nad/epsg&quot; (&quot;/ms4w/proj/nad&quot; in MS4W). 
+            Also, check out the EPSG web site at 
+            <a href="http://www.epsg.org">
+              http://www.epsg.org
+            </a>.
+          </p>
+          <hr align="center" width="300">
+          <p>If you need to learn more about projections, please look through 
+            some of the links below:
+          </p>
+          <p>
+            <a href="http://www.colorado.edu/geography/gcraft/notes/mapproj/mapproj_f.html">
+              http://www.colorado.edu/geography/gcraft/notes/mapproj/mapproj_f.html
+            </a><br>
+            <a href="http://www.geography.hunter.cuny.edu/mp/">
+              http://www.geography.hunter.cuny.edu/mp/
+            </a><br>
+            <a href="http://www.nationalatlas.gov/articles/mapping/a_projections.html">
+              http://www.nationalatlas.gov/articles/mapping/a_projections.html
+            </a>
+            <a href="http://en.wikipedia.org/wiki/Map_projection">
+              http://en.wikipedia.org/wiki/Map_projection
+            </a><br>
+            <a href="http://erg.usgs.gov/isb/pubs/MapProjections/projections.html">
+              http://erg.usgs.gov/isb/pubs/MapProjections/projections.html
+            </a>
+          </p>
+          <p>You can find more by searching the web for 
+            &quot;map projection&quot;.
+          </p>
+          <hr>
+          <p class="Small" align="center">
+            <a href="example1-5.html">
+              Back to Example 1.6
+            </a> |
+            <a href="section1.html">
+              Back to the Section 1
+            </a> |
+            <a href="sections.html">
+              Back to the Sections Page
+            </a> |
+            <a href="example1-7.html">
+              Proceed to Example 1.7
+            </a>
+          </p>
+        </td>
+      </tr>
+    </table>
+  </body>
+</html>
