@@ -18,118 +18,69 @@ Presently MapServer supports a very flexible query mechanism that utilizes two
 passes through the data. This works by caching a list of feature IDs (pass one)
 and then a second pass through the features for presentation (template, drawing,
 or retrieval via MapScript. The obvious problem is the performance hit incurred
-from the second pass (which can be quite steep with certain drivers).
+from the second pass. The real pain is that the msLayerGetShape() function, as 
+implemented, provides random access to the data which can be very expensive for
+certain drivers.
 
 Technical Solution
 ------------------------------------------------------------------------------
-There are two (obvious) possible solutions to the problem. The first, a brute
-force approach, would cache features (and their attributes) for presentation
-later. The primary benefit is that the current query and presentation functions
-could be retained. However, even moderately sized result sets could consume
-loads of system memory and this approach is impractical for very large data
-sets. One *could* apply limits on the number features allowed in the cache
-and fall back to the two-pass approach if necessary. However, this doesn't 
-help the worst case scenarios where the two-pass performance penalty is the
-greatest.
+There are a number of potential solutions:
 
-Another more performant approach would be to integrate the processing done by 
-the query functions into the mainstream feature retrieval system already in place 
-for drawing and querying (e.g. msLayerWhichShapes() and msLayerNextShape()). The
-current query functions basically just operate before or after those functions
-anyway. For example, msQueryByAttributes() alters a layer's FILTER before
-calling msLayerWhichShapes(). All of the query functions so some post processing
-of features once retrieved. For example:
+1. One could cache the returned shapes in memory. While this wouldn't result in 
+a true single-pass, you wouldn't have to go back to the original driver twice. 
+However, it could lead to large memory consumption with even moderately-sized 
+datasets. Multiple clients accessing services at the same time would only 
+compound the problems.
 
-  - make sure there is a template present (at class or layer level)
-  - doing basic intersection tests 
+2. Another solution would be fold much of the query pre-  and post-processing 
+code into the msLayerWhichShapes() and msLayerNextShapes() functions so that
+the access paradigm used in drawing layers could be used. Subsequent research
+has let us to conclude that a true single pass is not possible in some cases.
+For example, GML requires a result set envelope be written out before writing
+individual features. There's no way to get that initial envelope without a 
+pass through the features. It's simply not worth the investment in time...
 
-If those steps could be done optionally in msLayerWhichShapes() and msLayerNextShape()
-then those functions could be used in lieu of the other query functions.
+3. A final solution would be to change how the msLayerGetShape() function 
+behaves. We prepose changing the behavior of that function to provide random
+access to a result set (as defined by msLayerWhichShapes()) rather than the 
+entire data set. This removes most of the overhead currently incurred by 
+referencing the results already returned by the data driver in the intial 
+query.
 
-For this to work we would have to encapsulate queries in a new object that
-could be passed to those functions to trigger pre- or post-processing as 
-necessary. For example, we might consider defining a new queryObj that would
-look like:
+Under this last solution data drivers would need to do two things:
 
-::
+  * update the population shapeObj index property (long int) with a value that
+  will allow msLayerGetShape() to randomly access a result 
 
-  typedef struct {
-    int type; /* one of a number of enumerated query types */
+  * update the driver-specific version of msLayerGetShape() to retrieve a shape
+  from the results created in msLayerWhichShapes()
 
-    rectObj extent;
-  
-    char **layers; /* these mimic the qxxxxxx CGI arguments used for querying */
-    char *string;
-    char *item;
- 
-    char *slayer;
-    featureListNodeObjPtr shape, currentshape; /* for querying by shape or other layer */
-  } queryObj;
+The query functions would need to:
 
-Query presentation code would simply open a layer, pass a query object to 
-msLayerWhichShapes() and then do msLayerNextShape() repeatedly. 
+  * not close the layer when finished with a query (we assume that users will 
+  want to do something with the results)
+
+  * allow msLayerWhichItems() to retrieve ALL items so that the retreived
+  shapes are presentation-ready (draw, template, or ...)
 
 Backwards Compatability Issues
 ------------------------------------------------------------------------------
-The current two-pass system actually does present certain advantages and may be 
-difficult to overcome with the second techincal solution.
+This solution preserved 95% of the current functionality. Because we are proposing
+to change the behaviour of msLayerGetShape() to be specific to query processing.
+While this has always been the intentional use, there's nothing to stop a user
+from using that method (in MapScript) in other ways.  
 
-1. We know if a query was successful or not *before* presentation takes place
-and can throw an error (e.g. using the EMPTY in the webObj) easily. While we
-still will know if a query returned no results, but we may be well into 
-presentation by that time and will need new ways to deal with this. The EMPTY
-parameter would probably become obsolete. Essentionally no results would not
-be an error condition- perhaps a good thing.
-
-2. Since the number of results found in each layer after the first pass is known
-we populate a number of counter variables (e.g. total number of results) that
-are accessible via template tags. While the counters would still work as normal
-the totals would not be available. There are workarounds in some cases but not
-in others.
-
-3. One of the most useful MapServer query modes is QUERY which finds the closest
-feature across one or more layers. It's the "more" that is problematic. The 
-functions msLayerWhichShapes() and msLayerNextShapes() operate on a single layer 
-while this particular query operates across layers. This type of query would have 
-to be handled as a special case through a msFindClosestFeature() function.
-
-4. The FEATUREQUERY modes in MapServer will provide a challenge. These are essentially
-two queries done one after the other. Features from one layer are used to select
-features from another (e.g. find all lakes within a county). This cannot be done 
-using a single msLayerWhichShapes() and msLayerNextShapes() iteration so we'd need 
-a function to move features from the initial query into a second queryObj for the 
-second. Special consideration would be necessary in template processing to optionally
-output the selection features.
-
-5. MapScript access to query functions. Presently, the various MapScript query
-methods are simply wrappers for the corresponding C function. Since the C functions
-essentionally go away this interface will undoubtedly need to change. We can 
-preserve the methods (they would just set queryObj members, perhaps more), but the 
-access to results would change. A typical usage would be:
-
-::
-
-  # do the query
-  $layer->queryByShape(...); # should open the layer(s) and call msLayerWhichShapes()
-  while($shape = $layer->nextShape()) {
-    # do something with it
-  }
-  $layer->close();
-
-I would propose adding a new method to handle the "closest" case that would just
-return a shapeObj (no more MS_SINGLE or MS_MULTIPLE).
+A typical MapScript query and process results operation would be unchanged.
 
 Files Impacted
 ------------------------------------------------------------------------------
 
-* mapserver.h: new queryObj, new enumeration, various fuctions coming and going
+* driver files: changes to shape fetching code
 
-* maplayer.c: additions to msLayerWhichShapes(), msLayerNextShapes()
+* maptemplate.c: don't open/close a layer
 
-* maptemplate.c: refatoring of code to process tempates (2 places)
+* mapgml.c: don't open/close a layer
 
-* mapgml.c: refactoring of code to output GML 2 & 3
+* mapdraw.c: don't open/close a layer IF if drawing a query map
 
-* mapquery.c: pretty much a complete gutting
-
-* mapdraw.c: refactoring of code that deals with drawing a querymap
+* maputil.c: refactor msLayerWhichItems()
