@@ -7,7 +7,7 @@ Example 1.1
 Map With A Single Layer
 -----------------------
 
-.. image:: http://biometry.gis.umn.edu/cgi-bin/mapserv.exe?map=/ms4w/apps/tutorial/htdocs/example1-1.map&layer=states&mode=map
+.. image:: http://demo.mapserver.org/cgi-bin/mapserv.exe?map=/ms4w/apps/tutorial/htdocs/example1-1.map&layer=states&mode=map
 
 MapServer can create an image and dump it to a local directory or send it directly to the requesting web browser, as in this example. You can view it without the need for an html page, just enter this URL: `<http://localhost/cgi-bin/mapserv.exe?map=/ms4w/apps/tutorial/htdocs/example1-1.map&layer=states&mode=map>`_ (Remember to replace "<insert hostname or IP address here>" with your web server's name, e.g. "localhost", or its IP address, e.g. "127.0.0.1").
 
@@ -18,6 +18,9 @@ This URL can be broken into three parts: the first part, http://<insert hostname
      No query information to decode. QUERY_STRING is set, but empty.
 
 The next three parts are what make up the query string.  The query string contains the CGI parameters (variables and their values), with each parameter separated by an ampersand (&amp;). So, looking at the query string, the first parameter "map" has a value "/ms4w/apps/tutorial/htdocs/example1-1.map"--this tells the MapServer CGI program (mapserv or mapserv.exe) what mapfile to process/parse. The next parameter &quot;layer=states&quot;, tells mapserv.exe to "turn on" the states layer--recall that we named our layer object "states".  The last parameter, &quot;mode=map&quot;, tells mapserv.exe what to do with the output from the mapfile. In this case it tells mapserv.exe to dump the image directly to the web browser (the client), without first creating a temporary image on the server. The MapServer &quot;mode&quot; CGI variable takes values other than &quot;map&quot;. For example if you use &quot;mode=browse&quot;, MapServer will dump the image to a temporary directory on the server. The browse mode will not work now but we'll come back to it again later.
+
+Mapfile Structure
+#################
 
 This is what the mapfile looks like: :ref:`Example1-1.map <example1-1-map>`.
 
@@ -36,9 +39,10 @@ Let's break "example1-1.map" down by objects. Its structure looks like this:
 
 
 Let's look at the keywords (parameters) within the MAP object:
+**************************************************************
 
 **MAP**
-       Every mapfile starts with the :ref:`MAP <map>` object--the entire 
+       Every mapfile starts with the :ref:`MAP <map>` object--the entire
        mapfile is the MAP object.
 
 **IMAGETYPE**
@@ -60,15 +64,15 @@ Let's look at the keywords (parameters) within the MAP object:
 
      <Lower Left X> <Lower Left Y> <Upper Right X> <Upper Right Y>
 
-with spaces separating each value. This needs to be in the same units as the 
-data or, if specifying a different output projection, in the same units as the 
+with spaces separating each value. This needs to be in the same units as the
+data or, if specifying a different output projection, in the same units as the
 output projection.
 
-In this example our data is in geographic projection so the units are in decimal 
-degrees.  You can use the utility 
+In this example our data is in geographic projection so the units are in decimal
+degrees.  You can use the utility
 `ogrinfo <http://gdal.osgeo.org/ogr_utilities.html>`_,
 which is part of the GDAL/OGR library package, to get the extent of a particular
-shapefile (or other supported vector formats).  Here is the command I used to 
+shapefile (or other supported vector formats).  Here is the command I used to
 get the extent for this example:
 
 ::
@@ -112,62 +116,65 @@ Feel free to change the values of EXTENT to get a better understanding of how it
 
 **IMAGECOLOR**
         This is the background color of your map. The values are RGB values so
-        255 Red, 255 Green, and 255 Blue which results in a white background. 
+        255 Red, 255 Green, and 255 Blue which results in a white background.
         Go ahead and play with this values.
 
 Now let's look at the LAYER object parameters:
+**********************************************
 
 **LAYER**
         Marks the beginning of a :ref:`LAYER <layer>` within the MAP object.
         You can specify as many layers as you'd like although you are limited
-        to 100, by default. To change this limit, you will have to edit the 
+        to 100, by default. To change this limit, you will have to edit the
         map.h header file (in the soure tree) and recompile MapServer.
 
 **NAME**
-        This is the layer identifier.  MapServer uses this name to toggle the 
+        This is the layer identifier.  MapServer uses this name to toggle the
         layer on and off.  It won't work in this example as we have the layer
         STATUS set to default.  We will get back to this in later examples.
 
 **DATA**
-        The name of the data (shapefile in this case). MapServer supports 
+        The name of the data (shapefile in this case). MapServer supports
         vector data formats other than ESRI's shapefile through the use of OGR
         library (part of the GDAL software package). Please visit the GDAL
         project web site at `<http://gdal.osgeo.org/>`_ and
         read `<http://gdal.osgeo.org/ogr/>`_
-        to know more about the different vector formats MapServer supports.  
+        to know more about the different vector formats MapServer supports.
         In addition, Jeff McKenna and Tyler Mitchell have written a detailed
         :ref:`guide to using vector data for MapServer <vector>`.
 
 **TYPE**
         What type of data is it? If it's a vector data, you can specify whether
-        it is a POLYGON, LINE (you use LINE even if your data is technically a 
-        POLYLINE), or a POINT. You can also specify RASTER or ANNOTATION data. 
+        it is a POLYGON, LINE (you use LINE even if your data is technically a
+        POLYLINE), or a POINT. You can also specify RASTER or ANNOTATION data.
         Here we want to display POLYGON.
 
 **STATUS**
-        Layers are turned on or off based on their STATUS. DEFAULT is always on. 
+        Layers are turned on or off based on their STATUS. DEFAULT is always on.
         ON or OFF works when the LAYER name is passed as part of the query string.
 
 Let's look at the CLASS object parameters:
+******************************************
 
 **CLASS**
         Marks the beginning of a :ref:`CLASS <class>` object within the LAYER
         object. You can specify as many classes within a layer although you are
-        limited to 50 by default. You'll have to recompile MapServer to change 
+        limited to 50 by default. You'll have to recompile MapServer to change
         this default value.
 
 **NAME**
-        The descriptive identifier for this CLASS. LAYER objects can have 
-        multiple classes, just like MAP objects can have multiple layers.  
-        CLASS names are used by MapServer as labels for the legend so make 
-        sure to use an appropriate descriptive name when naming classes.  We 
+        The descriptive identifier for this CLASS. LAYER objects can have
+        multiple classes, just like MAP objects can have multiple layers.
+        CLASS names are used by MapServer as labels for the legend so make
+        sure to use an appropriate descriptive name when naming classes.  We
         will talk about legends later in this tutorial.
 
 And finally, let's look at the STYLE object parameters:
+*******************************************************
 
 **STYLE**
         Marks the beginning of the :ref:`STYLE <style>` object.  You can
-        define multiple styles within a class--this is useful when you want to 
+        define multiple styles within a class--this is useful when you want to
         overlay a style over another.
 
 **COLOR**
