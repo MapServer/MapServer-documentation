@@ -1,70 +1,37 @@
 .. _rfc51:
 
 ======================================================================
-MS RFC 51: XML/BXML Mapfiles
+MS RFC 51: XML Mapfile Format
 ======================================================================
 
 :Date: 2009/01/16
 :Authors: Alan Boudreault
 :Contact: aboudreault at mapgears.com
-:Last Edited: 2009/01/16
-:Version: MapServer 5.4
+:Last Edited: 2009/03/09
+:Version: MapServer 6.0
 :Id:
 
 Overview
 ------------------------------------------------------------------------------
-This RFC proposes the addition of XML/BXML Mapfiles support.
-
 Presently, MapServer supports only normal mapfiles that are parsed by Flex.
 The current mapfiles are parsed very fast by MapServer but can not be
 parsed by any other software due to the parser complexity. So, a client
 interface to build mapfiles is difficult to make.
 
-XML is seen as a solution that can provide a strict syntax to mapfiles to
-have a strong validation with XML Schema.
+The need we are trying to address is the ability to build MapFile Editors
+that would be facilitated by the existence of a XML mapfile format (since
+the current mapfile format makes it impossible to write a
+forward-compatible parser). XML is seen as a solution that can provide a
+strict syntax to mapfiles to have a strong validation with XML Schema.
+
+This RFC proposes the addition of XML Mapfile support.
 
 Technical Solution
 ------------------------------------------------------------------------------
-The main task is to write a XML Mapfile Schema to have a strict XML syntax
-that will provide a strong validation and to code a new parser for the XML
-encoding as an alternative to the current mapfiles format. It will use a
-similar C API as the traditionnal. The Cubewerx's CWXML library
-(http://www.cubewerx.com/main/cwxml/) will be used for the new parser.
-
-Technical Issue
-------------------------------------------------------------------------------
-The main blocker for this feature so far has been the poor performance that
-we expect from parsing large XML documents at runtime. Fortunately, a
-Binary XML (BXML) discussion paper has been submitted to OGC and Cubewerx
-has released an open source library that implements it. The use of BXML
-addresses the potential performance issue and makes XML/Binary XML mapfiles
-a viable option.
-
-Technical Risk
-------------------------------------------------------------------------------
-There is a risk related to the maturity and stability of the CWXML library
-on which this implementation will be based: the library seems quite good on
-the surface but we will only know for sure once we have started working
-with it.
-
-Implementation Details
-------------------------------------------------------------------------------
-First, it is plan to write a schema and a parser that will simply allow us to
-do the same things that the traditionnal mapfile does. Each keyword will be
-almost the same, only the XML syntax will be different.
-
-Secondly, the XML Parser needs to support XML mapfiles as well as BXML
-mapfiles. This part should be transparent with the CWXML library.
-
-
-C API Changes
-------------------------------------------------------------------------------
-Most of the changes will be in the new file "mapfilexml.c" that
-contains the new parser. A few minor changes will be needed to determine
-which parser to use in the msLoadMap() method.
-
-- mapserv.c
-- mapfilexml.c (new file)
+It was decided that for the time being we should develop a XML schema and a
+XSLT to convert from XML to text mapfile. If the new XML format takes off
+then we may consider implementing support for it directly in MapServer in a
+future release.
 
 Mapfiles
 ------------------------------------------------------------------------------
