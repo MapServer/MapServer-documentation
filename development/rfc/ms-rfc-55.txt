@@ -1,0 +1,103 @@
+.. _rfc55:
+
+======================================================================
+MS RFC 55: Improve control of output resolution
+======================================================================
+
+:Date: 2009/03/09
+:Authors: Daniel Morissette
+:Contact: dmorissette at mapgears.com
+:Last Edited: 2009/03/09
+:Status: Draft
+:Version: MapServer 6.0
+:Id: $Id: $
+
+Overview
+------------------------------------------------------------------------------
+
+MapServer is often used to produce a printable map corresponding to the 
+map currently being displayed in the Web interface.
+
+Printed maps will usually require a resolution higher than the default 72
+pixels per inch which is commonly used for the screen (e.g. 150 or 300 dpi). 
+In general printing is done by setting the map.resolution and requesting a 
+larger size image for the same map extents. Setting map.resolution to a higher
+value ensures that the layers minscaledenom/maxscaledenom are properly
+evaluated for the larger image, but one thing is missing: symbology (line 
+widths, symbol and font sizes, etc) is not adjusted to reflect the resolution
+change and the result is a map in which symbology looks smaller than what it
+looked on screen.
+
+This RFC proposes a mechanism to fix this by automatically scaling the
+symbology when resolution changes so that the map maintains the same look
+at each resolution.
+
+Technical Solution
+------------------------------------------------------------------------------
+
+A new optional DEFRESOLUTION keywork will be added in the mapObj with 
+a default value if 72 if not set. DEFRESOLUTION is the reference or default 
+resolution for which all symbology sizes are defined in the mapfile.
+
+At rendering time, if RESOLUTION is set to something different from 
+DEFRESOLUTION, then the symbology in the layer definitions will be 
+adjusted by a factor corresponding to RESOLUTION/DEFRESOLUTION.
+More specifically, this is done by multiplying the layer->scalefactor value
+by the resolution/defresolution ratio in msPrepareImage().
+
+
+Usage example
+------------------------------------------------------------------------------
+
+Example 1:
+
+Let's say we've got a mapfile that we use to produce a 400x400 pixels
+image for use on the Web, with both defresolution and resolution set to 72.
+
+In order to produce a 300dpi image for printing, the application code
+should request an image of 1667 x 1667 pixels (400*300/72=1667) and set
+resolution=300. MapServer will automagically scale all symbology sizes
+by a factor of 300/72=4.1667.
+
+Example 2:
+
+An application is using a mapfile developed for map.resolution=96 with 
+MapServer 5.x. In order to take advantage of the new feature, one should
+set DEFRESOLUTION=96 in the mapfile, and at rendering time, setting
+RESOLUTION=300 will result in all symbology being scaled by a factor
+of 300/96=3.125.
+
+
+Backwards Compatability Issues
+------------------------------------------------------------------------------
+
+Existing apps or mapfiles that set RESOLUTION to a value other than 72
+**without** setting DEFRESOLUTION will end up with their symbology scaled.
+This change in behavior is more likely to be considered as a feature 
+than as a bug in most cases, but in case this is a problem for an 
+existing app then the fix will be to simply add a DEFRESOLUTION to the 
+mapfile which matches the resolution for which all mapfile classes 
+and styles are defined.
+
+
+Files Impacted
+------------------------------------------------------------------------------
+
+* mapserver.h: new defresolution member in mapObj
+
+* mapfile.c, maplexer.l, etc: new DEFRESOLUTION mapfile keyword
+
+* mapdraw.c: adjust scalefactor as needed in msPrepareImage()
+
+* mapscript/php3/php_mapscript.c: expose new defresolution member
+
+
+Ticket Id
+------------------------------------------------------------------------------
+
+None yet.
+
+Voting History
+------------------------------------------------------------------------------
+
+No vote yet.
