@@ -7,7 +7,7 @@ MS RFC 55: Improve control of output resolution
 :Date: 2009/03/09
 :Authors: Daniel Morissette
 :Contact: dmorissette at mapgears.com
-:Last Edited: 2009/03/09
+:Last Edited: 2009/03/10
 :Status: Draft
 :Version: MapServer 6.0
 :Id: $Id: $
@@ -45,6 +45,32 @@ adjusted by a factor corresponding to RESOLUTION/DEFRESOLUTION.
 More specifically, this is done by multiplying the layer->scalefactor value
 by the resolution/defresolution ratio in msPrepareImage().
 
+The following rendering parameters will be affected:
+
+* size (symbols and labels)
+* width (lines)
+
+The following rendering parameters which were not impacted by scaling in
+the past will also be fixed to follow the scaling from now on:
+
+* offsets (line, point, polygon)
+* pattern (line)
+* gap (line)
+* outlinewidth (labels)
+* shadowsize, background-shadow-size (labels)
+* buffer around labels (collision)
+* minfeaturesize, mindistance (labels)
+
+The case of outlinewidth for line styles is a bit different: it ignores
+the scalefactor so that we get a fixed outline width no matter what we use
+for size units, but we want it to follow the resolution/defresolution factor.
+For this case the line drawing code will need to have a reference to the 
+mapObj passed to msDrawLineSymbol() so that it can access the resolution
+and defresolution parameters and do the right thing.
+
+In the case of pixmap symbols, they will be scaled only if a size is set. 
+If no size is set then no scaling happens.
+
 
 Usage example
 ------------------------------------------------------------------------------
@@ -79,6 +105,8 @@ existing app then the fix will be to simply add a DEFRESOLUTION to the
 mapfile which matches the resolution for which all mapfile classes 
 and styles are defined.
 
+The rendering parameters listed above that did not follow scaling in the
+past will be fixed to follow the scaling.
 
 Files Impacted
 ------------------------------------------------------------------------------
