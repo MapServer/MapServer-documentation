@@ -1,4 +1,4 @@
-3-26-2009 - MapServer 5.2.2 and 4.10.4 with security fixes are released
+3-26-2009 - MapServer 5.2.2 and 4.10.4 security fixes are released
 ..............................................................................
 
 MapServer 5.2.2 and 4.10.4 have been released, containing important security fixes.  See the
