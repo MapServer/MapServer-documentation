@@ -1,3 +1,10 @@
+4-1-2009 - MapServer 5.4 beta 4 is released
+..............................................................................
+
+MapServer 5.4 beta 4 has been released.  See the
+`Changelog <http://trac.osgeo.org/mapserver/browser/tags/rel-5-4-0-beta4/mapserver/HISTORY.TXT>`__
+for more details and head to :ref:`download` to obtain a copy.
+
 3-26-2009 - MapServer 5.2.2 and 4.10.4 security fixes are released
 ..............................................................................
 
@@ -10,27 +17,6 @@ for more details and head to :ref:`download` to obtain copies.
 
 Members of the MapServer Project Steering Committee attend the `Toronto Code Sprint <http://wiki.osgeo.org/wiki/Toronto_Code_Sprint_2009>`__
 event, an international meeting of GDAL, PostGIS, OpenLayers, and MapServer development teams.
-
-3-5-2009 - MapServer 5.4 beta 3 is released
-..............................................................................
-
-MapServer 5.4 beta 3 has been released.  See the
-`Changelog <http://trac.osgeo.org/mapserver/browser/tags/rel-5-4-0-beta3/mapserver/HISTORY.TXT>`__
-for more details and head to :ref:`download` to obtain a copy.
-
-2-25-2009 - MapServer 5.4 beta 2 is released
-..............................................................................
-
-MapServer 5.4 beta 2 has been released.  See the
-`Changelog <http://trac.osgeo.org/mapserver/browser/tags/rel-5-4-0-beta2/mapserver/HISTORY.TXT>`__
-for more details and head to :ref:`download` to obtain a copy.
-
-2-18-2009 - MapServer 5.4 beta 1 is released
-..............................................................................
-
-MapServer 5.4 beta 1 has been released.  See the
-`Changelog <http://trac.osgeo.org/mapserver/browser/tags/rel-5-4-0-beta1/mapserver/HISTORY.TXT>`__
-for more details and head to :ref:`download` to obtain a copy.
 
 12-30-2008 - New MapServer website is now live
 ..............................................................................
