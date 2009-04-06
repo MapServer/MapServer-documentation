@@ -23,7 +23,7 @@ Consortium's (OGC) `Web Map Server Interfaces Implementation Specification v1.1.
 
 MapServer v3.5 or more recent is required to implement WMS features. At the time 
 this document was written, MapServer supports the following WMS versions: 1.0.0, 
-1.0.7, 1.1.0 (a.k.a. 1.0.8), and 1.1.1.
+1.0.7, 1.1.0 (a.k.a. 1.0.8), 1.1.1 and 1.3.0
 
 This document assumes that you are already familiar with certain aspects of MapServer:
 
@@ -36,6 +36,7 @@ Links to WMS-Related Information
 
 - :ref:`MapServer WMS Client Howto <wms_client>`
 - `WMS 1.1.1 specification`_
+- `WMS 1.3.0 specification`_
 - `Open Geospatial Consortium (OGC)`_ home page
 - `WMS-Dev mailing list and archive`_ 
 - `WMS Cookbook`_ 
@@ -575,6 +576,65 @@ An example request might look like:
 
   http://127.0.0.1/cgi-bin/mapserv.exe?SERVICE=WMS&VERSION=1.1.1&layer=park&
   REQUEST=getlegendgraphic&FORMAT=image/png            
+
+WMS 1.3.0 Support
+=================
+
+MapServer 5.4 adds support for WMS 1.3.0. Although the general mechanism in Mapserver
+to support this new specification are the same, there are some notable upgrades.
+
+
+Major features related to the WMS 1.3.0 support 
+-----------------------------------------------
+ 
+- Support WMS 1.3.0 basic operations: GetCapabilities, GetMap and GetFeatureInfo.
+
+- Implement the `Styled Layer Descriptor profile of the Web Map Service Implementation Specification`_. This specification 
+  extends the WMS 1.3.0 and allows to advertise styling capabilities (Styled Layer Descriptor (SLD) support). It also 
+  defines two addition operations GetLegendGraphic and  DescribeLayer
+
+- Implement the `Symbology Encoding Implementation Specification`_, which is the new version of the SLD. Read support was added for Point, Line, Polygon, Raster symbolizers 
+
+- Upgrade the generation of SLD to version 1.1.0 (SLD generated through through the GetStyles operation or through MapScript)
+
+
+Coordinate Systems and Axis Orientation  
+---------------------------------------
+
+The most notable changes introduced in WMS 1.3.0 are the:
+
+- the axis changes
+- the introduction of new coordinate reference systems
+
+The axis order in previous versions of the WMS specifications was to always use easting (x or lon ) and northing (y or lat).  WMS 1.3.0 specifies that, depending on the particular CRS, the x axis may or may not be oriented West-to-East, and the y axis may or may not be oriented South-to-North. The WMS portrayal operation shall account for axis order. This affects some of the EPSG codes that were commonly used such as ESPG:4326.  The current implementation makes sure that coordinates passed to the server (as part of the GetMap BBOX parameter) as well as those advertised in the capabilities document reflect the inverse axe orders for EPSG codes between 4000 and 5000.
+
+In addition, the WMS 1.3.0 defines a series of new coordinate system. These are the once that are currently supported 
+in MapServer:
+
+- CRS:84 (WGS 84 longitude-latitude)
+- CRS:83 (NAD83 longitude-latitude)
+- CRS:27 (NAD27 longitude-latitude)
+- AUTO2:420001 (WGS 84 / Auto UTM )
+- AUTO2:420002 (WGS 84 / Auto Tr. Mercator)
+- AUTO2:420003 (WGS 84 / Auto Orthographic)
+- AUTO2:420004 (WGS 84 / Auto Equirectangular)
+- AUTO2:420005 (WGS 84 / Auto Mollweide)
+
+
+Some  Missing features 
+----------------------
+
+- WMS 1.3.0 Post request should be an XML document containing the different operations and parameters.
+
+- SLD documents containing elements form the Feature Encoding 1.1 specification could potentially use ESPG projections with some filters. It is not yet clear nor implemented if the axis ordering should be taken into account in these specific cases. 
+
+
+OCG compliance tests
+--------------------
+
+As of version 5.4, MapServer passes all the basic and query tests of the OGC CITE test suite for WMS 1.3.0.
+ 
+
 
 Reference Section
 =================
@@ -1227,6 +1287,7 @@ FAQ / Common Problems
 
 .. _`Web Map Server Interfaces Implementation Specification v1.1.1`: http://portal.opengeospatial.org/files/?artifact_id=1081&version=1&format=pdf
 .. _`WMS 1.1.1 specification`: http://portal.opengeospatial.org/files/?artifact_id=1081&version=1&format=pdf
+.. _`WMS 1.3.0 specification`: http://portal.opengeospatial.org/files/index.php?artifact_id=4756&version=1&format=pdf
 .. _`Open Geospatial Consortium (OGC)`: http://www.opengeospatial.org/
 .. _`WMS-Dev mailing list and archive`: http://lists.eogeo.org/mailman/listinfo/wms-dev
 .. _`WMS Cookbook`: http://www.intl-interfaces.com/cookbook/WMS/
@@ -1242,3 +1303,5 @@ FAQ / Common Problems
 .. _`text/plain`: http://www2.dmsolutions.ca/cgi-bin/mswms_gmap?&SERVICE=wms&VERSION=1.1.1&REQUEST=getfeatureinfo&LAYERS=popplace&QUERY_LAYERS=popplace&x=305&y=200&INFO_FORMAT=text/plain
 .. _`text/html`: http://www2.dmsolutions.ca/cgi-bin/mswms_gmap?&SERVICE=wms&VERSION=1.1.1&REQUEST=getfeatureinfo&LAYERS=popplace&QUERY_LAYERS=popplace&x=305&y=200&INFO_FORMAT=text/html
 .. _`gml`: http://www2.dmsolutions.ca/cgi-bin/mswms_gmap?&SERVICE=wms&VERSION=1.1.1&REQUEST=getfeatureinfo&LAYERS=popplace&QUERY_LAYERS=popplace&x=305&y=200&INFO_FORMAT=gml
+.. _`Styled Layer Descriptor profile of the Web Map Service Implementation Specification`: http://portal.opengeospatial.org/files/index.php?artifact_id=22364
+.. _`Symbology Encoding Implementation Specification`: http://portal.opengeospatial.org/files/index.php?artifact_id=16700
