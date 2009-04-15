@@ -1,8 +1,8 @@
-4-8-2009 - MapServer 5.4 Release Candidate 1 is released
+4-15-2009 - MapServer 5.4 Release Candidate 1 is released
 ..............................................................................
 
-MapServer 5.4 RC1 has been released.  See the
-`Changelog <http://trac.osgeo.org/mapserver/browser/tags/rel-5-4-0-rc1/mapserver/HISTORY.TXT>`__
+MapServer 5.4 RC2 has been released.  See the
+`Changelog <http://trac.osgeo.org/mapserver/browser/tags/rel-5-4-0-rc2/mapserver/HISTORY.TXT>`__
 for more details and head to :ref:`download` to obtain a copy.
 
 3-26-2009 - MapServer 5.2.2 and 4.10.4 security fixes are released
