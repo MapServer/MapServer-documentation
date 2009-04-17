@@ -6,6 +6,8 @@
 
 :Author: Howard Butler
 :Contact: hobu.inc at gmail.com
+:Author: Frank Warmerdam
+:Contact: warmerdam at pobox.com
 :Revision: $Revision$
 :Date: $Date$
 :Status: Draft
@@ -53,14 +55,14 @@ And proj4-formated definitions in the form:
 ::
 
     PROJECTION
-    	"proj=cea"
-    	"lon_0=0"
-    	"lat_ts=45"
-    	"x_0=0"
-    	"y_0=0"
-    	"ellps=WGS84"
-    	"units=m"
-    	"no_defs"
+        "proj=cea"
+        "lon_0=0"
+        "lat_ts=45"
+        "x_0=0"
+        "y_0=0"
+        "ellps=WGS84"
+        "units=m"
+        "no_defs"
     END
 
 A third, and rather unknown option is available exclusively to WMS -- the 
@@ -83,7 +85,11 @@ Alternatively, the EPSG/ESRI code definition of MapServer's spatial references
 allows MapServer to offload the lookup of proj4 descriptions to proj4 itself, 
 with a simple file-based lookup table.  This mechanism is currently a 
 bottleneck, however, as each lookup requires trolling through a file to 
-match the given identifier and returning the proj4 definition.  
+match the given identifier and returning the proj4 definition.
+
+.. note::
+    This penalty was lessened in early 2009 by the addition of a caching 
+    mechanism in proj4 that allows subsequent lookups to be fast.
 
 Usability
 ---------
@@ -95,8 +101,8 @@ information for data with a known EPSG value, custom projections or those
 not generally available in the EPSG database require the user to somehow 
 translate their WKT into proj4 format and paste it into their mapfile.  
 
-Additionally, this author has developed a website, http://spatialreference.org, 
-to ease this pain, but it is ultimately a stopgap, and not a permanent 
+Additionally, http://spatialreference.org exists to help
+ease this pain, but it is ultimately a stopgap, and not a permanent 
 solution to the problem.  It is not practical to be downloading the 
 spatial reference for each and every layer in a mapfile on every map draw 
 from a website.  spatialreference.org does provide some conversion utilities 
@@ -106,20 +112,21 @@ but this approach still foists pain and misery on the users.
 Specification Features
 ==============================================================================
 
-Two keywords would be added to the PROJECTION block to trigger the new 
-behavior.  Without these keywords, MapServer will continue to behave as before, 
-assuming the inputted projection is either an EPSG code or proj4 definition.
+MapServer will continue to behave as before, 
+assuming the inputted projection is either an EPSG code or proj4 definition.  
+The user will also have the ability to optionally add a TYPE enumeration that 
+will hint the processing of the projection object.
 
 ::
 
     PROJECTION
         TYPE TYPEENUM
-        VALUE "A definition"
+        "A definition"
     END
 
-The following TYPE enumerations would be supported:
+The following optional TYPE enumerations would be supported:
 
-* NATIVE
+* AUTO
 * PROJ4
 * EPSG
 * FILE
@@ -127,8 +134,7 @@ The following TYPE enumerations would be supported:
 * ESRIWKT
 
 
-VALUE is then defined as a spatial reference definition in the form denoted 
-by the enumeration.  See below for some examples:
+See below for some examples:
 
 ::
 
@@ -136,24 +142,21 @@ by the enumeration.  See below for some examples:
     # This may not be available for all data sources or layer types 
     # (shapefile, SDE, OGR, etc.).
     PROJECTION
-        TYPE NATIVE
+        AUTO
     END
 
 :: 
     
-    # Use a proj4 definition (this is essentially the same as usual except
-    # defined in a different way)
+    # Use a proj4 definition
     PROJECTION
-        TYPE PROJ4
-        VALUE "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
+        "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
     END
 
 ::
 
     # Use an EPSG code
     PROJECTION
-        TYPE EPSG
-        VALUE "4326"
+        "init=epsg:4326"
     END
 
 ::
@@ -168,8 +171,7 @@ by the enumeration.  See below for some examples:
 
     # Use an OGC WKT definition (escaping may be required)
     PROJECTION
-        TYPE OGCWKT
-        VALUE 'GEOGCS["WGS 84",
+        'GEOGCS["WGS 84",
                     DATUM["WGS_1984",
                         SPHEROID["WGS 84",6378137,298.257223563,
                             AUTHORITY["EPSG","7030"]],
@@ -186,7 +188,7 @@ by the enumeration.  See below for some examples:
     # Use an ESRI WKT definition (escaping may be required)
     PROJECTION
         TYPE ESRIWKT
-        VALUE 'GEOGCS["GCS_WGS_1984",
+        'GEOGCS["GCS_WGS_1984",
                     DATUM["D_WGS_1984",
                         SPHEROID["WGS_1984",6378137,298.257223563]],
                         PRIMEM["Greenwich",0],
@@ -199,7 +201,7 @@ Implementation Details
 ==============================================================================
 
 It is important that MapServer's previous spatial reference definition 
-behavior be preserved.  First, drastically changing the PROJECTION defintions 
+behavior be preserved.  First, drastically changing the PROJECTION definitions 
 would mean a lot of unnecessary mapfile churn.  Second, continuing to define 
 spatial references in proj4 format as before will be the most performant.
 
@@ -207,17 +209,12 @@ Implementation of this RFC will encompass four items:
 
 1) Additional spatial reference type enumerations will be added.
 
-2) Additional keywords to the PROJECTION block in the mapfile. If these 
-   keywords are not set, the MapServer's previous behavior with respect to 
-   projections will continue.
-
 2) Addition of a method to the LAYER virtual table so layers can support 
    returning the spatial reference in a variety of formats (OGCWKT, ESRIWKT, 
    proj4, EPSG).
 
-3) Additional methods will be added to the MapScript projectionObj to support 
-   setting the necessary TYPE and VALUE members to utilize the new 
-   functionality.
+3) Additional methods will be added to operate with the MapScript projectionObj 
+   to support setting the projectionObj of a TYPE with a definition.
    
 
 TYPE Enumerations
@@ -227,30 +224,26 @@ The following TYPE enumerations will be added to support SRS definition types:
 
 ::
 
-    enum MS_SRS_TYPE {MS_SRS_NATIVE, MS_SRS_PROJ4, MS_SRS_EPSG, MS_SRS_FILE, MS_SRS_OGCWKT, MS_SRS_ESRIWKT}
+    enum MS_SRS_TYPE {MS_SRS_AUTO, MS_SRS_PROJ4, MS_SRS_EPSG, MS_SRS_FILE, MS_SRS_OGCWKT, MS_SRS_ESRIWKT}
 
 
 projectionObj
 -------------
 
-The MapServer projectionObj struct will have two additional members added:
+Two methods will be added to set the projectionObj using various definition 
+types and to return definitions in various flavors. 
 
 ::
 
-    char* definition
-    int type
+    int msSetProjectionByType(projectionObj *p, int type, const char *value)
 
-These members will have their data set during mapfile parsing, and if they 
-are not specified in the user's PROJECTION block, they will have their values 
-set to '' and MS_SRS_PROJ4 respectively.  When an empty definition of type 
-proj4 is encountered, MapServer will default to exhibiting the previous 
-definition behavior.
-
+::
+    char* msGetProjectionByType(projectionObj *p, int type)
 
 Virtual Table Method
 --------------------
 
-To support the additional (optional) members specified in [1] for TYPE NATIVE, 
+To support AUTO projection definitions,
 drivers need to have the ability to return spatial reference information.
 MapServer's layer plugin architecture provides mechanisms for interacting with 
 MapServer layer providers, but there is currently no regularized method for 
@@ -259,17 +252,13 @@ virtual table member is proposed:
 
 ::
   
-    int (*LayerGetSpatialReference)(layerObj *layer, char* definition, int type)
+    int (*LayerGetAutoProjection)(layerObj *layer)
 
-A default implementation for msLayerGetSpatialReference will be provide for 
-drivers that do not define a method.  It will return an empty definition of 
-type MS_SRS_PROJ4.  When MapServer encounters this, it will default to using 
-the previous PROJECTION definition behavior.
 
 Driver-specific implementations
 -------------------------------
 
-The following drivers will have implementations provided to support TYPE NATIVE 
+The following drivers will have implementations provided to support TYPE AUTO 
 spatial reference definitions:
 
 * Shapefile 
@@ -281,15 +270,13 @@ spatial reference definitions:
 MapScript
 ---------
 
-Four methods will be added to the SWIG MapScript projectionObj to support 
-manipulating spatial reference information defined by this RFC.  
+msSetProjectionByType and msGetProjectionByType will be exposed to MapScript 
+via the projectionObj:
 
 ::
 
-    char* getDefintion()
-    int getType()
-    int setDefintion(char* definition)
-    int setType(int type)
+    setByType(char* definition, int type)
+    getByType(int type)
 
 
 Files Affected
