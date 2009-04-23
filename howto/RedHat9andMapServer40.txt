@@ -1,0 +1,191 @@
+<hr>The following are build notes for installing MapServer 4.0 on a new installation of <a href="wiki.pl?LinuxBuild">RedHat</a> 9. This is a slightly modified version of the <a href="wiki.pl?RedHat9AndMapServer40b">RedHat9AndMapServer40b</a> from Erich Schroeder, with the following changes:
+<p>
+<UL>
+<li> Added Xerces for WFS client support
+<li> Update to latest package versions
+<li> Use 'sudo' instead of running everything as root
+<li> Install PHP in /usr/local/php433 to allow multiple PHP installations to coexist
+<li> Install <a href="wiki.pl?MapServer">MapServer</a> binaries as mapserv_40 and php_mapscript_40.so to allow multiple versions to coexist on the same box
+</UL>
+<p>
+The first steps of those instructions assume that you installed the port of "apt" for rpm-based distributions, available at <a href="http://freshrpms.net/apt/">http://freshrpms.net/apt/</a>. You can download apt from <a href="http://shrike.freshrpms.net/rpm.html?id=650">http://shrike.freshrpms.net/rpm.html?id=650</a>.
+<p>
+Daniel M, 2003-10-09
+<p>
+<H2>Build Notes</H2>
+
+<pre>
+# removed these and dependent rpms
+sudo apt-get remove gd
+sudo apt-get remove curl
+sudo apt-get remove curl-devel
+sudo apt-get remove php
+
+# already have following rpms installed
+sudo apt-get install freetype freetype-devel
+sudo apt-get install libpng libpng-devel
+sudo apt-get install libtiff libtiff-devel zlib zlib-devel
+sudo apt-get install libjpeg libjpeg-devel
+#
+# I'm assuming that you will be providing a non-commercial mapserver
+# application, and then can use the PDFlib-Lite under their 
+# Alladin-type license. If not, you will need to either 
+# purchase the full PDFlib library or disable
+wget http://www.pdflib.com/products/pdflib/download/PDFlib-Lite-5.0.2-Unix-src.tar.gz
+tar xzf PDFlib-Lite-5.0.2-Unix-src.tar.gz
+cd PDFlib-Lite-5.0.2-Unix-src
+make clean
+./configure
+make
+sudo make install
+cd ..
+
+# download and build ming
+wget http://www.opaque.net/ming/ming-0.2a.tgz
+tar xzf ming-0.2a.tgz
+cd ming-0.2a
+make clean
+make
+make static
+sudo make install
+
+cd ..
+
+# download and build curl
+wget http://curl.haxx.se/download/curl-7.10.7.tar.gz
+tar xzf curl-7.10.7.tar.gz
+cd curl-7.10.7
+make clean
+./configure
+make
+sudo make install
+
+cd ..
+
+# add /usr/local/lib to /etc/ld.so.conf ...
+# and run ldconfig
+sudo /sbin/ldconfig
+
+# download and install gd-2 into /usr/local
+rm -f /usr/lib/libgd.*     # to remove any potentially conflicts
+wget http://www.boutell.com/gd/http/gd-2.0.15.tar.gz
+tar xzf gd-2.0.15.tar.gz
+cd gd-2.0.15
+make clean
+./configure
+make
+sudo make install
+cd ..
+
+# download and build proj libraries
+wget --passive-ftp ftp://ftp.remotesensing.org/pub/proj/proj-4.4.7.tar.gz
+wget --passive-ftp ftp://ftp.remotesensing.org/pub/proj/proj-nad27-1.1.tar.gz
+tar xzf proj-4.4.7.tar.gz
+cd proj-4.4.7/nad
+tar xzf ../../proj-nad27-1.1.tar.gz
+cd ..
+./configure
+make
+sudo make install
+
+cd ..
+
+# if you are going to use WMS/WFS then you might want to download and install
+# a new epsg file with custom canadian projections and esri projections codes
+wget http://www.maptools.org/dl/proj4-epsg-with-42xxx-and-esri.zip
+unzip proj4-epsg-with-42xxx-and-esri.zip
+sudo mv epsg /usr/local/share/proj/
+
+#download and install Xerces 1.6 (for GML support in OGR)
+wget http://xml.apache.org/dist/xerces-c/stable/archives/Xerces-C_1_6_0/xerces-c-src1_6_0.tar.gz
+tar xzf xerces-c-src1_6_0.tar.gz
+cd xerces-c-src1_6_0
+#set SERCESROOT to the xerces source directory
+export XERCESCROOT=`pwd`
+cd src
+# The configure file in the distribution is not executable!
+chmod +x ./configure
+./configure
+make
+sudo make install
+
+sudo /sbin/ldconfig
+
+cd ../..
+
+
+# download and install gdal-1.1.9
+wget --passive-ftp ftp://ftp.remotesensing.org/pub/gdal/gdal-1.1.9.tar.gz
+tar xzf gdal-1.1.9.tar.gz
+cd gdal-1.1.9
+make clean
+./configure  --with-ogr --without-python --with-xerces
+make
+sudo make install
+cd ..
+
+sudo /sbin/ldconfig
+
+# download and build php
+#
+# Note that I install PHP under /usr/local/php433 in order to allow
+# multiple versions of PHP to coexist on my server
+#
+wget http://ca.php.net/get/php-4.3.3.tar.gz/from/ca2.php.net/mirror
+tar xzf php-4.3.3.tar.gz
+cd php-4.3.3
+make clean
+./configure --enable-shared --with-regex=system --with-jpeg-dir=/usr --with-png-dir=/usr --with-zlib --with-gd=/usr/local --with-freetype-dir=/usr --enable-force-cgi-redirect --enable-dbase --with-pdflib --with-mysql --with-config-file-path=/usr/local/php433/ --prefix=/usr/local/php433 
+make
+sudo cp sapi/cgi/php /var/www/cgi-bin/php433
+sudo make install
+sudo cp php.ini-dist /usr/local/php433/php.ini
+
+# note: include brackets in the following command to keep your shell in current directory
+(cd /usr/local/php433; sudo ln -s lib/php/extensions/no-debug-non-zts-20020429/ extensions)
+
+# edit your php.ini:
+#diff /usr/local/php433/php.ini php.ini-dist
+#428c428
+#&lt; extension_dir = "/usr/local/php433/extensions/"
+#---
+#&gt; extension_dir = "./"
+
+cd ..
+
+
+# download and build mapserver
+wget http://cvs.gis.umn.edu/dist/mapserver-4.0.tar.gz
+tar xzf mapserver-4.0.tar.gz
+cd mapServer-4.0
+rm -f config.cache
+./configure --without-tiff --without-eppl --with-threads --with-proj --with-gdal=/usr/local/bin/gdal-config --with-ogr --with-php=../php-4.3.3 --with-gd=/usr/local  --with-freetype=/usr/bin  --with-pdf --with-ming --with-wmsclient --with-wfs --with-wfsclient
+
+make clean
+make
+# DO NOT do a "make install"
+
+sudo cp mapserv /var/www/cgi-bin/mapserv_40
+sudo cp mapscript/php3/php_mapscript.so /usr/local/php433/extensions/php_mapscript_40.so
+
+cd ..
+
+# add to /etc/httpd/conf/httpd.conf
+
+#
+# For PHP scripts as CGI-BIN
+#
+#AddType application/x-httpd-php-cgi .php .php4 .phtml
+#Action  application/x-httpd-php-cgi /cgi-bin/php433
+
+sudo /sbin/service httpd restart
+
+# create /var/www/html/ms_info.php
+#&lt;?php
+#dl("php_mapscript_40.so");
+#phpinfo();
+#?&gt;
+
+# check the output of http://yourhost/ms_info.php
+# for mapserver support
+</pre>

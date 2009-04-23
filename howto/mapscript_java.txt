@@ -1,0 +1,341 @@
+<a name="N1000C"></a><a name="My+Notes"></a>
+<h3>My Notes</h3>
+<div>
+<p>
+	Many people ask questions about Java MapScript on <em>mapserver-users</em>. This is an attempt
+	to record my answers to them, my impressions on mapserver and Java MapScript.
+	Before you proceed I must warn you that the following are my opinions and
+	they might not be endorsed or approved by the mapserver community at all.
+	</p>
+<p>
+	Most of this is <strong>LINUX</strong> specific, but some is general.
+	</p>
+</div>
+		
+<a name="N1001F"></a><a name="Building+Java+MapScript"></a>
+<h3>Building Java MapScript</h3>
+<div>
+<p>
+		Guidelines for building a working Java MapScript.
+		</p>
+<a name="N10028"></a><a name="The+Golden+Rule:+KISS!+(Keep+it+simple,+stup^H^H^H^sir!)"></a>
+<h4>The Golden Rule: KISS! (Keep it simple, stup^H^H^H^sir!)</h4>
+<div>
+<p>
+				MapServer is really a big piece of software with plenty of functionalities (some say it is the most advanced web
+				mapping software) and chances are you do need all of them. If you are a newbie to mapserver
+				or to Java mapscript try to understand what you need and stick with it, removing the unneeded features.
+				<br />
+				This approach is generally suggested because:
+				</p>
+<ul>
+					
+<li>it reduces the number of lines of code involved and thus reduces the number of possible
+					bugs that could bite</li>
+					
+<li>it makes for a smaller binary which is more efficient</li>
+					
+<li>in case of a crash the number of suspects is lower and will speed up investigation
+					and in some cases resolution</li>
+					
+<li>it requires less software to be installed on your computer which makes it easier to
+					mantain in the long term</li>
+					
+<li>the first three items apply (with recursion) to the previous</li>
+					
+<li>if you ask for help on the mailing list the first general advice is to remove components you
+					don't use: so do it in advance</li>
+				
+</ul>
+<p>
+				See <a href="#compile">below</a> for a example of a basic (but working) mapserver/mapscript build example.
+				</p>
+</div>
+<a name="N10050"></a><a name="How+do+I+disable+option+X?"></a>
+<h4>How do I disable option X?</h4>
+<div>
+<p>
+				Chances are that even if you do not need tiff or mysql support it will get built in anyway
+				because the configure script detects their libraries. In all cases you should review
+				the output of the configure script and then use the proper command line argument to disable unwanted
+				features.
+ 				</p>
+<p>
+			When running the <em>./configure</em> program use the
+			<em>--disable-X</em> option. You can get the list of available options by running:
+			</p>
+<pre class="code">./configure --help<br />			</pre>
+</div>
+<a name="N10068"></a><a name="Know+your+enemy"></a>
+<h4>Know your enemy</h4>
+<div>
+<p>
+				Certain libraries/features are known <strong>NOT</strong> to work with mapscript because they are not thread-safe.
+				Be sure not to enable them at compile time or you will get errors that will crash the JVM.
+				You can review the list of unsafe components <img src="/images/link-ext.gif" align="middle" /><a href="../../faq/thread_safety">here</a>.
+				</p>
+</div>
+<a name="N10079"></a><a name="Know+your+enemy+(part+2:+gdal+and+tiff)"></a>
+<h4>Know your enemy (part 2: gdal and tiff)</h4>
+<div>
+<p>
+				If you need raster support through GDAL disable tiff (using <em>--without-tiff</em>) because they don't play well
+				with each other.
+				</p>
+</div>
+<a name="N10086"></a><a name="Know+your+enemy+(part+3:+pdf)"></a>
+<h4>Know your enemy (part 3: pdf)</h4>
+<div>
+<p>
+				PDF is supported as an output format, but it is not worth the price of risking a buggy mapscript.
+				A better solution is to incorporate the image in a PDF document by using a pure Java library like the excellent
+				<em>iText</em>.
+				</p>
+<p>
+				By doing so you will be able to customize headers, footers, paper format and transparencies will also work as supposed.
+				iText additionally supports PDF encryption to disallow printing, editing or modification.
+				</p>
+<p>
+				Also remember that PDF output in mapserver cannot make use of an embedded scalebar because pixmap
+				fonts are not supported.
+				</p>
+</div>
+<a name="N10099"></a><a name="Know+your+enemy+(part+4:+connection+pooling)"></a>
+<h4>Know your enemy (part 4: connection pooling)</h4>
+<div>
+<p>
+				Connection pooling is locked hence thread safe, but as of version 4.8.x (that is until Feb 2006)
+				it has known memory leaks. There is an issue on bugzilla that tracks this problem with Oracle.<br />
+				
+<img src="/images/link-ext.gif" align="middle" /><a href="../../../bugs/show_bug.cgi?id=1662">http://mapserver.gis.umn.edu/bugs/show_bug.cgi?id=1662</a>.
+				</p>
+<p>
+				Until that is cleared you can use connection pooling, just make sure that once in a while the application is
+				restarted or you will eventually run out of memory. How often this should happen depends on the number
+				of database connections defined in the map and the number of users. Sites with 1 or two database connections and
+				moderate to low use could reboot the application (that is the tomcat process in case of web apps) once a day.
+				</p>
+<div class="frame note">
+<div class="label">Note</div>
+<div class="content">
+				There is no way to disable connection pooling.
+				</div>
+</div>
+<p>
+				
+</p>
+</div>
+<a name="N100B2"></a><a name="Know+your+friends"></a>
+<h4>Know your friends</h4>
+<div>
+<p>
+				Java MapScript will <strong>NEVER</strong> work without the following configure flag: <em>--with-threads</em>.
+				Do not complain about you JVM going belly up on the mailing lists if you do not have enabled
+				this option.
+				</p>
+</div>
+<a name="N100C2"></a><a name="compile"></a>
+<h4>The proper way to compile mapscript is...</h4>
+<div>
+<p>
+				To use mapserver and mapscript you will quite likely need to download and install
+				many other libraries and this might not particularly easy as most of
+				them (gdal, for instance) do not have a binary rpm for linux.<br />
+				You have then to find, download all of them and install one by one, solving
+				dependencies by hand. If this is not what you want and need a more portable
+				,reliable and easier to deploy environment you should seriously consider
+				<img src="/images/link-ext.gif" align="middle" /><a href="http://fwtools.maptools.org/">fwtools</a>. Fwtools is collection of the most popular
+				libraries used with mapserver already compiled and ready to run on almost
+				any linux distribution.<br />
+				
+<a href="#againstFwtools">This section</a> describes how to compile mapserver
+				and Java mapscript against fwtools.
+				</p>
+<p>
+				The proper way to compile is to carefully select options as described above, then to run make,
+				cd into mapscript/java and run:
+				</p>
+<pre class="code">make interface<br />make<br />make test<br />				</pre>
+<p>
+				Make interface requires that you have <img src="/images/link-ext.gif" align="middle" /><a href="http://www.swig.org">swig</a> installed, at least version 1.3.21.
+				</p>
+<p>
+				My configure options to build mapscript with support for raster (through gdal), truetype fonts (through freetype),
+				shape files (native, cannot be disabled), projection (through proj) are:
+				</p>
+<pre class="code">./configure --with-freetype --without-tiff --with-gdal=/opt/gdal/bin/gdal-config --with-proj --without-pdf --with-threads<br />				</pre>
+<p>
+				These are known to work (for me at least :-)) and are used in production sites. Note that proj, even
+				if it not used, is required for good operation of mapserver.
+				</p>
+</div>
+<a name="N100F2"></a><a name="againstFwtools"></a>
+<h4>Compiling against fwtools</h4>
+<div>
+<p>
+				Download <img src="/images/link-ext.gif" align="middle" /><a href="http://fwtools.maptools.org/">fwtools</a> and install it. I usually install it in <em>/opt/FWTools-1.0.0b2</em>.
+				Cd into the lib subdirectory and run the following two commands:
+				</p>
+<pre class="code">ln -s libpng.so.2 libpng.so<br />ln -s libfreetype.so.6 libfreetype.so<br />				</pre>
+<p>
+				This is required for mapserver configure script to find and use the freetype
+				and png libraries shipping with fwtools.
+				</p>
+<p>
+				Download latest mapserver and unpack it, then compile it with the following
+				configuration:
+				</p>
+<pre class="code">./configure --enable-debug --with-threads --without-pdf --without-tiff \<br />  --with-gdal=/opt/FWTools-1.0.0b2/bin/gdal-config --with-proj=/opt/FWTools-1.0.0b2/ \<br />  --with-gd=/opt/FWTools-1.0.0b2 --with-freetype=/opt/FWTools-1.0.0b2 \<br />  --with-png=/opt/FWTools-1.0.0b2 --with-zlib=/opt/FWTools-1.0.0b2 --with-jpeg=/opt/FWTools-1.0.0b2<br />				</pre>
+<p>
+				Before you run mapserver or mapscript make sure you load the fwtools environment by running
+				<em>/opt/FWTools-1.0.0b2/fwtools_env.sh</em>.
+				</p>
+</div>
+<a name="N10119"></a><a name="What's+the+deal+with+"></a>
+<h4>What's the deal with make interface?</h4>
+<div>
+<p>
+				When I first used Java mapscript in 2003 running swig was a necessary prerequisite to
+				generate the Java and c wrapper files as the source distribution did not have any. There was a problem
+				though: swig would generate Java methods and c wrappers for all mapserver components (like postgis, wfs or ogr)
+				regardeless of the fact that they were enabled in the <em>configure</em> phase.
+				</p>
+<p>
+				Then I submitted bug <img src="/images/link-ext.gif" align="middle" /><a href="../../../bugs/show_bug.cgi?id=876">#876</a> along with a patch which would
+				let swig know of which components were enabled and consequently generate Java and c wrappers only for them.
+				For the patch to work the user <strong>had to</strong> run make interface.
+				</p>
+<p>
+				The problem then was that a rather new version of swig was required, which was not available on all distros
+				so the developers decided to provide a default version of the Java and c wrappers to help those who
+				did not have a recent swig (at least 1.3.21). That issue should be overcome by now as all
+				linux distros should ship with a swig version that is two years old!
+				<br />
+				So, if you have a recent version of swig (run <em>swig -version</em> to know) you should run make interface
+				to update your Java and c wrappers, even if the README does not recommend it.
+				</p>
+</div>
+</div>
+		
+<a name="N1013C"></a><a name="Running+Java+MapScript+(on+Linux)"></a>
+<h3>Running Java MapScript (on Linux)</h3>
+<div>
+<p>
+			To correctly run any Java MapScript application (be it a servlet, jsp page or a standalone graphical client)
+			you need to let the Java Virtual Machine know where to find two pieces of software:
+			</p>
+<ol>
+				
+<li>
+					
+<em>libmapscript.so</em> whose role is to tie together mapserver and Java</li>
+				
+<li>
+					
+<em>mapscript.jar</em> which provides the mapserver Java objects which interface with libmapscript.so</li>
+			
+</ol>
+<p>
+			The location of the second must be specified on the classpath by means of the <em>CLASSPATH</em> environment variable
+			or the <em>-cp</em> option. The location of the first can be specified using the <em>LD_LIBRARY_PATH</em> variable or the
+			<em>-Djava.library.path</em> option. For an example see the <em>make test</em> command you ran after compiling mapscript.
+			</p>
+<a name="N10166"></a><a name="Dealing+with+unresolved+dependencies"></a>
+<h4>Dealing with unresolved dependencies</h4>
+<div>
+<p>
+				If your Java application brings up an error like the following:
+				</p>
+<pre class="code">javac -classpath ./:examples/:./mapscript.jar -d examples/ examples/*.java<br />java -classpath ./:examples/:./mapscript.jar -Djava.library.path=. DumpShp ../../tests/point.shp<br />java.lang.UnsatisfiedLinkError: /opt-4.4.2/mapscript/java/libmapscript.so:<br />	libgdal.so.1: cannot open shared object file: No such file or directory<br />make: *** [test] Error 255<br />				</pre>
+<p>
+				it means that the gdal library was not found by the linker: this is probably due to the fact that gdal
+				was not supplied by your Linux distro and you installed it from source. In this case you must find the directory
+				where <em>libgdal.so.1</em> is and then add it to the <em>LD_LIBRARY_PATH</em> or the <em>-Djava.library.path</em>.
+				</p>
+<a name="N10180"></a><a name="Specifying+the+library+name"></a>
+<h5>Specifying the library name</h5>
+<div>
+<p>
+					When the JVM attempts to load the shared library it will look by default for a file named <em>libmascript.so</em>
+					in one of the system directories or in those specified by <em>LD_LIBRARY_PATH</em> or <em>-Djava.library.path</em>.<br />
+					If necessary one can tell the JVM to load a shared library with a different name by passing the following
+					argument to the <em>java</em> interpreter: <em>-Dmapserver.library.name=yourname</em>. For instance to load
+					an hypothetical library named libmapscript-debug.so:
+					</p>
+<pre class="code">java -Dmapserver.library.name=mapscript-debug MyJavaProgram<br />					</pre>
+</div>
+</div>
+</div>
+		
+<a name="N101A2"></a><a name="Learning+Java+MapScript"></a>
+<h3>Learning Java MapScript</h3>
+<div>
+<p>
+			If you got this far then by now you probably want to know how to do X in Java MapScript? (replace X with query, zoom, etc).
+			</p>
+<p>
+			To date there is not a tutorial, nor code that you can look at (besides the examples, but that's not much frankly),
+			so the best thing you can do is take the php mapscript example form the mapserver web site and <em>translate</em> it
+			to Java. This is how I did the first time and somehow it worked.
+			</p>
+<p>
+			Additional documentation is in the mapserver sources in <em>mapscript/doc</em>.
+			</p>
+<a name="N101B7"></a><a name="QueryByPoint+example"></a>
+<h4>QueryByPoint example</h4>
+<div>
+<p>
+				The following is an example of a working code snippets that opens a layer and queries
+				its features by shape. It has been used succesfully against shape and postgis sources.
+				</p>
+<p>
+				Note the usage of the <img src="/images/link-ext.gif" align="middle" /><a href="http://jakarta.apache.org/commons/logging/">commons-logging</a> api for debuggins the code.
+				</p>
+<pre class="code">protected List queryLayerByPoint(int i, pointObj queryPoint) {<br />   List results = new ArrayList();<br /><br />   layerObj layer = map.getLayer(i);<br />   if (layer != null &amp;&amp; isVisible(layer)) {<br />	   if (log.isDebugEnabled()) {<br />		   log.debug("Querying layer: " + layer.getName());<br />	   }<br />	   if (layer.queryByPoint(map, queryPoint,mapscript.MS_MULTIPLE, -1) == mapscript.MS_SUCCESS) {<br />		   // OLD pre 4.2 code, see http://mapserver.gis.umn.edu/docs/howto/mapscript_querying<br />		   //resultCacheObj resultCache = layer.ggetResultcache();<br />		   if (layer.open() == mapscript.MS_SUCCESS) {<br />			   // OLD pre 4.4 code<br />			   //for (int j=0;j &lt; resultCache.getNumresults();j++) {<br />			   for (int j = 0; j &lt; layer.getNumResults(); j++) {<br />				   if (log.isDebugEnabled())<br />					   log.debug("Layer " + layer.getName() + ", result number:" + j);<br />				   resultCacheMemberObj resultMember = layer.getResult(j);<br />				   shapeObj shape = new shapeObj(layer.getType());<br />				   layer.getShape(shape,resultMember.getTileindex(), resultMember.getShapeindex());<br />				   if (shape != null) {<br />					   Map aResult = getResult(shape, layer);<br /><br />					   results.add(aResult);<br />				   } else {<br />					   log.error("Shape " + j + " is null!");<br />				   }<br />			   }<br />			   layer.close();<br />		   } else {<br />			   log.error("Cannot open layer: " + layer.getName());<br />		   }<br />	   } else {<br />		   log.info("Query on layer " + layer.getName() + " failed.");<br />	   }<br />   }<br />   return results;<br />}<br />				</pre>
+</div>
+</div>
+		
+<a name="N101CE"></a><a name="What+to+do+if+mapscript+crashes"></a>
+<h3>What to do if mapscript crashes</h3>
+<div>
+<p>
+			Make sure that you have done all I have suggested here, in particular review the list
+			of unsafe components. After that try to isolate the piece of code that is
+			failing: if you cannot do that because errors are random then look for a <em>hs_err*.log</em> somewhere
+			in your filesystem. That is the file that the JVM creates when a crash occurs.
+			</p>
+<p>
+			The file should report a stack trace that will tell you more or less exactly where the crash happened.
+			Review that piece of code and eventually ask on the mailing list. Before you ask on the mailing list
+			gather all information that you have available and that will be useful to diagnose the problem.
+			A good report should include:
+			</p>
+<ul>
+				
+<li>Linux version (both kernel and distro). Can be obtained by running: <em>uname -a</em>
+				
+</li>
+				
+<li>GCC Version: <em>gcc --version</em>
+				
+</li>
+				
+<li>mapserver version and compile flags: run <em>mapserv -v</em> and/or report the configure flags</li>
+				
+<li>Java version and vendor: <em>java -version</em>
+				
+</li>
+				
+<li>swig version (if used): <em>swig -version</em>
+				
+</li>
+				
+<li>support libraries used and their version: gdal, proj, curl, postgis, etc</li>
+				
+<li>whatever you think could help</li>
+			
+</ul>
+<p>
+			Additionally some will definitely find telling the reading of the venerable guide:
+			<img src="/images/link-ext.gif" align="middle" /><a href="http://www.catb.org/%7Eesr/faqs/smart-questions.html">how to ask questions the smart way</a>.
+			</p></div>
