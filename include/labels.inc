@@ -3,11 +3,14 @@
 	============================   =============================================================================================
 	Label                          Title
 	============================   =============================================================================================
+	about                          :ref:`About <about>`
 	agg                            :ref:`AGG Rendering Specifics <agg>`
 	antialias                      :ref:`AntiAliasing with MapServer <antialias>`
 	arcinfo                        :ref:`ArcInfo <arcinfo>`
 	arcsde                         :ref:`ArcSDE <arcsde>`
 	autotest                       :ref:`Regression Testing <autotest>`
+	background                     :ref:`Tutorial Timeframe <background>`
+	batch_utilities                :ref:`Batch Scripting <batch_utilities>`
 	bugs                           :ref:`Bug Submission <bugs>`
 	cgi                            :ref:`CGI <cgi>`
 	cgi_controls                   :ref:`MapServer CGI Controls <cgi_controls>`
@@ -16,13 +19,31 @@
 	community                      :ref:`Community Activities <community>`
 	development                    :ref:`Development <development>`
 	dgn                            :ref:`DGN <dgn>`
-	documentation                  :ref:`MapServer 5.2.1 Documentation <documentation>`
+	documentation                  :ref:`MapServer 5.2.2 Documentation <documentation>`
+	documentation_development      :ref:`Documentation Development Guide <documentation_development>`
 	dotnet_compile                 :ref:`.NET MapScript Compilation <dotnet_compile>`
 	download                       :ref:`Download <download>`
 	dynamic_charting               :ref:`Dynamic Charting <dynamic_charting>`
 	editing                        :ref:`Mapfile Editing <editing>`
 	errors                         :ref:`Errors <errors>`
+	example1-1                     :ref:`Example 1.1 <example1-1>`
+	example1-1-map                 :ref:`Example1-1.map <example1-1-map>`
+	example1-2                     :ref:`Example 1.2 <example1-2>`
+	example1-2-map                 :ref:`Example1-2.map <example1-2-map>`
+	example1-3                     :ref:`Example 1.3 <example1-3>`
+	example1-3-map                 :ref:`Example1-3.map <example1-3-map>`
+	example1-4                     :ref:`Example 1.4 <example1-4>`
+	example1-4-map                 :ref:`Example1-4.map <example1-4-map>`
+	example1-5                     :ref:`Example 1.5 <example1-5>`
+	example1-5-map                 :ref:`Example1-5.map <example1-5-map>`
+	example1-6                     :ref:`Example 1.6 <example1-6>`
+	example1-6-map                 :ref:`Example1-6.map <example1-6-map>`
+	example1-7                     :ref:`Example 1.7 <example1-7>`
+	example1-7-map                 :ref:`Example1-7.map <example1-7-map>`
+	example1-8                     :ref:`Example 1.8 <example1-8>`
+	example1-8-map                 :ref:`Example1-8.map <example1-8-map>`
 	expressions                    :ref:`Expressions <expressions>`
+	faq                            :ref:`FAQ <faq>`
 	fastcgi                        :ref:`FastCGI <fastcgi>`
 	feature                        :ref:`FEATURE <feature>`
 	filter_encoding                :ref:`WFS Filter Encoding <filter_encoding>`
@@ -32,8 +53,8 @@
 	genindex                       :ref:`genindex`
 	gloss                          :ref:`Glossary <gloss>`
 	gml                            :ref:`GML <gml>`
+	gpx                            :ref:`GPS Exchange Format (GPX) <gpx>`
 	grid                           :ref:`GRID <grid>`
-	home                           :ref:`Welcome to MapServer <home>`
 	html_legend                    :ref:`HTML Legends with MapServer <html_legend>`
 	iis                            :ref:`IIS Setup for MapServer <iis>`
 	imagemaps                      :ref:`HTML Imagemaps <imagemaps>`
@@ -53,7 +74,7 @@
 	license                        :ref:`License <license>`
 	linux                          :ref:`Linux <linux>`
 	lists                          :ref:`Mailing Lists <lists>`
-	management                     :ref:`Management <management>`
+	management                     :ref:`File Management <management>`
 	map                            :ref:`MAP <map>`
 	map_context                    :ref:`Map Context <map_context>`
 	mapcontext_cgi                 :ref:`Map Context Files <mapcontext_cgi>`
@@ -83,6 +104,7 @@
 	php                            :ref:`PHP MapScript <php>`
 	php_example                    :ref:`By Example <php_example>`
 	php_install                    :ref:`PHP MapScript Installation <php_install>`
+	php_install_example_steps      :ref:`Example Steps of a Full Windows Installation <php_install_example_steps>`
 	projection                     :ref:`PROJECTION <projection>`
 	python                         :ref:`Python MapScript Appendix <python>`
 	querying                       :ref:`Querying <querying>`
@@ -105,8 +127,8 @@
 	rfc21                          :ref:`MS RFC 21: MapServer Raster Color Correction <rfc21>`
 	rfc22a                         :ref:`MS RFC 22a: Feature cache for long running processes and query processing <rfc22a>`
 	rfc23                          :ref:`MS RFC 23: Technical Steering Committee Guidelines <rfc23>`
-	rfc24                          :ref:`MS RFC 24: MapScript memory management <rfc24>`
-	rfc24first                     :ref:`MS RFC 24: MapScript memory management <rfc24first>`
+	rfc24                          :ref:`MS RFC 24: Mapscript memory management <rfc24>`
+	rfc24first                     :ref:`MS RFC 24: Mapscript memory management <rfc24first>`
 	rfc25                          :ref:`MS RFC 25: Align MapServer pixel and extent models with OGC models <rfc25>`
 	rfc26                          :ref:`MS RFC 26: Version 5 Terminology Cleanup <rfc26>`
 	rfc27                          :ref:`MS RFC 27: Label Priority <rfc27>`
@@ -131,6 +153,11 @@
 	rfc49                          :ref:`MS RFC 49: Symbology, Labeling, and Cartography Improvements <rfc49>`
 	rfc5                           :ref:`MS RFC 5: MapServer Horizon Reprojection Improvements <rfc5>`
 	rfc50                          :ref:`MS RFC 50: OpenGL Rendering Support <rfc50>`
+	rfc51                          :ref:`MS RFC 51: XML Mapfile Format <rfc51>`
+	rfc53                          :ref:`MS RFC 53: Guidelines for MapScript method return values <rfc53>`
+	rfc54                          :ref:`MS RFC 54: Rendering Interface API <rfc54>`
+	rfc55                          :ref:`MS RFC 55: Improve control of output resolution <rfc55>`
+	rfc56                          :ref:`MS RFC 56: Tighten control of access to mapfiles and templates <rfc56>`
 	rfc6                           :ref:`MS RFC 6: Color Range Mapping of Continuous Feature Values <rfc6>`
 	rfc7                           :ref:`MS RFC 7: MapServer CVS Commit Management <rfc7>`
 	rfc7.1                         :ref:`MS RFC 7.1: MapServer SVN Commit Management <rfc7.1>`
@@ -143,6 +170,8 @@
 	scalebar_utility               :ref:`scalebar <scalebar_utility>`
 	sdts                           :ref:`SDTS <sdts>`
 	search                         :ref:`search`
+	section1                       :ref:`Section 1: Static Maps and the MapFile <section1>`
+	section2                       :ref:`Section 2: CGI variables and the User Interface <section2>`
 	shapefiles                     :ref:`ESRI Shapefiles (SHP) <shapefiles>`
 	shp2img                        :ref:`shp2img <shp2img>`
 	shptree                        :ref:`shptree <shptree>`
@@ -153,10 +182,11 @@
 	source                         :ref:`Source <source>`
 	sponsors                       :ref:`Sponsors <sponsors>`
 	style                          :ref:`STYLE <style>`
+	styleitemauto-label-styles     :ref:`Accessing OGR STYLEITEMAUTO Label Styles Through MapScript <styleitemauto-label-styles>`
 	svg                            :ref:`SVG <svg>`
 	svn                            :ref:`Subversion <svn>`
 	swig                           :ref:`SWIG MapScript API Reference <swig>`
-	sym2img                        :ref:`legend <sym2img>`
+	sym2img                        :ref:`sym2img <sym2img>`
 	sym_construction               :ref:`Cartographic Symbol Construction with MapServer <sym_construction>`
 	sym_examples                   :ref:`Symbology Examples <sym_examples>`
 	symbol                         :ref:`SYMBOL <symbol>`
@@ -166,6 +196,7 @@
 	tile4ms                        :ref:`tile4ms <tile4ms>`
 	tile_mode                      :ref:`Tile Mode <tile_mode>`
 	tileindex                      :ref:`Tile Indexes <tileindex>`
+	tutorial                       :ref:`MapServer Tutorial <tutorial>`
 	unix                           :ref:`Compiling on Unix <unix>`
 	utilities                      :ref:`Utilities <utilities>`
 	variable_sub                   :ref:`Variable Substitution <variable_sub>`
