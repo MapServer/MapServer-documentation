@@ -24,14 +24,14 @@ class CollectLabelsBuilder(Builder):
        outfile.write('\t============================   =============================================================================================\n')
        outfile.write('\t%s %s\n' % ('Label'.ljust(30), 'Title'))
        outfile.write('\t============================   =============================================================================================\n')
-       
+
        unlabeled = ['genindex','search','modindex']
        for docname, items in groupby(labels, key=lambda x: x[1][0]):
            for label in items:
                if label[0] in unlabeled:
-                   outfile.write("""\t%s :ref:`%s`\n""" % (label[0].ljust(30), label[0]))
+                   outfile.write("""\t%s :ref:`%s`\n""" % ((label[0].ljust(30)).encode("utf-8"), label[0].encode("utf-8")))
                else:
-                   outfile.write("""\t%s :ref:`%s <%s>`\n""" % (label[0].ljust(30), label[1][2],label[0]))
+                   outfile.write("""\t%s :ref:`%s <%s>`\n""" %((label[0].ljust(30)).encode("utf-8"),(label[1][2]).encode("utf-8"),(label[0]).encode("utf-8")))
 
        outfile.write('\t============================   =============================================================================================\n')
 
