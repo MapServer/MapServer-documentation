@@ -1,0 +1,90 @@
+MS RFC 52: One-pass query processing
+======================================================================
+
+:Date: 2009/03/08
+:Authors: Steve Lime
+:Contact: sdlime at comcast.net
+:Last Edited: 2009/03/08
+:Status: Draft
+:Version: MapServer 6.0
+:Id:
+
+Overview
+------------------------------------------------------------------------------
+This RFC proposes change(s) to the current of query (by point, by box, by shape, 
+etc...) processing in MapServer.
+
+Presently MapServer supports a very flexible query mechanism that utilizes two
+passes through the data. This works by caching a list of feature IDs (pass one)
+and then a second pass through the features for presentation (template, drawing,
+or retrieval via MapScript. The obvious problem is the performance hit incurred
+from the second pass. The real pain is that the msLayerGetShape() function, as 
+implemented, provides random access to the data which can be very expensive for
+certain drivers.
+
+Technical Solution
+------------------------------------------------------------------------------
+There are a number of potential solutions:
+
+1. One could cache the returned shapes in memory. While this wouldn't result in 
+a true single-pass, you wouldn't have to go back to the original driver twice. 
+However, it could lead to large memory consumption with even moderately-sized 
+datasets. Multiple clients accessing services at the same time would only 
+compound the problems.
+
+2. Another solution would be fold much of the query pre-  and post-processing 
+code into the msLayerWhichShapes() and msLayerNextShapes() functions so that
+the access paradigm used in drawing layers could be used. Subsequent research
+has let us to conclude that a true single pass is not possible in some cases.
+For example, GML requires a result set envelope be written out before writing
+individual features. There's no way to get that initial envelope without a 
+pass through the features. It's simply not worth the investment in time...
+
+3. A final solution would be to change how the msLayerGetShape() function 
+behaves. We prepose changing the behavior of that function to provide random
+access to a result set (as defined by msLayerWhichShapes()) rather than the 
+entire data set. This removes most of the overhead currently incurred by 
+referencing the results already returned by the data driver in the intial 
+query.
+
+Under this last solution data drivers would need to do two things:
+
+  * update the population shapeObj index property (long int) with a value that 
+    will allow msLayerGetShape() to randomly access a result 
+
+  * update the driver-specific version of msLayerGetShape() to retrieve a shape
+    from the results created in msLayerWhichShapes()
+
+The query functions would need to:
+
+  * not close the layer when finished with a query (we assume that users will 
+    want to do something with the results)
+
+  * allow msLayerWhichItems() to retrieve ALL items so that the retreived
+    shapes are presentation-ready (draw, template, or ...)
+
+Backwards Compatability Issues
+------------------------------------------------------------------------------
+This solution preserved 95% of the current functionality. Because we are proposing
+to change the behaviour of msLayerGetShape() to be specific to query processing.
+While this has always been the intentional use, there's nothing to stop a user
+from using that method (in MapScript) in other ways.  
+
+A typical MapScript query and process results operation would be unchanged.
+
+One casualty would be the query save/read functions. Since the processing of 
+a set of results would be specific to dataset result handle it won't be 
+possible to get back to a result once a layer is ultimately closed.
+
+Files Impacted
+------------------------------------------------------------------------------
+
+* driver files: changes to shape fetching code
+
+* maptemplate.c: don't open/close a layer
+
+* mapgml.c: don't open/close a layer
+
+* mapdraw.c: don't open/close a layer IF if drawing a query map
+
+* maputil.c: refactor msLayerWhichItems()
