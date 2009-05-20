@@ -1,15 +1,19 @@
 # Makefile for Sphinx documentation
 #
+# $(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/$$lang;
+#
 
 # You can set these variables from the command line.
+BUILDDIR     = build
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
+LANGUAGES     = en de
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
-ALLSPHINXOPTS   = -d build/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees/$$lang $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -A language=$$lang -D language=$$lang
 
 .PHONY: help clean html web pickle htmlhelp latex changes linkcheck
 
@@ -27,57 +31,100 @@ clean:
 	-rm -rf build/*
 
 html:
-	mkdir -p build/html build/doctrees
-	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) build/html
+	@for lang in $(LANGUAGES);\
+	do \
+		mkdir -p $(BUILDDIR)/html/$$lang $(BUILDDIR)/doctrees/$$lang; \
+		$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/html/$$lang;\
+		cp -R _static $(BUILDDIR)/html/; \
+	done
 	@echo
-	@echo "Build finished. The HTML pages are in build/html."
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html/<language>.";\
+
 
 pickle:
-	mkdir -p build/pickle build/doctrees
-	$(SPHINXBUILD) -b pickle $(ALLSPHINXOPTS) build/pickle
+	@for lang in $(LANGUAGES);\
+	do \
+		mkdir -p $(BUILDDIR)/pickle/$$lang $(BUILDDIR)/doctrees/$$lang; \
+		$(SPHINXBUILD) -b pickle $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/pickle/$$lang;\
+	done
 	@echo
 	@echo "Build finished; now you can process the pickle files."
 
 web: pickle
 
 json:
-	mkdir -p build/json build/doctrees
-	$(SPHINXBUILD) -b json $(ALLSPHINXOPTS) build/json
+	@for lang in $(LANGUAGES);\
+	do \
+		mkdir -p $(BUILDDIR)/json/$$lang $(BUILDDIR)/doctrees/$$lang; \
+		$(SPHINXBUILD) -b json $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/json/$$lang;\
+	done
 	@echo
 	@echo "Build finished; now you can process the JSON files."
 
 htmlhelp:
-	mkdir -p build/htmlhelp build/doctrees
-	$(SPHINXBUILD) -b htmlhelp $(ALLSPHINXOPTS) build/htmlhelp
+	@for lang in $(LANGUAGES);\
+	do \
+		mkdir -p $(BUILDDIR)/htmlhelp/$$lang $(BUILDDIR)/doctrees/$$lang; \
+		$(SPHINXBUILD) -b htmlhelp $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/htmlhelp/$$lang;\
+	done
 	@echo
 	@echo "Build finished; now you can run HTML Help Workshop with the" \
-	      ".hhp project file in build/htmlhelp."
+	      ".hhp project file in $(BUILDDIR)/htmlhelp/<language>."
 
 latex:
-	mkdir -p build/latex build/doctrees
-	$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) build/latex
+	@for lang in $(LANGUAGES);\
+	do \
+		mkdir -p $(BUILDDIR)/latex/$$lang $(BUILDDIR)/doctrees/$$lang; \
+		$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/latex/$$lang;\
+	done
 	@echo
-	@echo "Build finished; the LaTeX files are in build/latex."
-	@echo "Run \`make all-pdf' or \`make all-ps' in that directory to" \
-	      "run these through (pdf)latex."
+	@echo "Build finished; the LaTeX files are in $(BUILDDIR)/latex/<language>."\
+	@echo "Run \`make all-pdf' or \`make all-ps'"
+
+all-pdf:
+	@for lang in $(LANGUAGES);\
+	do \
+		/usr/bin/make -C $(BUILDDIR)/latex/$$lang all-pdf ; \
+		if [ -d $(BUILDDIR)/html/$$lang ]; then \
+		mv -f $(BUILDDIR)/latex/$$lang/MapServer.pdf $(BUILDDIR)/html/$$lang ; \
+		fi \
+	done
+
+all-ps:
+	@for lang in $(LANGUAGES);\
+	do \
+		/usr/bin/make -C $(BUILDDIR)/latex/$$lang all-ps ; \
+		if [ -d $(BUILDDIR)/html/$$lang ]; then \
+		mv -f $(BUILDDIR)/latex/$$lang/MapServer.pdf $(BUILDDIR)/html/$$lang ; \
+		fi \
+	done
 
 changes:
-	mkdir -p build/changes build/doctrees
-	$(SPHINXBUILD) -b changes $(ALLSPHINXOPTS) build/changes
+	@for lang in $(LANGUAGES);\
+	do \
+		mkdir -p $(BUILDDIR)/changes/$$lang $(BUILDDIR)/doctrees/$$lang; \
+		$(SPHINXBUILD) -b changes $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/changes/$$lang;\
+	done
 	@echo
-	@echo "The overview file is in build/changes."
+	@echo "The overview file is in $(BUILDDIR)/changes/<language>."
 
 linkcheck:
-	mkdir -p build/linkcheck build/doctrees
-	$(SPHINXBUILD) -b linkcheck $(ALLSPHINXOPTS) build/linkcheck
+	@for lang in $(LANGUAGES);\
+	do \
+		mkdir -p $(BUILDDIR)/linkcheck/$$lang $(BUILDDIR)/doctrees/$$lang; \
+		$(SPHINXBUILD) -b linkcheck $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/linkcheck/$$lang;\
+	done
 	@echo
 	@echo "Link check complete; look for any errors in the above output " \
-	      "or in build/linkcheck/output.txt."
+	      "or in $(BUILDDIR)/linkcheck/<language>/output.txt."
 
 labels:
-	mkdir -p build/labels build/doctrees
-	$(SPHINXBUILD) -b labels $(ALLSPHINXOPTS) build/labels
+	@for lang in $(LANGUAGES);\
+	do \
+		mkdir -p $(BUILDDIR)/labels/$$lang $(BUILDDIR)/doctrees/$$lang; \
+		$(SPHINXBUILD) -b labels $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/labels/$$lang;\
+		cp $(BUILDDIR)/labels/$$lang/labels.txt $$lang/include/labels.inc;\
+	done
 	@echo
-	@echo "Link check complete; look for any errors in the above output " \
-	      "or in build/labels/output.txt."
-	cp build/labels/labels.txt include/labels.inc
+	@echo "Label generation complete; look for any errors in the above output " \
+	      "or in $(BUILDDIR)/labels/<language>/labels.txt."
