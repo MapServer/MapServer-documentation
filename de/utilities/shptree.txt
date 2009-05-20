@@ -1,0 +1,85 @@
+.. _shptree:
+
+*****************************************************************************
+ shptree
+*****************************************************************************
+
+
+Zweck
+-----------------------------------------------------------------------------
+Erzeugt einen Quadtree-basierten räumlichen Index für ein Shapefile. Die
+Standardbaumtiefe wird so bestimmt, dass jeder Knoten (Quadtree-Zelle) 8 Elemente
+enthält. Für Punkt-Shapefiles sollte statt dem Standardwert ein Wert zwischen
+6 und 10 genommen werden. Erfahrungsgemäß benötigt man einige Versuche um
+einen passenden Wert zu finden.
+
+Die `shptree Wiki-Seite <http://trac.osgeo.org/mapserver/wiki/ShpTree>`__
+enthält weitere Informationen zu diesem Tool.
+
+Beschreibung
+-----------------------------------------------------------------------------
+Dieses Werkzeug ist ein Muss für jede MapServer-Anwendung basierend auf
+Shapefiles. Shptree erzeugt, unter Verwendung der Quadtree-Methode, einen
+räumlichen Index für jedes Shapefile. Dieser Index wird von MapServer benutzt
+um die gewünschten Elemente schnell zu finden. Es wird eine Datei mit dem Namen
+des Shapefiles und der Endung *.qix* etstellt.
+Die Quadtree-Methode teilt die Datei rekursiv in 4 Quadranten, bis nur noch
+einige Elemente in jedem Quadrant enthalten sind. Die Mindestanzahl kann mit dem
+Parameter <depth> festgelegt werden.
+
+
+Syntax
+-----------------------------------------------------------------------------
+::
+
+    shptree <shpfile> [<depth>] [<index_format>]
+      Where:
+      <shpfile> is the name of the .shp file to index.
+      <depth>   (optional) is the maximum depth of the inde
+           to create, default is 0 meaning that shptre
+           will calculate a reasonable default depth.
+      <index_format> (optional) is one of:
+           NL: LSB byte order, using new index format
+           NM: MSB byte order, using new index format
+       The following old format options are deprecated
+           N:  Native byte order
+           L:  LSB (intel) byte order
+           M:  MSB byte order
+       The default index_format on this system is: NL
+
+Beispiel
+
+::
+
+    shptree us_states.shp
+      creating index of new  LSB format
+
+Ergebnis
+  Eine Datei mit Namen 'us_states.qix' wird an der selben Stelle wie das
+  Shapefile erstellt. (Mit shptreevis können die erstellten Quadtree-Quadranten
+  angeschaut werden.)
+
+Mapfile Hinweise
+-----------------------------------------------------------------------------
+
+Die Unterstützung für Shapefiles ist im MapServer eingebaut, deswegen muss die
+Erweiterung *.shp* im DATA Pfad des LAYER nicht angegeben werden. Im folgenden
+ist das Verhalten von MapServer für Versionen < 5.2 beschrieben:
+
+.. code-block:: mapfile
+
+    LAYER
+      ...
+      DATA "us_states"    #MapServer sucht nach us_states.qix und wird es benutzen
+      ...
+    END
+
+    LAYER
+      ...
+      DATA "us_states.shp"    #MapServer sucht nach us_states.shp.qix und findet nichts
+      ...
+    END
+
+.. note::
+    Ab Mapserver 5.2 wird die Indexdatei qix auch benutzt, wenn die Erweiterung
+    .shp angegeben wurde.

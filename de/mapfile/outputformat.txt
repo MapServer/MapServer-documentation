@@ -1,0 +1,168 @@
+.. _outputformat:
+
+*****************************************************************************
+ OUTPUTFORMAT
+*****************************************************************************
+
+Ein Mapfile kann null, eine oder mehrere Ausgabeformate (OUTPUTFORMAT) 
+Objekte beinhalten, die verfügbare Ausgabeformate wie PNG, GIF, JPEG, GeoTIFF 
+und Flash (SWF) definieren.
+
+Wird kein OUTPUTFORMAT Block im Mapfile gefunden, werden folgende Formate
+implizit deklariert. Dabei sind nur die Formate verfügbar die bei der
+Kompilierung angegeben wurden. GeoTIFF hängt dabei von GDAL Unterstützung ab
+und für Flash (SWF) wird die MING Bibliothek benötigt.
+
+  
+.. code-block:: mapfile
+
+    OUTPUTFORMAT
+      NAME aggpng24
+      DRIVER AGG/PNG
+      MIMETYPE "image/png"
+      IMAGEMODE RGB
+      EXTENSION "png"
+    END
+    OUTPUTFORMAT
+      NAME gif
+      DRIVER "GD/GIF"
+      MIMETYPE "image/gif"
+      IMAGEMODE PC256
+      EXTENSION "gif"
+    END
+    OUTPUTFORMAT
+      NAME png
+      DRIVER "GD/PNG"
+      MIMETYPE "image/png"
+      IMAGEMODE PC256
+      EXTENSION "png"
+    END
+    OUTPUTFORMAT
+      NAME jpeg
+      DRIVER "GD/JPEG"
+      MIMETYPE "image/jpeg"
+      IMAGEMODE RGB
+      EXTENSION "jpg"
+    END
+    OUTPUTFORMAT
+      NAME wbmp
+      DRIVER "GD/WBMP"
+      MIMETYPE "image/wbmp"
+      IMAGEMODE PC256
+      EXTENSION "wbmp"
+    END
+    OUTPUTFORMAT
+      NAME swf
+      DRIVER "SWF"
+      MIMETYPE "application/x-shockwave-flash"
+      EXTENSION "swf"
+      IMAGEMODE PC256
+      FORMATOPTION "OUTPUT_MOVIE=SINGLE"
+    END
+    OUTPUTFORMAT
+      NAME GTiff
+      DRIVER "GDAL/GTiff"
+      MIMETYPE "image/tiff"
+      IMAGEMODE RGB
+      EXTENSION "tif"
+    END
+
+NAME [name]
+    Der Name der vom IMAGETYPE Schlüsselwort benutzt wird um dieses 
+    Ausgabeformat auszuwählen. (optional)
+
+DRIVER [name]
+    Name des Treibers der benutzt wird um dieses Ausgabeformat zu erzeugen.
+    Einige Treiber geben die Formatdefinition im Namen mit an, falls mehrere
+    Formatdefinitionen unterstützt werden. Für AGG sind die möglichen Namen
+    "AG/PNG" und "AGG/JPEG". Für GD "GD/Gif", "GD/PNG", "GD/WBMP" und "GD/JPEG".
+    Für Flash gibt es nur "SWF". Für die Ausgabe durch GDAL wird der 
+    GDAL-Kurzname des Formats angehängt, z.B. "GDAL/GTiff". PNG, JPEG und GIF
+    können sowohl mit GDAL als auch GD erzeugt werden, wobei GD im allgemeinen
+    effizienter ist. (Pflichtangabe)
+
+IMAGEMODE [PC256/RGB/RGBA/INT16/FLOAT32]
+    Bestimmt den Zeichenmodus in dem das Kartenbild erzeugt wird. Ist wichtig
+    für Nicht-Rasterformate wie Flash. Nicht alle Formate unterstützen alle
+    kombinationen. So unterstützt GD/GIF nur PC256. (optional)    
+
+    - PC256: Erzeugt eine Ausgabe mit Falschfarben mit bis zu 256 Farben in 
+      der Palette (traditioneller MapServer Modus).
+    - RGB: Ausgabe im 24bit Rot/Grün/Blau Modus. Unterstützt alle Farben aber
+      keine Transparenz.
+    - RGBA: Ausgabe im 32bit Rot/Grün/Blau/Alpha Modus. Unterstützt alle Farben
+      und Alpha-Transparenz. Alle Objekte werden mit einem transparentem 
+      Hintergrund gezeichnet.
+    - BYTE: Ausgabe von 8bit-Pixel-Werten (keine Darstellung). Derzeit nur für
+      RASTER Layer (durch GDAL) und WMS Layer verfügbar.
+    - INT16: Ausgabe von vorzeichenbehafteten 16bit Werten (keine Darstellung).
+      Derzeit nur für RASTER Layer (durch GDAL) und WMS Layer verfügbar.
+    - FLOAT32: Ausgabe von 32bit Gleitkomma Pixel Werten (keine Darstellung). 
+      Derzeit nur für RASTER Layer (durch GDAL) und WMS Layer verfügbar.
+
+MIMETYPE [type]
+    Legt den Mime-Typ fest, der für Web-Ausgaben benutzt wird.(optional)
+
+EXTENSION [type]
+    Legt die Dateinamenerweiterung für erzeugte Dateien fest. (optional)
+
+TRANSPARENT [ON/OFF]
+    Gibt an ob Transparenz für dieses Format aktiviert wird. Für IMAGEMODE RGB
+    steht keine Transparenz zur Verfügung. Nicht alle Formate unterstützen
+    Transparenz (optional).
+    Wird z.B. für die 8bit Falschfarben-Ausgabe Transparenz aktiviert, wird die
+    per IMAGECOLOR angegebene Farbe in der Ausgabepalette als trnasparent
+    markiert. Alle anderen Kartenelemente mit der Farbe werden ebenfalls 
+    transparent. Für die Erstellung von Karten mit Transparenz sollte deshalb 
+    eine Farbe als Hintergrundfarbe benutzt werden, die in der Karte sonst 
+    nicht vorkommt.
+
+.. _FORMATOPTION:
+
+FORMATOPTION [option]
+    Stellt einen Treiber oder formatspezifische Optionen zur Verfügung. Es
+    können 0 oder mehr FORMATOPTION Angaben in dem OUTPUTFORMAT Block
+    angegeben werden. (optional)
+
+    - GD/JPEG: Mit der Angabe "QUALITY=n" kann die Qualität der Ausgabe
+      beeinflußt werden (Werte von 0-100).
+    - GD/PNG: Die Angabe "INTERLACE=[ON/OFF]" schaltet Interlacing an oder aus.
+    - GD/GIF: Die Angabe "INTERLACE=[ON/OFF]" schaltet Interlacing an oder aus.
+    - GDAL/GTiff: unterstützt die Optionen TILED=YES, BLOCKXSIZE=n, 
+      BLOCKYSIZE=n, INTERLEAVE=[PIXEL/BAND] und 
+      COMPRESS=[NONE,PACKBITS,JPEG,LZW,DEFLATE] 
+    - GDAL/\*: Alle FORMATOPTIONen werden an die GDAL-Funktion create 
+      weitergereicht. Die verfügbaren Optionen sind detailiert in der GDAL
+      Dokumentation aufgeführt.
+    - GD/PNG und AGG/PNG unterstützen beide Quantitisierung von 24/32 Bits zu
+      8 Bits um die Ausgabegröße der erzeugten Bilddateien zu reduzieren (und 
+      damit auch Bandbreite). (Siehe auch 
+      http://trac.osgeo.org/mapserver/ticket/2436#comment:4 für Regeln der
+      Anwendungsreihenfolge):
+
+        - "QUANTIZE_FORCE=on" wird benutzt um ein RGB oder RGBA Bild in ein 
+          8 Bit (oder weniger) Bild mit Farbpalette umzuwandeln. Die Farben die
+          für die Palette gewählt werden sind geeignet den wirklichen Farben in
+          dem RGB Bild zu entsprechen. (RGBA Quantitisierung wurde in Version
+          5.2 eingeführt und benötigt das Flag --enable-experimental-png bei
+          der Konfiguration)
+        - "QUANTIZE_COLORS=256" wird benutzt um die Anzahl der Farben anzugeben
+          wenn Quantitisierung angewandt wird. Der Maximalwert beträgt 256. 
+          Für Angaben zwischen 17 und 255 wird wahrscheinlich Qualität 
+          verschenkt, da jedes Pixel dennoch mit einem ganzen Byte kodiert 
+          wird. Angaben unter 16 erzeugen sehr kleine Bilddateien, jedoch mit
+          extrem verminderter Qualität.
+        - "QUANTIZE_NEW=on" wird benutzt um einen anderen Algorithmus (bessere
+          Qualität, aber langsamer) für die Quantitisierung zu benutzen. Bei
+          Standardverhalten wird ein schneller aber sehr einfacher Algorithmus
+          benutzt. Dadurch erhält man doppelte Einträge in der Palette und
+          sichtbare Artifakte bei der Kachelung.
+        - "PALETTE_FORCE=on" wird benutzt um die Farbtiefe mit einer 
+          vordefinierten Palette zu reduzieren. Diese Option ist inkompatible
+          mit den oben aufgeführten Quantitisierungsoptionen.
+        - "PALETTE=/path/to/palette.txt" wird benutzt um den Pfad zu den 
+          Palettenfarben anzugeben. Diese Datei sollte 256 Einträge der Form
+          r,g,b für RGB Farbmodi oder r,g,b,a für RGBA Farbmodi enthalten.
+          Jede Zeile enthält genau ein Dreierpaar (oder Viererpaar), die Werte
+          sind durch Kommata getrennt. Enthält die Datei weniger als 256 
+          Einträge, werden die restlichen Farben per Quantitisierung bestimmt.

@@ -1,0 +1,327 @@
+.. _map:
+
+*****************************************************************************
+ MAP
+*****************************************************************************
+
+ANGLE [double]
+   Winkel, in Grad, um den die Karte rotiert wird. Standard ist 0. Die gerenderte
+   Karte wird im Uhrzeigersinn rotiert. Folgende Bedingungen müssen beachtet werden:
+
+   - Erfordert die Angabe eines :ref:`projection` Objektes auf MAP-Ebende und für 
+     jedes :ref:`layer` Objekt (auch wenn alle Ebenen die selbe Projektion benutzen). 
+
+   - Erfordert :ref:`MapScript <mapscript>` (:ref:`SWIG <swig>`, :ref:`PHP
+     MapScript <php>`). Funktioniert nicht im :ref:`CGI <cgi>` Modus.
+
+   - Werden die Parameter ANGLE des :ref:`LABEL` Objektes oder LABELANGLEITEM des 
+     :ref:`LAYER` Objektes benutzt, sind diese Parameter relativ zu der 
+     Kartenrotation (d.h. sie werden nach dem Winkel des MAP Objektes berechnet).
+     Wird beispielsweise ANGLE mit 45 für das MAP Objekt angegeben, und bei einem
+     Layer LABELANGLEITEM mit 45, so wird das Label nicht rotiert dargestellt. Die
+     Karte wird 45 Grad im Uhrzeigersinn gedreht und das Label 45 Grad entgegen
+     des Uhrzeigersinnes. 
+
+   - Weitere Informationen auf der MapRotation `Wiki Page`_.
+
+.. _`Wiki Page`: http://trac.osgeo.org/mapserver/wiki/MapRotation 
+
+.. index::
+    pair: CONFIG; MAP
+    
+CONFIG [key] [value]
+    Hiermit können verschiedene Laufzeitparameter für MapServer und
+    GDAL/OGR Bibliotheken gesetzt werden. Entwickler: Die Werte werden an 
+    CPLSetConfigOption() übergeben. Details zu den GDAL/OGR Optionen sind
+    auf den Seiten der zugehörigen Treiberdokumentation zu finden (`GDAL`_/`OGR`_).
+    Für MapServer sind folgende Optionen verfügbar:
+
+    CGI_CONTEXT_URL [value]
+       Dieser CONFIG Parameter wird benutzt um das Laden eines map context von einer
+       URL zu aktivieren. Siehe auch :ref:`Map Context HowTo<map_context>`.
+
+    MS_ENCRYPTION_KEY [filename]
+       Dieser CONFIG Parameter wird benutzt um einen encryption key anzugeben.
+       Siehe auch :ref:`msencypt utility<msencrypt>`.
+ 
+    MS_ERRORFILE [filename]
+       Dieser CONFIG Parameter wird benutzt um Fehlermeldungen von MapServer in eine
+       Datei zu schreiben (ab MapServer 5.0). Es muss ein absoluter Pfad 
+       angegeben werden, inklusive Dateiname. Siehe dazu auch die Beschreibung 
+       des DEBUG Parameters.
+
+    MS_NONSQUARE [yes|no]
+       Dieser CONFIG Parameter wird benutzt um nicht-quadratische WMS Requests zu erlauben.
+
+    MS_PROJ_LIB [path]
+       Dieser CONFIG Parameter wird benutzt um den Pfad zu den EPSG Dateien anzugeben.
+       Weitere Informationen siehe Parameter 'PROJ_LIB'.   
+
+    ON_MISSING_DATA [FAIL|LOG|IGNORE]
+       Dieser CONFIG Parameter wird benutzt um den Umgang mit fehlenden Daten in Tile
+       Indices einzustellen (ab MapServer 5.3-dev, r8015). Frühere Versionen von
+       MapServer benötigen den Parameter ("IGNORE_MISSING_DATA") zur Kompilierung.
+       Dieser wird in neueren Versionen nicht mehr benötigt.
+
+       FAIL
+           MapServer gibt einen Fehler aus und beendet sich ("stürzt ab")
+           wenn eine Datei im Tile Index fehlt. Dies ist das Standardverhalten.
+
+           .. code-block:: mapfile
+
+             CONFIG "ON_MISSING_DATA" "FAIL"
+
+       LOG
+           MapServer schreibt eine protokolliert eine Fehlermeldung für die
+           fehlende Datei im Tile Index und fährt mit der Kartenerzeugung fort.
+           Hinweis: Damit die Fehlermeldung protokolliert wird müssen die 
+           Parameter DEBUG und CONFIG "MS_ERRORFILE" gesetzt werden. Für weitere 
+           Informationen siehe Beschreibung zu den Parametern.
+
+           .. code-block:: mapfile
+
+             CONFIG "ON_MISSING_DATA" "LOG" 
+
+       IGNORE
+           MapServer gibt keine Fehlermeldung aus und fährt mit der
+           Kartenerzeugung fort.
+
+           .. code-block:: mapfile
+
+             CONFIG "ON_MISSING_DATA" "IGNORE" 
+   
+    PROJ_LIB [path]
+        Dieser CONFIG Parameter wird benutzt um den Pfad zu den EPSG Dateien der        
+        :term:`Proj.4` anzugeben. Wird [key] auf PROJ_LIB und für [value] der Pfad
+        zu den EPSG Dateien angegeben, wird PROJ.4 diesen Wert benutzen. Durch
+        das Setzen dieses CONFIG Parameters kann das Setzen von Umgebungsvariablen
+        vermieden werden. Zur Veranschaulichung einige Beispiele:
+
+        1. Unix
+        
+           .. code-block:: mapfile
+
+             CONFIG "PROJ_LIB" "/usr/local/share/proj/"
+
+        2. Windows
+
+           .. code-block:: mapfile
+
+             CONFIG "PROJ_LIB" "C:/somedir/proj/nad/"
+
+.. _DATAPATTERN:
+
+DATAPATTERN [regular expression]
+    Hiermit können reguläre Ausdrücke auf Requests angewandt werden um DATA 
+    Parameter via URL Requests einzuschränken (z.B. map_layername_data=...).  
+    Damit kann verhindert werden, dass beliebige Werte via URL an die Variablen 
+    übergeben werden. 
+    Verschiedene Anwendungen können damit gegeneinander isoliert und konfiguriert
+    werden, aufbauend auf einer sehr konservativen Konfiguration. Siehe auch
+    TEMPLATEPATTERN.
+
+    Folgendes Beispiel erlaubt Dateinamen mit dem Muster "IMG_XXXX.tif", wobei X eine 
+    beliebige Ziffer von 0-9 sein kann.
+
+    .. code-block:: mapfile
+
+      DATAPATTERN "^IMG_[0-9]{4}\.tif$"
+
+
+DEBUG [off|on|0|1|2|3|4|5]
+    Aktiviert Debugging aller Layer in der Karte.
+
+    *Debugging mit MapServer Versionen >= 5.0:*
+
+    Ausführliche Ausgaben werden in die Standardfehlerausgabe (STDERR) oder in 
+    die per Umgebungsvariable "MS_ERRORFILE" angegebene Datei geschrieben. 
+    Die Umgebungsvariable kann per CONFIG Parameter auf MAP Ebene wie folgt 
+    gesetzt werden:
+
+    .. code-block:: mapfile
+
+      CONFIG "MS_ERRORFILE" "/ms4w/tmp/ms_error.txt"
+
+    Die Umgebungsvariable kann bei Apache durch das hinzufügen folgender Zeile
+    gesetzt werden:
+
+    ::
+
+      SetEnv MS_ERRORFILE "/ms4w/tmp/ms_error.txt"
+
+    Ist die Umgebungsvariable gesetzt, so können mittels DEBUG Parameter die
+    Details der Ausgabe gesetzt werden. Folgende Liste beschreibt die möglichen
+    DEBUG Werte:
+
+    - **DEBUG O or OFF** - nur msSetError() Aufrufe werden nach MS_ERRORFILE protokolliert.
+      Keine msDebug() Ausgaben. Dies ist das Standardverhalten und entspricht dem 
+      ursprünglichen Verhalten von MS_ERRORFILE in MapServer 4.x
+
+    - **DEBUG 1 or ON** - enthält alle Ausgaben von DEBUG 0 plus msDebug() Warnungen
+      über häufige Fehlerquellen, ungültige Anweisungen oder oder nicht-fatale Fehler
+      (z.B. fehlende oder ungültige Parameterwerte, fehlende Dateien im Tileindex, 
+      Timeouts von WMS/WFS Servern, etc.)
+
+    - **DEBUG 2** - enthält alle Ausgaben von DEBUG 1 plus Hinweise und Werte zur
+      Zeitmessung, nützlich zum Tuning von Mapfiles und Anwendungen
+
+    - **DEBUG 3** - enthält alle Ausgaben von DEBUG 2 plus zusätzliche Debugausgaben 
+      zur Fehleranalyse wie z.B. aufgerufene WMS-URLs, Angaben zu Datenbankverbindungen etc.
+      Dies ist der empfohlene Debuglevel zur Fehleranalyse von Mapfiles.
+
+    - **DEBUG 4** - DEBUG 3 plus noch mehr Details...
+
+    - **DEBUG 5** - DEBUG 4 plus alle msDebug() Ausgaben die möglicherweise nur für
+      Entwickler hilfreich sind.
+
+    Das Debuglevel kann auch über die Umgebungsvariable "MS_DEBUGLEVEL" gesetzt werden.
+
+    Die Debugangabe kann auch für Layer gesetzt werden indem der Parameter DEBUG im
+    :ref:`LAYER` Objekt gesetzt wird.
+
+    Für weitere Details wird auf :ref:`RFC28` verwiesen.
+
+    *Debugging mit MapServer Versionen < 5:*
+
+    Ausführliche Angaben werden erzeugt und an die Standardfehlerausgabe (STDERR)
+    oder eine MapServer Logdatei geschrieben. Diese wird über den Parameter LOG im
+    WEB Objekt gesetzt. Benutzer des Apache finden Zeitangaben zum Zeichnen in den 
+    Apache Logdateien. MapServer muss mit der Option DEBUG=MSDEBUG (--with-debug)
+    übersetzt werden.
+
+EXTENT [minx] [miny] [maxx] [maxy]
+    Die räumliche Ausdehnung der zu erstellenden Karte. Dieser Parameter sollte
+    angegeben werden. Fehlt dieser, so berechnet MapServer die Ausdehnung, wodurch
+    es zu Geschwindigkeitseinbußen kommen kann.
+
+:ref:`FONTSET` [filename]
+    Dateiname des zu benutzenden Schriftenkatalogs. Angabe kann relativ zum Mapfile
+    oder als absolute Angabe erfolgen.
+
+IMAGECOLOR [r] [g] [b]
+    Farbwert mit der die Karte initialisiert wird (z.B. Hintergrundfarbe). 
+    Der angegebene Farbwert wird als   Wird 
+    Wenn Transparenz aktiviert (TRANSPARENT ON) bei einem typischen 8-bit 
+    Falschfarbenbildes, 
+
+    Wird Tranzparenz aktiviert (TRANSPARENT ON) bei der Erzeugung eines 8-bit
+    Falschfarbenbildes, so wird der angegebene Farbwert als transparent markiert. 
+    Alle anderen Kartenkomponenten mit diesem Farbwert, werden somit ebenfalls
+    transparent. Es empfiehlt sich daher einen möglichst ungenutzten Farbwert als 
+    Hintergrundfarbe zu definieren.
+
+IMAGEQUALITY [int]
+    *Veraltet* Zur Angabe der Qualität der JPEG Ausgabe wird FORMATOPTION "QUALITY=n" 
+    in der :ref:`OUTPUTFORMAT` Deklaration benutzt. 
+    
+    .. deprecated:: 4.6
+
+.. _imagetype:
+
+IMAGETYPE [gif|png|jpeg|wbmp|gtiff|swf|userdefined]
+    Zu erstellendes Ausgabeformat. Siehe auch unter :ref:`OUTPUTFORMAT` im Abschnitt
+    für verfügbare Formate. Der hier angegebene Name muss mit einem benutzerdefinierten
+    oder internen definierten  Namen des :ref:`OUTPUTFORMAT` Abschnittes entsprechen.
+
+INTERLACE [on|off]
+    *Veraltet* Um für Ausgabebilder interlace zu aktivieren muss im Abschnitt
+    :ref:`OUTPUTFORMAT` FORMATOPTION "INTERLACE=ON" gesetzt sein.
+    
+    .. deprecated:: 4.6
+
+:ref:`LAYER`
+    Signalisiert den Anfang des :ref:`LAYER` Objektes.
+
+:ref:`LEGEND`
+    Signalisiert den Anfang des :ref:`LEGEND` Objektes. 
+
+MAXSIZE [integer]
+    Definiert die maximale Größe des Kartenbildes. Diese Angabe überschreibt
+    den Standardwert. Z.B. wird als Wert 2048 angegeben, so kann das Bild
+    2048 Pixel breit und/oder hoch sein (max. 2048x2048)
+
+NAME [name]
+    Präfix der GIF Dateinamen für map, scalebar und legend -Grafiken die durch 
+    die Anwendung dieses Mapfiles erzeugt werden. Es sollte ein kurzer Name benutzt werden.
+
+:ref:`PROJECTION`
+    Signalisiert den Anfang des :ref:`PROJECTION` Objektes. 
+
+:ref:`QUERYMAP`
+    Signalisiert den Anfang des :ref:`QUERYMAP` Objektes. 
+
+:ref:`REFERENCE`
+    Signalisiert den Anfang des :ref:`REFERENCE` Objektes. 
+
+RESOLUTION [int]
+    Definiert die Anzahl Pixel pro Zoll, betrifft nur Maßstabsberechnungen
+    und sonst nichts. Standardwert ist 72.
+
+.. index::
+    pair: SCALEDENOM; MAP
+    
+SCALEDENOM [double]
+    Berechneter Maßstab der Karte. Wird oftmals von der Anwendung gesetzt. 
+    Es wird nur der Nenner des eigentlichen Maßstabwertes angegeben. Z.B. für
+    eine Karte im Maßstab 1:24000 wird 24000 angegeben. Implementiert in
+    MapServer 5.0, ersetzt veralteten SCALE Parameter.
+
+    .. seealso::
+        
+        :term:`Map Scale`
+
+SCALE [double] - deprecated
+    *Veraltet* Seit MapServer 5.0 der zu verwendende Parameter ist SCALEDENOM.
+    Berechneter Maßstab der Karte. Wird oftmals von der Anwendung gesetzt. 
+    Es wird nur der Nenner des eigentlichen Maßstabwertes angegeben. Z.B. für
+    eine Karte im Maßstab 1:24000 wird 24000 angegeben. 
+    
+    .. deprecated:: 5.0
+
+SCALEBAR
+    Signalisiert den Anfang des :ref:`SCALEBAR` Objektes. 
+
+SHAPEPATH [filename]
+    Pfad zum Verzeichnis der Shapefiles oder Tiles. Es können sich auch
+    Unterverzeichnisse unterhalb von SHAPEPATH befinden.
+
+SIZE [x][y]
+    Größe des Ausgabebildes in Pixel (z.B. die Karte).
+
+STATUS [on|off]
+    Ist die Karte aktiv? Soll nur die Übersichtskarte oder der Maßstab benutzt
+    werden, kann die Karte hiermit abgeschaltet werden.
+
+SYMBOLSET [filename]
+    Dateiname des zu benutzenden Symbolsets. Angabe erfolgt relativ zum Mapfile,
+    oder als absolute Pfadangabe.
+
+:ref:`SYMBOL`
+    Signalisiert den Anfang des :ref:`SYMBOL` Objektes. 
+
+.. _TEMPLATEPATTERN:
+
+TEMPLATEPATTERN [regular expression]
+    Hiermit können reguläre Ausdrücke auf Requests angewandt werden um TEMPLATE 
+    Parameter via URL Requests einzuschränken (z.B. map_layername_template=...).  
+    Damit kann verhindert werden, dass beliebige Werte via URL an die Variablen 
+    übergeben werden. 
+    Verschiedene Anwendungen können damit gegeneinander isoliert und konfiguriert
+    werden, aufbauend auf einer sehr konservativen Konfiguration. Siehe auch
+    DATAPATTERN.
+
+TRANSPARENT [on|off]
+    *Veraltet* Für ein transparentes Ausgabebild muss FORMATOPTION "TRANSPARENT=ON"
+    im Abschnitt :ref:`OUTPUTFORMAT` gesetzt werden.
+    
+    .. deprecated:: 4.6
+
+UNITS [feet|inches|kilometers|meters|miles|dd]
+    Einheiten der Kartenkoordinaten. Wird für Maßstableiste und Maßstabberechnungen benutzt.
+
+:ref:`WEB`
+    Signalisiert den Anfang des :ref:`WEB` Objektes. 
+
+    
+.. _`GDAL`: http://www.gdal.org/formats_list.html
+.. _`OGR`: http://www.gdal.org/ogr/ogr_formats.html 

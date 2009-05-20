@@ -1,0 +1,614 @@
+.. _layer:
+
+*****************************************************************************
+ LAYER
+*****************************************************************************
+
+:ref:`CLASS`
+    Signalisiert den Anfang des :ref:`CLASS` Objektes.
+
+    Innerhalb eines Layers wird immer nur eine Klasse zum Rendering des
+    Objektes benutzt. Jedes Objekt wird gegen jede Klasse getestet, unter
+    Berücksichtigung der Definitionsreihenfolge im Mapfile. Die Klasse die
+    zuerst die Bedingung für Min/Max-Maßstab und der 
+    :ref:`EXPRESSION <expressions>` Auswertung erfüllt, wird gezeichnet.
+
+.. index::
+    single: CLASSITEM
+    
+.. _CLASSITEM:
+
+CLASSITEM [attribute]
+    Name der Tabellenspalte der für Klassenabfragen benutzt wird.
+
+CLASSGROUP  [string]
+    Definiert den Namen der Klassengruppe.
+    Der :ref:`CLASS` Objekt GROUP Parameter muss zusammen mit
+    CLASSGROUP benutzt werden..
+    
+CONNECTION [string]
+    Festlegen der Verbindungsdaten für Datenbanken.
+
+    Die Verbindungsdaten für eine SDE-Verbindung enthalten den Hostnamen,
+    Instanznamen, Datenbanknamen, Benutzernamen und Passwort, jeweils durch 
+    Kommata getrennt.
+
+    Für eine PostGIS-Verbindung können typische PostgreSQL-Verbindungsangaben
+    benutzt werden. Beispiel:
+    "user=nobody password=****** dbname=dbname host=localhost port=5432"
+
+    Oracle Verbindungsangaben: user/pass[@db]
+    
+    .. seealso::
+        Siehe auch :ref:`vector` für spezielle Verbindungsangaben 
+        unterschiedlicher Datenquellen.
+
+CONNECTIONTYPE [local|sde|ogr|postgis|oraclespatial|wms]
+    Art der Verbindung. Standard ist local. 
+
+    .. seealso::
+        Siehe auch :ref:`vector` für spezielle Verbindungsangaben 
+        unterschiedlicher Datenquellen.
+
+DATA [filename]|[sde parameters][postgis table/column][oracle table/column]
+    Vollständiger Dateiname der zu verarbeitenden Daten. Für Shapedateien
+    muss keine Dateinamenerweiterung (.shp) angegeben werden. Kann relativ 
+    zu im Map-Objekt definierten SHAPEPATH angegeben werden.
+
+    Handelt es ich um einen SDE-Layer, so sollte neben dem Layernamen auch
+    der Name der Geometriespalte angegeben werden 
+    (z.B. "mylayer,shape,myversion").
+
+    Handelt es sich um einen PostGIS-Layer, sollte die Angabe in der Form
+    "<columnname> from <tablename>" erfolgen, wobei "columname" der Name
+    der Geometriespalte ist und "tablename" der Tabellenname aus dem die
+    Daten gelesen werden.    
+    
+    Handelt es sich um einen Oracle-Layer, kann "shape FROM table" oder 
+    "shape FROM (SELECT statement)" oder auch komplexere Oracle-Statements
+    benutzt werden. Werden räumliche Unterabfragen benutzt, treten erhebliche
+    Performanzeinbußen auf. Wenn möglich sollten immer MapServer's FILTER_ 
+    benutzt werden. Um das erzeugte SQL-Statement zu sehen, kann ein Fehler
+    provoziert werden, in dem der offensichtlich fehlerhafte DATA Parameter
+    mit einem ungültigen Spaltennamen benutzt wird.
+
+    .. seealso::
+        Siehe auch :ref:`vector` für spezielle Verbindungsangaben 
+        unterschiedlicher Datenquellen.
+
+.. index::
+    pair: DEBUG; LAYER
+     
+DEBUG [off|on|0|1|2|3|4|5]
+    Aktiviert Debugging des aktuellen Layers.
+
+
+    *Debugging mit MapServer Versionen >= 5.0:*
+
+    Ausführliche Ausgaben werden in die Standardfehlerausgabe (STDERR) oder in 
+    die per Umgebungsvariable "MS_ERRORFILE" angegebene Datei geschrieben. 
+    Die Umgebungsvariable kann per CONFIG Parameter auf MAP Ebene wie folgt 
+    gesetzt werden:
+
+    .. code-block:: mapfile
+
+      CONFIG "MS_ERRORFILE" "/ms4w/tmp/ms_error.txt"
+
+    Die Umgebungsvariable kann bei Apache durch das hinzufügen folgender Zeile
+    gesetzt werden:
+
+    ::
+
+      SetEnv MS_ERRORFILE "/ms4w/tmp/ms_error.txt"
+
+    Ist die Umgebungsvariable gesetzt, so können mittels DEBUG Parameter die
+    Details der Ausgabe gesetzt werden. Folgende Liste beschreibt die möglichen
+    DEBUG Werte:
+
+    - **DEBUG O or OFF** - nur msSetError() Aufrufe werden nach MS_ERRORFILE 
+      protokolliert.
+      Keine msDebug() Ausgaben. Dies ist das Standardverhalten und entspricht 
+      dem ursprünglichen Verhalten von MS_ERRORFILE in MapServer 4.x
+
+    - **DEBUG 1 or ON** - enthält alle Ausgaben von DEBUG 0 plus msDebug() 
+      Warnungen über häufige Fehlerquellen, ungültige Anweisungen oder oder 
+      nicht-fatale Fehler (z.B. fehlende oder ungültige Parameterwerte, 
+      fehlende Dateien im Tileindex, Timeouts von WMS/WFS Servern, etc.)
+
+    - **DEBUG 2** - enthält alle Ausgaben von DEBUG 1 plus Hinweise und Werte 
+      zur Zeitmessung, nützlich zum Tuning von Mapfiles und Anwendungen
+
+    - **DEBUG 3** - enthält alle Ausgaben von DEBUG 2 plus zusätzliche 
+      Debugausgaben zur Fehleranalyse wie z.B. aufgerufene WMS-URLs, Angaben zu 
+      Datenbankverbindungen etc. 
+      Dies ist der empfohlene Debuglevel zur Fehleranalyse von Mapfiles.
+
+    - **DEBUG 4** - DEBUG 3 plus noch mehr Details...
+
+    - **DEBUG 5** - DEBUG 4 plus alle msDebug() Ausgaben die möglicherweise nur 
+      für Entwickler hilfreich sind.
+
+    Das Debuglevel kann auch über die Umgebungsvariable "MS_DEBUGLEVEL" gesetzt 
+    werden.
+
+    Die Debugangabe kann auch für Layer gesetzt werden indem der Parameter DEBUG
+    im :ref:`MAP` Objekt gesetzt wird.
+
+    Für weitere Details wird auf :ref:`RFC28` verwiesen.
+
+    *Debugging mit MapServer Versionen < 5:*
+
+    Ausführliche Angaben werden erzeugt und an die Standardfehlerausgabe 
+    (STDERR) oder eine MapServer Logdatei geschrieben. Diese wird über den 
+    Parameter LOG im WEB Objekt gesetzt. Benutzer des Apache finden Zeitangaben 
+    zum Zeichnen in den Apache Logdateien. MapServer muss mit der Option 
+    DEBUG=MSDEBUG (--with-debug) übersetzt werden.
+
+
+DUMP [true|false]
+    Schalter um MapServer zu veranlassen Daten im GML-Format auszugeben. 
+    Nützlich bei Verwendung von WMS GetFeatureInfo Abfragen. Standard ist false.
+
+EXTENT [minx] [miny] [maxx] [maxy]
+    Die räumliche Ausdehnung der zu erstellenden Karte. Dieser Parameter sollte
+    angegeben werden. Fehlt dieser, so berechnet MapServer die Ausdehnung, 
+    wodurch es zu Geschwindigkeitseinbußen kommen kann.
+
+:ref:`FEATURE`
+    Signalisiert den Anfang des :ref:`FEATURE` Objektes.
+
+.. _FILTER:
+    
+FILTER [string]
+    Dieser Parameter erlaubt die Filterung an Hand von Attributen. 
+    Die Auswertung erfolgt zur gleichen Zeit wie die räumliche Filterung jedoch 
+    vor Auswertung der CLASS-Expressions. Im Fall von OGR und Shapefiles 
+    entspricht der Wert eines regulären Ausdrucks. Bei raumbezogenen Datenbanken
+    entspricht der Wert der SQL WHERE Klausel in Bezug auf die benutzte 
+    Datenbank.
+
+    Beispiel: FILTER "type='road' and size <2"
+
+FILTERITEM [attribute]
+    Spalte die für einfache FILTER_ Ausdrücke benutzt wird. Nür für OGR und 
+    Shapefiles.
+
+FOOTER [filename]
+    Template das *nach* den Apfrageergebnissen benutzt wird.
+    Nur für mehrzeilie Ergebnisse.
+
+:ref:`GRID`
+    Signals the start of a :ref:`GRID` object.
+
+GROUP [name]
+    Name of a group that this layer belongs to. The group name can then be 
+    reference as a regular layer name in the template files, allowing to do 
+    things like turning on and off a group of layers at once.
+
+HEADER [filename]
+    Template to use *before* a layer's set of results have been sent. 
+    Multiresult query modes only.
+
+:ref:`JOIN`
+    Signalisiert den Anfang des :ref:`JOIN` Objektes.
+
+LABELANGLEITEM [attribute]
+    (Ab MapServer Version 5.0 nicht mehr verfügbar. Bitte beim ANGLE Parameter 
+    vom :ref:`LABEL` Objekt nachlesen).
+    Für Versionen < 5.0, Spaltenname der Attributtabelle für 
+    Beschriftungswinkel. Angaben in Grad.
+    
+    .. deprecated:: 5.0
+
+LABELCACHE [on|off]
+    Gibt an ob Label zur gleichen Zeit wie der Layer gezeichnet werden oder
+    zwischengespeichert und nach allen Layern gezeichnet werden. Standard ist 
+    on. Entfernen von überlappenden Labeln, automatische Platzierung etc. sind 
+    nur bei aktiviertem Labelcache verfügbar.
+
+LABELITEM [attribute]
+    Name der Spalte der Attributtabelle in der Text zur Beschriftung 
+    gespeichert ist.
+
+.. index::
+    pair: LABELMAXSCALEDENOM; LAYER
+
+LABELMAXSCALEDENOM [double]
+    Größter Maßstab bis zu dem der Layer beschriftet wird. 
+    Es wird nur der Nenner des eigentlichen Maßstabwertes angegeben. Z.B. für
+    eine Karte im Maßstab 1:24000 wird 24000 angegeben. Implementiert in
+    MapServer 5.0, ersetzt veralteten LABELMAXSCALE Parameter.
+
+    .. seealso::
+        
+        :term:`Map Scale`
+
+LABELMAXSCALE [double] 
+    (*veraltet*) Ab MapServer Version 5.0 sollte LABELMAXSCALEDENOM benutzt 
+    werden.
+    Größter Maßstab bis zu dem die Layerbeschriftung gezeichnet wird. 
+    Es wird nur der Nenner des eigentlichen Maßstabwertes angegeben. Z.B. für
+    eine Karte im Maßstab 1:24000 wird 24000 angegeben.
+    
+    .. deprecated:: 5.0
+
+.. index::
+    pair: LABELMINSCALEDENOM; LAYER
+
+LABELMINSCALEDENOM [double]
+    Kleinster Maßstab bis zu dem der Layer beschriftet wird. 
+    Es wird nur der Nenner des eigentlichen Maßstabwertes angegeben. Z.B. für
+    eine Karte im Maßstab 1:24000 wird 24000 angegeben. Implementiert in
+    MapServer 5.0, ersetzt veralteten LABELMINSCALE Parameter.
+
+    .. seealso::
+        
+        :term:`Map Scale`
+
+LABELMINSCALE [double] 
+    (*veraltet*) Ab MapServer Version 5.0 sollte LABELMINSCALEDENOM benutzt 
+    werden.
+    Kleinster Maßstab bis zu dem die Layerbeschriftung gezeichnet wird. 
+    Es wird nur der Nenner des eigentlichen Maßstabwertes angegeben. Z.B. für
+    eine Karte im Maßstab 1:24000 wird 24000 angegeben.
+
+    .. deprecated:: 5.0
+
+.. _LABELREQUIRES:
+
+LABELREQUIRES [expression]
+    Bedingung zum Beschriften, z.B.:
+
+    .. code-block:: mapfile
+    
+        LABELREQUIRES "![orthoquads]"
+
+    bedeutet das dieser Layer nicht beschriftet wird wenn ein Layer mit dem 
+    Namen "orthoquads" aktiv ist. Der Wert besteht aus einem Booleschen Ausdruck
+    und basiert auf den Stati anderer Layer. Jedes Auftreten von [layer name] 
+    wird durch 0 oder 1 ersetzt, je nachdem was der aktuelle STATUS_ des Layers 
+    ist und anschließend außgewertet. Die logischen Operatoren AND und OR können
+    benutzt werden.
+
+LABELSIZEITEM [attribute]
+    (Ab MapServer Version 5.0 nicht mehr verfügbar. Bitte beim SIZE Parameter 
+    vom :ref:`LABEL` Objekt nachlesen).
+    Für Versionen < 5.0, Spaltenname der Attributtabelle für Beschriftungsgröße.
+    Angaben in Pixel.
+    
+    .. deprecated:: 5.0
+
+MAXFEATURES [integer]
+    Gibt die Anzahl der darzustellenden Objekte eines Layers im aktuellen 
+    Fenster an. 
+    Bietet interessante Möglichkeiten der Beschriftung von sortierten Werten
+    (z.B. Seen eines Gebietes)
+
+    sorted data (i.e. lakes by area).
+
+.. index::
+    pair: MAXSCALEDENOM; LAYER
+
+MAXSCALEDENOM [double]
+    Größter Maßstab bis zu dem der Layer gezeichnet wird. 
+    Es wird nur der Nenner des eigentlichen Maßstabwertes angegeben. Z.B. für
+    eine Karte im Maßstab 1:24000 wird 24000 angegeben. Implementiert in
+    MapServer 5.0, ersetzt veralteten MAXSCALE Parameter.
+
+    .. seealso::
+        
+        :term:`Map Scale`
+
+MAXSCALE [double] 
+    (*veraltet*) Ab MapServer Version 5.0 ist MAXSCALEDENOM zu benutzen.
+    Größter Maßstab bis zu dem der Layer gezeichnet wird. 
+    Es wird nur der Nenner des eigentlichen Maßstabwertes angegeben. Z.B. für
+    eine Karte im Maßstab 1:24000 wird 24000 angegeben.
+
+    .. deprecated:: 5.0
+
+METADATA
+    Hiermit können beliebige Daten als Wertepaare gespeichert werden. 
+    Dies wird mit :ref:`OGC WMS <wms_server>` benutzt um z.B. den Layertitel
+    zu definieren. Es erlaubt auch mehr Flexibilität bei der Templateerstellung,
+    da auf die hier definierten Werte über Template Tags zugegriffen werden kann.
+
+    Example:
+    
+    .. code-block:: mapfile
+    
+        METADATA
+            title "My layer title"
+            author "Me!"
+        END
+
+.. index::
+    pair: MINSCALEDENOM; LAYER
+
+MINSCALEDENOM [double]
+    Kleinster Maßstab bis zu dem der Layer gezeichnet wird. 
+    Es wird nur der Nenner des eigentlichen Maßstabwertes angegeben. Z.B. für
+    eine Karte im Maßstab 1:24000 wird 24000 angegeben. Implementiert in
+    MapServer 5.0, ersetzt veralteten MINSCALE Parameter.
+
+    .. seealso::
+        
+        :term:`Map Scale`
+
+MINSCALE [double] - deprecated
+    (*veraltet*) Ab MapServer Version 5.0 ist MINSCALEDENOM zu benutzen.
+    Kleinster Maßstab bis zu dem der Layer gezeichnet wird. 
+    Es wird nur der Nenner des eigentlichen Maßstabwertes angegeben. Z.B. für
+    eine Karte im Maßstab 1:24000 wird 24000 angegeben.
+
+    .. deprecated:: 5.0
+
+NAME [string]
+    Kurzer Name des Layers. Beschränkung liegt bei 20 Zeichen. Über diesen Namen
+    wird die Verbindung zwischen Mapfile und Webinterface hergestellt. Der Name
+    muß eindeutig sein, es sein denn ein Layer wird durch einen anderen bei
+    unterschiedlichen Maßstäben ersetzt. Für Gruppierungen von Layern steht
+    die GROUP Option zur Verfügung.
+
+OFFSITE [r] [g] [b]
+    Definiert den Farbwert der bei Raster Layer transparent erscheinen soll.
+
+.. _OPACITY:
+
+OPACITY [integer|alpha]
+    Gibt die Deckkraft für einen Layer an. Als Wert wird entweder ein 
+    Integer-Wert im Intervall von (0-100) angegeben oder das Symbol "ALPHA". 
+    Ein Wert von 100 ist undurchlässig und 0 entspricht voller Transparenz. 
+    Implementiert in MapServer 5.0 um den veralteten Parameter TRANSPARENCY 
+    zu ersetzen.
+
+    Durch das Symbol "ALPHA" wird der MapServer veranlasst indizierte- oder
+    alpha-Transparenz von Pixmap-Symbolen zu benutzen. Dies ist nur notwendig
+    wenn RGB Ausgabeformate benutzt werden. Da die Verarbeitung von 
+    transparenten Pixmap-Symbolen in einem RGB-Bild sehr rechenaufwendig ist,
+    sollte Alpha-Transparenz nur benutzt werden wenn es wirklich notwendig ist.
+
+POSTLABELCACHE [true|false]
+    Veranlasst MapServer diesen Layer erst zu zeichnen wenn alle Labels im 
+    Cache gezeichnet wurden. Nützlich für Begrenzungslinien oder ähnliche
+    Elemente. Standard ist false.
+
+.. index:: PROCESSING, Raster options, Special options
+
+PROCESSING [string]
+    Gibt Direktiven an wie der Layer verarbeitet werden soll. Die unterstützen
+    Direktiven sind abhängig vom Typ des Layers und dem benutzten Treiber.
+     
+    - **Attribut Direktive** - Die ITEMS Option erlaubt die Angabe der 
+      Attributnamen für Inlinelayer oder die vom Layer benuzten Attribute, z.B.
+    
+      .. code-block:: mapfile
+
+          PROCESSING "ITEMS=itemname1,itemname2,itemname3"
+
+    - **Verbindungspooling Direktive** - Hiermit kann für bestimmte Layer
+      das Verbindungspooling aktiviert werden. Verbindungspooling erlaubt 
+      MapServer das Handle der Datenbankverbindung für mehrere Layer
+      wiederzuverwenden. Wird FastCGI benutzt, bleibt die Verbindung unbegrenzt
+      lange offen bzw. maximal so lange wie die angegebenen Optionen in der
+      :ref:`FastCGI <fastcgi>` Konfiguration es erlauben. :ref:`oci`, 
+      :ref:`arcsde`, :ref:`ogr` und :ref:`input_postgis` unterstützen diese
+      Option.
+
+      .. code-block:: mapfile
+
+          PROCESSING "CLOSE_CONNECTION=DEFER"
+          
+    - **OGR Style Direktive** - Diese Direktive wird benutzt um Labelstyles 
+      durch MapScript zu erhalten. Für weitere Informationen siehe
+      :ref:`MapServer's OGR document <styleitemauto-label-styles>`.
+      
+      .. code-block:: mapfile
+
+          PROCESSING "GETSHAPE_STYLE_ITEMS=all"
+
+    - **Raster Direktive** - Alle Verarbeitungsoptionen für Raster sind in
+      :ref:`raster` beschrieben. Im folgenden Beispiel wird die SCALE und
+      BANDS Direktive benutzt um Rasterdaten automatisch zu skalieren und
+      die Kanäle zu ändern.
+
+      .. code-block:: mapfile
+    
+          PROCESSING "SCALE=AUTO"
+          PROCESSING "BANDS=3,2,1"
+
+:ref:`PROJECTION`
+    Signalisiert den Anfang des :ref:`PROJECTION` Objektes.   
+
+REQUIRES [expression]
+    Erlaubt die Angabe von Bedingungen zur Anzeige des Layers (siehe 
+    LABELREQUIRES_).
+
+SIZEUNITS [pixels|feet|inches|kilometers|meters|miles|
+    Gibt die Einheit der SIZE Werte (Standard ist pixels) der :ref:`CLASS` 
+    Objekte an. Nützlich für die Simulation von Buffern.
+
+.. _STATUS:
+
+STATUS [on|off|default]
+    Gibt den aktuellen Status des Layers an. Wir von MapServer oftmals selbst
+    gesetzt. Für permanente Anzeige wird "default" benutzt.
+    
+    .. note::
+
+        Im :ref:`CGI <cgi>` modus, Layer mit STATUS DEFAULT können nicht 
+        mit den üblichen Mchanismen deaktiviert werden. Für die Fehlersuche
+        wird empfohlen STATUS DEFAULT zu setzen, für produktive Benutzung
+        STATUS ON/OFF.
+    
+    .. note::
+        
+        Für :ref:`WMS <wms_server>` werden Layer mit STATUS DEFAULT immer
+        ausgeliefert.
+
+
+STYLEITEM [attribute]
+    Wird benutzt für featureabhängiges Styling. Dies ist im Moment *sehr*
+    experimentell und steht nur für OGR zur Verfügung.
+
+.. index::
+    pair: SYMBOLSCALEDENOM; LAYER
+
+SYMBOLSCALEDENOM [double]
+    Der Maßstab bei dem die Symbole und/oder Text in Originalgröße erscheinen.
+    Dies erlaubt dynamische Skalierung von Objekten in Abhängigkeit vom
+    Kartenmaßstab. Wird dies nicht gesetzt, werden die Symbole über den 
+    gesamten Maßstabsbereich mit der gleichen Größe gezeichnet. Die Skalierung
+    findet nur in den Grenzen von MINSIZE und MAXSIZE statt. 
+    Es wird nur der Nenner des eigentlichen Maßstabwertes angegeben. Z.B. für
+    eine Karte im Maßstab 1:24000 wird 24000 angegeben. Implementiert in
+    MapServer 5.0, ersetzt veralteten SYMBOLSCALE Parameter.
+
+    .. seealso::
+        
+        :term:`Map Scale`
+
+SYMBOLSCALE [double] - deprecated
+    Ab MapServer Version 5.0 wird dieser Parameter durch SYMBOLSCALEDENOM 
+    ersetzt.
+    Der Maßstab bei dem die Symbole und/oder Text in Originalgröße erscheinen.
+    Dies erlaubt dynamische Skalierung von Objekten in Abhängigkeit vom
+    Kartenmaßstab. Wird dies nicht gesetzt, werden die Symbole über den 
+    gesamten Maßstabsbereich mit der gleichen Größe gezeichnet. Die Skalierung
+    findet nur in den Grenzen von MINSIZE und MAXSIZE statt. 
+    Es wird nur der Nenner des eigentlichen Maßstabwertes angegeben. Z.B. für
+    eine Karte im Maßstab 1:24000 wird 24000 angegeben.
+
+    .. deprecated:: 5.0
+
+:ref:`TEMPLATE <template>` [file|url]
+    Wird als globale Alternative zum CLASS TEMPLATE benutzt.
+
+:ref:`TILEINDEX <tileindex>` [filename|layername]
+    Name des Tileindex. Ein Teileindex ist ähnlich des ArcInfo 
+    Bibliotheks Index. Der Tileindex enthält Polygonfeatures für jede Kachel.
+    Das Attributelement, das den Verweis auf die gekachelten Daten enthält, 
+    wird mitdem TILEITEM Parameter angegeben. Wird eine Datei als Tileindex
+    für Shapefile- oder Raster-Layer benutzt, sollte der Tileindex ein 
+    Shapefile sein. Für Layer mit CONNECTIONTYPE OGR können alle von OGR
+    unterstützten Datenquellen Tileindex sein. Als Verweis (zum Speicherort)
+    wird die Angabe relativ zum Shapepath erwartet, nicht relativ zum
+    Tileindex. Enthält der DATA Parameter einen Wert, wird die an das Ende
+    des Verweises angehängt. Wird ein Layer mit Tileindex benutzt, verhält 
+    dieser sich als ob die Datei direkt angegeben wurde, aber alle 
+    unterstützten Quellen können benutzt werden (z.B. postgres, oracle).
+
+    .. note::
+
+        Alle Dateien im Tileindex sollten im selben Koordinatensystem 
+        vorliegen und Vektordateien sollten die selben Attribute in der
+        selben Reihenfolge besitzen.
+
+TILEITEM [attribute]
+    Attribut das den Verweis auf die zu benutzende Kachel enthält, Standardwert
+    ist "location".
+
+.. _TOLERANCE:
+
+TOLERANCE [double]
+    Empfindlichkeit für punktbasierte Abfragen (z.B. via Maus und/oder
+    Kartenkoordinaten). Angabe in TOLERANCEUNITS. Handelt es sich um einen
+    Punkt- (POINT) oder Linien-Layer (LINE), wird als Stadardwert 3 benutzt. 
+    Für alle anderen Layertypen wird 0 als Standardwert benutzt. Um 
+    flächenbasierte Suchen in der Art einzuschränken das der Punkt innerhalb
+    des Polygons sein muss, muss der Toleranzwert auf 0 gesetzt werden.
+
+TOLERANCEUNITS [pixels|feet|inches|kilometers|meters|miles|dd]
+    Einheit der TOLERANCE Werte. Standard ist pixels.
+
+TRANSPARENCY [integer|alpha] - deprecated
+    Ab MapServer Version 5.0 wird der Parameter OPACITY benutzt.
+    Gibt die Deckkraft für einen Layer an. Als Wert wird entweder ein 
+    Integer-Wert im Intervall von (0-100) angegeben oder das Symbol "ALPHA". 
+    Ein Wert von 100 ist undurchlässig und 0 entspricht voller Transparenz. 
+
+    Durch das Symbol "ALPHA" wird der MapServer veranlasst indizierte- oder
+    alpha-Transparenz von Pixmap-Symbolen zu benutzen. Dies ist nur notwendig
+    wenn RGB Ausgabeformate benutzt werden. Da die Verarbeitung von 
+    transparenten Pixmap-Symbolen in einem RGB-Bild sehr rechenaufwendig ist,
+    sollte Alpha-Transparenz nur benutzt werden wenn es wirklich notwendig ist.
+
+    .. deprecated:: 5.0
+
+    .. seealso::
+        
+        :ref:`OPACITY <opacity>`
+        
+TRANSFORM [true|false ul|uc|ur|lc|cc|lr|ll|lc|lr]
+    Gibt an ob MapServer einen Layer von einem Koordinatensystem in 
+    Bildkoordinaten umwandeln soll. Standard ist true. Dies erlaubt die 
+    Verwendung von Shapefiles mit Bildkoordinaten, deren Objekte immer an 
+    der gleichen Stelle platziert werden. Wird für die Platzierung von Logos
+    oder Text benutzt. Zu beachten ist, das bei dem Bildkoordinatensystem
+    der Ursprung in der linken oberen Ecke liegt, im Gegensatz zu den 
+    meisten anderen Koordinatensystemen.
+
+    Ab Version 4.10 besteht die Möglichkeit Objekte mit Pixelkoordinaten
+    (oder Prozentwerten, siehe UNITS) relativ zu einem beliebigen anderen Punkt
+    außer UL zu definieren. Dies wird durch "TRANSFORM FALSE" erreicht. Bei 
+    Verwendung eines anderen Ursprungs kann z.B. ein Copyright-Symbol in einem
+    Teilbereich des Bildes Angezeigt werden, der von der Bildgröße
+    unabhängig ist.
+
+TYPE [point|line|polygon|circle|annotation|raster|query|chart]
+    Gibt an wie die Daten gezeichnet werden sollen. Die Angabe muß nicht mit 
+    dem Shapefile-Typ übereinstimmen. Zum Beispiel kann ein Polygon-Shapefile
+    als Punktlayer gezeichnet werden, aber nicht umgekehrt.
+    Annotation bedeutet das ein Beschriftungspunkt berechnet wird, jedoch das
+    eigentliche Objekt nicht gezeichnet wird. Es kann ein Marker definiert 
+    werden, der statt des Objektes gezeichnet wird. Damit sind komplexe
+    Beschriftungen möglich wie z.B. nummerierte Autobahnschilder. Punkte werden
+    an den Punktkoordinaten beschriftet. Polygone werden an ihrem Schwerpunkt
+    beschriftet. Sollte dieser außerhalb des Polygons liegen, wird durch einen
+    Scanline-Algorithmus eine Position innerhalb des Polygons bestimmt.
+    Linien werden in der Mitte des längsten Bogen beschriftet, wobei nur
+    der sichtbare Abschnitt der Linie berücksichtigt wird. Durch den Typ 
+    "query" steht der Layer nur für Abfragen zur Verfügung, er wird nicht
+    gezeichnet.
+
+    Um zwischen POLYGONen und POLYLINEen (die es als Typ nicht gibt) 
+    unterscheiden zu können, wird bei der Klassifizierung das Schlüsselwort 
+    COLOR benutzt bzw. weggelassen. Wird es benutzt, handelt es sich um ein 
+    Polygon mit einer Füllfarbe, andernfalls ist es ein Linienzug mit einer 
+    Randfarbe (OUTLINECOLOR).
+    
+    Ein Kreis wird durch die kleinste Hülle eines Rechtecks definiert. Zwei 
+    Punkte beschreiben das kleinste Quadrat, das den Kreis umgibt. Diese zwei
+    Punkte sind die gegenüberliegenden Eckpunkte der Hülle.
+    A circle must be defined by a a minimum bounding rectangle. That is, two
+    points that define the smallest square that can contain it. These two points 
+    are the two opposite corners of said box.
+
+    Hier wird ein Kreis mittels Inlinepunkten definiert 
+
+    .. code-block:: mapfile
+      
+      LAYER
+        NAME 'inline_circles'
+        TYPE CIRCLE
+        STATUS ON
+        FEATURE
+          POINTS
+            74.01 -53.8
+            110.7 -22.16
+          END
+        END  
+        CLASS
+          STYLE
+            COLOR 0 0 255
+          END
+        END
+      END
+
+    .. seealso::
+        
+        Für Diagrammlayer siehe :ref:`Dynamic Charting<dynamic_charting>` HowTo
+
+UNITS [feet|inches|kilometers|meters|miles|dd|pixels|percentages]
+    Einheit des Layers. `Percentages` wurde in MapServer 4.10 hinzugefügt und
+    wird oftmals für Inline-Layer benutzt.

@@ -1,0 +1,163 @@
+<h2>FreeBSD 6.2 - MapServer 4.10.1</h2>
+<br>
+<p>With postgres/postgis/php_mapscript. this is assuming installation after a clean install of FreeBSD 6.2, with ports, but no x window system.</p>
+<p>The other version numbers are :<br>
+SERVER_SOFTWARE : Apache/2.2.4 (FreeBSD) mod_ssl/2.2.4 OpenSSL/0.9.7e-p1 DAV/2 PHP/5.2.1 with Suhosin-Patch </p>
+<p>It will really help if you have a copy of the FreeBSD Handbook on the screen of another computer, so you can look for FreeBSD help, and obviously access to the MapServer Website.
+<pre>:w :q is how to write and quit vi, don't forget to press 'esc' before these commands</pre>
+<br>
+
+<h2>Libraries</h2>
+
+Use ports to install libararies
+
+<ol><li>First, fix your ports-supfile (look in the Handbook) and choose to get all, or nearly all (see the list of directories below). For the once off cost of getting them all, it can save you a lot of  frustration (which I have experienced) because a build fails when the version numbers are wrong.</li>
+<pre>cvsup ports-supfile</pre> (to make sure you are getting the most recent ones)
+<li>Then :
+<pre>setenv LDFLAGS -lstdc++</pre> (this is important for PostgreSQL, and has to be done before compiling, so do it now. You can check it is set by just typing <pre>setenv</pre>, and making sure it is there.)
+<li>then required libraries using the ports system :
+
+<pre>cd /usr/ports/graphics/jpeg
+make install clean</pre>
+Do this for each of :
+<pre>jpeg
+png
+tiff
+gd
+proj
+geos</pre>
+then for :
+<pre>ftp/
+curl
+
+textproc/
+libxml2
+
+print/
+freetype
+pdflib
+
+devel/
+doxygen
+
+lang/
+perl
+php5-extensions
+
+www/
+apache22
+
+
+databases/
+postgresql82-server
+postgis</pre>
+</ol>
+<h3>MapServer installation</h3>
+<ol>
+<li>Once all the libraries are done, it is time to compile MapServer. From where-ever you have downloaded the mapserver package to:
+
+<pre>tar -xzf mapserver-4.10.1.tar.gz /usr/local/mapserver-4.10.1
+cd /usr/local/mapserver-4.10.1</pre>
+
+<li>Next, create a file with the compile commands - much easier than typing in the whole string at the command prompt
+
+<pre>vi config</pre>
+<p> and put this in, pretty much as it appears below</p>
+<pre>./configure     --with-freetype=/usr/local/bin \
+                --with-png=/usr/local/lib \
+                --with-jpeg=/usr/local \
+                --with-libiconv=/usr/local \
+                --with-geos=/usr/local/bin/geos-config \
+                --with-ogr=/usr/local/bin/gdal-config \
+                --with-gdal=/usr/local/bin/gdal-config \
+                --with-httpd=/usr/local/sbin/httpd \
+                --with-wfsclient \
+                --with-wmsclient \
+                --enable-runpath \
+                --enable-debug \
+                --with-curl-config=/usr/local/bin/curl-config \
+                --with-proj=/usr/local \
+                --with-pdf=/usr/local \
+                --with-tiff=/usr/local \
+                --with-threads \
+                --with-wcs \
+                --with-postgis=/usr/local/bin/pg_config \
+                --with-php=/usr/local \
+                --with-xml2-config=/usr/bin/xml2-config  # new in 4.10
+:w :q</pre>
+
+<li>(assuming you are doing all this as root...)
+
+<pre>chmod 744 config
+./config</pre>
+
+<li>when it has finished (special thanks to Eric 'Lontong' for this fix)
+
+  you need to edit Makefile in mapscript/php3 path.
+ 
+<pre>vi mapscript/php3/Makefile</pre>
+ <ol><li>change variable CFLAGS in the top to something else (e.g. CFLAGS1)
+  <li>then change :
+	<p>CFLAGS112 = $(CFLAGS) $(MS_DEFINE) $(MS_INC) $(PHP_INC) $(PHP_REGEX_INC)
+  <p>to :
+	<pre>CFLAGS112 = $(MS_DEFINE) $(MS_INC) $(PHP_INC) $(PHP_REGEX_INC) </pre>
+  <li>and add :
+	<pre>CFLAGS = $(CFLAGS1) $(CFLAGS112)</pre>
+  <li>finally, scroll down to in 
+  <p>compiler %.o: %.c php_mapscript_util.h php_mapscript.h
+     <p>     $(CC) $(CFLAGS112) -c -o $@ $<
+  <p>change :
+	<p>$(CFLAGS112)
+<p> to:
+<pre> $(CFLAGS)
+:w  :q</pre>
+</ol>
+<li>then (in /usr/local/mapserver) :
+
+<pre>make</pre>
+(Note that this is <b><font color='red'>not</font></b> make install clean!)
+</ol>
+
+<h3>Install & Test</h3>
+<ol>
+<li>when (if?!) it finishes without errors (it will take some time)
+
+<pre>cp mapserv /usr/local/www/apache22/cgi-bin/</pre>
+
+<li>and you can test it by typing 
+<pre>mapserv -v</pre> in the directory you have just moved it to.</pre>
+<li>You also need to move the php extension, and (if you want) add it to your php extensions file list. alternatively, you can call it from your php scripts.
+<pre>cp mapscript/php3/php_mapscript.so  /usr/local/lib/php/20060613/
+vi /usr/local/etc/php/extensions.ini </pre>
+<li>add the line (use A) :
+<pre>extension=php_mapscript.so
+:w :q</pre>
+<li>Restart Apache
+<pre>apachectl graceful</pre>
+<li>I find it convenient to have a symlink to the data directory, so :
+<pre>ln -s /usr/local/www/apache22/data/ htdocs</pre>
+
+<li>put your server.php file in the data (htdocs) directory
+<pre>vi /htdocs/server.php
+
+<?php
+dl("php_mapscript.so");
+echo phpinfo();
+?>
+
+:w :q</pre>
+
+<li>then point your web browser at your server :
+
+<pre>10.0.1.3/server.php</pre>
+<p>Which tells you that the webserver and php are both working.
+
+<li>and (very exciting)
+
+<pre>10.0.1.3/cgi-bin/mapserv</pre>
+
+<p>which should return you the lovely line :
+
+<b>No query information to decode. QUERY_STRING is set, but empty.</b>
+</ol>
+<h2>Congratulations, you're ready to make maps!</h2>

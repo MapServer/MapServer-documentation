@@ -1,0 +1,115 @@
+.. _projection:
+
+*****************************************************************************
+ PROJECTION
+*****************************************************************************
+
+Um Projektionen benutzen zu können, müssen zwei Projektionsobjekte definiert
+werden: eins für das Ausgabebild (im :ref:`MAP` Objekt) und eins für jeden
+zu projizierenden Layer (im :ref:`LAYER` Objekt). MapServer benutzt die
+:term:`Proj.4` Bibliothek für Projektionen. Deshalb bestehen Projektionsobjekte
+aus einer Folge von PROJ.4 Schlüsselwörtern, welche direkt im Objekt angegeben
+werden oder auf einen Eintrag in der :term:`EPSG` Datei verweisen. Eine 
+EPSG Datei ist eine Lookup-Datei und enthält Projektionsparameter. Sie ist
+außerdem Bestandteil der PROJ.4 Bibliothek.
+
+Die folgenden zwei Beispiele definieren die selbe Projektion (UTM zone 15,
+NAD83), benutzen aber unterschiedliche Methoden:
+
+**Example 1: Inline Projection Parameters**
+
+.. code-block:: mapfile
+
+    PROJECTION
+      "proj=utm"
+      "ellps=GRS80"
+      "datum=NAD83"
+      "zone=15"
+      "units=m"
+      "north"
+      "no_defs"
+    END
+    
+**Example 2: EPSG Projection Use**
+
+.. code-block:: mapfile
+
+    PROJECTION
+       "init=epsg:26915"
+    END
+
+.. note::
+
+    Hier wird auf eine EPSG Lookup Datei verwiesen die für den Code '26915'
+    die Projektionsparameter enthält. "epsg" ist in diesem Fall abhängig von
+    Groß-/Kleinschreibung, da es auf einen Dateinamen verweist. Unterscheidet
+    das eingesetzte Dateisystem zwischen Groß-/Kleinschreibung, muss dies
+    klein geschrieben werden oder MapServer (bzw. PROJ.4) geben eine Meldung
+    aus, dass die Datei nicht gefunden wurde.
+
+.. note::
+    Siehe http://spatialreference.org/ref/epsg/26915 für weitere Informatinen
+    zu diesem Koordinatensystem.
+
+Die nächsten beiden Beispielde veranschaulichen wie unprojizierte Daten (lat/
+lon bzw. "geographisch") definiert werden können:
+
+**Example 3: Inline Projection Parameters**
+
+.. code-block:: mapfile
+
+    PROJECTION
+      "proj=latlong"
+      "ellps=WGS84"
+      "datum=WGS84"
+    END
+
+**Example 4: epsg Projection Use**
+
+.. code-block:: mapfile  
+
+    PROJECTION
+       "init=epsg:4326"
+    END
+
+Wichtige Hinweise
+-----------------
+
+- Liegen alle im Mapfile benutzten Daten in der selben Projektion vor, müssen
+  KEINE Projektionsblöcke definiert werden. MapServer geht davon aus, dass alle
+  Daten die selbe Projektion besitzen.
+
+- Der Einfachheit halber kann die Projektionsangabe auf :ref:`MAP`-Ebene als
+  Ausgabeprojektion verstanden werden. Der EXTENT und die UNITS Werte auf 
+  MAP-Ebene müssen denen der Ausgabeprojektion entsprechen. Liegen Layer in 
+  anderen Projektionen (anders als die Projektionsangabe auf MAP-Ebene) vor, 
+  dann muss für diese Layer ein :ref:`PROJECTION` Objekt definiert werden.
+  Dabei wird die Projektion der Quelldaten angegeben.
+
+- Wird nur auf MAP-Ebene und in einem weiteren Layer eine Projektion 
+  angegeben, betrachtet MapServer alle anderen Layer in der auf MAP-Ebene 
+  definierten Projektion vorliegen.
+
+- Es sollte auf die EPSG-Datei immer mit Kleinschreibung verwiesen werden. Der
+  Dateiname wird klein geschrieben und auf Linux/Unix Systemen wird bei diesem
+  Parameter zwischen Groß-/Kleinschreibung unterschieden.
+
+Zusätzliche Informationen 
+-------------------------
+
+- Treten Projektionsfehler auf, kann man unter :ref:`errors` nachsehen ob
+  dieser Fehler bereits beschrieben wurde.
+
+- Eine Suche in den MapServer-users `email list archives`_ führt mit großer
+  Wahrscheinlichkeit zu einem Posting in dem der Fehler bereits beschrieben 
+  bzw. behoben wurde.
+
+- Siehe auch `PROJ.4`_ Handbücher für vollständige Beschreibungen der 
+  unterstützten Projektions- und Koordinatensysteme.
+
+- Für tiefergehende Informationen über Projektionen siehe 
+  `Cartographical Map Projections`_
+
+.. _`PROJ.4`: http://trac.osgeo.org/proj/
+.. _`Cartographical Map Projections`: http://www.progonos.com/furuti/MapProj/Normal/TOC/cartTOC.html
+.. _`email list archives`: http://lists.osgeo.org/pipermail/mapserver-users/

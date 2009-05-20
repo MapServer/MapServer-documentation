@@ -1,0 +1,440 @@
+.. _expressions:
+
+*****************************************************************************
+ Expressions
+*****************************************************************************
+
+:Author:       Dirk Tilger
+:Contact:      dirk at MIRIUP.DE
+:Author:       Umberto Nicoletti
+:Contact:      umberto.nicoletti at gmail.com
+:Revision: $Revision: 8295 $
+:Date: $Date: 2008-12-27 06:08:04 +0100 (Sa, 27. Dez 2008) $
+:Last Updated: 2007/07/09
+
+.. contents::
+    :depth: 2
+    :backlinks: top
+
+Einführung
+-------------------------------------------------------------------------------
+
+Ab Version 4.6.1 können Expression an zwei Stellen benutzt werden. Sie werden
+benutzt um Layer nach bestimmten Einträgen zu filtern und in
+:ref:`CLASS` :ref:`EXPRESSIONs <expressions>` um zu bestimmen auf welche 
+Objekte :ref:`CLASS` angewandt werden soll.
+
+Expression Typen
+-------------------------------------------------------------------------------
+
+Expressions werden benutzt um zu ermitteln ob Attributwerte bestimmten 
+logischen Tests entsprechen. Es gibt insgesamt drei unterschiedliche Typen
+von Expressions die mit MapServer benutzt werden können:
+
+ * Zeichenkettenvergleiche: Ein einzelnes Attribut wird mit einer Zeichenkette 
+   verglichen.
+ * Reguläre Ausdrücke: Ein einzelnes Attribute wird durch einen regulären
+   Ausdruck überprüft.
+ * Logische "MapServer Expressions": Ein oder mehrere Attribute werden anhand
+   von logischen Ausdrücken verglichen.
+
+Zeichenkettenvergleich
+...............................................................................
+
+Zeichenkettenvergleiche testen, wie der Name bereits vermuten läßt, ob
+Attributwerte mit einem bestimmten Wert übereinstimmen. Zeichenkettenvergleiche
+stellen die einfachste Form von MapServer Expressions dar und sin dauch die
+schnellste Alternative.
+
+.. index::
+    pair: EXPRESSION; CLASSITEM
+    
+Um einen Zeichenkettenvergleich zum filtern eines :ref:`LAYER` zu benutzen, 
+muss sowohl FILTERITEM als auch FILTER definiert werden. Mit FILTERITEM wird 
+der Attributname angegeben. FILTER dagen wird auf den Vergleichswert gesetzt.
+Dieselben Regeln treffen auf :ref:`CLASSITEM <classitem>` und EXPRESSION 
+im  :ref:`CLASS` Objekt zu.
+
+Einfaches Beispiel für einen Filter mit Zeichenkettenvergleich
+
+::
+
+    FILTER "2005"
+    FILTERITEM "year"
+
+würde auf alle Datensätze zutreffen deren Attribut "year" auf "2005" gesetzt 
+ist. Die gezeichnete Karte enthält demzufolge nur Objekte deren Attribut
+"year" dem Wert "2005" entspricht.
+
+Auf die gleiche Weise kann eine Klassifikation der oben gefilterten Objekte
+durchgeführt werden, indem CLASSITEM auf Layer Ebene und EXPRESSION in der 
+Klasse selber definiert wird.
+
+::
+
+    LAYER
+        NAME "example"
+        CLASSITEM "year"
+        ...
+        CLASS
+            NAME "year-2005"
+            EXPRESSION "2005"
+            ...
+        END
+    END
+
+Sowohl CLASSITEM als auch FILTERITEM sollten weder mit '/' noch mit '(' 
+beginnen. Die Hintergründe werden weiter unten im Dokument erklärt.
+
+.. index:: Regular expressions
+
+Vergleich mit regulären Ausdrücken
+...............................................................................
+
+Mit regulären Ausdrücken kann ein Text auf bestimmte lexikalische Eigenschaften
+überprüft werden. Dazu wird ein Muster definiert mit dem der gewünschte Text
+gefunden werden kann. Auf UNIX System wird durch das Betriebssystem die
+Funktionalität von regulären Ausdrücken zur Verfügung gestellt und dadurch 
+etwas vom Betriebssystem abhängig. Im POSIX Standard sind die Kerneigenschaften
+definiert. Eine Dokumentation der eingesetzten Bibliothek für reguläre
+Ausdrücke bieter üblicherweise die "regex" Handbuchseite ("man regex").
+
+Reguläre Ausdrücke mit MapServer funktionieren ähnlich den 
+Zeichenkettenvergleichen. Sie sind langsamer als reine Zeichenkettenvergleiche,
+aber können schneller sein als logische Ausdrücke. Wie bei den 
+Zeichenkettenvergleichen muss auch hier FILTERITEM und CLASSITEM definiert 
+werden.
+
+Ein regulärer Ausdruck besteht aus Zeichen mit besonderer Bedeutung und Zeichen
+die, so wie sie sind interpretiert werden. Alphanumerische Zeichen 
+(A-Z, a-z and 0-9) stellen keine besonderen Zeichen dar. Zeichen mit besonderer
+Bedeutung sind folgende:
+
+ * **.** trifft auf ein einzelnes Zeichen zu
+ * **[** and **]** Wird für Gruppierungen benutzt. Z.B. *[A-Z]* trifft zu
+   auf A,B,C,...,X,Y,Z.
+ * **{**, **}**, und **\*** gibt an wie oft eine Übereinstimmung auftreten muss.
+ * **^** trifft zu auf den Anfang, **$** trifft zu auf das Ende eines Wertes,
+ * Der Backslash **\\** wird benutzt um die besondere Bedeutung aufzuheben. 
+   Z.B. *\$* würde auf ein Dollarzeichen zutreffen.
+
+Die folgende :ref:`LAYER` Konfiguration wird alle Einträge auf die Karte 
+zeichnen die den Wert "hotel" in der Attributspalte "placename" gespeichert
+haben.
+::
+
+    LAYER
+        NAME "regexp-example"
+        FILTERITEM "placename"
+        FILTER /hotel/
+        ...
+    END
+
+.. note:: 
+
+    Der reguläre Ausdruck unterscheidet zwischen Groß-/Kleinschreibung, deshalb
+    werden Einträge mit "Hotel" nicht berücksichtigt.
+
+Beispiel: Benutze alle Einträge mit einem Wert des aktuellen Jahrhunderts
+(ausgehend von 2008 ;) in der Attributspalte "year"
+
+::
+
+    FILTERITEM "year"
+    FILTER /^20[0-9][0-9]/
+
+Beispiel: Benutze alle Einträge die entwerder numerisch oder leer sind
+::
+
+    FILTER /^[0-9]*$/
+
+.. note:: 
+    
+    Sollten bei der Verwendung von MapServer und regulären Ausdrücken
+    allgemeine Schutzverletzungen auftreten, könnte es sein das die
+    Arbeitsumgebung gegen mehr als eine Bibliothek für reguläre Ausdrücke
+    gelinkt ist. Dies kann passieren wenn MapServer gegen Komponenten 
+    gelinkt wird die ihre eigene Kopie mitbringen, wie z.B. Apache httpd oder
+    PHP. In diesem Fall kann es hilfreich sein die Bibliothek des 
+    Betriebssystems zu benutzen (libc). Dafür müssen dann auch die 
+    Konfigurationsdateien einiger Komponenten editiert werden.
+
+
+"MapServer expressions"
+-------------------------------------------------------------------------------
+
+MapServer Expressions sind am komplexesten und je nachdem wie sie formuliert
+werden auch relativ langsam. Es kann jedes Attribut getestet werden, dies
+ermöglicht Filterung und Klassifizierung mit mehr als einem Attribut. Neben 
+reinen logischen Operationen werden auch bestimmte Arithmetische- und 
+Zeit-Operationen sowie Zeichenkettenoperationen unterstützt.
+ 
+Damit MapServer einen Ausdruck als FILTER oder EXPRESSION Wert akzeptiert,
+muss dieser letztendlich einen logischen Wert ergeben.
+
+Logische Ausdrücke
+...............................................................................
+
+Syntaktisch gesehen, ist alles innerhalb von runden Klammern ein logischer
+Ausdruck. Logische Ausdrücke benutzen Wahrheitswerte als Eingabe und Ausgabe. 
+Ein logischer Ausdruck kann 'wahr' ('true') oder 'falsch' ('false') sein.
+
+ * ( ( ... ) AND ( ... ) )
+   ( ( ... ) && ( ... ) )
+   ... wird wahr wenn beide logischen Ausdrücke in den inneren Klammern wahr
+   sind.
+
+ * ( ( ... ) OR ( ... ) )
+   ( ( ... ) || ( ... ) )
+   ... wird wahr wenn mindestens einer der beiden logischen Ausdrücke in den
+   inneren Klammern warh ist.
+
+ * NOT ( ... )
+   ! ( ... )
+   ... wird wahr wenn der logische Ausdruck in den Klammern falsch ist.
+
+Zeichenkettenoperation die logische Ausdrücke ergeben   
+...............................................................................
+
+Syntaktische gesehen ist eine Zeichenkette das was zwischen zwei 
+Anführungszeichen steht.
+
+ *  ( "String1" eq "String2" )
+    ( "String1" == "String2" )
+    ( "String1" = "String2" )
+    ... wird wahr wenn beide Zeichenketten gleich sind. Diese Operation ist
+    identisch mit dem MapServer Zeichenkettenvergleich.
+
+ *  ( "String1" != "String2" )
+    ( "String1" ne "String2" )
+    ... wird wahr wenn beide Zeichenketten ungleich sind.
+
+ *  ( "String1" < "String2" )
+    ( "String1" lt "String2" )
+    ... wird wahr wenn "String1" lexikographisch kleiner als "String2" ist.
+
+ *  ( "String1" > "String2" )
+    ( "String1" gt "String2" )
+    ... wird wahr wenn "String1" lexikographisch größer als "String2" ist.
+
+ *  ( "String1" <= "String2" )
+    ( "String1" le "String2" )
+    ... will become true when "String1" is not lexicographically larger 
+    than "String2"
+
+ *  ( "String1" >= "String2" )
+    ( "String1" ge "String2" )
+    ... wird wahr wenn "String1" nicht lexikographisch kleiner ist 
+    als "String2".
+
+ *  ( "String1" IN "token1,token2,...,tokenN" )
+    ... wird wahr wenn "String1" in einem der angegebenen Elemente (token) 
+    enthalten ist.
+
+.. note:: 
+
+    Der Seperator für die Elemente (token) ist ein Komma. Deswegen sollte 
+    kein Leeraum (Leerzeichen, Tabulator...) angegeben werden. Außerdem 
+    kann nicht verglichen werden wenn die Elemente ein Komma enthalten.
+..
+
+ *  ( "String1" =~ /regexp/ )
+    ... wird wahr wenn auf "String1" der reguläre Ausdruck passt. Diese 
+    Operation ist identisch mit den weiter oben beschriebenen regulären
+    Ausdrücken.
+
+Zeichenkettenoperationen die Zeichenketten zurückliefern
+...............................................................................
+
+Es gibt nur eine Operation die eine Zeichenkette zurückliefert:
+
+ *  "String1" + "String2"
+    ... gibt "String1String2" zurück, die Zeichenketten werden aneinander
+    gehängt.
+
+Arithmetische Ausdrücke die logische Werte liefern
+...............................................................................
+
+Bei arithmetischen Operationen stellen Zahlen das Grundelement dar. Es gibt
+einige rein arithmetischen operationen die Zahlenwerte zurück liefern. Diese
+werden im nächsten Abschnitt beschrieben.
+
+ *  ( n1 eq n2 )
+    ( n1 == n2 )
+    ( n1 = n2 )
+    ... wird wahr wenn beide Zahlen gleich sind.
+
+ *  ( n1 != n2 )
+    ( n1 ne n2 )
+    ... wird wahr wenn beide Zahlen ungleich sind.
+
+ *  ( n1 < n2 )
+    ( n1 lt n2 )
+    ...wird wahr wenn n1 kleiner als n2 ist.
+
+ *  ( n1 > n2 )
+    ( n1 gt n2 )
+    ... wird wahr wenn n1 größer als n2 ist.
+
+ *  ( n1 <= n2 )
+    ( n1 le n2 )
+    ... wird wahr wenn n1 kleiner oder gleich n2 ist.
+
+ *  ( n1 >= n2 )
+    ( n1 ge n2 )
+    ... wird wahr wenn n1 größer oder gleich n2 ist.
+
+ *  ( n1 IN "number1,number2,...,numberN" )
+    ... wird wahr wenn n1 mit einer der angegebenen Zahlen übereinstimmt.
+
+
+Arithmetische Ausdrücke die Zahlen zurück liefern
+...............................................................................
+
+Wie bereits geschrieben, unterstützt MapServer auch rein numerische Operationen
+mit Zahlen.
+
+ *  n1 + n2
+    ... liefert die Summe von n1 und n2
+
+ *  n1 - n2
+    ... liefert die Differenz von n1 und n2
+ 
+ *  n1 \* n2
+    ... liefert das Produkt von n1 mit n2
+
+ *  n1 / n2>
+    ... liefert den Wert des Quotienten (n1 geteilt durch n2)
+ 
+ *  -n1
+    ... liefert n1 mit umgekehrtem Vorzeichen
+
+ *  n1 ^ n2
+    ... liefert n1 potentiert mit n2
+
+ *  length ( "String1" )
+    ... liefert die Anzahl der Zeichen von "String1"
+
+.. note::
+
+    Werden obige numerischen Operationen wie logische Operationen benutzt,
+    gelten folgende Regeln: Nullwerte werden als 'false' behandelt, alles
+    Andere als 'true'. Das bedeutet, dass der Ausdruck
+::
+
+    ( 6 + 5 )
+
+    ... als Ergebnis 'true' ergibt, hingegen
+::
+
+    ( 5 - 5 )
+
+    ... als 'false' ausgewertet wird.
+
+Zeitabhängige Ausdrücke
+...............................................................................
+
+MapServer benutzt einen internen Zeittyp für die Vergleiche. Soll ein Wert
+umgewandelt werden, wird die folgende Liste von oben nach unten abgeglichen
+ob ein Eintrag übereinstimmt. Wird eine Übereinstimmung gefunden, wird der
+Vergleich ausgeführt.
+
+ * YYYY-MM-DDTHH:MM:SSZ ('Z' und 'T' sind Buchstaben)</i>
+ * YYYY-MM-DDTHH:MM:SS ('T' ist Buchstabe)</i>
+ * YYYY-MM-DD HH:MM:SS
+ * YYYY-MM-DDTHH:MM ('T' ist Buchstabe)</i>
+ * YYYY-MM-DD HH:MM
+ * YYYY-MM-DDTHH ('T' ist Buchstabe)</i>
+ * YYYY-MM-DD HH
+ * YYYY-MM-DD
+ * YYYY-MM
+ * YYYY
+ * THH:MM:SSZ ('Z' und 'T' sind Buchstaben)</i>
+ * THH:MM:SS
+
+
+Für mit diesem Weg bestimmte Werte werden folgende Operationen unterstützt:
+
+ *  ( n1 eq n2 )
+    ( n1 == n2 )
+    ( n1 = n2 )
+    ... liefert wahr wenn beide Zeiten gleich sind.
+
+ *  ( t1 != t2 )
+    ( t1 ne t2 )
+    ... liefert wahr wenn beide Zeiten ungleich sind.
+
+ *  ( t1 < t2 )
+    ( t1 lt t2 )
+    ... liefert wahr wenn t1 zeitlich vor t2 liegt.
+
+ *  ( t1 > t2 )
+    ( t1 gt t2 )
+    ... liefert wahr wenn t1 zeitlich hinter t2 liegt.
+
+ *  ( t1 <= t2 )
+    ( t1 le t2 )
+    ... liefert wahr wenn t1 zeitlich vor oder gleich t2 ist.
+
+ *  ( n1 >= n2 )
+    ( n1 ge n2 )
+    ... liefert wahr wenn t1 zeitlich hinter oder gleich t2 ist.
+
+Wie wird auf die Attributwerte zugegriffen
+...............................................................................
+
+Um die oben beschriebenen Ausdrücke benutzen zu können, muss der Attributwert
+in den jeweiligen Ausdruck eingesetzt werden. Dies wird erreicht indem der
+Attributname bzw. Attributschlüssel (key) in eckige Klammern gesetzt wird, 
+z.B.: [Attributname]. Bevor ein Ausdruck ausgewertet wird, wird jedes 
+Vorkommen von 2[Attributname]" durch den Wert des Attributes ersetzt.
+
+Beispiel: Die Verarbeitung eines einfachen Zeichenkettenvergleiches. Der 
+Filter ist wie folgt definiert:
+
+::
+
+    FILTER ( "[BUILDING_NAME]" == "National Museum" )
+
+Es gibt ein Attribut "BUILDING_NAME" und der Wert ist "National Government 
+Building". Demzufolge wird der Ausdruck...
+::
+
+    "National Government Building" == "National Museum" )
+
+...ausgewertet und liefert falsch (bzw. false) als Ergebnis.
+
+Einige Layer besitzen oftmals keine Metadaten. Für Rasterlayer zum Beispiel
+wurden spezielle Attribute definiert, die für eine Klassifikation benutzt
+werden können:
+
+ *  [PIXEL]
+    ... liefert den Pixelwert als Zahl
+ *  [RED], [GREEN], [BLUE]
+    ... liefert den Farbwert für den roten (red), grünen (green) und blauen
+    (blue) Farbanteil des Pixel.
+
+
+Maskieren von Anführungszeichen in Zeichenketten
+...............................................................................
+
+.. note::
+
+    Anführungszeichen können erst ab MapServer Versionen >= 5.0 maskiert werden.
+
+Ab MapServer 5.0  kann eine C-ähnliche Maskierung für die Ausdrücke benutzt
+werden. Enthält das Attribut *"NAME"* den Wert *'National "hero" statue'* 
+könnte der FILTER Ausdruck wie folgt geschrieben werden:
+
+::
+
+    FILTER ( "[NAME]" == "National \"hero\" statue" )
+    ...
+
+um einfache Anführungszeichen zu maskieren kann folgender Ausdruck benutzt 
+werden:
+
+::
+
+    FILTER ( "[NAME]" == "National \'hero\' statue" )
+
