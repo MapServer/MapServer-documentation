@@ -1,0 +1,307 @@
+Workshop FOSSGIS 2006
+
+Installation des "GIS-Betriebssystems" UbuntuGIS
+
+Benjamin Thelen & Lars-Hendrik Schneider
+
+Bonn, den 29.03.2006
+
+
+Mini-Howto Installation Ubuntu 5.10 "Breezy Badger" mit
+
+1. PostgreSQL 8.1 und PostGIS 1.1.1
+2. (optional MySQL 4.1)
+3. UMN MapServer 4.8.2
+
+1. Vorbereitung der Installation
+================================
+System bootet von CD/DVD, Monitor und Tastatur anschließen, Netzwerkkabel angeschlossen (DHCP) ...
+
+2. Installation des Basissystems
+================================
+Installation vom Datenträger starten, am Bootprompt
+::
+
+	boot: server
+	
+
+eingeben (für erweiterte Optionen ''server-expert''). Dies startet die Installation des Grundsystems ohne X.
+
+Sprache wählen/Choose language: Choose a language: German – Deutsch
+
+Sprache wählen/Choose: Land wählen: Deutschland
+
+Ihre Tastatur ist: Deutsch
+
+Netzwerk einrichten: Bitte geben Sie den Namen des Rechners an: webgis
+
+Festplatte partitionieren: Partitionstabelle von Hand eingeben:
+
+z.B. 200MB /boot (Boot-Flag: EIN), 1GB SWAP (Auslagerungsdatei), 2GB /, Rest /var, u.U. noch /tmp auf eigene Partition. Alle Dateisysteme Ext3-Journaling-Dateisystem.
+
+Zeitzone konfigurieren: Europe/Berlin: Ja
+
+User und Passwörter einrichten: Voller Name für den neuen Benutzer: www-User
+
+User und Passwörter einrichten: Benutzername für ihr Konto: www
+
+User und Passwörter einrichten: Passwort für den neuen Benutzer: <geheim> (-Bestätigen)
+
+Installation beenden: Erste Stufe abgeschlossen: Weiter (-Reboot)
+
+3. Grundkonfiguration des Systems
+=================================
+Netzwerkeinstellungen:
+
+/etc/network/interfaces (IP, Gateway, Broadcast ...)
+
+/etc/resolv.conf (DNS)
+
+Root-Account aktivieren:
+::
+
+	# sudo passwd root
+	# su
+
+anderen Usern sudo-Rechte entziehen:
+::
+
+	# visudo
+	%admin ALL=(ALL) ALL ändern in #%admin ALL=(ALL) ALL
+ 
+apt-Quellen einrichten:
+::
+
+	# vi /etc/apt/sources.list
+
+Erste Zeile mit cdrom löschen, bei anderen '#' entfernen. TIP: Der vi ändert nicht die Eigentümerrechte einer Datei!
+
+Erstes Mal Paketquellen einlesen & updaten:
+::
+
+	# apt-get update && apt-get upgrade
+
+SSH-Server installieren:
+::
+
+	# apt-get install openssh-server
+
+Basispakete für Entwicklung installieren:
+::
+
+	# apt-get install build-essential
+
+Lokale anlegen:
+::
+
+	# dpkg-reconfigure locales
+	de_utf-8 auswählen, andere abwählen, de_utf-8 als Standard wählen.
+
+Umgebungsvariable LC_ALL exportieren:
+::
+
+	# echo 'LC_ALL=de_DE.UTF-8' >> /etc/environment
+	# export LC_ALL=de_DE.UTF-8
+
+4. Apache2-Webserver mit PHP5 installieren
+==========================================
+Verzeichnisse:
+
+/etc/apache2/sites-available – Verzeichnis für vHosts-Dateien
+
+/etc/apache2/sites-enabled – Verzeichnis für vHosts-Dateien, die aktiviert sind
+
+/var/www – default Veröffentlichungsverzeichnis des Apache
+
+/usr/lib/cgi-bin – default cgi-bin des Apache
+
+/etc/php5/apache2/php.ini – PHP.INI-Datei von PHP5 im Apache2
+
+Apache2 und PHP5 installieren (zieht weitere Pakete automatisch mit):
+::
+
+	# apt-get install apache2 apache2-common apache2-mpm-prefork apache2-utils libapache2-mod-php5 php5 php5-common php5-gd php5-mysql php5-pgsql
+
+Veröffentlichungsverzeichnis dem www-User schenken (für Webseitenbetreuung):
+::
+
+	# chown -R www:www /var/www
+
+5. PostgreSQL-Pakete installieren
+=================================
+Verzeichnisse:
+
+/etc/postgresql/8.1/main/pg_hba.conf – Rechteverwaltung des PostgreSQL-Servers
+
+/etc/postgresql/8.1/main/postgresql.conf – zentrale Konfigurationsdatei des PostgreSQL-Servers
+
+PostgreSQL-Pakete installieren (zieht weitere Pakete automatisch mit):
+::
+
+	# apt-get install postgresql-8.1 postgresql-client-8.1 postgresql-contrib-8.1 postgresql-server-dev-8.1
+
+Contrib-Paket wird dabei später für die PostGIS-Installation benötigt.
+
+PostgreSQL für den Einsatz mit TCP/IP freischalten:
+::
+
+	# vi /etc/postgresql/8.1/main/postgresql.conf
+	-> #listen_addresses = 'localhost' ändern in listen_addresses = 'localhost'
+
+Nutzerrechte freischalten:
+::
+
+	# vi /etc/postgresql/8.1/main/pg_hba.conf
+	-> local all all ident sameuser ändern in local all all trust bzw. was als Sicherheitspolicy vorgesehen ist.
+
+PostgreSQL-Server neu starten:
+::
+
+	# /etc/init.d/postgresql-8.1 restart
+
+/***** *OPTIONAL* *****/
+MySQL-Pakete installieren
+
+MySQL-Paket installieren (zieht weitere Pakete automatisch mit):
+::
+
+	# apt-get install mysql-server-4.1
+
+u.a. postfix (für die Zustellung von Mails aus dem DB-System)
+'Local only' oder 'No configuration'
+/***** *OPTIONAL* *****/
+
+
+6. Vor den weiteren Schritten Pakete holen
+==========================================
+Folgende Pakete werden für die Kompilierung von PostGIS bzw. des UMN MapServers benötigt und werden vorab installiert (zieht weitere Pakete automatisch mit):
+::
+
+	# apt-get install proj libgeos-dev libcurl3-dev libfreetype6-dev libgdal1-dev gdal-bin libjpeg62-dev libpng12-dev libgd2-xpm-dev flex bison
+
+7. Kompilierung und Installation von PostGIS
+============================================
+Arbeitsverzeichnis anlegen:
+::
+
+	# mkdir /var/src
+
+Sourcen von PostgreSQL besorgen von http://www.postgresql.org/ftp/source/v8.1.2/, entweder herunterladen und per SCP hochladen oder aus dem Mirror direkt mit wget laden:
+::
+
+	# wget ftp.de.postgresql.org/mirror/postgresql/source/v8.1.2/postgresql-8.1.2.tar.gz
+
+Unbedingt die genaue PostgreSQL-Version (hier die 8.1.2) beachten!
+
+Sourcen entpacken:
+::
+
+	# tar xzf postgresql-8.1.2.tar.gz
+	# cd postgresql-8.1.2
+
+configure laufen lassen:
+::
+
+	# ./configure -–without-readline -–without-zlib
+
+wenn configure erfolgreich war:
+::
+
+	# make
+
+und KEIN make install, da wir ja nur das Binary brauchen!
+
+PostGIS herunterladen in das Contrib-Verzeichnis der PostgreSQL-Sourcen laden und entpacken:
+::
+
+	# cd /var/src/postgresql-8.1.2/contrib
+	# wget http://postgis.refractions.net/download/postgis-1.1.1.tar.gz
+	# tar xzf postgis-1.1.1.tar.gz
+	# mv postgis-1.1.1 postgis
+
+PostGIS bauen und ins System installieren:
+::
+
+	# cd postgis
+	# make && make install
+
+Anlegen der ersten PostGIS-Datenbank als Benutzer postgres:
+::
+
+	# su postgres
+	$ createdb mygisdb
+	$ createlang plpgsql mygisdb
+	$ psql -d mygisdb -f /usr/share/postgresql/8.1/contrib/lwpostgis.sql
+	$ psql -d mygisdb -f /usr/share/postgresql/8.1/contrib/spatial_ref_sys.sql
+	$ exit
+
+8. Kompilierung und Installation des UMN MapServers
+===================================================
+::
+
+	# cd /var/src
+	# wget http://cvs.gis.umn.edu/dist/mapserver-4.8.2.tar.gz
+	# tar xzf mapserver-4.8.2.tar.gz
+	# cd mapserver-4.8.2
+
+Dateien tunen:
+::
+
+	# vi mapsymbol.h
+	-> #define MS_MAXSYMBOLS 64 ändern in #define MS_MAXSYMBOLS 1000
+
+Damit wird die Zahl der möglichen Symbole erhöht.
+::
+
+	# vi map.h
+	-> #define MS_MAXCLASSES 250 ändern in #define MS_MAXCLASSES 1000
+
+Anzahl Klassen je Layer erhöhen.
+::
+
+	-> #define MS_MAXLAYERS 200 ändern in #define MS_MAXLAYERS 500
+
+Anzahl Layer erhöhen.
+::
+
+	-> #define MS_MAXIMAGESIZE_DEFAULT 2048 ändern in #define MS_MAXIMAGESIZE_DEFAULT 10000
+
+Dateigröße des möglichen Ausgabebildes erhöhen (wichtig für den hochqualitativen Druck!)
+
+
+Nun configure ausführen:
+::
+
+	# ./configure --with-gd \
+	--with-gdal=/usr/bin/gdal-config \
+	--with-proj \
+	--with-ogr \
+	--with-jpeg=/usr/ \
+	--without-png \
+	--without-tiff \
+	--with-freetype \
+	--with-wmsserver \
+	--with-wmsclient \
+	--with-wfs \
+	--with-postgis
+
+Wenn configure erfolgreich, dann das Binary bauen:
+::
+
+	# make
+
+...und anschließend testen:
+::
+
+	# ./mapserv -v
+	MapServer version 4.8.2 OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG OUTPUT=WBMP OUTPUT=SVG SUPPORTS=PROJ SUPPORTS=FREETYPE SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT 	SUPPORTS=WFS_SERVER INPUT=EPPL7 INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE
+
+In das CGI-BIN des Apache2 verschieben:
+::
+
+	# cp mapserv /usr/lib/cgi-bin/
+
+und im Browser testen
+Im Browser: *http://<IP-Adresse>/cgi-bin/mapserv/*
+No query information to decode. QUERY_STRING is set, but empty.
+
