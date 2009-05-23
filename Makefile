@@ -10,10 +10,16 @@ SPHINXBUILD   = sphinx-build
 PAPER         =
 LANGUAGES     = en de
 
+# On mapserver.org we need to write alternate links for the language switcher.
+# This is triggered by setting TARGET to 'mapserverorg'
+# Unsetting or every other value will cause the standard behaviour.
+#
+#TARGET        = mapserverorg
+
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
-ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees/$$lang $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -A language=$$lang -D language=$$lang
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees/$$lang $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -A language=$$lang -D language=$$lang -A target=$TARGET
 
 .PHONY: help clean html web pickle htmlhelp latex changes linkcheck
 
@@ -24,6 +30,8 @@ help:
 	@echo "  json      to make JSON files"
 	@echo "  htmlhelp  to make HTML files and a HTML help project"
 	@echo "  latex     to make LaTeX files, you can set PAPER=a4 or PAPER=letter"
+	@echo "  all-pdf   to make PDF file"
+	@echo "  all-ps    to make PS file"
 	@echo "  changes   to make an overview over all changed/added/deprecated items"
 	@echo "  linkcheck to check all external links for integrity"
 
@@ -35,7 +43,6 @@ html:
 	do \
 		mkdir -p $(BUILDDIR)/html/$$lang $(BUILDDIR)/doctrees/$$lang; \
 		$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/html/$$lang;\
-		cp -R _static $(BUILDDIR)/html/; \
 	done
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html/<language>.";\
