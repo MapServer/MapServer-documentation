@@ -1,9 +1,14 @@
 @ECHO OFF
-
 REM Command file for Sphinx documentation
 
+REM using delayed expansion of variables...
+setlocal enableextensions enabledelayedexpansion
+
+REM ...to get a list of directories to be processed
+FOR /D  %%i IN ("??") do (SET LANGUAGES=!LANGUAGES! %%i)
+
 set SPHINXBUILD=sphinx-build
-set ALLSPHINXOPTS= -d _build/doctrees/%%L -c . -A language=%%L -D language=%%L
+set ALLSPHINXOPTS= -d _build/doctrees/%%L -c . -A language=%%L -D language=%%L -A languages="%LANGUAGES%"
 if NOT "%PAPER%" == "" (
 	set ALLSPHINXOPTS=-D latex_paper_size=%PAPER% %ALLSPHINXOPTS%
 )
@@ -27,7 +32,7 @@ if "%1" == "clean" (
 )
 
 if "%1" == "html" (
-  FOR /D %%L in ("??") DO (
+  FOR  %%L in (%LANGUAGES%) DO (
   	%SPHINXBUILD% -b html  %ALLSPHINXOPTS% %%L _build/html/%%L
 	)
 	echo.
@@ -36,7 +41,7 @@ if "%1" == "html" (
 )
 
 if "%1" == "latex" (
-  FOR /D %%L in ("??") DO (
+  FOR  %%L in (%LANGUAGES%) DO (
   	%SPHINXBUILD% -b latex  %ALLSPHINXOPTS% %%L _build/latex/%%L
 	)
 	echo.
@@ -45,7 +50,7 @@ if "%1" == "latex" (
 )
 
 if "%1" == "changes" (
-  FOR /D %%L in ("??") DO (
+  FOR  %%L in (%LANGUAGES%) DO (
   	%SPHINXBUILD% -b changes  %ALLSPHINXOPTS% %%L _build/changes/%%L
 	)
 	echo.
@@ -54,7 +59,7 @@ if "%1" == "changes" (
 )
 
 if "%1" == "linkcheck" (
-  FOR /D %%L in ("??") DO (
+  FOR  %%L in (%LANGUAGES%) DO (
   	%SPHINXBUILD% -b linkcheck  %ALLSPHINXOPTS% %%L _build/linkcheck/%%L
 	)
 	echo.
