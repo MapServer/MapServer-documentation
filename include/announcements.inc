@@ -1,3 +1,10 @@
+6-1-2009 - MapServer 5.4.1 is released
+..............................................................................
+
+MapServer 5.4.1 has been released.  See the
+`Changelog <http://trac.osgeo.org/mapserver/browser/tags/rel-5-4-1/mapserver/HISTORY.TXT>`__
+for more details and head to :ref:`download` to obtain a copy.
+
 4-22-2009 - MapServer 5.4 is released
 ..............................................................................
 
