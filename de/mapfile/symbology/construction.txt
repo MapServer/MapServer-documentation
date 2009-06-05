@@ -1,7 +1,7 @@
 .. _sym_construction:
 
 *****************************************************************************
- Cartographic Symbol Construction with MapServer 
+ Konstruktion von kartographischen Signaturen
 *****************************************************************************
 
 :Author: Peter Freimuth
@@ -11,264 +11,273 @@
 :Revision: $Revision: 8484 $
 :Date: $Date: 2009-01-31 16:38:27 +0100 (Sa, 31. Jan 2009) $
 
-.. contents:: Table of Contents
+.. contents:: Inhaltsverzeichnis
     :depth: 2
     :backlinks: top
 
 .. index:
     single: Symbol Construction;
 
-Abstract
-========
+Übersicht
+=========
 
-This Document refers to the syntax of MAP and symbolfiles for MapServer 4.6. 
-It is based upon the results of a project carried out at the University of 
-Hannover, Institute of Landscape and Nature Conservation. It was initiated by 
-Mr. Dipl. Ing. Roland Hachmann. Parts have been taken from a study carried through 
-by Karsten Hoffmann, student of Geography and Cartography at the FU Berlin. In 
-the context of a hands-on training in the company GraS GmbH Mr. Hoffman mainly 
-dealed with the development of symbols.
-(`Download study report`_ in German)
-His degree dissertation will also concern this subject. 
+Dieses Dokument bezieht sich auf die Syntax der Map-und Symboldatei für die
+MapServer Version 4.6. Es basiert auf Ergebnissen eines Projektes für die
+Universität Hannover – Institut für Landschaftspflege und Naturschutz –
+vertreten durch Herrn Dipl.Ing. Roland Hachmann und dem Praktikumsbericht
+von Karsten Hoffmann, "Geographiestudent der Humboldt Universität zu Berlin
+mit dem Nebenfach Kartographie an der FU Berlin!!". Im Rahmen eines bei der
+Firma GraS GmbH durchgeführten Praktikums gehörte die Zeichengenerierung im
+UMN MapServer zu einem der Schwerpunkte. (`Download des Praktikumsbericht`_ in
+Deutsch) Seine Diplomarbeit wird sich ebenfalls mit dieser Thematik beschäftigen.
 
-At the end of this document you will find a link to a paper discussing further 
-development of the UMN MapServer software regarding the cartographic rendering 
-capabilities. We will try to get around to also translating it to English asap.  
-We welcome everybody who is interested in this subject to participate 
-in the discussion. As a result of this discussion we want to put together a list 
-with change requests and new requirements for UMN MapServer.   
+Am Ende des Dokumentes finden Sie auch den Download-Link zu einem
+Diskussionspapier zur Weiterentwicklung des UMN MapServers im Bereich
+kartographische Darstellungsmöglichkeiten. Ich bitte alle an dieser Thematik
+Interessierten um eine konstruktive Diskussion der dort angesprochenen Punkte.
+Des weiteren sollten wir über die Liste Feature-Wünsche im Bereich
+MapServer-Graphik zusammentragen.
 
-.. _`Download study report`: http://www.mapmedia.de/fileadmin/user_upload/dokumente/umn_signaturen_howto/Praktikumsarbeit.zip
+.. _`Download des Praktikumsbericht`: http://www.mapmedia.de/fileadmin/user_upload/dokumente/umn_signaturen_howto/Praktikumsarbeit.zip
 
 
-Introduction
-============
+Einleitung
+==========
 
-Cartographic characters can be distinguished as point, line and area 
-symbols. These symbols may vary depending on their special attributes (variables).
-Bertin (1974) created a clear and logical symbol scheme in which symbols can 
-be varied referring to graphical variables. The following variables 
-are used within MapServer: FORM, SIZE, PATTERN, COLOR and LIGHTNESS. Point and 
-area symbols as well as text fonts (ttf) can additionally be displayed 
-with a 1-pixel wide frame which we call OUTLINE.
+Kartographische Zeichen werden nach punkthaften, linienhaften und flächenhaften
+Zeichen unterschieden. Diese Zeichen können dann nach bestimmten Merkmalen
+(Variablen) variiert werden. Bertin (1974) entwarf ein klares und logisch
+aufgebautes Zeichenmodell in denen Zeichen nach bestimmten Graphischen
+Variablen verändert werden können. Im MapServer kommen folgende Variablen zur
+Anwendung: Form, Größe, Muster, Farbton und Helligkeit. Des Weiteren gibt es
+für punkt- und flächenhafte Objekte sowie für Schrift (TTF) noch die
+Möglichkeit diese mit einer 1-Pixel breiten Linie zu umranden, so dass also
+noch die Variable Kontur hinzugefügt werden kann.
 
-Multiple Rendering and Overlay
-------------------------------
 
-Complex cartographic effects can be achieved by rendering the same vector data 
-with different attributes, sizes and colors on top of each other. This is an 
-easy workaround to creating complex signatures but obviously it will also reflect 
-on the performance of the application. Every rendering process of the same 
-geometries will  take up additional processor time. 
+Mehrfaches Rendern und Überlagern
+---------------------------------
 
-As an example consider displaying a highway with a black border line, two yellow 
-lanes and a red center line. You can achieve this by rendering the same highway 
-geometry three times on top of each other. The lowest (in drawing order) is rendered 
-as a broad black line with a width of 9 pixel. The second level lines are rendered 
-in yellow color with a width of 7 pixel. The topmost layer is displayed as the 
-red center line with a width of 3 pixel in size. That way each yellow colored 
-lane will have a width of (7-1)/2 = 3 pixel.
+Eine Kontur für Flächen mit mehr graphischen Möglichkeiten kann auch mittels
+zweier Layer erzeugt werden, wobei beides mal auf dieselben Vektordaten
+(Polygone) zugegriffen wird. Es wird zunächst ein Layer vom TYPE LINE, welche
+also die Flächen mit einer Liniensignatur umrandet, definiert. Darüber kann
+dann ein zweiter Layer vom TYPE POLYGON gezeichnet werden, welcher die
+Flächensignatur zum Füllen der Polygone festlegt. Hierbei wird dann aber die
+innerhalb der Fläche liegende Hälfte der Umrandungslinie verdeckt (eine Art
+clipping), womit eine asymmetrische Liniensignatur erzeugt werden kann. Für
+eine vollständig sichtbare Umrandungslinie wird der Layer der Flächensignatur
+einfach unterhalb des Layers der Umrandungslinie angeordnet.
 
-This can be a solution for many kinds of cartographic questions, a combination of
-different geometry types is also possible. First define a polygon layer as 
-TYPE LINE. It will frame the polygons with a line signature. On top of this 
-include the same geometry a second time but now as TYPE POLYGON with a symbol 
-filling the polygon. This way half of the underlying outline is covered by the 
-polygon with the fill symbol. The clipping effect renders an asymmetric line 
-symbol. To present the outline without clipping just reorder the layers 
-and put the outline presentation on top of the layer with the fill symbol.
+Eine weitere und
+etwas aufwendige Möglichkeit zur Konstruktion von asymmetrischen
+Liniensignaturen für Flächenumrandungen wäre die Erzeugung von kleineren oder
+größeren Polygonen (von den Originalflächen), welche also innerhalb der
+Originalpolygone liegen oder diese überdecken und deren Ränder einen konstanten
+Abstand zueinander haben. Auf diese neuen Flächenrändern lässt sich dann eine
+Liniensignatur erzeugen. Dieses kann derzeit über die Verwendung des OFFSET
+Parameters erreicht werden, wobei der y-Wert -99 betragen muß. Allerdings ist
+diese Funktion noch nicht voll ausgereift!! (Featurewunsch? - Pufferzonen
+könnten hier ideale Aufsatzgeometrieen liefern. Sobald die „geos“ Bibliothek
+im MapServer integriert ist, sollte dies dann auch möglich sein.)
 
-Each step growing more complex, yet another way to construct asymmetric line 
-signatures for framed faces is to tamper with the original geometries by buffering 
-or clipping the original geometry such that the new objects lie inside the 
-original polygons or grow over the borders. A new line symbol for these 
-geometries can use the OFFSET parameter with the y-value set to -99. This is 
-where current development stops short this functions has not been developed 
-further. (Anybody need this feature?). Buffer areas may provide ideal geometry
-for ambitious cartography, this should be possible as soon as the GEOS library 
-is implemented in MapServer. Until then using PostGIS helps to solve a lot of 
-problems.       
 
-Symbol Scaling
---------------
+Skalierung von Symbolen
+-----------------------
 
-There are two basically different ways to handle the display size of symbols 
-and cartographic elements in a map at different scales. The size of cartographic 
-objects is either set in screen pixel or in real world units.         
+Es gibt zwei verschiedene Wege um die Größe von Symbolen oder kartographischen
+Elementen zu beeinflussen. Die Größe von kartographischen Objekten wird
+entweder in Bildschirmpixel oder realen Größeneinheiten angegeben.
 
-- If the size is set in real world units (i.e. meters), then cartographic 
-  objects are scalable, they will shrink and grow together with the scale 
-  at which the map ist displayed.             
+- Werden reale Größeneinheiten benutzt (z.B. Meter), sind kartographische
+  Objekte skalierbar. Sie werden ihre Größe dem jeweiligen dargestellten
+  Maßstab anpassen.
 
-- Object sizes in screen pixel will be displayed in the same size no matter 
-  at what scale the map is displayed.             
+- Werden Bildschirmpixel benutzt, werden die Symbole immer in dieser Größe
+  dargestellt, unabhängig vom Kartenmaßstab.
 
-UMN MapServer implements the screen pixel size type for displaying cartographic 
-elements. Additionally the size of cartographic elements can be tied to defined
-scales, such that the symbols "grow" and "shrink" with the 
-scale. The involved parameters include SYMBOLSCALE, MINSIZE and MAXSIZE settings 
-in the MAP file.      
+UMN MapServer benutzt die Methode mit Angabe der Bildschirmpixel. Zusätzlich
+kann die Größe der Elemente für bestimmte Maßstäbe defininiert werden, somit
+ergibt sich für die Größe gewissermassen eine Maßstabsabhängigkeit. Die dafür
+zu benutzenden Parameter sind SYMBOLSCALE, MINSIZE und MAXSIZE.
 
-All symbol and style definitions referenced in the following section are contained
-in the archive at the end of this document.       
+Alle hier verwendeten Symbole und Style Definitionen sind in dem ZIP-Archiv
+(download_vortrag.zip) enthalten. Link befindet sich am Ende des Dokuments!
 
-The following figure shows the theoretical structure of cartographic symbols, 
-which are also used in UMN MapServer: 
+Folgende Abbildung verdeutlicht die theoretische Struktur von kartographischen
+Zeichen, die auch im UMN MapServer Verwendung findet:
 
-**Figure1: Structure of Cartographic Symbols`**
+**Abbildung1: Kartographische Zeichenstruktur`**
 
 .. image:: ../../images/carto-elements.png
    :height: 400
    :width: 600
 
-In a MapServer application symbol parameters are taken from the MAP and symbol
-file as follows: 
+Die Definitionen der einzelnen Variablen werden in einer MapServer-Anwendung
+wie folgt auf die Map- und die Symboldatei aufgeteilt:
 
 *MAP* file:
 
-- The parameter TYPE defines the type of geometry (point, line or polygon)
-  for each layer. The symbols are accordingly rendered as single points,
-  along a line or area symbols.
-  
-- The definition of the color, brightness (through the color parameter),
-  size and outline is set inside the STYLE-section of a CLASS-section
-  by the parameters COLOR, SIZE and OUTLINECOLOR.
-  
-- Combining several basic elements to achieve a complex signature
-  with several STYLEs inside one layer (observe the display order).
-  
+- Bestimmung der Geometrie (Punkt, Linie, Fläche) im jeweiligen Layer über
+  TYPE, die Zeichen werden dann entweder auf Punkte, auf Linien oder auf
+  Flächen angewandt
+- Definition der Farbe, der Helligkeit (über die Farbe), der Größe und der
+  Kontur in der STYLE-Sektion einer CLASS-Sektion des Layers über COLOR,
+  SIZE und OUTLINECOLOR
+- Kombination von mehreren „Grundelementen“ zu einer gewünschten Signatur über
+  mehrere STYLEs im Layer (Zeichenreihenfolge beachten)
+
+
 *Symbol* file:
 
-- Definition of form and pattern with TYPE, POINTS, IMAGE, FILLED,
-  STYLE (meaning fill pattern) and GAP.  
-  
-The following figure shows the interaction of these elements and explains 
-the configuration in the MAP and the SYMBOL file sections necessary for 
-rendering cartographic symbols in the map:
+- Definition der Form und des Musters über TYPE, POINTS, IMAGE, FILLED, STYLE
+  (meint hier pattern) und GAP
 
-**Figure2: Schema showing interaction of MAP and SYMBOL file**
+Folgende Übersicht veranschaulicht diese Zusammenhänge und erläutert den
+Aufbau der Abschnitte der Map- und der Symboldatei, die für die Konstruktion
+von Signaturen relevant sind:
+
+**Abbildung2: Schema zur Erläuterung der Map-und der Symboldatei**
 
 .. image:: ../../images/map-symbolfile-interaction.png
 
-Using Cartographic Symbols in UMN MapServer
-===========================================
+Erstellung von kartographischen Signaturen mit dem UMN MapServer
+================================================================
 
-The basic graphic elements in a symbolfile are made up of vectors, truetype
-fonts, raster images or cartolines and are defined by the TYPE-parameter. The
-following section explains all four types of basic graphic elements and how
-they can be combined to create complex cartographic symbols.  
+Die „Grundelemente“ (graphische Basiselemte) in der Symboldatei können aus
+Vektoren, TrueTypeFonts, Rasterbildern oder Cartolines bestehen, was über den
+TYPE-Parameter bestimmt wird. Es werden nun alle vier Typen der „Grundelemente“
+und die Kombinationen dieser Elemente zu Signaturen näher erläutert. Zunächst
+wird aber noch eine kurze Betrachtung der Skalierungsproblematik (SYMBOLSCALE,
+MINSIZE, MAXSIZE) vorangestellt, da sie für den Einsatz komplexerer Signaturen
+im MapServer sehr wichtig sind.
 
-Scaling of Symbols
-------------------
+Skalierung von Signaturen
+-------------------------
 
-The parameter SYMBOLSCALE in the LAYER section specifies the scale number at
-which the symbol or text label is displayed in exactly the pixel size defined
-by the SIZE parameter. Observe that the SIZE parameter is tightly connected
-to the SYMBOLSCALE parameter. The parameters MAXSIZE and MINSIZE inside the
-STYLE block limit the rendering of symbols to the maximum and minimum scale
-specified here. Both the minimum reasonable display size for symbols and the
-minimum of space required to display a symbol within a polygon should be
-observed.
+Mit SYMBOLSCALE kann in der LAYER-Sektion eine Maßstabszahl angegeben werden,
+bei der die Signatur bzw. Beschriftung in ihrer über SIZE definierten Größe
+dargestellt wird. In anderen Maßstabsbereichen werden die Signaturen bzw.
+Beschriftungen dann mitskaliert. Mittels MAXSIZE und MINSIZE innerhalb des
+STYLE Blocks kann dieser Skalierungsvorgang auf ein für die Signatur
+vertretbaren Bereich eingegrenzt werden. Dabei sollte die „graphische
+Mindestgröße“ genauso wie der Flächenbedarf der Signatur in der Karte
+berücksichtigt werden. Bei Signaturen für Linien und Flächenfüllungen werden
 
-Symbols of TYPE PIXMAP will not be scaled if used as line and polygon fills!
-In addition PIXMAPs will not display nicely when rescaled due to roundings
-caused by the integer arithmetics of the GD. The basic elements of a composite
-cartographic symbol may change their relative positions to each other, especially
-at very small scales (large number). They can also slightly change their form
-when they are displayed as tiny little images.
+Symbole (Grundelemente) vom TYPE „PIXMAP“ nicht skaliert!. Des weiteren treten
+beim Skalierungsprozeß diverse Darstellungsprobleme auf, die primär auf die
+Aufrasterung aller Signaturen und die dabei zwangsweise auftretenden
+Rundungsungenauigkeiten zurückzuführen sind (Integerarithmetik der GD). Bei
+Signaturen, die aus mehreren „Grundelementen“ kombiniert sind, kann es
+vorkommen, dass in einigen Maßstabsbereichen (vor allem in den kleineren) die
+Elemente nicht mehr genau zueinander zentriert sind oder sich in der Form
+leicht verändern.
 
-Furthermore the gaps of line symbols (the pattern itself) will not be
-scaled. The gaps stay fixed whereas the width is scaled. This can result in
-strange effects seeming to change the original pattern.
+Außerdem werden bei Linienmustern die Abstände und Längen
+der Linienabschnitte (also das Muster an sich) nicht mitskaliert. Diese bleiben
+immer gleich und nur die Breite der Linie wird verändert. Dies hat einen
+unschönen Effekt auf das eigentliche Muster, das sich scheinbar verändert.
 
-There is no possibility to separately define the display intervals (gaps) with
-MINSCALE and MAXSCALE in the STYLE-section (anybody need this?), so this tuning
-has to be solved at the LAYER level. TO do this create several layers with the
-same geometries for different scale levels and specify the appropriate sizes
-accordingly.  
+Da sich für die STYLE Sektionen keine Darstellungsintervalle via MINSCALE und
+MAXSCALE definieren lassen (Featurewunsch?) muß dieses Feintuning auf
+Layerebene gelöst werden. Dazu legt man sich mehrere Layer mit denselben Daten
+für verschiedene Maßstabsbereiche an und ordnet ihnen entsprechend die
+passenden Signaturen zu.
 
-Always observe that cartographic symbols depend a lot on the scale! So be careful
-with the interaction of content, symbols and scale when creating projects.
-All three parameters heavily interact and have to be coordinated to produce
-a good map.  
+Beachten Sie, dass Signaturen immer eine große Maßstabsabhängigkeit aufweisen!
+Denken Sie also bei der Umsetzung Ihrer Projekte immer an das Zusammenspiel von
+Inhalt, Signatur und Maßstab. Alles drei muß aufeinander abgestimmt werden, um
+gute Visualisierungsergebnisse (Bildschirmkarten) zu erzielen.
 
-Symbols of TYPE VECTOR and ELLIPSE
-----------------------------------
 
-The TYPE VECTOR defines the form of a symbol by setting x- and y-values in a
-local caresian coordinate system with the origin at the upper left corner.
-Each symbol is parenthesized by the tags POINTS and END. The maximum number of
-points can be increased by changing the parameter MS_MAXVECTORPOINTS in the
-file mapsymbols.h. The current default is 100. Note that by setting the end
-point equal to the start point you obtain a closed form (polygon). To use the
-coordinates -99 -99 to break a line, the following point will not be connected
-by a line with the preceding one.   
+Signaturen vom TYPE VECTOR und ELLIPSE
+--------------------------------------
 
-When creating symbols of the TYPE VECTOR you should observe some style guidelines.
-Avoid downtilted lines in area symbols, as they will lead to heavy aliasing
-effects. Furthermore you should not go below a useful minimum size, which is
-relevant for all types of symbols. Keep in mind that the points in the local
-coordinate system are rendered as pixel images, thus only integer values make
-any sense. Every symbol of the TYPE VECTOR is first rendered as a pixel image
-and then added to the geometry. This is the basic principle of the GD graphic
-kernel. PIXMAP symbols may be used directly for drawing.  
+Beim TYPE VECTOR wird durch die Angabe von x- und y-Werten innerhalb von POINTS
+und END die Form eines Zeichens definiert (die max Anzahl der Punkte kann über
+den Parameter MS_MAXVECTORPOINTS in mapsymbols.h verändert werden / default ist
+100). Beachten Sie, dass Sie für eine geschlossene Figur auch den Endpunkt
+mitdefinieren müssen. Erster und letzter Punkt sind dabei identisch.
+Mit -99 -99 fügen Sie ein 'Pen up' Kommando ein. Soll heißen, der darauf
+folgenden Punkt wird nicht mit dem vorangegangenen verbunden.
 
-To create circles and ellipses use the TYPE ELLIPSE. These forms are created
-by setting the x and y values as the radius of the circle or ellipse inside
-POINTS and END.  
+Dazu kann man sich ein kartesisches Koordinatensystem vorstellen mit dem
+Koordinatenursprung in der linken oberen Ecke. Bei der Erstellung von
+Signaturen vom TYPE „VECTOR“ sollte auch darauf geachtet werden, gewisse
+Gestaltungsrichtlinien zu beachten, wie z.B. die Vermeidung von gewissen
+Neigungswinkeln bei Linien die später als Füllmuster verwendet werden sollen,
+da diese zu starken Aliasingeffekten führen können. Des Weiteren sollten
+bestimmte Mindestgrößen nicht unterschritten werden, was natürlich für alle
+Typen von Signaturen gilt. Beim Definieren der Form sollten Sie zudem im
+Hinterkopf behalten, das die Punktfolge im Grunde Pixelkoordinaten (also nur
+ganzzahlig) in einer Bitmap darstellen. Aus jedem Symbol vom Typ Vector und
+Ellipse wird eine Bitmap erstellt, die dann zum Zeichnen verwendet wird! (Dies
+ist das allg. Grundprinzip des GD basierten Graphik-Kernels). PIXMAP Symbole
+können demnach direkt zum Zeichnen verwendet werden.
 
-Construction of Point Symbols
------------------------------
+Zur Darstellung von Kreisen und Ellipsen benutzt man den TYPE „ELLIPSE“. Hier
+erfolgt die Bestimmung der Form über die Festlegung der Radien in
+x- und y-Richtung innerhalb von POINTS und END.
 
-The following figure shows how to combine several basic elements to create a 
-new point symbol. The combination is achieved by  adding several STYLEs within 
-one layer. Each basic element references one item of the SYMBOL file, which 
-are centered and overlayed when rendered.  
+Konstruktion von Punktsignaturen
+--------------------------------
 
-Notice that the SIZE parameter in the STYLE section only refers to the width
-of the symbol (size in the y-direction). An edgewise rectangle will thus display
-smaller than a lying rectangle, although both have the same SIZE parameter.
-When combining several point elements on top of each other, they will not always
-be centered correctly. We have not found a regular rule yet. We can only recommend
-to set an even-numbered  SIZE for combined elements. Combining elements with
-even and odd numbered SIZE parameters seem to have larger irregularities.
+In folgendem Schema sind mehrere „Grundelemente“ zu einer Punktsignatur
+kombiniert worden. Die Kombination erfolgt über die Definition mehrerer
+STYLEs im Layer. Diese beziehen sich jeweils auf ein „Grundelement“ aus der
+Symboldatei, welche dann zentriert übereinander gezeichnet werden.
 
-**Figure3: Construction of Point Symbols**
+Bei Punktsignaturen ist noch zu beachten, dass die SIZE-Angabe in der
+STYLE-Sektion nur für die Größe in y-Richtung gilt. So ist ein Rechteck,
+welches hochkant steht, kleiner als das Rechteck, wenn es liegt und die
+gleiche SIZE hat. Bei der Kombination von mehreren Elementen übereinander
+werden diese nicht immer zentriert. Es konnte hier noch keine feste Regel
+festgestellt werden. Es wird aber empfohlen, die Elemente, die kombiniert
+werden sollen, mit einer geradzahligen SIZE zu versehen. Bei der Kombination
+von Elementen mit geradzahligen und ungeradzahligen SIZE-Angaben sind die
+Verschiebungen meist größer.
+
+
+**Abbildung3: Konstruktion von Punktsignaturen**
 
 .. image:: ../../images/point-symbols.png
    :height: 400
    :width: 600
 
-Construction of Line Symbols
-----------------------------
+Konstruktion von Liniensignaturen
+---------------------------------
 
-For displaying line geometries most often a simple point symbol (filled circle
-/ SYMBOL 0) is used. This point is painted for each pixel along the line, giving
-a continuous line with rounded ends. To create line patterns use the STYLE section
-of the SYMBOL file (do not confuse this with the STYLE-section of the CLASS object).
-Here you state how many pixel of the section shall be displayed and how many
-are left blank. This pattern will be repeated as many times as that pattern
-will fit into the element. The following figure shows this effect. Unfortunately up 
-to now no OFFSET (start gap) can be defined to create asymetric patterns. (anybody need this?) 
+Bei der Anwendung der Elemente aus der Symboldatei auf Linien, wird oft ein
+einfacher Punkt (gefüllter Kreis / SYMBOL 0) verwendet. Dieser wird dann
+sozusagen auf jedem Pixel der zu zeichnenden Linien gezeichnet, was eine
+durchgehende Linie mit runden Enden ergibt. Um Linienmuster zu erzeugen, gibt
+es eine STYLE-Sektion in der Symboldatei (nicht zu verwechseln mit der STYLE
+Sektion der CLASS), in der man angibt, wie viele Pixel das Element gezeichnet
+wird und wie viele dann nicht. Dies wiederholt sich dann immer wieder, so dass
+ein Muster entsteht. Folgendes Schema verdeutlicht diesen Aspekt. Leider läßt
+sich derzeit noch kein OFFSET für ein Muster definieren, um gegeneinander
+versetzte Muster zu erzeugen.(Featurewunsch?)
 
-**Figure4: Construction of Line Symbols**
+**Abbildung4: Konstruktion von Liniensignaturen**
 
 .. image:: ../../images/line-symbols.png
    :height: 400
    :width: 600
 
-When using the point character for rendering all line features with have rounded
-ends. This can be a desired effect or not, it gets more obvious the larger the
-width of line is set. Alternatively a rectangle can be used to generate a line.
-It can be enhanced with a STYLE-parameter to create line patterns (see below).  
+Bei der Verwendung des Punktzeichens gibt es aber den Effekt, dass die Enden
+der Linien nicht gerade abschließen, sondern rund (ist besonders bei großen
+SIZE-Angaben sichtbar). Dies kann gewünscht oder ungewünscht sein. Wenn man
+breite Linien verwenden möchte, kann man genauso gut ein Rechteck zum Zeichnen
+der Linie benutzen. Dieses kann dann auch noch mit einem STYLE-Parameter
+versehen werden, um ein Linienmuster zu erzeugen (siehe folgende Tabelle).
 
-**Table 1. Creating a Symbol to Display Railways**
+**Tabelle 1. Konstruktion einer Signatur für eine Eisenbahnlinie**
 
 +----------------------------------+---------------------------------+
 | CLASS-section from the Mapfile   | Character from the Symbolfile   |
 +==================================+=================================+
 |.. code-block:: mapfile           |.. code-block:: mapfile          |
-|                                  |                                 | 
+|                                  |                                 |
 |  CLASS                           |  SYMBOL                         |
 |    STYLE                         |    NAME 'point'                 |
 |      COLOR 102 102 102           |    TYPE ELLIPSE                 |
@@ -295,33 +304,43 @@ It can be enhanced with a STYLE-parameter to create line patterns (see below).
 |                                  |  END                            |
 +----------------------------------+---------------------------------+
 
-.. image:: ../../images/railway.png                               
+.. image:: ../../images/railway.png
 
-The STYLE parameter can be used for elements of the SYMBOL file with the
-TYPE VECTOR, ELLIPSE, CARTOLINE and PIXMAP. It will define the number of
-intervals in which the symbol is rendered. This can be done using the GAP
-parameter with TRUETYPE symbols (see below). 
+Generell kann der STYLE-Parameter für alle Elemente der Symboldatei vom
+TYPE „VECTOR“, „ELLIPSE“, „CARTOLINE“ und „PIXMAP“ benutzt werden. Dieser
+wirkt sich dann bei der Anwendung der Zeichen auf eine Linie aus und steuert
+in welchen Abständen das Symbol gezeichnet wird. Beim Symboltype „Truetype“
+wird dies mittels des GAP Parameters realisiert. Dazu aber später mehr.
 
-When combining of several symbols on a line, they will be positioned on the
-baseline which is defined by the geometry of the object in pixel coordinates.
-Again we face the problem of centering. In most cases MapServer corectly centers
-symbols. The combination of a line displayed in 6 pixel width and overlayed with
-4 pixel width results in a line symbol with a 1 pixel border. If the cartographic
-symbol is to contain a centered line with a width of 1 pixel, then the SIZE
-parameters have to be reconfiguredfor example to 7 and a 5 pixel. As a rule
-of thumb only combine even numbered or odd numbered SIZE parameters (see above). 
+Bei der Kombination mehrerer Elemente auf einer Linie werden diese auf der
+Aufsatzlinie (in Pixelkoordinaten transformierte Geometrie des Objektes)
+gezeichnet. Auch hier gibt es wieder das Problem der Zentrierung. Es wurde
+beobachtet, dass in den meisten Fällen der MapServer von der Mitte ausgeht.
+Eine Kombination von einer 6-Pixel breiten Linie mit einer 4-Pixel breiten
+Linie ergibt eine Liniensignatur mit einem 1-Pixel breiten Rand auf beiden
+Seiten. Wenn man dann aber noch eine 1-Pixel breite Mittellinie einzeichnen
+möchte, muss man die SIZE-Angaben verändern, damit sie auch wirklich in der
+Mitte liegt. Das ist z.B. bei einer 7- und einer 5-Pixel breiten Linie der
+Fall. Auch hier gilt also der Hinweis bei der Kombination mehrerer Linien
+diese alle mit geradzahligen oder ungeradzahligen SIZE-Angaben zu versehen.
+(siehe obiges Beispiel).
 
-In the STYLE section of the MAP file an OFFSET parameter can be set to shift
-symbols or characters in the x and y direction. Unfortunately the displacement
-is set relative to the map border, not the inclination of the line gemoetry
-(with the exception: OFFSET n -99). Therefore the iterated characters are all
-shifted in the same direction, independent of which direction the line takes
-(see Example 2). To generate asymmetrical line symbols apply -99 for the y
-value of the OFFSET. Then the x-value defines the distance from a parallel
-to the original geometry, for which the selected symbol is used (what a pity
-this wasn't documented anywhere!).
+In der STYLE-Sektion der Map-Datei gibt es noch den OFFSET-Parameter. Man
+gibt einen x- und y-Wert in Pixeln (sofern über SIZEUNITS nichts anderes
+definiert wurde) an und kann damit also Zeichen in x- und in y-Richtung
+verschieben. Leider orientieren sich die x- und y-Richtungen beim OFFSET
+nicht an der Linie sondern am Kartenbild (Ausnahme: OFFSET n -99). Somit
+werden dann die wiederholt gezeichneten Zeichen alle in die gleiche Richtung
+verschoben, unabhängig davon in welche Richtung die Linie verläuft
+(siehe folgendes Beispiel).
+Zur Erzeugung von asymetrischen Liniensignaturen oder
+linienbegleitenden Signaturen müssen Sie beim y Wert des OFFSET den
+Wert -99 einsetzen. Über den x Wert definieren Sie dann den Abstand in dem
+eine parallele zur Originalgeometrie konstruiert wird, auf welche die gewählte
+Signatur angewendet wird. (Schade das dies nirgends dokumentiert war!)
 
-**Table 2: Use of the OFFSET parameter with line signatures**
+
+**Tabelle 2: Verwendung des OFFSET-Parameters bei Liniensignaturen**
 
 +--------------------------------+-------------------------------+--------------------------------+-------------------------------+
 | CLASS-section from the Mapfile | Character from the Symbolfile | CLASS-Section from the Mapfile | Character from the Symbolfile |
@@ -347,30 +366,37 @@ this wasn't documented anywhere!).
 .. image:: ../../images/symbol-offset-1.png
 
 .. image:: ../../images/symbol-offset-1.png
-        
-Area Symbols
-------------
 
-Areas (polygons) can be filled with elements of the SYMBOL file to create e.g.
-hatches and graticules. These are by default rendered without spacing one after
-the other in x and y direction and fill out the whole polygon. Simple line
-hatches (e.g. horizontal, vertical and diagonal) can be created by filling the
-polygon with a line symbol from the SYMBOL file (see example 5). 
+Flächen
+-------
 
-The SIZE parameter in the STYLE section for line hatches only specifies the
-distance between the lines and not their width. Thus in these hatches all lines
-will always have a width of 1 pixel. Unfortunately there is no additional
-parameter to define the line width (Anybody need this feature?). Notice that
-the SIZE parameter is interpreted by MapServer differently for horizontal and
-vertical lines. Vertical lines with a SIZE parameter of 8 pixel result in a
-distance of 8 pixel between the lines. Horizontal lines with the same SIZE
-parameter are instead renderes with a much smaller gap (see example 5). For
-creating cross hatches composed of vertical and horizontal lines the best
-method is to use a simple cross from the SYMBOL file. Polygons can also be
-filled with other POINT elements to obtain special patterns (e.g. with circles
-or triangles). 
+Flächen (Polygone) können mit Elementen der Symboldatei gefüllt werden, um z.B.
+Schraffuren oder Raster zu erzeugen. Diese werden dann ohne Abstände
+hintereinanderweg in x- und y-Richtung gezeichnet und füllen somit die gesamte
+Fläche aus. Es können einfache Linienschraffuren (z.B. horizontal, vertikal und
+diagonal) erzeugt werden, indem die Fläche mit einem definierten
+Linienabschnitt aus der Symboldatei gefüllt wird (siehe Bsp.5).
 
-**Table 3: Construction of a cross hatch with different line distances**
+Bei Linienschraffuren gibt der SIZE-Parameter in der STYLE-Sektion aber nur die
+Abstände zwischen den Linien an und nicht deren Breite. Die Linienbreite
+beträgt bei diesen Schraffuren immer 1 Pixel. Einen Parameter für die
+Liniendicke gibt es leider nicht. (Featurewunsch?) Des Weiteren ist zu
+beachten, dass dieselbe SIZE-Angabe für horizontale und für vertikale Linien
+nicht dieselben Abstände ergibt. Bei vertikalen Linien ergibt die SIZE-Angabe
+von 8 einen Abstand von 8 Pixeln zwischen den Linien. Bei horizontal
+verlaufenden Linien dagegen sind die Abstände bei derselben SIZE-Angabe
+wesentlich geringer (siehe Bsp.5). Dies ist vor allem bei der Erstellung von
+Kreuzschraffuren zu beachten, die man bei der Kombination von vertikalen und
+horizontalen Linien erhält. Eine Kreuzschraffur mit gleichen Linienabständen
+lässt sich derzeit am besten mit einem einfachen Kreuz aus der Symboldatei
+erzeugen.
+
+Bemerkung: Auch dieses Problem wurde im Rahmen der Code-Recherche beseitigt.
+
+Flächen können auch mit anderen punkthaften Elementen gefüllt werden, um
+bestimmte Flächenmuster zu erhalten (z.B. mit Kreisen oder Dreiecken).
+
+**Tabelle 3: Konstruktion einer Kreuzschraffur mit unterschiedlichen Linienabständen**
 
 +--------------------------------+-------------------------------+
 | CLASS-Section from the Mapfile | Character from the Symbolfile |
@@ -384,7 +410,7 @@ or triangles).
 |      COLOR 255 102 51          |      0.5 0                    |
 |      OUTLINECOLOR 0 0 0        |      0.5 1                    |
 |    END                         |    END                        |
-|    STYLE                       |  END                          |            
+|    STYLE                       |  END                          |
 |      SYMBOL "line-horizontal"  |  SYMBOL                       |
 |      SIZE 8                    |    NAME "line-horizontal"     |
 |      COLOR 204 102 51          |    TYPE vector                |
@@ -395,76 +421,85 @@ or triangles).
 |                                |  END                          |
 +--------------------------------+-------------------------------+
 
-.. image:: ../../images/crosshatch.png                                                   
+.. image:: ../../images/crosshatch.png
 
-Signatures of TYPE PIXMAP
--------------------------
+Signaturen vom TYPE PIXMAP
+--------------------------
 
-Symbols of the TYPE PIXMAP are simply small raster images. The name of the
-raster images are specified in the SYMBOL file with the parameter IMAGE.
-MapServer supports the raster formats GIF and PNG. Observe the color depth
-of the images and avoid using 24 bit PNG symbols displayed in 8 bit mode as
-this may cause unexpected color leaps. When using raster images the color
-cannot be modified in the SMBOL file subsequently. But you can specify a
-color with the TRANPARENT parameter which will not be displayed - i.e. it
-will be transparent. As a result all underlying objects and colors are visible. 
+Zeichen vom TYPE PIXMAP sind kleine Rasterbilder. Diese werden in der
+Symboldatei definiert und dort über den IMAGE Parameter eingebunden. MapServer
+unterstützt die Formate GIF und PNG. Hierbei ist auf die Farbtiefe der Bilder
+zu achten. Es sollte vermieden werden, ein 24-bit PNG-Symbol für eine Ausgabe
+im 8-bit Modus zu verwenden. Dies kann zu unvorhergesehenen Farbveränderungen
+führen. Bei der Nutzung von Rasterbildern für Signaturen kann man nachträglich
+keine graphischen Veränderungen (z.B. die der Farbe) mehr vornehmen. In der
+Symboldatei kann mit dem TRANSPARENT Parameter eine Farbe, durch die Angabe des
+entsprechenden Indexes in der Farbpalette des Rasterbildes, definiert werden.
+Diese Farbe wird dann transparent dargestellt. Im Ergebnis scheint die darunter
+liegende Graphik dann praktisch durch.
 
-The SIZE parameter defines the size of PIXMAP symbols when used as point symbols.
-Observe that the pixel structure will show when the SIZE grows too large. Prevent
-this from happening by setting a MAXSIZE parameter. When using PIXMAPS as line
-symbols or as fill symbols for polygons they will not be resized but are displayed
-in the original size. So the use of PIXMAP STYLE objects for signatures with
-a high need of scaling is rather limited.   
+Bei der Anwendung von PIXMAP Symbolen als Punkt-Marker, läßt sich deren Größe
+über die SIZE-Angabe noch variieren. Hier wird dann aber z.B. bei einer
+Vergrößerung die Pixelstruktur des Bildes sichtbar. Dies kann durch setzen des
+MAXSIZE Parameters aber unterbunden werden. Bei der Anwendung des Bildes auf
+Linien oder Flächen wird es immer in seiner Originalgröße dargestellt. Somit
+sind PIXMAP Symbole nicht oder nur eingeschränkt für Signaturierungen die einen
+hohen Skalierungsbedarf haben einsetzbar.
 
-PIXMAP symbols are always rendered respective to the map border and will not
-follow the inclination of a line or polygon outline. Only truetype font symbols
-can follow an inclined line geometry, although with some defects (see below).   
+PIXMAP Symbole werden bei der Benutzung als linienbegleitendes Zeichen immer in
+die gleiche Richtung visualisiert. Sie richten sich nicht nach der Richtung und
+dem Verlauf der Linien (d.h. sie werden nicht gedreht). Sie haben somit das
+gleiche Manko wie Symbole vom Type VECTOR oder ELLIPSE. Nur TrueType Symbole
+besitzen diesen Mechanismus, wenn auch mit einigen Mängeln. Dazu aber später
+mehr.
 
-To create more complex area symbols, e.g. with defined distances between single
-characters or hatches with broad lines, raster images are probably the most
-suitable objects. Depending on the desired pattern you have to generate the
-raster image with high precision using a graphic editor. To obtain a regular
-allocation of symbols with defined spacing you could use the raster image as
-shown in Figure1.   
+Um komplexere Flächenfüllungen zu erreichen, z.B. mit Abständen zwischen den
+einzelnen Zeichen oder Schraffuren mit breiten Linien, sind Rasterbilder wohl
+derzeit am besten geeignet. Je nach gewünschtem Muster muss das Rasterbild mit
+seinen graphischen Elementen millimetergenau in einem Grafikprogramm erstellt
+werden. Für eine in der Fläche regelmäßig verteilte und diagonal angeordnetes
+Zeichen könnte man das Rasterbild in Abb. 1 verwenden.
 
-**Figure5: Raster image for a regular polygon symbol fill**
+**Abbildung5: Rasterbild für eine regelmäßige Flächenfüllung**
 
 .. image:: ../../images/polygon-symbol-fill.png
    :height: 400
    :width: 600
-   
-**Figure6: Raster image for a hatched fill**
+
+**Abbildung6: Rasterbild für eine Flächenschraffur**
 
 .. image:: ../../images/hatch-symbol-fill.png
    :height: 400
    :width: 600
 
-Instead of using circles you can use different characters. B defines the width
-and H the height of the raster image. For a regular arrangment of symbols in
-a 45 degree angle B = H. For symbols, which are regularly arranged in parallel
-and without offset between each other one centered symbol with same x and y
-distances to the imageborder is enough. A regular hatch with wider lines can
-be created by using the raster image in fig. 2. To create a 45 degree hatch
-use:  
+Anstelle der Kreise können natürlich auch andere Zeichen benutzt werden.
+B bezeichnet die Breite und H die Höhe des Rasterbildes. Für eine regelmäßige
+Anordnung der Zeichen in einem 45-Grad Winkel gilt B = H. Für Signaturen, die
+regelmäßig neben- und untereinander ohne Versatz angeordnet sind, würde ein
+Zeichen reichen, welches in der Bildmitte liegt und gleiche Abstände in
+x- und y-Richtung zum Bildrand hat. Eine regelmäßige Schraffur mit breiteren
+Linien kann mit dem Rasterbild in Abb. 2 erstellt werden. Für eine
+45 Grad-Schraffur gilt dabei:
 
 ::
 
    B = H and x = y
-   
-When using the MapServer legend observe that each raster PIXMAP is displayed
-only once in the original size in the middle of the legend box.  
 
-See the example below of some PIXMAP symbols, which can be used as area symbols with
-transparency. The raster images were created using FreeHand, finished with
-Photoshop and exported to PNG with special attention regarding the color palette.
-Observe that you *have* to specify a COLOR in the STYLE section of the
-CLASS to display raster PIXMAPS although it has no influence on the output
-and color of the image.
+Zur Erstellung der Legende muss beachtet werden, dass das Rasterbild nur
+einmal in der Mitte des Legendenkästchens und in Originalgröße gezeichnet wird.
 
-**Table 4: Construction of a horizontally arranged area symbol**
+Im folgenden sind ein paar Beispiele von PIXMAP-Zeichen aufgeführt, die auf
+Flächen angewandt wurden und Transparenz benutzen. Die Rasterbilder wurden mit
+dem Grafikprogramm FreeHand konstruiert und mit Photoshop nachbearbeitet und
+in das PNG-Format unter Beachtung der verwendeten Farbpalette exportiert. In
+der STYLE-Sektion in der CLASS muss eine Farbe (COLOR) angegeben werden, damit
+das Rasterbild visualisiert wird. Für das Aussehen und die Farbe des Bildes hat
+diese Angabe aber keine Auswirkung.
+
+**Tabelle 4: Konstruktion einer waagerecht angeordneten Flächensignatur**
 
 +--------------------------------+-------------------------------------------------+
-| CLASS-Section from the Mapfile | Character from the Symbolfile                   |
+| CLASS-Sektion aus der Mapdatei | Zeichen aus der Symboldatei                     |
 +================================+=================================================+
 |.. code-block:: mapfile         |.. code-block:: mapfile                          |
 |                                |                                                 |
@@ -480,12 +515,12 @@ and color of the image.
 |  END                           |                                                 |
 +--------------------------------+-------------------------------------------------+
 
-.. image:: ../../images/horizontal-area-symbol.png                               
+.. image:: ../../images/horizontal-area-symbol.png
 
-**Table 5: Construction of a diagonally arranged area symbol**
+**Tabelle 5: Konstruktion einer diagonal angeordneten Flächensignatur**
 
 +--------------------------------+-------------------------------------------------+
-| CLASS-Section from the Mapfile | Character from the Symbolfile                   |
+| CLASS-Sektion aus der Mapdatei | Zeichen aus der Symboldatei                     |
 +================================+=================================================+
 |.. code-block:: mapfile         |.. code-block:: mapfile                          |
 |                                |                                                 |
@@ -500,12 +535,12 @@ and color of the image.
 |                                |   :align: left                                  |
 +--------------------------------+-------------------------------------------------+
 
-.. image:: ../../images/diagonal-area-symbol.png                            
+.. image:: ../../images/diagonal-area-symbol.png
 
-**Table 6: Construction of a face hatch**
+**Tabelle 6: Konstruktion einer Flächenschraffur**
 
 +--------------------------------+-------------------------------------------------+
-| CLASS-Section from the Mapfile | Character from the Symbolfile                   |
+| CLASS-Sektion aus der Mapdatei | Zeichen aus der Symboldatei                     |
 +================================+=================================================+
 |.. code-block:: mapfile         |.. code-block:: mapfile                          |
 |                                |                                                 |
@@ -521,27 +556,29 @@ and color of the image.
 |  END                           |                                                 |
 +--------------------------------+-------------------------------------------------+
 
-.. image:: ../../images/hatch-symbol.png                                          
+.. image:: ../../images/hatch-symbol.png
 
-Signatures of TYPE CARTOLINE
-----------------------------
+Signaturen vom TYPE „CARTOLINE“
+-------------------------------
 
-The TYPE Cartoline is not really an independent SYMBOL type or basic element
-but it is useful for creating line signatures. The advantage over the above
-types is the antialising of lines with any width.
-Conventional lines can only use antialising with a width of 1 pixel. This line
-type supports the ANTIALIAS parameter in the STYLE block of the CLASS definition
-just like the truetype fonts and symbols. Here you can also define line patterns
-and offsets. The design of the line ends can be controled with the
-LINECAP parameter. The LINECAP value BUTT stopps the signature exactly at the
-end of the top line.
-Author of this features is Tomas Krecmer (`tokr(a)tmapy.cz`_).
-If you have questions concerning this type of signature or suggestions for
-improvement please contact the author.  
+Der TYPE „Cartoline“ ist im Grunde kein wirklich eigenständiger SYMBOL Typ.
+Er ist lediglich für die Konstruktion von Liniensignaturen verwendbar. Großer
+Vorteil gegenüber der herkömmlichen Methode ist das 'Antialiasing' von beliebig
+breiten Linien dieses Typs. Herkömmliche Linien konnten nur mit einer Breite
+von 1 mit einem antialiasing gezeichnet werden. Bei diesem Linientyp können Sie
+im STYLE Block der CLASS Definition genauso wie bei TrueType Symbolen oder
+Schriften ebenfalls den ANTIALIAS Parameter verwenden. Auch hier können
+Linienmuster und Offsets definiert werden. Die Gestaltung der Linienenden kann
+mittels des LINECAP Parameters gesteuert werden. Der LINECAP Wert „butt“
+beendet die Signatur exakt am Ende der Aufsatzlinie.
+Author dieses Features ist
+Tomas Krecmer (tokr at tmapy.cz). Bei Fragen zu diesem Signaturentyp oder bei
+Verbesserungsvorschlägen empfehle ich eine direkte Kontaktaufnahme mit dem
+Author.
 
-.. _`tokr(a)tmapy.cz`: mailto:tokr@tmapy.cz
 
-Dashed line of TYPE CARTOLINE
+
+Gestrichelte Linie vom Typ Cartoline
 ...............................................................................
 
 .. code-block:: mapfile
@@ -555,80 +592,90 @@ Dashed line of TYPE CARTOLINE
      STYLE
        40 17 1 17 1 17 1 17
      END
-   END 
-   
+   END
+
 LINEJOIN
 ...............................................................................
 
-The different values for the parameter LINEJOIN have the following visual effects
-(see the following figure).  Default is 'not set' but do not specify the string 
-'not set', just omit the parameter LINEJOIN.
+Die verschiedenen Werte für den Parameter LINEJOIN haben folgende visuellen
+Auswirkungen (default ist 'none'), wobei 'none' kein gültiger Wert für diesen
+Parameter ist. Sollten Sie kein LINEJOIN verwenden wollen, so lassen Sie den
+Parameter einfach komplett weg.
 
 .. image:: ../../images/linejoin.jpg
 
 Miter
-  follow line borders until they intersect, fill the resulting area.
+  hier werden die Linienkanten bis zum Schnittpunkt verlängert und die
+  entstehende Fläche gefüllt.
 
 Round
-  see above
-  
+  s.o.
+
 Bevel
-  see above
+  s.o.
 
 None
-  Lines will not be connected but drawn with LINECAPP 'butt' at the respective ends. 
-           
+  Linien werden nicht verbunden sondern an den jeweiligen Enden mit
+  LINECAP 'butt' gezeichnet.
+
 .. image:: ../../images/miter-linejoin.jpg
 
 LINEJOINMAXSIZE
 ...............................................................................
 
-
-Specify the maximum length of m (only relevant for LINEJOIN type MITER).
-The value is a multiplication factor (default 3). The actual max length is
-calculated as follows:
+Definiert die maximale Länge für m (nur für LINEJOIN miter von Bedeutung).
+Der Wert dient dabei als Multiplikationsfaktor (default ist 3). Die
+tatsächliche max. Länge berechnet sich wie folgt:
 
 ::
 
    m - current join size
    d - symbol size
    m_max = d * LINEJOINMAXSIZE
-   
-If current *m > m_max* then the connection length will be set to m_max.
 
-Signatures of TYPE TRUETYPE
----------------------------
+Wenn current m > m_max dann wird die Verbindungslänge auf m_max gesetzt.
 
-Finally you can use symbols from truetype fonts. The symbol settings are also
-defined in the SYMBOL file. Specify the ASCII number of the symbol to be used
-in the CHARACTER parameter. Add the ALIAS name of the font file to the parameter
-FONT as defined in the file fonts.list. Remember to set the FONTSET parameter
-in the MAP file to link the correct fonts.list file. With the parameter ANTIALIAS
-you define whether to apply antialiasing to the symbols or characters. It is
-recommended to do this especially with more complex symbols and and whenever
-they don't fit well into the raster matrix or show a visible pixel structure.
-Set a POSITION [ul|uc|ur|cl|cc|cr|ll|lc|lr] relative to the geometric origin of
-the geometry. In the STYLE section of the LAYER object it is possible to define
-colors for true type symbols (as with signatures of the TYPE VECTOR).
+Signaturen vom TYPE „TRUETYPE“
+------------------------------
 
-When using truetype chracters to render complex line symbols, you can define the
-distance in pixel until the symbol is repeated by setting the GAP parmeter in
-the SYMBOL file. A more complicated pattern like the STYLE parameters for VECTOR,
-ELLIPSE or PIXMAP type symbols cannot be used not (Anybody need this feature?).
-The OFFSET parameter is currently not implemented yet. Truetype symbols follow
-the inclination of the accompanying line.
+Als letztes lassen sich noch Zeichen aus TrueTypeFonts verwenden. Die
+Definition erfolgt auch hier in der Symboldatei. Dabei gibt man die Nummer des
+gewünschten Zeichens aus der TrueTypeFont-Datei bei CHARACTER an. Bei FONT
+wird der Alias-Name der Fontdatei angegeben der in der Datei fonts.list
+definiert ist. Es muss dabei natürlich der FONTSET in der Map-Datei auf die
+fonts.list-Datei gesetzt werden. Mit ANTIALIAS wird festgelegt, ob ein
+Antialiasing für das Zeichen durchgeführt werden soll. Gerade bei komplexeren
+Zeichen und solchen, die sich nicht gut in die Rastermatrix einpassen und bei
+denen die Pixelstruktur deutlich sichtbar ist, wird empfohlen das Antialiasing
+anzuwenden. Desweiteren läßt sich noch die
+POSITION [ul|uc|ur|cl|cc|cr|ll|lc|lr] definieren. In der STYLE-Sektion im
+Layer können für TrueType-Zeichen unterschiedliche Farben und Größen (wie bei
+den Zeichen vom Typ Vektor) festgelegt werden (siehe auch Abb. 12).
 
-When using asymmetrical symbols they unfortunately do not always follow the
-outside or the inside, left or right of a line but change. If possible symbols
-will always be displayed upside (which makes a lot of sense for string characters,
-what true type fonts basically are). On vertical lines symbols are rendered
-to the right or left side depending on the drawing direction of the line. If
-the line is drawn from bottom to top, the truetype symbol is displayed to the
-left, if the line is drawn from top to bottom, the symbol is displayed to the
-right (see table below). In left picture in the table the line is drawn
-clockwise and in the right picture drawn counterclockwise.
+Für die Anwendung eines TrueType-Zeichens als Linienbegleitendes Zeichen, kann
+man in der Symboldatei mit GAP einen Abstand in Pixeln definieren, in dem das
+Zeichen nicht dargestellt wird. Ein komplizierteres Muster wie mit dem STYLE
+Parameter der VECTOR, ELLIPSE oder PIXMAP Symbole läßt sich hiermit jedoch
+nicht generieren. (Featurewunsch?) Der OFFSET-Parameter kann hier derzeit
+ebenfalls noch nicht benutzt werden. TrueType-Zeichen richten sich nach der
+Linienorientierung und ändern somit auch ihre Ausrichtung mit der Linie.
 
-**Table 7: TrueType-character used on lines**
+Bei der Nutzung von nichtsymmetrischen Zeichen, welche eine Fläche umranden,
+zeigt das Zeichen aber leider nicht immer nach außen oder nach innen, sondern
+es variiert. Die Zeichen werden, wenn möglich, nach oben zeigend dargestellt
+(bei waagerechten und schrägen Linien). Bei senkrechten Linien werden sie je
+nach Zeichenrichtung der Linie nach rechts oder nach links zeigend
+visualisiert. Wenn die Linie von unten nach oben gezeichnet wird, wird das
+TrueType-Zeichen nach links zeigend dargestellt und bei einer von oben nach
+unten gezeichneten Linie nach rechts zeigend visualisiert. Dies kann man in
+der Bsp.8 erkennen. Beim Bild links in der Tabelle wurde die Linie im
+Uhrzeigersinn und beim rechten Bild entgegengesetzt dem Uhrzeigersinn
+gezeichnet. Duch einen negativen GAP Wert, kann dieses Verhalten jedoch
+abgeschaltet werden!! Probieren Sie dies einfach mal aus. Sie werden
+überrascht sein!
+
+
+**Tabelle 7: TrueType-Zeichen angewandt auf Linien**
 
 +--------------------------------+-------------------------------------------------+
 | CLASS-Section from the Mapfile | Character from the Symbolfile                   |
@@ -646,28 +693,29 @@ clockwise and in the right picture drawn counterclockwise.
 |                                |                                                 |
 +--------------------------------+-------------------------------------------------+
 
-.. image:: ../../images/truetype-character-clockwise.png                         
+.. image:: ../../images/truetype-character-clockwise.png
 
 
-.. image:: ../../images/truetype-character-cc.png                                
+.. image:: ../../images/truetype-character-cc.png
+Um die Character-Nummer eines Zeichens herauszufinden stehen folgende Optionen
+zur Wahl:
 
-To find out the character number of a symbol use one of the following options:
+    * FontMap benutzen (Shareware, aber freie Try Version zum downloaden)(danke Till!)
+    * Zeichenkarte von MS Windows benutzten
+    * "Try And Error" Prinzip verfolgen
 
-- Use the software FontMap (Shareware, with free trial version for download, thanks Till!)
+Achten Sie darauf, das bei sogenannten „Symbol Fonts“ die Nummerierung erst
+bei 61440 beginnt. Um also auf den Character &#84 zuzugreifen, müssten Sie
+dazu 61440 + 84 = &#61524 verwenden. (total tricky, oder!!)
 
-- Use the MS Windows truetype map
- 
-- Trial and Error :-) 
 
-Please note that the numbering of the so-called "symbol fonts" starts at 61440! 
-So if you want to use character &#84, you have to use 61440 + 84 = &#61524. 
-(ain't that a pain!!) 
+Beispiele
+=========
 
-Examples
-========
-
-Find some examples to show different possibilities of the UMN MapServer for
-cartographical symbols of the vector based mapobjects (this is just a selection!):
+Hier sind einige Beispiele, die die verschiedenen Möglichkeiten des
+UMN MapServers zur kartographischen Signaturierung der vektorbasierten
+Kartenobjekte aufzeigen sollen (dies hat in keinerlei Hinsicht den Anspruch
+auf Vollständigkeit):
 
 Basic Symbols
 -------------
@@ -687,19 +735,24 @@ Complex Symbols
 
 .. image:: ../../images/pattern-symbol-complex.png
 
-Current Problems / Open Issues
-==============================
+Aktuelle Probleme
+=================
 
-The current version of MapServer renders open symbols (e.g. a cross) and empty
-symbols of the TYPE VECTOR incorrectly by filling them. This bug has been removed
-during our code examination and should be eliminated with a future release.
-Additionaly the OUTLINECOLOR-parameter can not be used to create a 1 pixel
-outline for symbols and characters on a line. This can be achieved in a more
-flexible way as mentioned above. Another problem concerns the use of line patterns
-(e.g. dashed line) on features with many points and nooks. The line pattern
-will then often be displayed irregularly (see Table9).
+Bei nichtgeschlossenen (z.B. einem Kreuz) und bei ungefüllten Zeichen vom
+TYPE VECTOR gibt es in der aktuellen Version noch das Problem, dass der
+MapServer diese, wenn sie als linienbegleitendes Zeichen verwendet werden,
+verändert. Die Zeichen werden geschlossen und gefüllt. (siehe Bsp.3). Dieser
+Fehler wurde im Rahmen unserer Code-Recherche behoben und wird in einem
+zukünftigen Release wohl beseitigt sein. Außerdem ist der
+OUTLINECOLOR-Parameter zur Erzeugung einer 1-Pixel breiten Umrandung nicht
+für Zeichen auf einer Linie anwendbar. Dies kann aber wie zuvor bereits
+beschrieben wurde wesentlich besser und flexibler durchgeführt werden. Ein
+weiteres Problem ist die Verwendung von Linienmustern (z.B. gestrichelte Linie)
+auf Linien mit vielen Ecken und Kurven. Das Linienmuster wird dann oftmals
+nicht mehr regelmäßig dargestellt (siehe Bsp.4).
 
-**Table 8: Use of a simple cross on a line**
+
+**Tabelle 8: Verwendung eines einfachen Kreuzes auf einer Linie**
 
 +--------------------------------+-------------------------------------------------+
 | CLASS-Section from the Mapfile | Character from the Symbolfile                   |
@@ -725,7 +778,7 @@ will then often be displayed irregularly (see Table9).
 .. image:: ../../images/cross-fill-example.png
 
 
-**Table9: Irregularities with line patterns**
+**Tabelle9: Unregelmäßigkeiten bei Linienmustern**
 
 +--------------------------------+-------------------------------------------------+
 | CLASS-Section from the Mapfile | Character from the Symbolfile                   |
@@ -749,22 +802,27 @@ will then often be displayed irregularly (see Table9).
 |                                |  END                                            |
 +--------------------------------+-------------------------------------------------+
 
-.. image:: ../../images/irregular-line-pattern.png                               
+.. image:: ../../images/irregular-line-pattern.png
 
-All symbols in this document were created with MAP files and SYMBOL files, which
-can be `downloaded`_. If you want to use this MAP
-file please note, that your MapServer must at least be able to handle with 50
-symbols. Otherwise you get an error while loading the SYMBOL files.
+Alle hier dargestellten Signaturen wurden mit Mapfiles und Symbolfiles
+erstellt, die in einem ZIP-Archiv zusammengefasst worden sind (`Download`_).
+Sollten Sie das Symbolfile verwenden wollen, so beachten Sie bitte, das Ihr
+Mapserver mindestens 50 Symbols verarbeiten kann. Ansonsten erhalten Sie eine
+entsprechende Fehlermeldung beim Laden des Symbolfiles.
 
-.. _`downloaded`: http://www.mapmedia.de/fileadmin/user_upload/dokumente/umn_signaturen_howto/vortrag_demo.zip
 
-I hope that this document will help you to present your data in a cartographically
-nice manner with the UMN MapServer and explains some basics and possibilities
-of the concept of the UMN MapServer as well as some weakness. It would be great
-to put together a cartographic symbols library for the profit of everyone.
-This especially concerns truetype-fonts, which were developed for some projects
-and contain some typical signatures for cartographic needs.
+.. _`Download`: http://www.mapmedia.de/fileadmin/user_upload/dokumente/umn_signaturen_howto/vortrag_demo.zip
 
-You can also view the `discussion paper for the improvement of the MapServer Graphic-Kernel`_ (sorry as yet German only).
+Ich hoffe das Ihnen dieses Dokument bei der Visualisierung Ihrer Daten mit dem
+UMN Mapserver weiterhilft und die Grundlagen und Möglichkeiten des im
+UMN Mapserver zum Einsatz kommenden kartographischen Konzepts, aber auch dessen
+Schwächen, verdeutlichen konnte. Es wäre schön wenn wir eine Art
+kartographische Signaturen-Bibliothek zusammentragen könnte, die dann allen
+Nutzern zur Verfügung steht. Dies betrifft insbesonder TrueType-Fonts die im
+Rahmen von Projekten entstanden sind und typische Signaturen für
+kartographische Zwecke enthalten.
 
-.. _`Discussion paper for the improvement of the MapServer Graphic-Kernel`: http://www.mapmedia.de/fileadmin/user_upload/dokumente/umn_signaturen_howto/DiskussionsPaper-UMNGraphikKernel.pdf
+
+`Diskussionspaper für die Weiterentwicklung des MapServer Graphik-Kernels`_.
+
+.. _`Diskussionspaper für die Weiterentwicklung des MapServer Graphik-Kernels`: http://www.mapmedia.de/fileadmin/user_upload/dokumente/umn_signaturen_howto/DiskussionsPaper-UMNGraphikKernel.pdf
