@@ -46,15 +46,25 @@ behaves. We prepose changing the behavior of that function to provide random
 access to a result set (as defined by msLayerWhichShapes()) rather than the 
 entire data set. This removes most of the overhead currently incurred by 
 referencing the results already returned by the data driver in the intial 
-query.
+query. For implementation purposes we would retain the current msLayerGetShape() 
+implementations to support easy random access and create a new function 
+called msLayerResultsGetShape(). 
+
+msLayerGetShape() would *only* be used via MapScript to preserve true random 
+access functionality. Note that drawing uses msLayerNextShape() and does not
+rely on index values.
 
 Under this last solution data drivers would need to do two things:
 
   * update the population of the shapeObj index property (long int) with a value 
-    that will allow msLayerGetShape() to randomly access a result
+    that will allow msLayerResultsGetShape() to randomly access a result
 
-  * update the driver-specific version of msLayerGetShape() to retrieve a shape
-    from the results created in msLayerWhichShapes()
+  * creation of the driver-specific version of msLayerResultsGetShape() to 
+    retrieve a shape from the results created in msLayerWhichShapes()
+
+  * the default implementation of msLayerResultsGetShape() would simply wrap
+    msLayerGetShape() since most drivers would not have to implement the newer
+    function (e.g. OGR or shapefiles)
 
 The query functions would need to:
 
@@ -69,6 +79,10 @@ The presentation functions:
   * refrain from calling msLayerOpen(), msLayerWhichItems(), msLayerWhichShapes()
     since that has already been done in the query functions
 
+MapScript layerObj wrappers:
+
+  * add resultsGetShape() method
+
 This solution has been piloted in the single-pass sandbox with very promising
 results. In some cases queries run orders of magnitude faster. One positive side
 effect is that primary keys need not be used to retrieve features from the result
@@ -77,12 +91,11 @@ row in the result set.
 
 Backwards Compatability Issues
 ------------------------------------------------------------------------------
-This solution preserved 95% of the current functionality. However, we are proposing
-to change the behaviour of msLayerGetShape() to be specific to query processing.
-While this has always been the intentional use, there's nothing to stop a user
-from using that method (in MapScript) in other ways. This would have to be well
-documented. That said, a typical MapScript query and process results operation 
-would be unchanged.
+This solution will most likely require changes to MapScript applications that 
+process query results depending on types of data being processed. Those hitting
+shapefiles for example will still function "as is" since there that driver will
+still be using msLayerGetShape(). Any script hitting a RDBMS data source will
+have to swith to using resultsGetShape() instead of getFeature()/getShape().
 
 One casualty would be the query save/read functions. Since the processing of 
 a set of results would be specific to dataset result handle it won't be 
@@ -129,15 +142,17 @@ remain "as is" although the internals would change.
 
 Files Impacted
 ------------------------------------------------------------------------------
-* driver files: changes to shape fetching code
+* driver files: implement msXXXLayerResultsGetShape() function to shape fetching 
+  code if necessary
 
 * maptemplate.c: don't open/close a layer when presenting results
 
 * mapgml.c: don't open/close a layer when presenting results
 
-* mapdraw.c: don't open/close a layer IF if drawing a query map
+* mapdraw.c: don't open/close a layer ect... IF if drawing a query map
 
-* maplayer.c: refactor msLayerWhichItems()
+* maplayer.c: refactor msLayerWhichItems(), add msLayerResultsGetShape() to the
+  layer plugin API
 
 * mapquery.c: re-work msSaveQuery() and msLoadQuery(), change query functions
   to take a lone mapObj as input, add msInitQuery() and msFreeQuery() functions
