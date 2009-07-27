@@ -1,3 +1,11 @@
+7-24-2009 - MapServer 5.4.2 is released (also 5.2.3 and 4.10.5)
+..............................................................................
+
+MapServer 5.4.2 has been released, which includes a security fix.  All users of 
+pre-5.4 releases should upgrade to 5.4.2 as soon as possible.  See the
+`Changelog <http://trac.osgeo.org/mapserver/browser/tags/rel-5-4-2/mapserver/HISTORY.TXT>`__
+for more details and head to :ref:`download` to obtain a copy.
+
 4-22-2009 - MapServer 5.4 is released
 ..............................................................................
 
