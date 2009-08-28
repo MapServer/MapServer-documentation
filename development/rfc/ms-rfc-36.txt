@@ -141,7 +141,7 @@ A GeoJSON example might be:
  [resultset layer=foo] {
  "type": "FeatureCollection",
  "features": [
-  [feature trim=',']
+  [feature trimlast=',']
   {
    "type": "Feature",
    "id": "[id]",
@@ -175,32 +175,20 @@ just wouldn't be as useful as with the 1 template idea.
     It is often a problem to have trailing record separator
     characters after the final record. For example, in the JSON template above the
     trailing comma in the [feature] block causes problems with Internet Explorer.
-    So I propose supporting a "trim" attribute that tells the template processor
+    So I propose supporting a "trimlast" attribute that tells the template processor
     to remove that string from the end of the output for the last feature
-    processed.
+    processed. (implemented in 5.2)
 
 .. note::
     A resultset could be applied to multiple layers so the name attribute
     will take a comma delimited list of layers. The order listed is the order they
     results will be presented. It's possible that groups could be used as well but
-    at this point that seems like a fairly rare use case.
+    at this point that seems like a fairly rare use case. (future)
 
 .. note::
 
-    A resultset will also take a maxresults attribute so that the number
-    of features processed can be limited.
-
-Additional Mapfile Changes
---------------------------
-
-By moving templates out of a layer we lose the ability mark layers as
-queryable. Dan proposed adding a QUERYABLE TRUE/FALSE option to layerObj's.
-That could be put in place as part of this RFC, although it is not required.
-We could continue to leverage dummy template values. Adding it would require
-the normal changes to support a new keyword, and a small change to function in
-mapquery.c that tests to see if a layer is queryable. Basically a layer would
-be queryable if: 1) it has a template or 2) QUERYABLE is TRUE (default would
-be FALSE).
+    A resultset will also take a "limit" attribute so that the number
+    of features processed can be controlled. (implemented in 5.2)
 
 Documentation
 -------------
@@ -215,9 +203,6 @@ Implementation
 mapoutput.c: No changes necessary (I think), no need to define a default
 format, nor do I think we need to extend the outputFormatObj structure.
 
-mapfile.c/maplexer.l: Allow changing webObj QUERYFORMAT from a URL. (todo: add
-support for setting a layer as queryable)
-
 maptemplate.c: Add processor functions for the new tags. Update process line
 to recognize the [resultset] and [join] tags (the [feature] tag would only be
 valid within a [resultset] block. Write a new single template processing
@@ -229,17 +214,10 @@ look at the value of web->queryformat. If it references an existing output
 format by name then use the file the format points to with
 msReturnSingleTemplateQuery(), otherwise process as currently done.
 
-Caveats: to simplify tag parsing (at least initially) I propose requiring that
-start and end tags exist on their own lines in the template file (is this a
-requirement for legend templates?). Depending on the legend template block
-parsing this requirement could be removed once some implementation work is
-done.
-
 MapScript
 ---------
 
-No changes are anticipated in MapScript at this time although we may choose to
-expose templated output as an option at a later date.
+No changes are anticipated in MapScript at this time,
 
 Backwards Compatibility Issues
 ------------------------------
@@ -253,7 +231,7 @@ and [include] tags.
 Bug ID
 ------
 
-None assigned.
+#2576
 
 Voting History
 --------------
