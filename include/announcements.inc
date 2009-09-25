@@ -1,3 +1,15 @@
+9-24-2009 - MapServer 5.6.0-beta1 is released
+..............................................................................
+
+The MapServer Team is pleased to announce the release of the first beta 
+for the 5.6.0 release. This is the first of three planned beta releases.
+
+We need your help to ensure a high quality product so please help out by 
+testing your applications with this new code base.
+
+See `the release announcement <http://lists.osgeo.org/pipermail/mapserver-users/2009-September/062916.html>`__ 
+for more details and head to :ref:`download` to obtain a copy.
+
 7-24-2009 - MapServer 5.4.2 is released
 ..............................................................................
 
