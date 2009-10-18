@@ -1,7 +1,7 @@
-2009-10-08 - MapServer 5.6.0-beta3 is released
+2009-10-18 - MapServer 5.6.0-beta14 is released
 ..............................................................................
 
-The MapServer Team is pleased to announce the release of the third beta 
+The MapServer Team is pleased to announce the release of the fourth beta 
 for the 5.6.0 release.
 
 We need your help to ensure a high quality product so please help out by 
