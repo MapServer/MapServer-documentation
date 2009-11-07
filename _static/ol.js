@@ -1,6 +1,6 @@
-var lon = 16831422;
-var lat = -4011708;
-var zoom = 4;
+var lon = 240750;
+var lat = 5070290;
+var zoom = 2;
 var map;
 
 
@@ -30,18 +30,18 @@ OpenLayers.Control.PanZoom.prototype.draw = function(px) {
 
 function olmapinit(){
   map = new OpenLayers.Map( 'olmap', {
-restrictedExtent: new OpenLayers.Bounds(16770012,-4044490,16876903,-3980726),
+restrictedExtent: new OpenLayers.Bounds(235459.12591906,5064998.3775063,246042.4535374,5075581.7051247),
 controls:[new OpenLayers.Control.Navigation(),
 new OpenLayers.Control.PanZoom()]
 });
   
-        var wms = new OpenLayers.Layer.TileCache( "Sydney", 
+        var wms = new OpenLayers.Layer.TileCache( "Barcelona", 
         ['http://mapserver-tile-1.osgeo.org/tilecache',
         'http://mapserver-tile-2.osgeo.org/tilecache'],
-        'osm',
+        'barcelona',
         {
           maxExtent: new OpenLayers.Bounds(-20000000,-20000000,20000000,20000000),
-          scales: [10000,25000,50000,100000,250000,500000,1000000,2500000,5000000,10000000],
+          scales: [5000,10000,25000,50000,100000,250000,500000,1000000,2500000],
           units: 'm',
           projection:new OpenLayers.Projection("EPSG:900913"),
           buffer:0,
