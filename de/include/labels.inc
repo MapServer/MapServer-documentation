@@ -186,7 +186,7 @@
 	svn                            :ref:`Subversion <svn>`
 	swig                           :ref:`SWIG MapScript API Reference <swig>`
 	sym2img                        :ref:`sym2img <sym2img>`
-	sym_construction               :ref:`Cartographic Symbol Construction with MapServer <sym_construction>`
+	sym_construction               :ref:`Konstruktion von kartographischen Signaturen <sym_construction>`
 	sym_examples                   :ref:`Symbology Examples <sym_examples>`
 	symbol                         :ref:`SYMBOL <symbol>`
 	template                       :ref:`Templating <template>`

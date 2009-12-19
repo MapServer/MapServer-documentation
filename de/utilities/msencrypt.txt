@@ -5,16 +5,16 @@
 *****************************************************************************
 
 
-Purpose
+Zweck
 -----------------------------------------------------------------------------
 
-Used to create an encryption key or to encrypt portions of connection strings for 
-use in mapfiles (added in v4.10) .  Typically you might want to encrypt portions of 
-the CONNECTION parameter for a database connection.  The following CONNECTIONTYPEs 
-are supported for using this encryption method:
+Erstellt einen Schlüssel für eine Verschlüsselung oder verschlüsselt Teile
+der Verbindungsdaten im Mapfile (ab Version 4.10). Normalerweise werden
+Verbindunsparameter für Datenbanken (Parameter CONNECTION) verschlüsselt.
+Folgende CONNECTIONTYPEs unterstützen diese Verschlüsselungsmethode:
 
 ::
-  
+
     OGR
     Oracle Spatial
     PostGIS
@@ -23,47 +23,46 @@ are supported for using this encryption method:
 Syntax
 -----------------------------------------------------------------------------
 
-To create a new encryption key:
-  
+Einen neuen Schlüssel erstellen:
+
 ::
-  
+
     msencrypt -keygen [key_filename]
-    
-To encrypt a string:
-  
+
+Eine Zeichenkette verschlüsseln:
+
 ::
-  
+
     msencrypt -key [key_filename] [string_to_encrypt]
 
-Use in Mapfile
+Verwendung im Mapfile
 -----------------------------------------------------------------------------
+Der Pfad zum Schlüssel kann über zwei Mechanismen angegeben werden. Entweder
+wird die Umgebungsvariable MS_ENCRYPTION_KEY gesetzt oder die Direktive
+CONFIG wird im MAP-Objekt des Mapfiles benutzt. Zum Beispiel:
 
-The location of the encryption key can be specified by two mechanisms, either by 
-setting the environment variable MS_ENCRYPTION_KEY or using a CONFIG directive 
-in the MAP object of your mapfile.  For example: 
-  
 ::
-  
+
 	CONFIG MS_ENCRYPTION_KEY "/path/to/mykey.txt"
-	
-Use the { and } characters as delimiters for encrypted strings inside database 
-CONNECTIONs in your mapfile.  For example: 
-  
+
+Es können geschweifte Klammen {} als Begrenzer des Schlüssels benutzt werden.
+Zum Beispiel:
+
 ::
-  
+
 	CONNECTIONTYPE ORACLESPATIAL
 	CONNECTION "user/{MIIBugIBAAKBgQCP0Yj+Seh8==}@service"
-	
+
 Example
 .............................................................................
 
 .. note:
-    
-    The following PostGIS example requires at least MapServer 5.0.3 or 5.2)  
-    Let's say we have a LAYER that uses a POSTGIS connection as follows:
-  
+    Das folgende PostGIS-Beispiel benötigt mind. MapServer 5.0.3 oder 5.2.
+
+    Angenommen ein LAYER benutzt eine PostGIS-Verbindung wie folgt:
+
 ::
-  
+
     LAYER
       NAME "provinces"
       TYPE POLYGON
@@ -76,52 +75,53 @@ Example
         COLOR 255 0 0
       END
     END
-    
-Here are the steps to encrypt the password in the above connection:
-  
-1. Generate an encryption key (note that this key should not be stored anywhere within 
-   your web server's accessible directories):
-   
+
+Mit den folgenden Schritten wurde das Passwort im obigen Beispiel verschlüsselt:
+
+1. Erstellung eines Schlüssels (Dieser Schlüssel sollte nicht in Verzeichnissen
+   gespeichert werden die für den Webserver zugänglich sind):
+
 ::
-   
+
     msencrypt -keygen "E:\temp\mykey.txt"
 
-And this generated key file might contain something like: 
-    
-::
-    
-    2137FEFDB5611448738D9FBB1DC59055
-      
-2. Encrypt the connection's password using that generated key:
+Der erstellte Schlüssel könnte wie folgt aussehen:
 
 ::
-    
+
+    2137FEFDB5611448738D9FBB1DC59055
+
+2. Verschlüsselung des Verbindungspasswortes mit dem erstellten Schlüssel:
+
+::
+
     msencrypt -key "E:\temp\mykey.txt" "iluvyou18"
 
-Which returns the password encrypted, at the commandline (you'll 
-use it in a second):
+Dies liefert das verschlüsselte Passwort, das auf der Kommandozeile ausgegeben
+wird (und in einem der nächsten Schritte benutzt wird):
 
 ::
-      
+
     3656026A23DBAFC04C402EDFAB7CE714
 
-3. Edit the mapfile to make sure the 'mykey.txt' can be found, using the 
-   "MS_ENCRYPTION_KEY" environment variable.  The CONFIG parameter inside the 
-   MAP object can be used to set an environment variable inside a mapfile:
+3. Bearbeitung des Mapfiles um sicherzustellen das 'mykey.txt' gefunden wird.
+   Hierzu wird die Umgebungsvariable "MS_ENCRYPTION_KEY" benutzt. Der Parameter
+   CONFIG kann zum setzen der Umgebungsvariablen benutzt werden:
 
 ::
-    
+
     MAP
         ...
         CONFIG "MS_ENCRYPTION_KEY" "E:/temp/mykey.txt"
         ...
     END #mapfile
-      
-4. Modify the layer's CONNECTION to use the generated password key, 
-   making sure to use the “{}” brackets around the key:
-    
+
+4. Anpassung des Parameters CONNECTION, damit das verschlüsselte Passwort
+   benutzt wird. Dies muss dabei in geschweiften Klammern "{}" geschrieben
+   werden:
+
 ::
-    
+
     CONNECTION "host=127.0.0.1 dbname=gmap user=postgres password={3656026A23DBAFC04C402EDFAB7CE714} port=5432"
- 
-5. Done!  Give your new encrypted mapfile a try with the :ref:`shp2img` utility!
+
+5. Fertig! Mit :ref:`shp2img` kann das verschlüsselte Mapfile getestet werden.
