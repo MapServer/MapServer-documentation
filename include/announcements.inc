@@ -1,15 +1,7 @@
-2009-11-27 - MapServer 5.6.0-rc1 is released
+2009-12-18 - MapServer 5.6.0 is released
 ..............................................................................
 
-The MapServer Team is pleased to announce the release of the first release candidate
-for the 5.6.0 release.
-
-We need your help to ensure a high quality product so please help out by 
-testing your applications with this new code base. If no blocker issues 
-are found then this release candidate should be promoted to final release 
-next week 
-
-See `the release announcement <http://lists.osgeo.org/pipermail/mapserver-users/2009-November/063716.html>`__ 
+MapServer 5.6.0 has been released. See `the release announcement <http://lists.osgeo.org/pipermail/mapserver-users/2009-December/064001.html>`__ 
 for more details and head to :ref:`download` to obtain a copy.
 
 2009-07-24 - MapServer 5.4.2 is released
