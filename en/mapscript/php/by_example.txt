@@ -148,7 +148,8 @@ The Map File
 
 Here's the map file:
 
-::
+.. code-block:: mapfile
+    :linenos:
 
         NAME "Europe in purple"
         SIZE 400 400
@@ -205,28 +206,29 @@ imageObj methods:
 
 The code looks like this:
 
-::
+.. code-block:: php
+    :linenos:
 
-        1 <?php
+        <?php
         
-        2 dl('php_mapscript.so'); 
+        dl('php_mapscript.so'); 
         
-        3 $map_path="/var/www/html/ms/map_files/";
+        $map_path="/var/www/html/ms/map_files/";
                 
-        4 $map = ms_newMapObj($map_path."europe.map");
-        5 $image=$map->draw();
-        6 $image_url=$image->saveWebImage();
+        $map = ms_newMapObj($map_path."europe.map");
+        $image=$map->draw();
+        $image_url=$image->saveWebImage();
         
-        7 ?>
+        ?>
         
-        8  <HTML>
-        9   <HEAD>
-        10      <TITLE>Example 1: Displaying a map</TITLE>
-        11  </HEAD>
-        12  <BODY>
-        13      <IMG SRC=<?php echo $image_url; ?> >
-        14  </BODY>
-        15 </HTML>
+         <HTML>
+          <HEAD>
+              <TITLE>Example 1: Displaying a map</TITLE>
+          </HEAD>
+          <BODY>
+              <IMG SRC=<?php echo $image_url; ?> >
+          </BODY>
+         </HTML>
         
 
 The code I will present through the rest of this document will follow the 
@@ -299,129 +301,130 @@ PHP/MapScript Code
 
 Here I present the new code.
 
-::
+.. code-block:: php
+    :linenos:
 
-        1 <?php
+        <?php
         
-        2 dl('php_mapscript.so');
+        dl('php_mapscript.so');
         
-        3 // Default values and configuration
+        // Default values and configuration
         
-        4 $val_zsize=3;
-        5 $check_pan="CHECKED";
-        6 $map_path="/var/www/html/ms/map_files/";
-        7 $map_file="europe.map";
+        $val_zsize=3;
+        $check_pan="CHECKED";
+        $map_path="/var/www/html/ms/map_files/";
+        $map_file="europe.map";
         
-        8 $map = ms_newMapObj($map_path.$map_file);
-        
-        
-        9 if ( isset($_POST["mapa_x"]) && isset($_POST["mapa_y"])
-        10      && !isset($_POST["full"]) ) {
-        
-        11      $extent_to_set = explode(" ",$_POST["extent"]); 
-        
-        12      $map->setextent($extent_to_set[0],$extent_to_set[1],
-        13                      $extent_to_set[2],$extent_to_set[3]);
-        
-        14      $my_point = ms_newpointObj();
-        15      $my_point->setXY($_POST["mapa_x"],$_POST["mapa_y"]);
-        
-        16      $my_extent = ms_newrectObj();
-        
-        17      $my_extent->setextent($extent_to_set[0],$extent_to_set[1],
-        18                              $extent_to_set[2],$extent_to_set[3]);
-        
-        19      $zoom_factor = $_POST["zoom"]*$_POST["zsize"];
-        20      if ($zoom_factor == 0) {
-        21              $zoom_factor = 1;
-        22              $check_pan = "CHECKED";
-        23              $check_zout = "";
-        24              $check_zin = "";
-        25      } else if ($zoom_factor < 0) {
-        26              $check_pan = "";
-        27              $check_zout = "CHECKED";
-        28              $check_zin = "";
-        29      } else {
-        30              $check_pan = "";
-        31              $check_zout = "";
-        32              $check_zin = "CHECKED";
-        33      }
-        
-        34      $val_zsize = abs($zoom_factor);
-        
-        35      $map->zoompoint($zoom_factor,$my_point,$map->width,$map->height,
-        36                      $my_extent);
-        
-        37 }
+        $map = ms_newMapObj($map_path.$map_file);
         
         
-        38 $image=$map->draw();
-        39 $image_url=$image->saveWebImage();
+        if ( isset($_POST["mapa_x"]) && isset($_POST["mapa_y"])
+              && !isset($_POST["full"]) ) {
         
-        40 $extent_to_html = $map->extent->minx." ".$map->extent->miny." "
-        41              .$map->extent->maxx." ".$map->extent->maxy;
+              $extent_to_set = explode(" ",$_POST["extent"]); 
         
-        42 ?>
-        43 <HTML>
-        44 <HEAD>
-        45 <TITLE>Map 2</TITLE>
-        46 </HEAD>
-        47 <BODY>
-        48 <CENTER>
-        49 <FORM METHOD=POST ACTION=<?php echo $HTTP_SERVER_VARS['PHP_SELF']?>>
-        50 <TABLE>
-        51 <TR>
-        52      <TD>
-        53              <INPUT TYPE=IMAGE NAME="mapa" SRC="<?php echo $image_url?>">
-        54      </TD>
-        55 </TR>
-        56 <TR>
-        57      <TD>
-        58              Pan
-        59      </TD>
-        60      <TD>
-        61              <INPUT TYPE=RADIO NAME="zoom" VALUE=0 <?php echo $check_pan?>>
-        62      </TD>
-        63 </TR>
-        64 <TR>
-        65      <TD>
-        66              Zoom In
-        67      </TD>
-        68      <TD>
-        69              <INPUT TYPE=RADIO NAME="zoom" VALUE=1 <?php echo $check_zin?>>
-        70      </TD>
-        71 </TR>
-        72 <TR>
-        73      <TD>
-        74              Zoom Out
-        75      </TD>
-        76      <TD>
-        77              <INPUT TYPE=RADIO NAME="zoom" VALUE=-1 <?php echo $check_zout?>>
-        78      </TD>
-        79 </TR>
-        80 <TR>
-        81      <TD>
-        82              Zoom Size
-        83      </TD>
-        84      <TD>
-        85              <INPUT TYPE=TEXT NAME="zsize" VALUE="<?php echo $val_zsize?>" 
-        86              SIZE=2>
-        87      </TD>
-        88 </TR>
-        89 <TR>
-        90      <TD>
-        91              Full Extent
-        92      </TD>
-        93      <TD>
-        94              <INPUT TYPE=SUBMIT NAME="full" VALUE="Go" 
-        95              SIZE=2>
-        96      </TD>
-        97 </TABLE>
-        98 <INPUT TYPE=HIDDEN NAME="extent" VALUE="<?php echo $extent_to_html?>">
-        99 </FORM>
-        100 </CENTER>
-        101 </BODY>
-        102 </HMTL>
+              $map->setextent($extent_to_set[0],$extent_to_set[1],
+                              $extent_to_set[2],$extent_to_set[3]);
+        
+              $my_point = ms_newpointObj();
+              $my_point->setXY($_POST["mapa_x"],$_POST["mapa_y"]);
+        
+              $my_extent = ms_newrectObj();
+        
+              $my_extent->setextent($extent_to_set[0],$extent_to_set[1],
+                                      $extent_to_set[2],$extent_to_set[3]);
+        
+              $zoom_factor = $_POST["zoom"]*$_POST["zsize"];
+              if ($zoom_factor == 0) {
+                      $zoom_factor = 1;
+                      $check_pan = "CHECKED";
+                      $check_zout = "";
+                      $check_zin = "";
+              } else if ($zoom_factor < 0) {
+                      $check_pan = "";
+                      $check_zout = "CHECKED";
+                      $check_zin = "";
+              } else {
+                      $check_pan = "";
+                      $check_zout = "";
+                      $check_zin = "CHECKED";
+              }
+        
+              $val_zsize = abs($zoom_factor);
+        
+              $map->zoompoint($zoom_factor,$my_point,$map->width,$map->height,
+                              $my_extent);
+        
+         }
+        
+        
+         $image=$map->draw();
+         $image_url=$image->saveWebImage();
+        
+         $extent_to_html = $map->extent->minx." ".$map->extent->miny." "
+                      .$map->extent->maxx." ".$map->extent->maxy;
+        
+         ?>
+         <HTML>
+         <HEAD>
+         <TITLE>Map 2</TITLE>
+         </HEAD>
+         <BODY>
+         <CENTER>
+         <FORM METHOD=POST ACTION=<?php echo $HTTP_SERVER_VARS['PHP_SELF']?>>
+         <TABLE>
+         <TR>
+              <TD>
+                      <INPUT TYPE=IMAGE NAME="mapa" SRC="<?php echo $image_url?>">
+              </TD>
+         </TR>
+         <TR>
+              <TD>
+                      Pan
+              </TD>
+              <TD>
+                      <INPUT TYPE=RADIO NAME="zoom" VALUE=0 <?php echo $check_pan?>>
+              </TD>
+         </TR>
+         <TR>
+              <TD>
+                      Zoom In
+              </TD>
+              <TD>
+                      <INPUT TYPE=RADIO NAME="zoom" VALUE=1 <?php echo $check_zin?>>
+              </TD>
+         </TR>
+         <TR>
+              <TD>
+                      Zoom Out
+              </TD>
+              <TD>
+                      <INPUT TYPE=RADIO NAME="zoom" VALUE=-1 <?php echo $check_zout?>>
+              </TD>
+         </TR>
+         <TR>
+              <TD>
+                      Zoom Size
+              </TD>
+              <TD>
+                      <INPUT TYPE=TEXT NAME="zsize" VALUE="<?php echo $val_zsize?>" 
+                      SIZE=2>
+              </TD>
+         </TR>
+         <TR>
+              <TD>
+                      Full Extent
+              </TD>
+              <TD>
+                      <INPUT TYPE=SUBMIT NAME="full" VALUE="Go" 
+                      SIZE=2>
+              </TD>
+         </TABLE>
+         <INPUT TYPE=HIDDEN NAME="extent" VALUE="<?php echo $extent_to_html?>">
+         </FORM>
+         </CENTER>
+         </BODY>
+         </HMTL>
         
 This code will zoom out, zoom in, pan, and restore to full extent the image 
 displayed in the previous example.
