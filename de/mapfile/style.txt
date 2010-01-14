@@ -1,0 +1,219 @@
+.. _style:
+
+*****************************************************************************
+ STYLE
+*****************************************************************************
+
+Im Style werden Parameter der Symbolisierung gesetzt. Es können mehrere Styles
+in einer Klasse (CLASS) angewandt werden.
+
+Dieses Objekt wurde mit Version 4.0 eingeführt um Logik und Layout voneinander
+zu trennen. Ziel ist es benannte Styles zu definieren (wird derzeit noch nicht
+unterstützt), die im gesamten Mapfile verwandt werden können. Dies ist die
+bevorzugte Vorgehensweise um die Ausprägung eines Objektes, insbesondere einer
+Klasse, anzupassen.
+
+ANGLE [double|attribute|AUTO]
+
+    - Winkel, Angabe in Grad. Standard ist 0. Für Symbole vom Typ HATCH ist dies
+      der Winkel der Schraffur. Eine Anwendung zeigt Beispiel 8 in
+      :ref:`Signaturbeispiele <sym_examples>`.
+    - [*Attribute*] wurde in Version 5.0 eingeführt, um den Spaltennamen der
+      Attributtabelle anzugeben, der die Winkelangaben enthält. Die eckigen
+      Klammern [] müssen mit angegeben werden. Enthält das Shapefile bzw. die
+      DBF-Datei eine Spalte "MYANGLE", könnte das zugehörige STYLE-Objekt
+      wie folgt aussehen:
+
+      .. code-block:: mapfile
+
+        STYLE
+          SYMBOL 'hatch-test'
+          COLOR 255 0 0
+          ANGLE [MYANGLE]
+          SIZE 4
+          WIDTH 3
+        END
+
+      Des zugehörige RFC-Dokument ist :ref:`RFC19`.
+    - Das Schlüsselwort AUTO wurde in Version 5.4 hinzugefügt und kommt derzeit
+      nur in Kombination mit GEOMTRANSFORM zur Anwendung.
+
+ANGLEITEM [string]
+
+    - Dieser Parameter wurde in MapServer 5.0 entfernt. Stattdessen sollte der
+      Parameter ANGLE [*attribute*] benutzt werden.
+      Für MapServer Version <5 wird hiermit der Name des Attributes angegeben,
+      das die Winkelangaben enthält. Die Angabe erfolgt in Grad, wobei der Wert
+      0 keine Rotation bedeutet.
+
+ANTIALIAS [true|false]
+    Definiert ob für TrueType-Schriften und Cartoline-Symbole Antialiasing
+    wird.
+
+BACKGROUNDCOLOR [r] [g] [b]
+    Farbe für nicht-transparente Symbole.
+
+COLOR [r] [g] [b] | [attribute]
+
+    - Farbe mit der die Objekte gezeichnet werden.
+    - [*Attribute*] wurde in Version 5.0 eingeführt, um den Spaltennamen der
+      Attributtabelle anzugeben, der die Farbangaben enthält. Die eckigen
+      Klammern [] müssen mit angegeben werden. Enthält das Shapefile bzw. die
+      DBF-Datei eine Spalte "MYCOLOR", könnte das zugehörige STYLE-Objekt
+      wie folgt aussehen:
+
+      .. code-block:: mapfile
+
+        STYLE
+          COLOR [MYCOLOR]
+          OUTLINECOLOR 150 150 150
+        END
+
+      Des zugehörige RFC-Dokument ist :ref:`RFC19`.
+
+GAP [int]
+    Angabe in Pixel. Hiermit wird der Abstand zwischen Symbolen für TrueType-
+    Linien angegeben. Ab MapServer 5.0 gilt dies auch für PixMap-Symbole.
+
+    Soll ein Symbol entlang eines Liniensegmentes gezeichnet werden, wird bei
+    einem negativem Wert von GAP 180 Grad zum Winkel addiert. Die TrueType und
+    PixMap-Symbole werden immer entlang der Linie ausgerichtet. Bei einem GAP
+    von 0 (Standardwert) wird das Symbol als Pinsel benutzt um die Linie zu
+    zeichnen.
+
+    .. versionadded:: 6.0 verschoben von :ref:`SYMBOL`
+
+GEOMTRANSFORM [start|end|vertices|bbox]
+
+    - Erlaubt eine Transformation des Objektes, bevor der definierte STYLE
+      angewandt wird. Wird ab Version 5.4 unterstützt.
+    - "bbox": der definierte STYLE wird zum Zeichnen der Boundingbox der
+      zugehörigen Geometrie benutzt.
+    - "start" und "end": mit dem definierten STYLE wird ein Marker an der ersten
+      oder letzten Kante der zugehörigen Geometrie gezeichnet. In Kombination
+      mit ANGLE AUTO können damit Pfeilspitzen oder Pfeilenden gezeichnet werden.
+    - "vertices": mit dem aktuellen STYLE wird ein Marker an die Schnittkanten
+      der zugehörigen Geometrie gezeichnet. Wird ausserdem ANGLE AUTO benutzt,
+      wird der Marker an der Winkelhalbierenden der beiden angrenzenden
+      Liniensegmente gezeichnet.
+
+LINECAP [butt|round|square|triangle]
+    Definiert Linienenden für Cartoline-Symbole. Standardwert ist butt.
+    Funktioniert ausschließlich mit CARTOLINE-Symbolen!
+
+    .. versionadded:: 6.0 verschoben von :ref:`SYMBOL`
+
+LINEJOIN [round|miter|bevel]
+    Definiert Art der Linienverbindung für Cartoline-Symbole. Standardwert ist
+    "none" - Linien werden nicht verbunden. Funktioniert ausschließlich mit
+    CARTOLINE-Symbolen!
+
+    .. versionadded:: 6.0 verschoben von:ref:`SYMBOL`
+
+LINEJOINMAXSIZE [int]
+    Definiert die maximale Länge der Gehrung. Der Wert entspricht dem Faktor mit
+    dem die aktuelle Symbolgröße multipliziert wird. Standardwert ist 3.
+    Funktioniert ausschließlich mit CARTOLINE-Symbolen!
+
+    .. versionadded:: 6.0 verschoben von :ref:`SYMBOL`
+
+MAXSIZE [integer]
+    Maximale Größe des Symbols. Angabe in Pixel, Standardwert ist 50.
+
+MAXWIDTH [integer]
+    Maximale Breite in Pixel mit der Linien gezeichnet werden.
+    Standardwert ist 32.
+
+MINSIZE [integer]
+    Minimale Größe des Symbols. Angabe in Pixel, Standardwert ist 0.
+
+MINWIDTH [integer]
+    Minimale Breite in Pixel, mit der Linien gezeichnet werden.
+
+OFFSET [x][y]
+    Offsetwert für Schatten und ähnliches
+
+OPACITY [integer]
+    Deckkraft des aktuellen STYLE (ab Version 5.2, nur für :ref:`AGG`, nicht für
+    Pixmap-Symbole verfügbar)
+
+OUTLINECOLOR [r] [g] [b] | [attribute]
+    - Farbe mit der Umrisse von Polygonen und bestimmten Markersymbolen
+      dargestellt werden. Liniensymbole unterstützen keine Umrissfarbe.
+    - [*Attribute*] wurde in Version 5.0 eingeführt, um den Spaltennamen der
+      Attributtabelle anzugeben, der die Farbangaben enthält. Die eckigen
+      Klammern [] müssen mit angegeben werden. Enthält das Shapefile bzw. die
+      DBF-Datei eine Spalte "MYOUTCOLOR", könnte das zugehörige STYLE-Objekt
+      wie folgt aussehen:
+
+      .. code-block:: mapfile
+
+        STYLE
+          COLOR 255 0 0
+          OUTLINECOLOR [MYOUTCOLOR]
+        END
+
+      Des zugehörige RFC-Dokument ist :ref:`RFC19`.
+
+PATTERN [num on] [num off] [num on] ... END
+
+    Definiert ein gestricheltes Muster für Liniensymbole.
+
+    .. versionadded:: 6.0 verschoben von :ref:`SYMBOL`
+
+SIZE [integer|attribute]
+
+    - Höhe des Symbols bzw. Musters. Angabe in SIZEUNITS. Wird nur für
+      skalierbare Symbole gebraucht. Standard ist 1. Für Symbole vom Type HATCH
+      ist der angegebene Wert der Abstand zwischen den Schraffurlinien. Eine
+      Anwendung zeigt Beispiel 8 in :ref:`Signaturbeispiele <sym_examples>`.
+    - [*Attribute*] wurde in Version 5.0 eingeführt, um den Spaltennamen der
+      Attributtabelle anzugeben, der die Größenangaben enthält. Die eckigen
+      Klammern [] müssen mit angegeben werden. Enthält das Shapefile bzw. die
+      DBF-Datei eine Spalte "MYSIZE", könnte das zugehörige STYLE-Objekt
+      wie folgt aussehen:
+
+      .. code-block:: mapfile
+
+        STYLE
+          SYMBOL 'hatch-test'
+          COLOR 255 0 0
+          ANGLE 45
+          SIZE [MYSIZE]
+          WIDTH 3
+        END
+
+      Des zugehörige RFC-Dokument ist :ref:`RFC19`.
+    - Ab Version 5.4 können zusätzlichen zu ganzzahligen Werten, gebrochene
+      Werte angegeben werden. Derzeit kann nur der :ref:`AGG <AGG>`-Renderer
+      mit gebrochenen Größenangaben verarbeiten.
+
+SIZEITEM [string]
+
+    - Dieser Parameter wurde in MapServer 5.0 entfernt. Stattdessen sollte
+      der Parameter SIZE [*attribute*] benutzt werden.
+      Für MapServer Version <5 wird hiermit der Name des Attributes angegeben,
+      das die Größenangaben enthält. Die Angabe erfolgt in Grad.
+
+SYMBOL [integer|string|filename]
+    Der Name oder die Nummer des Symbols das für alle Objekte benutzt werden
+    soll, falls keine Attributtabelle benutzt wird. Die Nummer ist der Index
+    des Symbols, beginnend bei 1. Das 5te Symbol in der Datei hat demnach die
+    Nummer 5. Es kann auch ein Name vergeben werden (mit dem Schlüsselwort NAME),
+    der als Referenz benutzt werden kann. Standard ist 0, was je nach Typ
+    des Layers in einem einzelnen Pixel, einer 1-Pixel-Linie oder einem
+    ausgefüllten Polygon entspricht.
+
+    Es kann auch der Name einer GIF- oder PNG-Datei angegeben werden. Der Pfad
+    ist relativ zum Mapfile.
+
+WIDTH [integer|attribute]
+
+    - Angabe der Linienbreite erfolgt in `SIZEUNITS` des Layers. Standard ist 1.
+    - Bei Symbolen vom Typ HATCH wird mit WIDTH die Breite der Schraffurlinien
+      angegeben. Eine Anwendung zeigt Beispiel 8 in
+      :ref:`Signaturbeispiele <sym_examples>`.
+    - *Attribute* wurde in Version 5.2 hinzugefügt.
+    - Ab Version 5.4 können zusätzlichen zu ganzzahligen Werten, gebrochene
+      Werte angegeben werden. Derzeit kann nur der :ref:`AGG <AGG>`-Renderer
+      mit gebrochenen Größenangaben verarbeiten.

@@ -1,0 +1,282 @@
+.. _join:
+
+*****************************************************************************
+ JOIN
+*****************************************************************************
+
+.. index:: Join
+
+Beschreibung
+============
+
+Joins werden innerhalb des :ref:`layer` Objektes definiert. Es ist wichtig zu
+verstehen, dass JOINS *NUR* verfügbar sind, wenn eine Abfrage verarbeitet wurde.
+Auf das Aussehen der Karte haben JOINs keinen Einfluss. Der Hauptanwendungszweck
+liegt bei der Verwendung von Lookup-Tabellen für kodierte Daten 
+(z.B. 1 => Wald), aber es gibt auch andere Verwendungen.
+
+Unterstützte Formate
+====================
+ 
+- DBF/XBase Dateien
+- CSV (Kommagetrennter Text)
+- PostgreSQL und PostGIS Tabellen
+- MySQL Tabellen
+
+Mapfile Parameter:
+===================
+
+CONNECTION [string]
+    Benötigte Verbindungsparameter zur Datenbank für die zu verknüpfende 
+    Tabelle (für DBF oder CSV nicht benötigt). Ein Beispiel für 
+    :ref:`PostgreSQL <input_postgis>`:
+
+.. code-block:: mapfile
+
+    CONNECTION "host=127.0.0.1 port=5432 user=postgres password=postgres dbname=somename"
+
+CONNECTIONTYPE [string]
+    Art der Verbindung (nicht benötigt für DBF oder CSV). Ein Beispiel für
+    PostgreSQL:
+
+.. code-block:: mapfile
+
+    CONNECTIONTYPE ogr 
+
+FROM [item]
+    Zu verknüpfendes Element (join Element) des Datensatzes. Abhängig von
+    Groß-/Kleinschreibung.
+
+NAME [string]
+    Eindeutiger Name der Verknüpfung (Join). Benötigt.
+
+TABLE [filename|tablename]
+    Bei dateibasierten Verknüpfungen Name der XBase- oder CSV-Datei ZU der die
+    Daten verknüpft werden. Bei PostgreSQL und MySQL ist dies der Name der
+    PostgreSQL/MySQL-Tabelle ZU der verknüpft wird.
+
+TEMPLATE [filename]
+    Zu benutzendes Template bei 1:n-Verknüpfungen. Für jeden Eintrag wird
+    das Template verarbeitet. Es darf nur Ersetzungen für Objekte der 
+    verknüpften Tabelle enthalten. Der Spaltenname der verknüpften Tabelle wird
+    im Template mit [joinname_spaltenname] angegeben, wobei joinname dem NAME
+    Eintrag des JOIN Objektes entsprechen muss.
+
+TO [item]
+    Element in der Tabelle das verknüpft wird. Abhängig von 
+    Groß-/Kleinschreibung.
+
+TYPE [ONE-TO-ONE|ONE-TO-MANY]
+    Die Art der Verknüpfung. Standard ist 1:1 (one-to-one).
+
+Beispiel 1: Join einer Shapedatei mit einer DBF-Datei
+=====================================================
+
+Mapfile Layer
+-------------
+
+.. code-block:: mapfile
+
+      LAYER
+        NAME "prov_bound"
+        TYPE POLYGON
+        STATUS DEFAULT
+        DATA "prov.shp"
+        CLASS
+          NAME "Province"
+          STYLE
+            OUTLINECOLOR 120 120 120
+            COLOR 255 255 0
+          END
+        END
+        TEMPLATE "../htdocs/cgi-query-templates/prov.html"
+        HEADER "../htdocs/cgi-query-templates/prov-header.html"
+        FOOTER "../htdocs/cgi-query-templates/footer.html"
+        JOIN
+          NAME "test"
+          TABLE "../data/lookup.dbf"
+          FROM "ID"
+          TO "IDENT"
+          TYPE ONE-TO-ONE
+        END
+      END # layer
+
+Ogrinfo
+-------
+
+::
+
+  >ogrinfo lookup.dbf lookup -summary
+  INFO: Open of `lookup.dbf'
+  using driver `ESRI Shapefile' successful.
+
+  Layer name: lookup
+  Geometry: None
+  Feature Count: 12
+  Layer SRS WKT:
+  (unknown)
+  IDENT: Integer (2.0)
+  VAL: Integer (2.0)
+
+::
+
+  >ogrinfo prov.shp prov -summary
+  INFO: Open of `prov.shp'
+  using driver `ESRI Shapefile' successful.
+
+  Layer name: prov
+  Geometry: Polygon
+  Feature Count: 12
+  Extent: (-2340603.750000, -719746.062500) - (3009430.500000, 3836605.250000)
+  Layer SRS WKT:
+  (unknown)
+  NAME: String (30.0)
+  ID: Integer (2.0)
+
+Template
+--------
+
+::
+
+  <tr bgcolor="#EFEFEF"><td align="left">[NAME]</td><td align="left">[test_VAL]</td></tr> 
+
+
+Beispiel 2: Join einer Shapedatei mit einer PostgreSQL-Tabelle
+==============================================================
+
+Mapfile Layer
+-------------
+
+.. code-block:: mapfile
+
+      LAYER
+        NAME "prov_bound"
+        TYPE POLYGON
+        STATUS DEFAULT
+        DATA "prov.shp"
+        CLASS
+          NAME "Province"
+          STYLE
+            OUTLINECOLOR 120 120 120
+            COLOR 255 255 0
+          END
+        END
+        TOLERANCE 20
+        TEMPLATE "../htdocs/cgi-query-templates/prov.html"
+        HEADER "../htdocs/cgi-query-templates/prov-header.html"
+        FOOTER "../htdocs/cgi-query-templates/footer.html"  
+        JOIN
+          NAME "test"
+          CONNECTION "host=127.0.0.1 port=5432 user=postgres password=postgres dbname=join"
+          CONNECTIONTYPE ogr
+          TABLE "lookup"
+          FROM "ID"
+          TO "ident"
+          TYPE ONE-TO-ONE
+        END
+      END # layer
+
+Ogrinfo
+-------
+
+::
+
+  >ogrinfo -ro PG:"host=127.0.0.1 port=5432 user=postgres password=postgre dbname=join" lookup -summary
+  INFO: Open of `PG:host=127.0.0.1 port=5432 user=postgres password=postgres dbname=join'
+  using driver `PostgreSQL' successful.
+
+  Layer name: lookup
+  Geometry: Unknown (any)
+  Feature Count: 12
+  Layer SRS WKT:
+  (unknown)
+  ident: Integer (0.0)
+  val: Integer (0.0)
+
+Template
+--------
+
+::
+
+  <tr bgcolor="#EFEFEF"><td align="left">[NAME]</td><td align="left">[test_val]</td></tr>
+
+.. note::
+
+    Beim Testen mit MapServer 4.10.0 unter Windows stürzte mapserv.exe ab. 
+    Bei Versionen > 4.10.0 konnten keine Abstürtze beobachtet werden.
+
+Beispiel 3: Join einer Shapedatei mit einer CSV-Datei
+=====================================================
+
+Mapfile Layer
+-------------
+
+.. code-block:: mapfile
+
+      LAYER
+        NAME "prov_bound"
+        TYPE POLYGON
+        STATUS DEFAULT
+        DATA "prov.shp"
+        CLASS
+          NAME "Province"
+          STYLE
+            OUTLINECOLOR 120 120 120
+            COLOR 255 255 0
+          END
+        END
+        TOLERANCE 20
+        TEMPLATE "../htdocs/cgi-query-templates/prov.html"
+        HEADER "../htdocs/cgi-query-templates/prov-header.html"
+        FOOTER "../htdocs/cgi-query-templates/footer.html"  
+        JOIN
+          NAME "test"
+          TABLE "../data/lookup.csv"
+          FROM "ID"
+          TO "IDENT"
+          TYPE ONE-TO-ONE
+        END
+      END # layer
+
+CSV File Structure
+------------------
+
+::
+
+  "IDENT","VAL"
+  1,12
+  2,11
+  3,10
+  4,9
+  5,8
+  6,7
+  7,6
+  8,5
+  9,4
+  10,3
+  11,2
+  12,1
+
+Ogrinfo
+-------
+
+::
+
+  >ogrinfo lookup.csv lookup -summary
+  INFO: Open of `lookup.csv'
+  using driver `CSV' successful.
+
+  Layer name: lookup
+  Geometry: None
+  Feature Count: 12
+  Layer SRS WKT:
+  (unknown)
+  IDENT: String (0.0)
+  VAL: String (0.0)
+
+Template
+--------
+
+::
+
+  <tr bgcolor="#EFEFEF"><td align="left">[NAME]</td><td align="left">[test_VAL]</td></tr>

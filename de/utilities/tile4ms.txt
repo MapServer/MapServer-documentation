@@ -1,0 +1,146 @@
+.. _tile4ms:
+
+*****************************************************************************
+ tile4ms
+*****************************************************************************
+
+Zweck
+-----------------------------------------------------------------------------
+
+Erzeugt ein Shapefile mit Tileindex (Kachelindex) das von MapServer verarbeitet
+werden kann. Das Programm erzeugt ein Shapefile mit Rechtecken aller
+Ausdehnungen der angegebenen Shapefiles in [metafile] (ein Dateiname pro Zeile)
+und die zugehörige DBF-Datei mit Dateinamen für jede Kachel in der Spalte
+LOCATION (wie von mapserv erwartet).
+
+
+Beschreibung
+-----------------------------------------------------------------------------
+Dieses Programm erzeugt ein Shapefile mit MBR (minimum bounding rectangle /
+kleinstes umgebenes Rechteck) aller Objekte. Die erzeugte Datei kann im
+LAYER-Objekt per Parameter TILEINDEX benutzt werden. Diese Datei wird von
+MapServer benutzt um nur die den Extent (bzw. Kachel) betreffenden Dateien zu
+verarbeiten.
+
+Syntax
+-----------------------------------------------------------------------------
+::
+
+    tile4ms <meta-file> <tile-file> [-tile-path-only]
+    <meta-file>     INPUT  file containing list of shapefile names
+                    (complete paths 255 chars max, no extension)
+    <tile-file>     OUTPUT shape file of extent rectangles and names
+                    of tiles in <tile-file>.dbf
+    -tile-path-only Optional flag.  If specified then only the path to the
+                    shape files will be stored in the LOCATION field
+                    instead of storing the full filename.
+
+
+
+Kurzes Beispiel
+-----------------------------------------------------------------------------
+
+Erzeuge tileindex.shp für alle Kacheln unterhalb von /path/to/data:
+
+::
+
+       <on Unix>
+
+    cd /path/to/data
+    find . -name "/*.shp" -print > metafile.txt
+    tile4ms metafile.txt tileindex
+
+       <on Windows>
+
+    dir /b /s *.shp > metafile.txt
+    tile4ms metafile.txt tileindex
+
+Ausführliches Beispiel
+-----------------------------------------------------------------------------
+
+Dieses Beispiel benutzt die TIGER-Zensusdaten, die nach Land/Bundesland
+unterteilt sind. (Der Datensatz enthält mehr als 3200 Länder, also wirklich
+sehr groß). In diesem Bespiel sollen alle Seen des Staates Minnesota angezeigt
+werden. (Die TIGER-Daten wurden dafür bereits in das Shapefile-Format konvertiert.
+Mit ogrtindex könnte auf die Daten auch direkt zugegriffen werden.)
+Der TIGER-Datensatz für Minnesota enthält Daten für 87 unterschiedliche
+Staaten, jeweils mit den Dateien für die Seen ('wp.shp').
+
+1. Zuerst muss das 'meta-file' erstellt werden. Dies ist eine Textdatei mit
+   Pfadangaben zu allen 'wp.shp'-Dateien für Minnesota. Zur Erstellung können
+   folgende Kommandos benutzt werden:
+
+ ::
+
+    DOS: dir wp.shp /b /s > wp_list.txt
+    (Die Pfadangabe sollte angepasst werden, so dass nur der relative
+    Pfad vorhanden bleibt)
+
+    UNIX: find -name *wp.shp -print > wp_list.txt
+
+Die erzeugte Datei könnte wie folgt aussehen (nach Entfernung des absoluten
+Pfades):
+
+ ::
+
+   001\wp.shp
+   003\wp.shp
+   005\wp.shp
+   007\wp.shp
+   009\wp.shp
+   011\wp.shp
+   013\wp.shp
+   015\wp.shp
+   017\wp.shp
+   019\wp.shp
+   . . .
+
+2. Ausfühunr des Preogramms tile4ms mit dem eben erstellten meta-file um
+   die Indexdatei zu erzeugen:
+
+ ::
+
+   tile4ms wp_list.txt index
+     Processed 87 of 87 files
+
+3. Eine neue Datei 'index.shp' wurde erstellt. Dies ist die Indexdatei mit allen
+   MBR für alle 'wp.shp'.Dateien für ganz Minnesota, siehe Abbildung 1.
+   Die Attributtabelle dieser Datei enthält eine Spalte 'LOCATION', die wiederum
+   den Pfad zu den wp.shp-Dateien enthält, siehe Abbildung 2.
+
+ **Abbildung 1: Von tile4ms erzeugte Indexdatei**
+
+ .. image:: ../images/tile4ms-view.png
+
+
+ **Abbildung 2: Attribute der erzeugten Indexdatei**
+
+ .. image:: ../images/tile4ms-attributes.png
+
+4. Der letzte Schritt besteht in der Verwendung im Mapfile.
+    - LAYER-Objekt TILEINDEX - gibt den Pfad zur Indexdatei an
+    - Layer-Objekt TILEITEM - gibt des Namen der Attributspalte an, die die
+      Pfade enthält (Standard ist 'location')
+    - Der Parameter DATA kann weggelassen werden.
+
+ For example:
+
+     ::
+
+       LAYER
+         NAME 'mn-lakes'
+         STATUS ON
+         TILEINDEX "index"
+         TILEITEM "location"
+         TYPE POLYGON
+         CLASS
+           NAME "mn-lakes"
+           STYLE
+             COLOR 0 0 255
+           END
+         END
+       END
+
+Wird dieser Layer in einer MapServer-Anwendung benutzt, werden bei großem
+Maßstab (dicht am Boden) nur die betroffenen Dateien werden geladen. Dies
+beschleunigt die Anwandung.

@@ -1,0 +1,127 @@
+.. _msencrypt:
+
+*****************************************************************************
+ msencrypt
+*****************************************************************************
+
+
+Zweck
+-----------------------------------------------------------------------------
+
+Erstellt einen Schlüssel für eine Verschlüsselung oder verschlüsselt Teile
+der Verbindungsdaten im Mapfile (ab Version 4.10). Normalerweise werden
+Verbindunsparameter für Datenbanken (Parameter CONNECTION) verschlüsselt.
+Folgende CONNECTIONTYPEs unterstützen diese Verschlüsselungsmethode:
+
+::
+
+    OGR
+    Oracle Spatial
+    PostGIS
+    SDE
+
+Syntax
+-----------------------------------------------------------------------------
+
+Einen neuen Schlüssel erstellen:
+
+::
+
+    msencrypt -keygen [key_filename]
+
+Eine Zeichenkette verschlüsseln:
+
+::
+
+    msencrypt -key [key_filename] [string_to_encrypt]
+
+Verwendung im Mapfile
+-----------------------------------------------------------------------------
+Der Pfad zum Schlüssel kann über zwei Mechanismen angegeben werden. Entweder
+wird die Umgebungsvariable MS_ENCRYPTION_KEY gesetzt oder die Direktive
+CONFIG wird im MAP-Objekt des Mapfiles benutzt. Zum Beispiel:
+
+::
+
+	CONFIG MS_ENCRYPTION_KEY "/path/to/mykey.txt"
+
+Es können geschweifte Klammen {} als Begrenzer des Schlüssels benutzt werden.
+Zum Beispiel:
+
+::
+
+	CONNECTIONTYPE ORACLESPATIAL
+	CONNECTION "user/{MIIBugIBAAKBgQCP0Yj+Seh8==}@service"
+
+Example
+.............................................................................
+
+.. note:
+    Das folgende PostGIS-Beispiel benötigt mind. MapServer 5.0.3 oder 5.2.
+
+    Angenommen ein LAYER benutzt eine PostGIS-Verbindung wie folgt:
+
+::
+
+    LAYER
+      NAME "provinces"
+      TYPE POLYGON
+      CONNECTIONTYPE POSTGIS
+      CONNECTION "host=127.0.0.1 dbname=gmap user=postgres password=iluvyou18 port=5432"
+      DATA "the_geom FROM province using SRID=42304"
+      STATUS DEFAULT
+      CLASS
+        NAME "Countries"
+        COLOR 255 0 0
+      END
+    END
+
+Mit den folgenden Schritten wurde das Passwort im obigen Beispiel verschlüsselt:
+
+1. Erstellung eines Schlüssels (Dieser Schlüssel sollte nicht in Verzeichnissen
+   gespeichert werden die für den Webserver zugänglich sind):
+
+::
+
+    msencrypt -keygen "E:\temp\mykey.txt"
+
+Der erstellte Schlüssel könnte wie folgt aussehen:
+
+::
+
+    2137FEFDB5611448738D9FBB1DC59055
+
+2. Verschlüsselung des Verbindungspasswortes mit dem erstellten Schlüssel:
+
+::
+
+    msencrypt -key "E:\temp\mykey.txt" "iluvyou18"
+
+Dies liefert das verschlüsselte Passwort, das auf der Kommandozeile ausgegeben
+wird (und in einem der nächsten Schritte benutzt wird):
+
+::
+
+    3656026A23DBAFC04C402EDFAB7CE714
+
+3. Bearbeitung des Mapfiles um sicherzustellen das 'mykey.txt' gefunden wird.
+   Hierzu wird die Umgebungsvariable "MS_ENCRYPTION_KEY" benutzt. Der Parameter
+   CONFIG kann zum setzen der Umgebungsvariablen benutzt werden:
+
+::
+
+    MAP
+        ...
+        CONFIG "MS_ENCRYPTION_KEY" "E:/temp/mykey.txt"
+        ...
+    END #mapfile
+
+4. Anpassung des Parameters CONNECTION, damit das verschlüsselte Passwort
+   benutzt wird. Dies muss dabei in geschweiften Klammern "{}" geschrieben
+   werden:
+
+::
+
+    CONNECTION "host=127.0.0.1 dbname=gmap user=postgres password={3656026A23DBAFC04C402EDFAB7CE714} port=5432"
+
+5. Fertig! Mit :ref:`shp2img` kann das verschlüsselte Mapfile getestet werden.

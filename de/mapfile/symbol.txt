@@ -1,0 +1,122 @@
+.. _symbol:
+
+*****************************************************************************
+ SYMBOL
+*****************************************************************************
+- Symboldefinitionen können direkt im Mapfile oder einer separaten Datei
+  erstellt werden. Die separate Datei wird mit SYMBOLSET im
+  :ref:`MAP Object <map>` referenziert. Dadurch können die Symboldefinitionen
+  in verschiedenen MapServer-Anwendungen benutzt werden.
+- Es gibt 3 Haupttypen von Symbolen im MapServer: Marker, Shadesets und Linien.
+- Bei Symbol 0 handelt es sich immer um einen vereinfachten Fall einer
+  bestimmten Symbolklasse. Für Punkte ist symbol 0 ein einzelnes Pixel, bei
+  Schraffuren (z.B. bei Polygonen) ist Symbol 0 eine Füllung und für Linien
+  ist Symbol 0 eine Linie mit einer Breite von 1 Pixel.
+- Symboldefinitionen enthalten keine Farbangaben, Farben werden im Objekt
+  :ref:`CLASS` definiert.
+- Für MapServer Versionen < 5 ist die Anzahl der Symbole auf 64 pro Datei
+  beschränkt. Dies kann durch Anpassung von MS_MAXSYMBOLS in mapsymbol.h
+  geändert werden. Ab MapServer 5.0 gibt es diese Begrenzung nicht mehr.
+- Weitere Informationen können unter
+  :ref:`Konstruktion von kartographischen Signaturen <sym_construction>`
+  gefunden werden.
+
+
+.. index::
+    pair: ANTIALIAS; SYMBOL
+
+ANTIALIAS [true|false]
+    Gibt an ob Antialiasing für TrueType-Schriften benutzt werden soll.
+
+CHARACTER [char]
+    Zeichen das einem bestimmten Zeichen einer TrueType-Schrift entspricht.
+    Dabei muß die Zuordnung des Zeichens auf der Tastatur zum Schriftzeichen
+    beachtet werden.
+
+FILLED [true|false]
+    Gibt an ob das Symbol mit einer Farbe (siehe :ref:`CLASS` Objekt) gefüllt
+    werden soll. Wird für Markersymbole OUTLINECOLOR definiert, wird das Symbol
+    damit umrissen.
+
+FONT [string]
+    Name der TrueType-Schrift wie in :ref:`FONTSET` definiert.
+
+GAP [int]
+    Angabe in Pixel. Hiermit wird der Symbolabstand für TrueType-Linien
+    definiert. Ab MapServer 5.0 gilt dies auch für PixMap-Symbole.
+
+    Wird ein Symbol entlang eines Liniensegmentes gezeichnet, werden durch einen
+    negativen GAP-Wert 180 Grad zum Winkel addiert. TrueType- und PixMap-Symbole
+    werden immer entlang der Linie gezeichnet. Bei Wert 0 (Standardwert) wird
+    das Symbol als Pinsel genutzt um die Linie zu zeichnen.
+
+IMAGE [string]
+    Bild (GIF oder PNG) das als Marker oder Pinsel für PIXMAP-Symbole benutzt
+    wird.
+
+NAME [string]
+    Alias für die Schrift um im :ref:`CLASS`-Objekt benutzt werden zu können.
+
+LINECAP [butt|round|square|triangle]
+    Definiert den Typ von Linienabschluß für das Cartoline-Symbol. Standardwert
+    ist "butt". Funktioniert ausschließlich mit CARTOLINE-Symbolen!
+
+LINEJOIN [round|miter|bevel]
+    Definiert den Typ von Linienverbindung für das Cartoline-Symbol.
+    Standardwert ist "none" - Linien werden nicht verbinden. Funktioniert
+    ausschließlich mit CARTOLINE-Symbolen!
+
+LINEJOINMAXSIZE [int]
+    Definiert die Maximallänge der Gehrungsgrenze. Der Wert stellt einen
+    Koeffizienten dar, der mit der Symbolgröße multipliziert wird. Standard ist 3.
+    Funktioniert ausschließlich mit CARTOLINE-Symbolen!
+
+PATTERN [num on] [num off] [num on] ... END
+    Definiert einen Strichstil oder -muster. Verfügbar ab MapServer 5.0, zum
+    ersetzen des veralteten Parameter STYLE.r.
+
+    .. versionadded: 5.0
+
+POINTS [x y] [x y] ... END
+    Bedeutet den Anfang einer Punkt-Definition, die ein Vektorsymbol erzeugt
+    oder den x- und y-Radius eines Ellipsensymbols definiert. Der Abschnitt
+    muß mit dem Schlüsselwort END beendet werden. Koordinaten werden in Pixeln
+    angegeben und bestimmen die Standard-Symbolgröße vor dem Skalieren. Durch
+    die Verwendung von negativen Koordinaten können Pfade definiert werden,
+    die nicht zusammenhängend sind. Für Ellipsensymbole wird ein Punkt definiert,
+    der den x- und y-Radius der Ellipse angibt. Kreise werden erzeugt, wenn x
+    und y den selben Wert haben.
+
+.. note::
+    Wird in einer Klasse das Symbol benutzt, in der der die Größe nicht
+    explizit angegeben ist, wird die Standardgröße bestimmt durch den Bereich
+    der y-Werte. Z.B.: Haben die Y-Koordinaten der Punkte einen Bereich von
+    0 bis 5, wird für die Standardgröße für dieses Symbol 5 angenommen.
+
+STYLE [num on] [num off] [num on] ... END
+    (*veraltet*)
+    Ab MapServer 5.0 sollte der Parameter PATTERN benutzt werden. Der
+    veraltete Parameter STYLE definiert einen Strichstil oder -muster.
+
+    .. deprecated:: 5.0
+
+TRANSPARENT [color index]
+    Definiert eine "Transparenzfarbe" für die GIF-Bilder, die für PIXMAP-Symbole
+    benutzt werden. Oder gibt an ob alle abgestuften Symbole (shade symbols)
+    einen transparenten Hintergrund haben. Für abgestufte Symbole kann es
+    empfehlenswert sein, dass Hintergrundobjekte durch ein transparentes
+    Schraffurmuster durchscheinen um eine komplexe Karte zu erzeugen.
+    Der Standardwert für den Symbolhintergrund ist der selbe wie für das
+    eigentliche Bild (z.B. colo 0). Dies ist vom Anwender konfigurierbar.
+
+TYPE [vector|ellipse|pixmap|truetype|simple|cartoline|hatch]
+        *  `vector`: eine einfache zeichnung wird benutzt um die Form des
+           Symbols zu definieren
+        *  `ellipse`: Radius in x- und y-Richtung beschreibt eine Ellipse
+        *  `pixmap`: eine GIF-Datei wird als Symbol benutzt
+        *  `truetype`: zu benutzende TrueType-Schrift wie in FONTSET angegeben.
+        *  `cartoline`: erlaubt unterschiedliche Linienenden (spitzwinklig/mitered,
+           abgerundet/rounded, schräg/beveled). Weitere Informationen sind im
+           :ref:`Konstruktion von kartographischen Signaturen <sym_construction>`
+           zu finden.
+        *  `hatch`: erzeugt schraffierte Linien
