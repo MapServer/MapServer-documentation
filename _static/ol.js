@@ -76,6 +76,9 @@ map.addLayers([wms]);
 OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
 if(!map.getCenter())
   map.setCenter(new OpenLayers.LonLat(lon, lat), zoom);
+var  controls = map.getControlsByClass('OpenLayers.Control.Navigation');
+for(var i = 0; i<controls.length; ++i)
+       controls[i].disableZoomWheel();
 }
 OpenLayers.Event.observe(window, "load", olmapinit);
 
