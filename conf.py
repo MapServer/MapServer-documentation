@@ -220,6 +220,40 @@ pdf_stylesheets = ['sphinx','kerning','a4']
 # If false, no coverpage is generated.
 #pdf_use_coverpage = True 
 
+
+# -- Options for Epub output ---------------------------------------------------
+
+# Bibliographic Dublin Core info.
+epub_title = 'MapServer Documentation'
+epub_author = 'Steve Lime'
+epub_publisher = 'http://mapserver.org'
+epub_copyright = copyright
+
+# The language of the text. It defaults to the language option
+# or en if the language is not set.
+#epub_language = ''
+
+# The scheme of the identifier. Typical schemes are ISBN or URL.
+epub_scheme = 'URL'
+
+# The unique identifier of the text. This can be a ISBN number
+# or the project homepage.
+epub_identifier = 'http://mapserver.org'
+
+# A unique identification for the text.
+#epub_uid = ''
+
+# HTML files that should be inserted before the pages created by sphinx.
+# The format is a list of tuples containing the path and title.
+#epub_pre_files = []
+
+# HTML files shat should be inserted after the pages created by sphinx.
+# The format is a list of tuples containing the path and title.
+#epub_post_files = []
+
+# A list of files that should not be packed into the epub file.
+#epub_exclude_files = []
+
 from pygments.lexer import RegexLexer, bygroups,combined, include
 from pygments.token import *
 from pygments import highlight
