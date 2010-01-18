@@ -88,6 +88,17 @@ latex:
 	@echo "Build finished; the LaTeX files are in $(BUILDDIR)/latex/<language>."\
 	@echo "Run \`make all-pdf' or \`make all-ps'"
 
+pdf:
+	@for lang in $(LANGUAGES);\
+	do \
+		mkdir -p $(BUILDDIR)/pdf/$$lang $(BUILDDIR)/doctrees/$$lang; \
+		$(SPHINXBUILD) -b pdf $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/pdf/$$lang;\
+	done
+	@echo
+	@echo "Build finished; the PDF files are in $(BUILDDIR)/pdf/<language>."\
+	@echo "Run \`make pdf' "
+
+
 all-pdf:
 	@for lang in $(LANGUAGES);\
 	do \
