@@ -1,8 +1,11 @@
 
 from os import path
 from itertools import groupby
-from sphinx.builder import Builder
-
+try:
+    from sphinx.builders import Builder
+except ImportError:
+    from sphinx.builder import Builder
+    
 class CollectLabelsBuilder(Builder):
    """
    Collects all present explicit labels into a table.
