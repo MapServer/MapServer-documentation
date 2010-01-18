@@ -47,6 +47,14 @@ html:
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html/<language>.";\
 
+singlehtml:
+	@for lang in $(LANGUAGES);\
+	do \
+		mkdir -p $(BUILDDIR)/singlehtml/$$lang $(BUILDDIR)/doctrees/$$lang; \
+		$(SPHINXBUILD) -b singlehtml $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/singlehtml/$$lang;\
+	done
+	@echo
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/singlehtml/<language>.";\
 
 pickle:
 	@for lang in $(LANGUAGES);\
@@ -87,6 +95,26 @@ latex:
 	@echo
 	@echo "Build finished; the LaTeX files are in $(BUILDDIR)/latex/<language>."\
 	@echo "Run \`make all-pdf' or \`make all-ps'"
+
+pdf:
+	@for lang in $(LANGUAGES);\
+	do \
+		mkdir -p $(BUILDDIR)/pdf/$$lang $(BUILDDIR)/doctrees/$$lang; \
+		$(SPHINXBUILD) -b pdf $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/pdf/$$lang;\
+	done
+	@echo
+	@echo "Build finished; the PDF files are in $(BUILDDIR)/pdf/<language>."\
+	@echo "Run \`make pdf' "
+
+epub:
+	@for lang in $(LANGUAGES);\
+	do \
+		mkdir -p $(BUILDDIR)/epub/$$lang $(BUILDDIR)/doctrees/$$lang; \
+		$(SPHINXBUILD) -b epub $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/epub/$$lang;\
+	done
+	@echo
+	@echo "Build finished; the epub files are in $(BUILDDIR)/epub/<language>."\
+	@echo "Run \`make epub' "
 
 all-pdf:
 	@for lang in $(LANGUAGES);\
