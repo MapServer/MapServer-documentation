@@ -8,7 +8,8 @@ BUILDDIR     = build
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
-LANGUAGES     = en de
+TRANSLATIONS  = de
+LANGUAGES     = en $(TRANSLATIONS) 
 
 # On mapserver.org we need to write alternate links for the language switcher.
 # This is triggered by setting TARGET to 'mapserverorg'
@@ -26,6 +27,7 @@ ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees/$$lang $(PAPEROPT_$(PAPER)) $(SPHINXOP
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
 	@echo "  html      to make standalone HTML files"
+	@echo "  init	   to preprocess translation directories"
 	@echo "  pickle    to make pickle files"
 	@echo "  json      to make JSON files"
 	@echo "  htmlhelp  to make HTML files and a HTML help project"
@@ -37,6 +39,13 @@ help:
 
 clean:
 	-rm -rf build/*
+
+init:
+	@for lang in $(TRANSLATIONS) ;\
+	do \
+		cp -npR en/* $$lang;\
+	done
+	@echo "Init finished. Other target can now be build.";\
 
 html:
 	@for lang in $(LANGUAGES);\
