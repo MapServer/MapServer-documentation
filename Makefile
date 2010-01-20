@@ -43,7 +43,7 @@ clean:
 init:
 	@for lang in $(TRANSLATIONS) ;\
 	do \
-		cp -npR en/* $$lang;\
+		yes n | cp -ipR en/* $$lang &> /dev/null;\
 	done
 	@echo "Init finished. Other target can now be build.";\
 
