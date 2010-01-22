@@ -43,7 +43,19 @@ clean:
 init:
 	@for lang in $(TRANSLATIONS) ;\
 	do \
-		yes n | cp -ipR en/* $$lang &> /dev/null;\
+# 		We change the Internal Field Separator (IFS) because to handle filename with special char like space. \
+		OLDIFS="$$IFS"; \
+		IFS=$$'\n'; \
+		for file in `cd en; find . -type f -a -regex '.*\.txt$$' -a -not -regex '.*\.svn.*' -printf "%p\n" ; cd ..;`; \
+		do \
+			if [ ! -f $$lang/$$file ]; then  \
+				mkdir -p `dirname "$$lang/$$file"`; \
+				(echo ".. meta::"; echo "  :ROBOTS: NOINDEX") | cat - "en/$$file" > "$$lang/$$file"; \
+			fi \
+		done; \
+		IFS=$$OLDIFS; \
+#		Copy all no .txt files \
+		yes n | cp -ipR en/* $$lang &> /dev/null; \
 	done
 	@echo "Init finished. Other target can now be build.";\
 
