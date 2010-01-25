@@ -4,8 +4,9 @@ REM Command file for Sphinx documentation
 REM using delayed expansion of variables...
 setlocal enableextensions enabledelayedexpansion
 
-REM ...to get a list of directories to be processed
-FOR /D  %%i IN ("??") do (SET LANGUAGES=!LANGUAGES! %%i)
+REM ...build a list of directories to be processed (language directories)
+SET TRANSLATIONS=de
+SET LANGUAGES=en %TRANSLATIONS%
 
 set SPHINXBUILD=sphinx-build
 set ALLSPHINXOPTS= -d _build/doctrees/%%L -c . -A language=%%L -D language=%%L -A languages="%LANGUAGES%"
@@ -18,11 +19,20 @@ if "%1" == "" goto help
 if "%1" == "help" (
 	:help
 	echo.Please use `make ^<target^>` where ^<target^> is one of
+  echo.  init      to preprocess translation directories 
 	echo.  html      to make standalone HTML files
 	echo.  latex     to make LaTeX files, you can set PAPER=a4 or PAPER=letter
 	echo.  changes   to make an overview over all changed/added/deprecated items
 	echo.  linkcheck to check all external links for integrity
 	goto end
+)
+
+if "%1" == "init" (
+  FOR  %%L in (%TRANSLATIONS%) DO (
+  	xcopy en %%L /d /y /c /s /q
+	)
+	echo.Init finished.
+  goto end
 )
 
 if "%1" == "clean" (
