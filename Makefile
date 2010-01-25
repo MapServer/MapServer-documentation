@@ -9,7 +9,7 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
 TRANSLATIONS  = de
-LANGUAGES     = en $(TRANSLATIONS) 
+LANGUAGES     = en $(TRANSLATIONS)
 
 # On mapserver.org we need to write alternate links for the language switcher.
 # This is triggered by setting TARGET to 'mapserverorg'
