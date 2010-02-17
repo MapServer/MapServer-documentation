@@ -1,0 +1,214 @@
+.. _class:
+
+*****************************************************************************
+ CLASS
+*****************************************************************************
+
+BACKGROUNDCOLOR [r] [g] [b]
+    Color de los símbolos que tienen transparencia.
+  
+COLOR [r] [g] [b]
+    Color de los objetos geográficos.
+
+.. index::
+    pair: DEBUG; CLASS
+    
+DEBUG [on|off]
+    Habilita la depuración del objeto CLASS. Se genera una salida detallada y se envía 
+    a la salida de error estándar (STDERR) o al archivo de error de MapServer, si este se indica 
+    usando el parámetro LOG en el objeto :ref:`WEB`.  
+    
+    .. seealso::
+        
+        :ref:`rfc28`
+
+.. index::
+    pair: EXPRESSION; CLASS
+    
+:ref:`EXPRESSION <expresiones>` [cadena]
+    MapServer soporta cuatro tipos de expresiones para definir la membresía a una clase. 
+    Comparaciones de cadenas de texto, expresiones regulares, expresiones lógicas simples y 
+    funciones de cadenas de texto. Si no se indica una expresión, se dice que todos los objetos geográficos 
+    pertenecen a esta clase.
+
+    - Las comparaciones de cadenas de texto distinguen mayúsculas/minúsculas y son las mas rápidas de evaluar. 
+      No se necesitan delimitadores especiales, aunque las cadenas deben ponerse entre comillas si contienen
+      caracteres especieales. (Como una buena costumbre, se recomienda poner entre comillas todas las
+      cadenas de texto).
+      
+    - Las expresiones regulares funcionan igual que en las versiones anteriores de MapServer. 
+      Sin embargo, ahora deben delimitarse usando barras /regex/. No se debe utilizar comillas.
+
+    - Las expresiones lógicas permiten construír consultas bastante complejas basadas en uno o mas 
+      atributos y por lo tanto solo estan disponibles con archivos shapefile. 
+      Las expresiones lógicas están delimitadas por parentesis "(expresión)". 
+      Los nombres de atributo estan delimitados por corchetes "[ATTRIBUTO]". Estos nombres 
+      distinguen mayúsculas/minúsculas y deben coincidir los elementos del archivo shapefile. 
+      Por ejemplo: EXPRESSION ([POBLACION] > 50000 AND '[IDIOMA]' eq 
+      'FRANCES') ... Las siguientes operadores de expresiones lógicas estan soportados: 
+      =,>,<,<=,>=,=,or (ó),and (y),lt (menor que),gt (mayor que),ge (mayor o igual),le (menor o igual),
+      eq (igual),ne (no igual). Como es de esperar, este nivel de complejidad es procesado mas
+      lentamente.
+
+    - Existe una función de cadenas de texto: length() (longitud). Esta función calcula la longitud de
+      una cadena de texto. Por ejemplo:
+
+      ::
+        
+         EXPRESSION (length('[NOMBRE_E]') < 8)                      
+                                
+      Las comparaciones de cadenas de texto y expresiones regulares trabajan con base en el CLASSITEM 
+      (elemento de clase) definido a nivel de capa. Es posible mezclar varios tipos de expresiones
+      dentro de diferentes clases de una capa.
+
+.. index::
+    pair: GROUP; CLASS
+    
+GROUP [cadena]
+    Permite agrupar las clases. Solo se utiliza cuando existe un elemento CLASSGROUP (Grupo de Clases)
+    a nivel de :ref:`LAYER` (capa). Cuando se ha fijado un parametro CLASSGROUP, solo las clases que
+    tienen el mismo nombre de grupo serán consideradas en el momento del renderizado.  Un ejemplo
+    de una capa con clases agrupadas puede contener:
+
+    .. code-block:: mapfile
+
+      LAYER
+        ...
+        CLASSGROUP "grupo1"
+        ...
+        CLASS
+          NAME "nombre1"
+          GROUP "grupo1"
+          ...
+        END
+        CLASS
+          NAME "nombre2"
+          GROUP "grupo2"
+          ...
+        END
+        CLASS
+          NAME "nombre3"
+          GROUP "grupo1"
+          ...
+        END
+        ...
+      END # layer
+
+
+.. index::
+    pair: KEYIMAGE; CLASS
+
+.. _KEYIMAGE:
+     
+KEYIMAGE [nombredearchivo]
+    Nombre completo de la imagen de la leyenda para la :ref:`CLASS` (clase). Esta imagen se utiliza
+    al construir una leyenda (o al solicitar un icono de leyenda a través de MapScript o una
+    :ref:`aplicación CGI <cgi>`).
+    
+:ref:`LABEL`
+    Señala el comienzo de un objeto :ref:`LABEL` (etiqueta).
+
+.. index::
+    pair: MAXSCALEDENOM; CLASS
+    
+MAXSCALEDENOM [double]
+    La escala máxima a la se se dibuja esta :ref:`CLASS`. La escala se da como el denominador
+    de la fracción de escala actual, por ejemplo, para un mapa a escala 1:24.0000, se usa 24000.
+    Este parámetro se eimplementó en MapServer 5.0 para remplazar el parámetro obsolteo MAXSCALE. 
+
+    .. seealso::
+        
+        :term:`Map Scale`
+
+MAXSCALE [presicióndoble] - obsoleto
+    A partir de MapServer 5.0, el parámetro adecuado a usar en su lugar es MAXSCALEDENOM.
+    El parámetro obsoleto MAXSCALE es la máxima escala a la cual esta clase CLASS es dibujada.
+    La escala es dada como el deominador de la fracción de escala actual, por ejemplo, para un 
+    mapa a escala 1:24.000, se usa 24000. 
+    
+    .. deprecated: 5.0
+    
+MAXSIZE [entero]
+    El tamaño máximo en pixeles con el cual se dibujará un símbolo. El valor predeterminado es 50.
+
+.. index::
+    pair: MINSCALEDENOM; CLASS
+    
+MINSCALEDENOM [precisióndoble]
+    La escala mínima a la se se dibuja esta :ref:`CLASS`. La escala se da como el denominador
+    de la fracción de escala actual, por ejemplo, para un mapa a escala 1:24.0000, se usa 24000.
+    Este parámetro se eimplementó en MapServer 5.0 para remplazar el parámetro obsolteo MINSCALE.
+    
+    .. seealso::
+        
+        :term:`Map Scale`
+
+MINSCALE [presicióndoble] - deprecated
+    A partir de MapServer 5.0, el parámetro adecuado a usar en su lugar es MINSCALEDENOM.
+    El parámetro obsoleto MINSCALE es la máxima escala a la cual esta clase CLASS es dibujada.
+    La escala es dada como el deominador de la fracción de escala actual, por ejemplo, para un 
+    mapa a escala 1:24.000, se usa 24000. 
+
+    .. deprecated: 5.0
+    
+MINSIZE [entero]
+    El tamaño mínimo en pixeles con el cual se dibujará un símbolo. El valor predeterminado es 0.
+    
+NAME [cadena]
+    Nombre que se utilizará en las leyendas de esta clase. Si no se establece,la clase no se 
+    mostrará en la leyenda.
+    
+OUTLINECOLOR [r] [g] [b]
+    Color a usar para dibujar el borde de los polígonos y algunos símbolos de tipo marcador. Los símbolos
+    de líneas no soportan colores de borde.
+    
+SIZE [integer]
+    Height, in pixels, of the symbol/pattern to be used. Only useful with
+    scalable symbols. For vector (and ellipse) symbol types the default size
+    is based on the range of Y values in the POINTS defining the symbol. For
+    pixmaps, the default is the vertical size of the image. Default size is 1
+    for TTF symbols.
+    
+STATUS [on|off]
+    Sets the current display status of the class.  Default turns the class on.
+
+:ref:`STYLE`
+    Signals the start of a :ref:`STYLE` object. A class can contain multiple
+    styles.
+
+:ref:`SYMBOL` [integer|string|filename]
+    The symbol name or number to use for all features if attribute tables are
+    not used. The number is the index of the symbol in the symbol file,
+    starting at 1, the 5th symbol in the file is therefore symbol number 5.
+    You can also give your symbols names using the NAME keyword in the symbol
+    definition file, and use those to refer to them. Default is 0, which
+    results in a single pixel, single width line, or solid polygon fill,
+    depending on layer type.
+
+    You can also specify a gif or png filename. The path is relative to the
+    location of the mapfile.
+    
+:ref:`TEMPLATE <template>` [filename]
+    Template file or URL to use in presenting query results to the user.  See
+    :ref:`template` for more info.
+    
+TEXT [string]
+    Static text to label features in this class with. This overrides values obtained 
+    from the LABELTIEM. The string may be given as an expression delimited using 
+    the ()'s. This allows you to concatenate multiple attributes into a single 
+    label. For example: ([FIRSTNAME],[LASTNAME]).
+
+You can also "stack" 2 symbols to achieve interesting effects. You define the second 
+symbol, which effectively sits "on top" of the symbol normally defined above.  
+See :ref:`sym_construction` for more information.
+
+The following parameters allow you to define the symbol, and they are equivalent 
+to their non-overlay counterparts:
+
+- OVERLAYBACKGROUNDCOLOR
+- OVERLAYCOLOR
+- OVERLAYOUTLINECOLOR
+- OVERLAYSIZE
+- OVERLAYMINSIZE
+- OVERLAYMAXSIZE
+- OVERLAYSYMBOL
