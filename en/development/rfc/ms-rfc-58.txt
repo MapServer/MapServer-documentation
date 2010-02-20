@@ -1,0 +1,208 @@
+.. _rfc58:
+
+======================================================================
+MS RFC 58: Kml Output
+======================================================================
+
+:Date: 2009/03/01
+:Authors: Dvaid Kana (david.kana at gmail.com)
+:Authors: Thomas.Bonfort (thomas.bonfort at gmail.com)
+:Authors: Yewondwossen Assefa (yassefa at dmsolutions.ca)
+:Authors: Michael Smith (michael.smith at usace.army.mil)
+:Status: Planning
+:Version: MapServer 6.0
+:Id: $
+
+Purpose
+-------------------------------------------------------------------------------
+
+This purpose of this RFC is to provide a KML output for MapServer.
+The initial work was done by David Kana during the 2009 Google Summer of Code.
+
+The main task of the project is the implementation of the KML driver for generating 
+KML output used mainly by Google Earth application. Code for KML rendering is based 
+on new renderer API described in MS RFC 54
+
+First intention was to use original KML library libkml provided by Google but due 
+to its complexity libxml2 already included in MapServer was selected for xml generating.
+ 
+
+Functionnalities
+-------------------------------------------------------------------------------
+
+KML driver can work in two modes: vector mode generates standard KML output where 
+MapServer shapes are transformed into KML elements called placemarks. 
+On the other side, raster mode generates standard MapServer raster image output 
+transformed into KML element ground overlay. Switching between vector and raster 
+depends on feature count and user can change default value on global level using 
+FORMATOPTION or using layer METADATA.
+
+
+Format options
+-------------------------------------------------------------------------------
+
+KML_RASTEROUTPUTFOMAT specifies name of the raster driver, default value is cairopng.
+
+OUTPUTFORMAT
+    NAME "cairo/kml"
+    DRIVER "cairo/png"
+    IMAGEMODE RGBA
+END
+
+OUTPUTFORMAT
+    NAME "kml"
+    DRIVER "KML"
+    IMAGEMODE RGB
+    FORMATOPTION "kml_rasteroutputformat=cairo/kml"
+    FORMATOPTION "kml_maxfeaturecount=30"    
+END
+
+IMAGETYPE 'KML'
+
+
+
+Driver configuration options
+-------------------------------------------------------------------------------
+
+KML_MAXFEATURECOUNT
+Maximum number of features rendered as KML vector, if number of features rendered 
+in one layer is greater than maximum feature count, layer is rasterized and renderer 
+generates ground overlay KML element.
+
+KML_DUMPATTRIBUTES
+Option whether or not to create KML description element "baloon" containing shape 
+attributes. Default is yes, possible values 0, no, or list of attributes separated 
+by comma.
+Example: KML_DUMPATTRIBUTES "NAME,SIZE"
+
+KML_ALTITUDEMODE
+Specifies how altitude components in the <coordinates> element are interpreted. 
+Possible values are: absolute, relativeToGround, clampToGround.
+http://code.google.com/apis/kml/documentation/kmlreference.html#altitudemode
+
+KML_EXTRUDE
+Specifies whether to connect the LinearRing to the ground.
+http://code.google.com/apis/kml/documentation/kmlreference.html#tessellate
+
+KML_TESSELLATE
+Specifies whether to allow the LinearRing to follow the terrain.
+http://code.google.com/apis/kml/documentation/kmlreference.html#extrude
+
+Options are specified in layer metadata.
+
+LAYER
+...
+METADATA
+	kml_maxfeaturecount	"512"
+END	
+END
+
+
+
+Projection
+-------------------------------------------------------------------------------
+
+Google  Earth accepts only WGS84 Lat Lon coordinates, using mapfile projection 
+epsg:4326 is the only alternative. Driver tests mapfile projection and generates 
+error when projection doesn't match.
+
+
+
+Shape  types
+-------------------------------------------------------------------------------
+
+MapServer layer is transformed into KML element Folder
+For every shape KML driver creates KML element Placemark.
+
+Point shapes 
+~~~~~~~~~~~~
+
+- is transformed into Placemark including symbol.
+
+Line shape 
+~~~~~~~~~~
+
+- is transformed into kml element LineString, supported attributes: 
+color, width. 
+
+Polygon shape 
+~~~~~~~~~~~~~
+
+- is transformed into KML element Polygon, supported attributes: 
+outline color, color, width.
+
+Symbol
+~~~~~~
+ 
+- is rendered and stored in separate file and transformed into KML element 
+Icon.
+
+Label
+~~~~~
+ 
+- is transformed into placemark name. To ensure binding shape and label, 
+labelcache should be switched off.  Label position LL is also recommended.
+
+LAYER
+...
+LABELCACHE OFF
+END
+
+
+Raster layers are not supported yet
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+WMS Client layers are not yet supported
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+
+Compressed KMZ output
+-------------------------------------------------------------------------------
+
+Minizip library was tested as possibility for generating compressed KML output, 
+additional efforts needed to determine how to integrate effectively minizip library 
+into MapServer.
+
+
+KML NetworkLink
+-------------------------------------------------------------------------------
+
+MapServer KML output can be displayed in Google Earth using KML NetworkLink element.
+
+<?xml version="1.0" encoding="UTF-8"?>
+<kml xmlns="http://www.opengis.net/kml/2.2">
+<Folder>
+<name>MapServer KML Reflector</name>
+<NetworkLink>
+  <name>Network Link</name>
+  <visibility>1</visibility>
+  <flyToView>0</flyToView>
+  <Link>
+    <href>http://localhost/Mapserver/Mapserv.cgi?map=test_kml.map&amp;MODE=map</href>
+    <viewRefreshMode>onStop</viewRefreshMode>
+    <viewRefreshTime>1</viewRefreshTime>
+    <viewFormat>MAPEXT=[bboxWest] [bboxSouth] [bboxEast] [bboxNorth]</viewFormat>
+  </Link>
+</NetworkLink> 
+</Folder>
+</kml>
+
+ 
+
+Testing
+-------------------------------------------------------------------------------
+
+Development is done for now inside http://svn.osgeo.org/mapserver/sandbox/davidK/
+sandbox
+
+
+Documentation
+--------------------------------------------------------------------------------
+
+
+Comments from Review period
+--------------------------------------------------------------------------------
+
+
+Voting History
+--------------------------------------------------------------------------------
