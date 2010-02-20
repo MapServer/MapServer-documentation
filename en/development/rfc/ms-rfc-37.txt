@@ -17,10 +17,10 @@ Purpose
 ==============================================================================
 
 To provide MapServer with the ability to set its PROJECTION information from 
-a number of sources, including directly from the datasource itself, in an 
+directly from the datasource itself, in an 
 attempt to lessen the burden related to dealing with coordinate system 
 information on users.  These improvements will be optionally available and
-not interfere with previous PROJECTION defintion methods.  
+not interfere with previous PROJECTION definition methods.  
 
 The History of Spatial References in MapServer
 ==============================================================================
@@ -33,10 +33,6 @@ the information on the floor or completely ignored it.
 MapServer's reprojection machinery keys off the fact that a LAYER's 
 PROJECTION is different than the MAP's.  When this is the case, MapServer 
 reprojects the LAYER's data to the MAP's spatial reference during a map draw. 
-OGC services also interact here, and when a spatial reference is specified as 
-"available" using the METADATA mechanism, a client can request maps in a 
-different spatial reference than is specified by default, which starts the 
-reprojection machinery.
 
 Definition
 ----------
@@ -65,11 +61,19 @@ And proj4-formated definitions in the form:
         "no_defs"
     END
 
-A third, and rather unknown option is available exclusively to WMS -- the 
-EPSG AUTO definition, where MapServer attempts to determine the spatial 
-reference from the data itself.  This method currently only works for 
-OGR and GDAL data sources, and it is only available when GDAL/OGR is 
-linked into MapServer.
+OGR datasources also support a form of AUTO projection type, but it is 
+not widely advertised or regularized:
+
+::
+
+    LAYER
+        CONNECTIONTYPE OGR
+        PROJECTION
+            "AUTO"
+        END
+    END
+
+
 
 Performance Observations
 ------------------------
@@ -112,29 +116,9 @@ but this approach still foists pain and misery on the users.
 Specification Features
 ==============================================================================
 
-MapServer will continue to behave as before, 
-assuming the inputted projection is either an EPSG code or proj4 definition.  
-The user will also have the ability to optionally add a TYPE enumeration that 
-will hint the processing of the projection object.
-
-::
-
-    PROJECTION
-        TYPE TYPEENUM
-        "A definition"
-    END
-
-The following optional TYPE enumerations would be supported:
-
-* AUTO
-* PROJ4
-* EPSG
-* FILE
-* OGCWKT
-* ESRIWKT
-
-
-See below for some examples:
+MapServer will continue to behave as before, and the user can opt-in for 
+AUTO projection support by using the AUTO keyword in a projection object as 
+so:
 
 ::
 
@@ -143,56 +127,6 @@ See below for some examples:
     # (shapefile, SDE, OGR, etc.).
     PROJECTION
         AUTO
-    END
-
-:: 
-    
-    # Use a proj4 definition
-    PROJECTION
-        "+proj=longlat +ellps=WGS84 +datum=WGS84 +no_defs"
-    END
-
-::
-
-    # Use an EPSG code
-    PROJECTION
-        "init=epsg:4326"
-    END
-
-::
-
-    # Read the definition from a file
-    PROJECTION
-        TYPE FILE
-        VALUE "../myfile.prj"
-    END
-
-::
-
-    # Use an OGC WKT definition (escaping may be required)
-    PROJECTION
-        'GEOGCS["WGS 84",
-                    DATUM["WGS_1984",
-                        SPHEROID["WGS 84",6378137,298.257223563,
-                            AUTHORITY["EPSG","7030"]],
-                        AUTHORITY["EPSG","6326"]],
-                    PRIMEM["Greenwich",0,
-                        AUTHORITY["EPSG","8901"]],
-                    UNIT["degree",0.01745329251994328,
-                        AUTHORITY["EPSG","9122"]],
-                    AUTHORITY["EPSG","4326"]]'
-    END
-
-::
-
-    # Use an ESRI WKT definition (escaping may be required)
-    PROJECTION
-        TYPE ESRIWKT
-        'GEOGCS["GCS_WGS_1984",
-                    DATUM["D_WGS_1984",
-                        SPHEROID["WGS_1984",6378137,298.257223563]],
-                        PRIMEM["Greenwich",0],
-                        UNIT["Degree",0.017453292519943295]]'
     END
 
 
@@ -205,41 +139,16 @@ behavior be preserved.  First, drastically changing the PROJECTION definitions
 would mean a lot of unnecessary mapfile churn.  Second, continuing to define 
 spatial references in proj4 format as before will be the most performant.
 
-Implementation of this RFC will encompass four items:
+Implementation of this RFC will encompass two items:
 
-1) Additional spatial reference type enumerations will be added.
+1) Addition of a method to the LAYER virtual table .
 
-2) Addition of a method to the LAYER virtual table so layers can support 
-   returning the spatial reference in a variety of formats (OGCWKT, ESRIWKT, 
-   proj4, EPSG).
+2) Additional methods will be added for drivers to be able to convert 
+   from their native projection description type (ESRI WKT, OGC WKT, proj.4, etc)
+   into proj.4 for setting on the projectionObj.
 
-3) Additional methods will be added to operate with the MapScript projectionObj 
-   to support setting the projectionObj of a TYPE with a definition.
-   
+3) PROJECTION will support an explicit AUTO keyword
 
-TYPE Enumerations
------------------
-
-The following TYPE enumerations will be added to support SRS definition types:
-
-::
-
-    enum MS_SRS_TYPE {MS_SRS_AUTO, MS_SRS_PROJ4, MS_SRS_EPSG, MS_SRS_FILE, MS_SRS_OGCWKT, MS_SRS_ESRIWKT}
-
-
-projectionObj
--------------
-
-Two methods will be added to set the projectionObj using various definition 
-types and to return definitions in various flavors. 
-
-::
-
-    int msSetProjectionByType(projectionObj *p, int type, const char *value)
-
-::
-
-    char* msGetProjectionByType(projectionObj *p, int type)
 
 Virtual Table Method
 --------------------
@@ -253,7 +162,18 @@ virtual table member is proposed:
 
 ::
   
-    int (*LayerGetAutoProjection)(layerObj *layer)
+    int (*LayerGetAutoProjection)(layerObj *layer, projectionObj *projection)
+
+
+Additional methods
+-----------------------
+
+The msOGCWKT2ProjectionObj method already exists, but a few more would be 
+added to allow drivers that implement LayerGetAutoProjection to generate 
+a projectionObj.
+
+* msESRIWKT2ProjectionObj
+* msOGCWKT2ProjectionObj
 
 
 Driver-specific implementations
@@ -267,17 +187,6 @@ spatial reference definitions:
 * GDAL Raster
 * ArcSDE
 * PostGIS
-
-MapScript
----------
-
-msSetProjectionByType and msGetProjectionByType will be exposed to MapScript 
-via the projectionObj:
-
-::
-
-    setByType(char* definition, int type)
-    getByType(int type)
 
 
 Files Affected
