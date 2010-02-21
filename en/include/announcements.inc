@@ -1,3 +1,9 @@
+2010-02-20 - MapServer PSC Attend New York Code Sprint
+..................................................................................................................
+
+Members of the MapServer Project Steering Committee attend the `New York Code Sprint <http://wiki.osgeo.org/wiki/New_York_Code_Sprint_2010>`__
+event, an international meeting of PostGIS, GeoServer, GeoMOOSE, and MapServer development teams.
+
 2010-01-08 - MapServer 5.6.1 is released
 ..............................................................................
 
