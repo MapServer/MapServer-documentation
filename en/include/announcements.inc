@@ -1,7 +1,7 @@
-2010-03-20 - MapServer 5.6.2 is released
+2010-03-22 - MapServer 5.6.3 is released
 ..............................................................................
 
-MapServer 5.6.2 has been released. See `the release announcement <http://lists.osgeo.org/pipermail/mapserver-users/2010-March/064977.html>`__ 
+MapServer 5.6.3 has been released. See `the release announcement <http://lists.osgeo.org/pipermail/mapserver-users/2010-March/064997.html>`__ 
 for more details and head to :ref:`download` to obtain a copy.
 
 2010-02-20 - MapServer PSC Attend New York Code Sprint
