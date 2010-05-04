@@ -154,6 +154,8 @@ html_copy_source = True
 # Output file base name for HTML help builder.
 htmlhelp_basename = 'MapServerdoc'
 
+# Hide source from sidebar (see http://sphinx.pocoo.org/config.html#confval-html_show_sourcelink)
+html_show_sourcelink = False
 
 # Options for LaTeX output
 # ------------------------
