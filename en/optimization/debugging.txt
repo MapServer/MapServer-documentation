@@ -480,7 +480,7 @@ Debugging Older Versions of MapServer (before 5.0)
        INPUT=EPPL7 INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE
        DEBUG=MSDEBUG 
 
-2. Set the *MS_ERRORFILE** variable is in your mapfile, within the :ref:`MAP` object, 
+2. Set the *MS_ERRORFILE* variable is in your mapfile, within the :ref:`MAP` object, 
    such as:
 
    .. code-block:: mapfile
@@ -493,14 +493,32 @@ Debugging Older Versions of MapServer (before 5.0)
          ...
        END
      END
+     
+3. If you don't use the *MS_ERRORFILE* variable, you can use the LOG parameter in
+   your :ref:`WEB` object of the mapfile, such as:
+   
+   .. code-block:: mapfile
 
-3. Specify *DEBUG ON* in your MAP object, or in your LAYER objects, such as:
+      MAP
+       ...
+       WEB
+         LOG "mapserver.log"
+       END
+       ...
+       LAYER
+         ...
+       END
+     END   
+
+4. Specify *DEBUG ON* in your MAP object, or in your LAYER objects, such as:
 
    .. code-block:: mapfile
 
       MAP
        ...
-       CONFIG "MS_ERRORFILE" "/ms4w/tmp/ms_error.txt"
+       WEB
+         LOG "mapserver.log"
+       END       
        DEBUG ON
        ...
        LAYER
@@ -508,7 +526,7 @@ Debugging Older Versions of MapServer (before 5.0)
        END
      END
 
-4. Note that only errors will be written to the log file; all DEBUG output 
+5. Note that only errors will be written to the log file; all DEBUG output 
    goes to stderr, in the case of Apache that is Apache's *error_log* file. If you are 
    using Microsoft IIS, debug output is routed to *stdout* (i.e. the browser), so be sure 
    to remove *DEBUG ON* statements if using IIS on a production server.
