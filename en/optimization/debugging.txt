@@ -1,0 +1,534 @@
+.. _debugging:
+
+*****************************************************************************
+ Debugging MapServer
+*****************************************************************************
+
+:Author: Jeff McKenna
+:Contact: jmckenna at gatewaygeomatics.com
+:Revision: $Revision: 9846 $
+:Date: $Date: 2010-02-21 12:40:26 -0400 (Sun, 21 Feb 2010) $
+
+.. contents:: Table of Contents
+    :depth: 3
+    :backlinks: top
+
+Introduction
+============
+
+When developing an application for the Internet, you will inevitably across problems many problems 
+in your environment.  The goal of this guide is to assist you with locating the problem
+with your MapServer application.
+
+Links to Related Information
+----------------------------
+
+- :ref:`RFC 28: Redesign of LOG/DEBUG output mechanisms <rfc28>`
+- :ref:`MapServer Errors <errors>`
+
+Steps to Enable MapServer Debugging
+===================================
+
+Starting with MapServer 5.0, you are able to control the levels of debugging/logging
+information returned to you by MapServer, and also control the location of the output
+log file.
+
+In technical terms, there are msDebug() calls in various areas of the MapServer code that generate 
+information that may be useful in tuning and troubleshooting applications.
+
+Step 1: Set the MS_ERRORFILE Variable
+-------------------------------------
+
+The **MS_ERRORFILE** variable is used to specify the output of debug messages from MapServer.  
+You can pass the following values to **MS_ERRORFILE**:
+
+**[filename]**
+  Full path and filename of a log file, to contain MapServer's debug messages.  Any file extension
+  can be used, but *.log* or *.txt* is recommended.  The file will be created, if it does not 
+  already exist.
+  
+**stderr**
+  Use this to send MapServer's debug messages to the Web server's log file (i.e. "standard error"). 
+  If you are using Apache, your debug messages will be placed in the Apache  *error_log* file. 
+  If you are using Microsoft IIS, your debug messages will be sent to *stdout*
+  (i.e. the browser), so its use is discouraged. With IIS it is recommended to direct output to a file
+  instead.
+  
+**stdout**
+  Use this to send MapServer's debug messages to the standard output (i.e. the browser), combined with 
+  the rest of MapServer's output.
+  
+**windowsdebug**
+  Use this to send MapServer's debug messages to the Windows OutputDebugString API, allowing the use of 
+  external programs like SysInternals debugview to display the debug output.
+
+
+Through the Mapfile
+*******************
+
+The recommended way to set the **MS_ERRORFILE** variable is in your mapfile, within the :ref:`MAP` object, 
+such as:
+
+.. code-block:: mapfile
+
+   MAP
+     ...
+     CONFIG "MS_ERRORFILE" "/ms4w/tmp/ms_error.txt"
+     ...
+     LAYER
+       ...
+     END
+   END
+
+Through an Environment Variable
+*******************************
+
+You can also set the **MS_ERRORFILE** variable as an environment variable on your system.  Apache
+users can set the environment variable in Apache's *httpd.conf* file, such as:
+
+::
+
+   SetEnv MS_ERRORFILE "/ms4w/tmp/ms_error.txt"
+
+Windows users can alternatively set the environment variable through the Windows System 
+Properties; but make sure to set a SYSTEM environment variable.
+   
+.. NOTE::
+   If both the *MS_ERRORFILE* environment variable is set and a *CONFIG MS_ERRORFILE* is also set, 
+   then the CONFIG directive takes precedence.
+
+Step 2: Set the DEBUG Level
+---------------------------
+
+You can retrieve varying types of debug messages by setting the *DEBUG* parameter in the :ref:`mapfile`.  
+You can place the *DEBUG* parameter in any LAYER in the mapfile, or instead, set it once in the MAP
+object so that it applies to each layer.  Use the value of the *DEBUG* parameter to set the type of information
+returned, as follows:
+
+DEBUG Levels
+************
+
+**Level 0** 
+  Errors only (DEBUG OFF, or DEBUG 0)
+    
+  In level 0, only msSetError() calls are logged to MS_ERORFILE. No msDebug() output at all. 
+  This is the default and corresponds to the original behavior of MS_ERRORFILE in MapServer 4.x
+    
+**Level 1** 
+  Errors and Notices (DEBUG ON, or DEBUG 1)
+    
+  Level 1 includes all output from Level 0 plus msDebug() warnings about common pitfalls, failed 
+  assertions or non-fatal error situations (e.g. missing or invalid values for some parameters, 
+  missing shapefiles in tileindex, timeout error from remote WMS/WFS servers, etc.)
+
+**Level 2** 
+  Map Tuning (DEBUG 2)
+  
+  Level 2 includes all output from Level 1 plus notices and timing information useful for tuning 
+  mapfiles and applications.  *this is the recommended minimal debugging level*
+  
+**Level 3** 
+  Verbose Debug (DEBUG 3)
+  
+  All of Level 2 plus some debug output useful in troubleshooting problems such as WMS connection 
+  URLs being called, database connection calls, etc.
+
+**Level 4** 
+  Very Verbose Debug (DEBUG 4)
+  
+  Level 3 plus even more details...
+
+**Level 5** 
+  Very Very Verbose Debug (DEBUG 5)
+  
+  Level 4 plus any msDebug() output that might be more useful to developers than to users.
+
+
+Mapfile Example
+***************
+
+The following example is the recommended method to set the *DEBUG* parameter:
+
+.. code-block:: mapfile
+
+   MAP
+     ...
+     CONFIG "MS_ERRORFILE" "/ms4w/tmp/ms_error.txt"
+     DEBUG 5
+     ...
+     LAYER
+       ...
+     END
+   END
+
+The MS_DEBUGLEVEL Environment Variable
+**************************************
+
+Instead of setting the *DEBUG* Debug level in each of your mapfiles, you can also be set 
+the level globally by using the *MS_DEBUGLEVEL* environment variable.
+
+When set, this value is used as the default debug level value for all map and layer objects as they 
+are loaded by the mapfile parser. This option also sets the debug level for any msDebug() call 
+located outside of the context of a map or layer object, for instance for debug statements relating 
+to initialization before a map is loaded. If a DEBUG value is also specified in the mapfile in 
+some map or layer objects then the local value (in the mapfile) takes precedence over the 
+value of the environment variable.
+
+Apache users can set the environment variable in Apache's *httpd.conf* file, such as:
+
+::
+
+   SetEnv MS_DEBUGLEVEL 5
+
+Windows users can alternatively set the environment variable through the Windows System 
+Properties; but make sure to set a SYSTEM environment variable.
+
+Step 3: Turn on CPL_DEBUG (optional)
+------------------------------------
+
+MapServer relies on the `GDAL <http://www.gdal.org/>`__ library to access most data layers, so
+you may wish to turn on GDAL debugging, to hopefully get more information on how GDAL is accessing 
+your data file.  This could be very helpful for problems with accessing raster files and PostGIS 
+tables.  You can trigger this GDAL output by setting the **CPL_DEBUG** variable in your mapfile, 
+within the :ref:`MAP` object, such as:
+
+.. code-block:: mapfile
+
+   MAP
+     ...
+     CONFIG "CPL_DEBUG" "ON"
+     ...
+     LAYER
+       ...
+     END
+   END
+
+Step 4: Test your Mapfile
+-------------------------
+
+Once you have set the *MS_ERRORFILE* and *DEBUG* level in your mapfile, you should now test
+your mapfile and read your generated log file.
+
+Using shp2img
+*************
+
+The recommended way to test your mapfile is to use the MapServer commandline utility :ref:`shp2img`, 
+to verify that your mapfile creates a valid map image. :ref:`shp2img` should be included in your MapServer 
+installation  (`MS4W <http://www.maptools.org/ms4w>`__ users need to execute *setenv.bat* before 
+using the utility).
+
+You can set the *DEBUG* level by passing the :ref:`shp2img` following parameters to your commandline call:
+
+.. NOTE::
+   If you have already set *MS_ERRORFILE* and *DEBUG* in your mapfile, you must comment these out
+   in order to use these :ref:`shp2img` options
+   
+-all_debug
+^^^^^^^^^^
+
+Use this setting to set the debug level for the MAP object and all layers. *this is the recommended switch
+to use*
+
+::
+  
+  shp2img -m spain.map -o test.png -all_debug 5
+  
+    msLoadMap(): 0.002s
+    msDrawMap(): Layer 0 (spain provinces), 0.012s
+    msDrawRasterLayerLow(orthophoto): entering.
+    msDrawGDAL(): src=0,0,3540,2430, dst=188,48,1,1
+    source raster PL (-793.394,-1712.627) for dst PL (188,48).
+    msDrawGDAL(): red,green,blue,alpha bands = 1,2,3,0
+    msDrawMap(): Layer 1 (orthophoto), 0.150s
+    msDrawMap(): Layer 2 (urban areas), 0.004s
+    msDrawMap(): Layer 3 (species at risk), 0.008s
+    msDrawMap(): Layer 4 (populated places), 1.319s
+    msDrawMap(): Drawing Label Cache, 0.014s
+    msDrawMap() total time: 1.513s
+    msSaveImage() total time: 0.039s
+    msFreeMap(): freeing map at 0218C1A8.
+    freeLayer(): freeing layer at 0218F5E0.
+    freeLayer(): freeing layer at 030C33A0.
+    freeLayer(): freeing layer at 030C3BC8.
+    freeLayer(): freeing layer at 030C4948.
+    freeLayer(): freeing layer at 030C7678.
+    shp2img total time: 1.567s
+
+-map_debug
+^^^^^^^^^^
+
+Use this setting to set the debug level for the MAP object only.
+
+::
+
+  shp2img -m spain.map -o test.png -map_debug 5
+  
+    msDrawMap(): Layer 0 (spain provinces), 0.012s
+    msDrawRasterLayerLow(orthophoto): entering.
+    msDrawMap(): Layer 1 (orthophoto), 0.144s
+    msDrawMap(): Layer 2 (urban areas), 0.004s
+    msDrawMap(): Layer 3 (species at risk), 0.008s
+    msDrawMap(): Layer 4 (populated places), 1.323s
+    msDrawMap(): Drawing Label Cache, 0.013s
+    msDrawMap() total time: 1.511s
+    msSaveImage() total time: 0.039s
+    msFreeMap(): freeing map at 0205C1A8.
+
+-layer_debug
+^^^^^^^^^^^^
+
+Use this setting to set the debug level for one layer object only.
+
+::
+ 
+  shp2img -m spain.map -o test.png -layer_debug orthophoto 5
+  
+    msDrawRasterLayerLow(orthophoto): entering.
+    msDrawGDAL(): src=0,0,3540,2430, dst=188,48,1,1
+    source raster PL (-793.394,-1712.627) for dst PL (188,48).
+    msDrawGDAL(): red,green,blue,alpha bands = 1,2,3,0
+    msDrawMap(): Layer 1 (orthophoto), 0.151s
+    freeLayer(): freeing layer at 02F23390.
+    
+Set CPL_DEBUG
+^^^^^^^^^^^^^
+
+At the commandline execute the following:
+
+::
+
+  set CPL_DEBUG=ON
+
+  shp2img -m spain.map -o test.png -layer_debug orthophoto 5
+  
+    msDrawRasterLayerLow(orthophoto): entering.
+    GDAL: GDALOpen(D:\ms4w\apps\spain\map/.\../data/ov172068_200904_c100u50x75c24n.jpg, this=0
+    4059840) succeeds as JPEG.
+    msDrawGDAL(): src=0,0,3540,2430, dst=188,48,1,1
+    source raster PL (-793.394,-1712.627) for dst PL (188,48).
+    msDrawGDAL(): red,green,blue,alpha bands = 1,2,3,0
+    GDAL: GDALDefaultOverviews::OverviewScan()
+    msDrawMap(): Layer 1 (orthophoto), 0.155s
+    freeLayer(): freeing layer at 03113390.
+    GDAL: GDALDeregister_GTiff() called.
+
+Reading Errors Returned by shp2img
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If there is a problem with your mapfile, :ref:`shp2img` should output the line number in your 
+mapfile that is causing the trouble.  The following tells us that there is a problem on line 85
+of my mapfile:
+
+::
+
+  getSymbol(): Symbol definition error. Parsing error near (truetype2):(line 85)
+  
+If you are using mapfile :ref:`INCLUDEs <include>`, it may be tricky to track down this line number,
+but most of the time the line number is useful.
+
+Using mapserv CGI
+*****************
+
+Another handy way to test your mapfile is to call the mapserv CGI executable at the 
+:ref:`commandline <mapserv>`, such as the following:
+
+::
+
+  mapserv -nh "QUERY_STRING=map=/ms4w/apps/spain/map/spain.map&mode=map"
+
+ON_MISSING_DATA
+***************
+
+If you are using tile indexes to access your data, you should also be aware of the
+configuration settings added in MapServer 5.4 that allow you to tell MapServer how to 
+handle missing data in tile indexes.  Please see the *CONFIG* parameter's *ON_MISSING_DATA* setting
+in the :ref:`map` object for more information.
+
+.. HINT::
+   You can check the attributes in the tileindex by executing "*ogrinfo -al*" on your data file
+
+Step 5: Check your Web Server Logs
+----------------------------------
+
+Once you have verified that there are no problems with you mapfile, next you should check your Web
+server log files, for any related information that may help you narrow down your problem.
+
+Apache
+******
+
+Unix users will usually find Apache's *error_log* file in a path similar to:
+
+::
+
+  /var/log/apache2/
+  
+Windows users will usually find Apache's log files in a path similar to:
+
+::
+
+  C:\Program Files\Apache Group\Apache2\logs
+  
+MapServer for Windows (`MS4W <http://www.maptools.org/ms4w>`__) users will find Apache's log files at:
+
+::
+
+  \ms4w\Apache\logs
+  
+Microsoft IIS
+************* 
+
+IIS log files can be located by:
+
+1. Go to Start -> Control Panel -> Administrative Tools
+2. Open the Internet Information Services (IIS) Manager.
+3. Find your Web site under the tree on the left.
+4. Right-click on it and choose Properties.
+5. On the Web site tab, you will see an option near the bottom that says "Active Log Format." Click on the 
+   Properties button.
+   
+    .. image:: ../images/iis-debug.png 
+
+6. At the bottom of the General Properties tab, you will see a box that contains the log file directory 
+   and the log file name. The full log path is comprised of the log file directory plus the first part 
+   of the log file name, for example:
+   ::
+   
+     C:\WINDOWS\system32\LogFiles\W3SVC1\ex100507.log
+     
+You may also want to check the Windows Event Viewer logs, which is located at:
+
+1. Go to Start -> Control Panel -> Administrative Tools
+2. Computer Management
+3. Event Viewer
+
+.. WARNING::
+   As mentioned previously, in IIS the MapServer *stderr* debug output is returned to 
+   the client instead of routed to the Web Server logs, so be sure to log the output
+   to a file, using:
+   
+   ::
+   
+     CONFIG "MS_ERRORFILE" "/ms4w/tmp/ms_error.txt"
+
+CGI Error - The specified CGI application misbehaved by not returning a complete set of HTTP headers
+****************************************************************************************************
+
+This error is often caused by missing DLL files.  You should try to execute "*mapserv -v* at the 
+commandline, to make sure that MapServer loads properly.
+
+
+Step 6: Verify your Application Settings
+----------------------------------------
+
+If you have verified that MapServer creates a valid map image through :ref:`shp2img`, you've checked
+your MapServer log files, and there are no problems noted in your Web server logs, then you should 
+focus your attention on possible application configuration problems.  "Application" here means how 
+you are displaying your map images on the Web page, such as with `OpenLayers <http://www.openlayers.org>`__.
+
+PHP MapScript
+*************
+
+If you are using PHP MapScript in your application, here are some important notes for debugging:
+
+1. Make sure your *php.ini* file is configured to show all errors, by setting:
+
+   ::
+   
+     display_errors = On
+
+
+2. To enable debugging in PHP MapScript, if you are using MapServer 5.6.0 or more
+   recent, make sure to define *ZEND_DEBUG* in the PHP source.
+   
+   If you are using MapServer < 5.6.0, then:
+
+   - open the file */mapscript/php3/php_mapscript.c*
+
+   - change the following:
+
+     ::
+     
+       #define ZEND_DEBUG 0
+
+       to
+
+       #define ZEND_DEBUG 1
+
+Debugging MapServer using Compiler Debugging Tools
+==================================================
+
+Once you build MapServer in debug mode (*./configure --enable-debug*), you should be 
+able to debug MapServer with most debugging tools. `GDB <http://www.gnu.org/software/gdb/>`__ 
+is an example of a popular debugger tool, that works well with MapServer.
+
+Debugging Older Versions of MapServer (before 5.0)
+==================================================
+
+1. Make sure that MapServer is compiled in debug mode (on unix this is
+   enabled through *./configure --enable-debug*).
+   
+   You can verify that your build was compiled in debug mode, by executing
+   the following at the commandline (look for "DEBUG=MSDEBUG"):
+   
+   ::
+   
+     ./mapserv -v
+     
+       MapServer version 4.10.2 OUTPUT=GIF OUTPUT=PNG OUTPUT=WBMP
+       OUTPUT=SVG SUPPORTS=PROJ SUPPORTS=FREETYPE SUPPORTS=WMS_SERVER
+       SUPPORTS=WMS_CLIENT SUPPORTS=WCS_SERVER SUPPORTS=THREADS SUPPORTS=GEOS
+       INPUT=EPPL7 INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE
+       DEBUG=MSDEBUG 
+
+2. Set the *MS_ERRORFILE* variable is in your mapfile, within the :ref:`MAP` object, 
+   such as:
+
+   .. code-block:: mapfile
+
+     MAP
+       ...
+       CONFIG "MS_ERRORFILE" "/ms4w/tmp/ms_error.txt"
+       ...
+       LAYER
+         ...
+       END
+     END
+     
+3. If you don't use the *MS_ERRORFILE* variable, you can use the LOG parameter in
+   your :ref:`WEB` object of the mapfile, such as:
+   
+   .. code-block:: mapfile
+
+      MAP
+       ...
+       WEB
+         LOG "mapserver.log"
+       END
+       ...
+       LAYER
+         ...
+       END
+     END   
+
+4. Specify *DEBUG ON* in your MAP object, or in your LAYER objects, such as:
+
+   .. code-block:: mapfile
+
+      MAP
+       ...
+       WEB
+         LOG "mapserver.log"
+       END       
+       DEBUG ON
+       ...
+       LAYER
+         ...
+       END
+     END
+
+5. Note that only errors will be written to the log file; all DEBUG output 
+   goes to stderr, in the case of Apache that is Apache's *error_log* file. If you are 
+   using Microsoft IIS, debug output is routed to *stdout* (i.e. the browser), so be sure 
+   to remove *DEBUG ON* statements if using IIS on a production server.
+
+.
