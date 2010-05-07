@@ -1,0 +1,140 @@
+.. _php_migration_guide:
+
+*****************************************************************************
+ PHP MapScript Migration Guide
+*****************************************************************************
+
+:Author: Alan Boudreault
+:Contact: aboudreault at mapgears.com
+:Revision: $Revision: 10033 $
+:Date: $Date: 2010-03-30 15:58:30 -0400 (Tue, 30 Mar 2010) $
+
+.. contents:: Table of Contents
+    :depth: 3
+    :backlinks: top
+    
+Introduction
+------------
+
+This document describes the changes that must be made to PHP MapScript
+applications when migrating from one MapServer version to another (i.e. backwards
+incompatibilities), as well as information on some of the new features.
+
+Migrating 5.6 to 6.0
+--------------------
+
+PHP Version Required
+====================
+
+PHP 5.2.0 or more recent is required. The support for earlier versions
+has been dropped.
+  
+Error Reporting
+===============
+
+PHP MapScript now uses exceptions for error reports. All errors are
+catchable. There are no more fatal errors reported via the standard
+uncatchable PHP system (Only Warnings).
+  
+Manipulating Objects
+====================
+
+* Object properties can be set like all other PHP objects.
+
+.. code-block:: php 
+
+    $map->scaledenom = 25000;
+  
+.. note::
+    The set/setProperty methods are still available. 
+
+* Objects can be created with the PHP "new" operator.
+
+.. code-block:: php
+
+  $myShape = ms_newShapeObj(MS_SHAPE_LINE); // or
+  $myShape = new shapeObj(MS_SHAPE_LINE);
+
+.. note::
+   All object constructors throw an exception on failure.
+  
+.. note::
+     
+    *ms_newSymbolObj()* and *new symbolObj()* are different
+
+    * ms_newSymbolObj() returns the id of the new/existing symbol.
+    * new symbolObj() returns the symbolObj. You don't need to get it with getSymbolObjectById().
+
+Class Properties
+================
+
+Class properties that have been removed:
+
+  * classObj: maxscale, minscale
+  * layerObj: labelsizeitem, labelangleitem, labelmaxscale, labelminscale, maxscale, minscale, symbolscale, transparency
+  * legendObj: interlace, transparent
+  * mapObj: imagetype, imagequality, interlace, scale, transparent  
+  * scalebarObj: interlace, transparent
+  * symbolObj: gap, stylelength
+  * webObj: minscale, maxscale
+  
+Class Methods
+=============
+  
+Class methods that have been removed:
+
+  * imageObj: free
+  * layerObj: getFilter, getShape  
+  * lineObj: free
+  * pointObj: free
+  * projectionObj: free  
+  * rectObj: free
+  * shapeObj: free, union_geos
+  * shapefileObj: free
+  * symbolObj: free, getstylearray
+  * outputFormatObj: getformatoption, setformatoption
+
+layerObj
+========
+
+layerObj->clearProcessing() method now returns void.
+
+mapObj
+======
+
+mapObj->queryByIndex(): default behavior for the addToQuery parameter was not ok, now it is.
+
+referenceMapObj
+===============
+
+referenceMapObj has new properties: marker, markername, markersize, maxboxsize, minboxsize.
+
+shapeFileObj
+============
+
+shapeFileObj is automatically closed/writed on destroy. (At the end of the script or with an explicit unset())
+
+Methods that now return MS_SUCCESS/MS_FAILURE
+=============================================
+  
+  * layerObj: setProcessing, addFeature, draw  
+  * mapObj: moveLayerUp, moveLayerDown, zoomRectangle, zoomScale, setProjection, setWKTProjection, setLayersDrawingOrder
+  * outputFormatObj: validate
+  * scalebarObj: setImageColor
+  * symbolObj: setPoints, setPattern  
+
+Methods that now return NULL on failure
+=======================================
+
+  * classObj: clone
+  * mapObj: clone, draw, drawQuery getLayerByName, getProjection  
+  * layerObj: nextShape, getExtent
+  * styleObj: clone  
+
+Methods that now return an empty array 
+======================================
+  
+  * layerObj: getItems, getProcessing, getGridIntersectionCoordinates
+  * mapObj: getLayersIndexByGroup, getAllGroupNames, getLayersDrawingOrder, getAllLayerNames
+  * symbolObj: getPatternArray
+  
