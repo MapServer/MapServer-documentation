@@ -27,173 +27,300 @@ First intention was to use original KML library libkml provided by Google but du
 to its complexity libxml2 already included in MapServer was selected for xml generating.
  
 
-Functionality
+General Functionnality
 -------------------------------------------------------------------------------
 
-KML driver can work in two modes: vector mode generates standard KML output where 
-MapServer shapes are transformed into KML elements called placemarks. 
-On the other side, raster mode generates standard MapServer raster image output 
-transformed into KML element ground overlay. Switching between vector and raster 
-depends on feature count and user can change default value on global level using 
-FORMATOPTION or using layer METADATA.
+The general idea is to provide an output format that can be set at the map level and allows to generate a 
+kml or kmz output from a MapServer map file. Output can be generated using MapServer cgi (example mode=map) 
+or through a WMS request.
 
 
-Format options
+
+Output format
 -------------------------------------------------------------------------------
 
-KML_RASTEROUTPUTFOMAT specifies name of the raster driver, default value is cairopng.
+The default name of the output format is kml, and this name can be used to set the imagetype parameter in the map file.
 
-OUTPUTFORMAT
-    NAME "cairo/kml"
-    DRIVER "cairo/png"
-    IMAGEMODE RGBA
-END
+The format can also be defined in the map file:
 
-OUTPUTFORMAT
-    NAME "kml"
+::
+
+  OUTPUTFORMAT
+    NAME kml
     DRIVER "KML"
+    MIMETYPE "application/vnd.google-earth.kml+xml"
     IMAGEMODE RGB
-    FORMATOPTION "kml_rasteroutputformat=cairo/kml"
-    FORMATOPTION "kml_maxfeaturecount=30"    
-END
+    EXTENSION "kml"    
+    FORMATOPTION 'ATTACHMENT=gmap75.kml'  #name of kml file returned
+  END
 
-IMAGETYPE 'KML'
+kmz output will also be supported through the minizip library.
 
 
-
-Driver configuration options
+Build
 -------------------------------------------------------------------------------
 
-KML_MAXFEATURECOUNT
-Maximum number of features rendered as KML vector, if number of features rendered 
-in one layer is greater than maximum feature count, layer is rasterized and the renderer 
-generates ground overlay KML element.
-
-KML_DUMPATTRIBUTES
-Option whether or not to create KML description element "balloon" containing shape 
-attributes. Default is yes, possible values 0, no, or list of attributes separated 
-by comma.
-Example: KML_DUMPATTRIBUTES "NAME,SIZE"
-
-KML_ALTITUDEMODE
-Specifies how altitude components in the <coordinates> element are interpreted. 
-Possible values are: absolute, relativeToGround, clampToGround.
-http://code.google.com/apis/kml/documentation/kmlreference.html#altitudemode
-
-KML_EXTRUDE
-Specifies whether to connect the LinearRing to the ground.
-http://code.google.com/apis/kml/documentation/kmlreference.html#tessellate
-
-KML_TESSELLATE
-Specifies whether to allow the LinearRing to follow the terrain.
-http://code.google.com/apis/kml/documentation/kmlreference.html#extrude
-
-Options are specified in the layer meta data.
-
-LAYER
-...
-METADATA
-	kml_maxfeaturecount	"512"
-END	
-END
+- On windows: there is a flag KML in nmake.opt
+- On Linux: --with-kml
+- cairo and agg2 are for now necessary to build with. When agg2 will be finshed, we will drop the cairo link. Driver configuration options
 
 
-
-Projection
+Map
 -------------------------------------------------------------------------------
 
-Google  Earth accepts only WGS84 Lat Lon coordinates, using map file projection 
-epsg:4326 is the only alternative. Driver tests the map file projection and generates 
-error when projection doesn't match.
+In terms for Kml object, the MapServer KML output will produce a <Document> element to include all the layers that are part of the MapServer map file. Features supported for the Document are:
 
 
++------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Document element | Supported | MapServer equivalence/Notes                                                                                                                                                                                                                                                                                                                                      |
++==================+===========+==================================================================================================================================================================================================================================================================================================================================================================+
+| name             | Yes       | Name in the map file                                                                                                                                                                                                                                                                                                                                             |
++------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| visibility       | No        | Can be supported if needed. Default is 1                                                                                                                                                                                                                                                                                                                         |
++------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| open             | No        | Can be supported if needed. Default is 0                                                                                                                                                                                                                                                                                                                         |
++------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| address          | No        | Could be supported for example using ows_address if available                                                                                                                                                                                                                                                                                                    |
++------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| AdressDetails    | No        |                                                                                                                                                                                                                                                                                                                                                                  |
++------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| phoneNumber      | No        | Could be supported using ows_contactvoicetelephone is available                                                                                                                                                                                                                                                                                                  |
++------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Snippet          | No        |                                                                                                                                                                                                                                                                                                                                                                  |
++------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| description      | No        |                                                                                                                                                                                                                                                                                                                                                                  |
++------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| AbstractView     | No        |                                                                                                                                                                                                                                                                                                                                                                  |
++------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| TimePrimitive    | No        |                                                                                                                                                                                                                                                                                                                                                                  |
++------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| styleURL         | No        |                                                                                                                                                                                                                                                                                                                                                                  |
++------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| StyleSelector    | Yes       | Style element will be supported. All different styles from the layers will be stored here and referenced from the folders using a styleUrl.In addition to the Styles related to features, there is a ListStyle element added at the document level. This allows to control the way folders are presented.See Layers section (styleUrl) setting for more details. |
++------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Region           | No        |                                                                                                                                                                                                                                                                                                                                                                  |
++------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Metadata         | No        |                                                                                                                                                                                                                                                                                                                                                                  |
++------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| ExtendedData     | No        |                                                                                                                                                                                                                                                                                                                                                                  |
++------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
-Shape  types
+
+Layers
 -------------------------------------------------------------------------------
 
-MapServer layer is transformed into KML element Folder
-For every shape KML driver creates KML element Placemark.
+Each layer of the MapServer map file will be inside a Kml <Folder> element.  
+Supported Folder elements are:
 
-Point shapes 
++-------------------------------------------------------------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Folder element                                              | Supported | MapServer equivalence/Notes                                                                                                                                                            |
++=============================================================+===========+========================================================================================================================================================================================+
+| name                                                        | Yes       | Name of the layer. If not available the name will be Layer concatenated with the layer's index (Layer1)                                                                                |
++-------------------------------------------------------------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| visibility                                                  | Yes       | Always set to 1                                                                                                                                                                        |
++-------------------------------------------------------------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| open                                                        | No        | Default is 0                                                                                                                                                                           |
++-------------------------------------------------------------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| atom:authoratom:linkaddressAddressDetailsphoneNumberSnippet | No        |                                                                                                                                                                                        |
++-------------------------------------------------------------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| description                                                 | No        | Could be supported using ows_description                                                                                                                                               |
++-------------------------------------------------------------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| AbstarctView                                                | No        |                                                                                                                                                                                        |
++-------------------------------------------------------------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| TimePrimitive                                               | No        |                                                                                                                                                                                        |
++-------------------------------------------------------------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| styleUrl                                                    | Yes       | The user  can use the kml_folder_display layer or map level metedata to choose a setting. Possible values are  'check' (default), 'radioFolder', 'checkOffOnly', 'checkHideChildren'.  |
++-------------------------------------------------------------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| RegionMetadataExtendedData                                  | No        |                                                                                                                                                                                        |
++-------------------------------------------------------------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+Each element in the Layer will be inside a Kml <Placemark> element. As described in the Kml reference : « A Placemark is a Feature with associated Geometry. In Google Earth, a Placemark appears as a list item in the Places panel. A Placemark with a Point has an icon associated with it that marks a point on the Earth in the 3D viewer. (In the Google Earth 3D viewer, a Point Placemark is the only object you can click or roll over. Other Geometry objects do not have an icon in the 3D viewer. To give the user something to click in the 3D viewer, you would need to create a MultiGeometry object that contains both a Point and the other Geometry object.) »
+
+For Polygon and Line layers, when a feature is associated with a label, a MultiGeometry element containing a point geometry and the geometry of the feature is created. The point feature will be located in the middle of the polygon or line
+
+::
+
+  <Folder>
+      <name>park</name>
+      <visibility>1</visibility>
+      <styleUrl>#LayerFolder_check</styleUrl>
+      <Placemark>
+        <name>Ellesmere Island National Park Reserve</name>
+        <styleUrl>#style_line_ff787878_w4.0_polygon_ff00ffc8_label_ff0000ff</styleUrl>
+        <MultiGeometry>
+          <Polygon>
+            <outerBoundaryIs>
+              <LinearRing>
+                <coordinates>
+          	…
+           <Point>
+            <coordinates>
+	-70.86810858,82.12291871
+	</coordinates>
+          </Point>
+        </MultiGeometry>
+      </Placemark>
+  </Folder>
+
+
+Supported Features in the Placemark element are:
+
++-------------------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Palcemark element | Supported | MapServer equivalence/Notes                                                                                                                                                                                                          |
++-------------------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| name              | Yes       | Label attached with the feature. If there is no label a default name is assigned using the layer name and the shape id (ex. park.1)                                                                                                  |
++-------------------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| visibility        | No        | Is is by default set to true                                                                                                                                                                                                         |
++-------------------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| open              | No        |                                                                                                                                                                                                                                      |
++-------------------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| address           | No        |                                                                                                                                                                                                                                      |
++-------------------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| AddessDetails     | No        |                                                                                                                                                                                                                                      |
++-------------------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| phoneNumber       | No        |                                                                                                                                                                                                                                      |
++-------------------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Snippet           | No        | This is a short description the feature. If needed It could be supported.                                                                                                                                                            |
++-------------------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| description       | Yes       | This information is what appears in the description balloon when the user clicks on the feature. The <description> element supports plain text as well as a subset of HTML formatting elements.Two ways of defining the description: |
++-------------------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| AbstractView      | No        |                                                                                                                                                                                                                                      |
++-------------------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| TimePrimitive     | No        |                                                                                                                                                                                                                                      |
++-------------------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| styleUrl          | Yes       | Refers to a Style defined in the Document                                                                                                                                                                                            |
++-------------------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| StyleSelector     | No        |                                                                                                                                                                                                                                      |
++-------------------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Region            | No        |                                                                                                                                                                                                                                      |
++-------------------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Metadata          | No        |                                                                                                                                                                                                                                      |
++-------------------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+| Geometry          | Yes       | Depends on the layer type                                                                                                                                                                                                            |
++-------------------+-----------+--------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
+
+
+General notes on layers
+~~~~~~~~~~~~~~~~~~~~~~~
+
+
+- Labelcache is turned off on each layer
+- Projection block should be set. If not set It will be assumed that the data is in lat/lon projection (a debug message will be sent to the user: Debug Message 1)
+- Possible to output vector layers as raster using metadata:  "KML_OUTPUTASRASTER" "true"
+- The user  can use the KML_FOLDER_DSIPLAY layer or map level metedata to choose a setting. Possible values are 'check' (default), 'radioFolder', 'checkOffOnly', 'checkHideChildren'.
+- The user can use metedata KML_DESCRIPTION or KML_INCLUDE_ITEMS to define the description attached to each feature.
+- The user can use metedata KML_ALTITUDEMODE to specify how altitude components in the <coordinates> element are interpreted. Possible values are: absolute, relativeToGround, clampToGround. http://code.google.com/apis/kml/documentation/kmlreference.html#altitudemode
+- The user can use metedata KML_EXTRUDE to specify whether to connect the LinearRing to the ground. http://code.google.com/apis/kml/documentation/kmlreference.html#tessellate
+- The user can use metedata KML_TESSELLATE to specify whether to allow the LinearRing to follow the terrain. http://code.google.com/apis/kml/documentation/kmlreference.html#extrude
+
+
+
+Point Layers
 ~~~~~~~~~~~~
 
-- is transformed into Placemark including symbol.
+- Each layer will be inside a Folder element. 
+- Each feature will be represented by a Placemark.
+- The  Geometry element for a Point layer would  be represented as a Point geometry element in Kml. Supported elements are:
 
-Line shape 
-~~~~~~~~~~
 
-- is transformed into kml element LineString, supported attributes are color, width. 
+Line Layers
+~~~~~~~~~~~
 
-Polygon shape 
+- Each layer will be inside a Folder element. 
+- Each feature in the layer would be represented by a Placemark.
+- If a label is attached to the line, the  Geometry element would  be represented as a MultiGeometry that includes a LineString element and a Point element representing the position of the label. If no label is attached to a feature, the Geometry element will be a LineString.
+
+Polygon Layers
+~~~~~~~~~~~~~~
+
+- Each layer will be inside a Folder element. 
+- Each feature will be represented by a Placemark.
+- If a label is attached to the polygon, the Geometry element would  be represented as a MultiGeometry that includes a Polygon element and a Point element representing the position of the label. 
+
+Annotation Layers
+~~~~~~~~~~~~~~~~~
+Not supported yet.
+
+Raster Layers
 ~~~~~~~~~~~~~
 
-- is transformed into KML element Polygon, supported attributes are outline color, color, width.
+- Each layer will be inside a Folder element. 
+- A GroundOverlay feature is created for the layer, that includes  an href link to the raster image generated and LatLongBox for the extents (map extents).
+- The href is generated using the imagepath and imageurl settings in the map file.
 
-Symbol
-~~~~~~
- 
-- is rendered and stored in separate file and transformed into KML element 
-  Icon.
+WMS Layers
+~~~~~~~~~~
 
-Label
-~~~~~
- 
-- is transformed into placemark name. To ensure binding shape and label, 
-  labelcache should be switched off.  Label position LL is also recommended.
-
-.. code-block:: guess
-
-    LAYER
-    ...
-    LABELCACHE OFF
-    END
+Not supported yet.
 
 
-Raster layers are not supported yet
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-WMS Client layers are not yet supported
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-
-
-Compressed KMZ output
+Styling
 -------------------------------------------------------------------------------
 
-Minizip library was tested as possibility for generating compressed KML output, 
-additional efforts needed to determine how to integrate effectively minizip library 
-into MapServer.
+As described in Section 4,  all different styles from the layers will be stored at the Document level and referenced from the folders using a styleUrl.
+
+Point Layers
+~~~~~~~~~~~~
+
+Point layers will be styled using the IconStyle styling element of kml. An image representing the symbol will be created and referenced from the IconStyle object.  If a label is attached to the point, a LabelStyle element will also be used. The LabelStyle will have the color parameter set.
+
+::
+
+  <Style id="style_label_ff0000ff_symbol_star_13.0_ff000000">
+      <IconStyle>
+        <Icon>
+          <href>>http://localhost/ms_tmp/4beab862_19bc_0.png</href>
+        </Icon>
+      </IconStyle>
+      <LabelStyle>
+        <color>ff0000ff</color>
+      </LabelStyle>
+  </Style>
 
 
-KML NetworkLink
+Line Layers
+~~~~~~~~~~~
+
+Line layers will be styled using the LineStyle styling element of kml. Color and width parameters of the LineStyle will be used.  If a label is attached to the layer, a LabelStyle element will also be used.
+
+
+Polygon Layers
+~~~~~~~~~~~~~~
+
+Polygon layers will be styled using the PolyStyle styling element of kml. Color parameter of the PolyStyle will be used. If an outline is defined in the map file, an addition LineStyle will be used.  If a label is attached to the layer, a LabelStyle element will also be used.
+
+
+Attributes
 -------------------------------------------------------------------------------
 
-MapServer KML output can be displayed in Google Earth using KML NetworkLink element.
+As described in section on Layers,  two ways of defining the description:
 
-<?xml version="1.0" encoding="UTF-8"?>
-<kml xmlns="http://www.opengis.net/kml/2.2">
-<Folder>
-<name>MapServer KML Reflector</name>
-<NetworkLink>
-  <name>Network Link</name>
-  <visibility>1</visibility>
-  <flyToView>0</flyToView>
-  <Link>
-    <href>http://localhost/Mapserver/Mapserv.cgi?map=test_kml.map&amp;MODE=map</href>
-    <viewRefreshMode>onStop</viewRefreshMode>
-    <viewRefreshTime>1</viewRefreshTime>
-    <viewFormat>MAPEXT=[bboxWest] [bboxSouth] [bboxEast] [bboxNorth]</viewFormat>
-  </Link>
-</NetworkLink> 
-</Folder>
-</kml>
+- kml_description
+- kml_include_items
 
- 
+
+
+Coordinate system
+-------------------------------------------------------------------------------
+
+The map level projection should be set to epsg:4326. If not set, the driver will automatically set it. Layers are expected to have projection block if their projection is different from epsg:4326.
+
+
+Warning and Error Messages
+-------------------------------------------------------------------------------
+
+- When the projection of the map file is not set or is different from a a lat/lon projection, the driver automatically sets the projection to espg:4326. If the map is is debug mode, the following message is sent: « "KmlRenderer::checkProjection: Mapfile projection set to epsg:4326 »
+- If imagepath and imageurl are not set in the web object, the following message is sent in debug mode: « KmlRenderer::startNewLayer: imagepath and imageurl should be set in the web object »
+
+
+
 
 Testing
 -------------------------------------------------------------------------------
 
-Development is done for now inside http://svn.osgeo.org/mapserver/sandbox/davidK/
-sandbox
+Development is done in mapserver svn (http://svn.osgeo.org/mapserver/trunk/mapserver/).
+It was initially in  http://svn.osgeo.org/mapserver/sandbox/davidK/
 
 
 Documentation
@@ -213,5 +340,6 @@ Voting History
 
 Adopted 2010/04/08 on the condition that this RFC should be cleaned and upadted with more details.
 This allows to move the source code from the sand box to trunk
-with +1 from DanielM, SteveL, TamasS, AssefaY, TomK, JeffM
-with +0 from SteveW
+
+- with +1 from DanielM, SteveL, TamasS, AssefaY, TomK, JeffM
+- with +0 from SteveW
