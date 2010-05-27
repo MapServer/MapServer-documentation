@@ -85,7 +85,7 @@ exclude_trees = ['howto', 'redirection', 'users-manual']
 pygments_style = 'sphinx'
 
 # Exclude subversion directories
-exclude_dirnames = ['.svn']
+exclude_patterns = ['**/.svn']
 
 # Options for HTML output
 # -----------------------
