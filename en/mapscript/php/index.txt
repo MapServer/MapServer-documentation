@@ -330,6 +330,10 @@ int setMetaData(string name, string value)
 int removeMetaData(string name)
     Remove a metadata entry for the class.  Returns MS_SUCCESS/MS_FAILURE.
 
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the resources.
+
 colorObj
 ^^^^^^^^
 
@@ -572,15 +576,15 @@ labelcacheObj
 
 Accessible only through the `mapObj`_ (map->labelcache). This object
 is only used to give the possiblity to free the label cache 
-(map->labelcache->free())
+(map->labelcache->freeCache())
 
 
 Method
 ...............................................................................
 
-boolean free()
+boolean freeCache()
     Free the label cache. Always returns MS_SUCCESS.
-    Ex : (map->labelcache->free();
+    Ex : (map->labelcache->freeCache();
 
 labelObj
 ^^^^^^^^
@@ -673,6 +677,10 @@ int removeBinding(const labelbinding)
     .. code-block:: php
     
         $oStyle->removebinding(MS_LABEL_BINDING_COLOR);
+
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the resources.
 
 layerObj
 ^^^^^^^^
@@ -1026,6 +1034,10 @@ array getGridIntersectionCoordinates()
     Returns an array containing the grid intersection coordinates. If there
     are no coordinates, it returns an empty array.
 
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the resources.
+
 legendObj
 ^^^^^^^^^
 
@@ -1063,6 +1075,10 @@ int updateFromString(string snippet)
 
 int set(string property_name, new_value)
     Set object property to a new value.
+
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the resources.
 
 lineObj
 ^^^^^^^
@@ -1601,6 +1617,10 @@ int insertLayer( layerObj layer [, int nIndex=-1 ] )
 layerObj removeLayer( int nIndex )
     Remove a layer from the mapObj. The argument is the index of the layer 
     to be removed. Returns the removed layerObj on success, else null.
+
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the resources.
  
 outputformatObj
 ^^^^^^^^^^^^^^^
@@ -1842,6 +1862,10 @@ int updateFromString(string snippet)
 int set(string property_name, new_value)
     Set object property to a new value.
 
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the resources.
+
 rectObj
 ^^^^^^^
 
@@ -1935,6 +1959,10 @@ int updateFromString(string snippet)
 int set(string property_name, new_value)
     Set object property to a new value.
 
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the resources.
+
 resultCacheMemberObj
 ^^^^^^^^^^^^^^^^^^^^
 
@@ -2003,6 +2031,10 @@ int setimagecolor(int red, int green, int blue)
     Sets the imagecolor propery (baclground) of the object.
     Returns MS_SUCCESS or MS_FAILURE on error.  
 
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the resources.
+
 shapefileObj
 ^^^^^^^^^^^^
 
@@ -2058,10 +2090,13 @@ int addShape(shapeObj shape)
 int addPoint(pointObj point)
     Appends a point to an open shapefile.
 
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the resources.
 
 **NOTE**: The shape file is closed (and changes committed) when the object
           is destroyed. You can explicitly close and save the changes by calling
-          unset($shape), which will also free the  php object.
+          $shapefile->free(); unset($shapefile), which will also free the php object.
 
 shapeObj
 ^^^^^^^^
@@ -2253,6 +2288,10 @@ int topologySimplifyPreservingSimplify(double tolerance)
     Given a tolerance, returns a simplified shape object using 
     underlying GEOS library or NULL on error.
 
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the resources.
+
 styleObj
 ^^^^^^^^
 
@@ -2342,6 +2381,10 @@ int removeBinding(const stylebinding)
     .. code-block:: php
         
         $oStyle->removebinding(MS_STYLE_BINDING_COLOR);
+
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the resources.
 
 symbolObj
 ^^^^^^^^^^^
@@ -2465,6 +2508,10 @@ Example of usage:
 	$oSymbol->set("character", "&#68;"); 
     $oSymbol->set("font", "ttfFontName"); 
 
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the resources.
+
 webObj
 ^^^^^^
 
@@ -2506,4 +2553,50 @@ int updateFromString(string snippet)
 
 int set(string property_name, new_value)
     Set object property to a new value.
+
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the resources.
+
+*****************************************************************************
+ Memory Management
+*****************************************************************************
+
+Normally, you should not have to worry about the memory management because
+php has a garbage collector and will free resources for you. If you write
+only small scripts that don't do a lot of processing, it's not worth to
+care about that. Everything will be freed at the end of the script.
+
+However, it may be useful to free resources during the execution if the
+script executes many tasks. To do so, you'll have to call the **free()**
+method of the mapscript objects and unset the php variables. The purpose of
+the free methods is to break the circular references between an object and
+its properties to allow the zend engine to free the resources.
+
+Here's an example of a script that doesn't free things during the execution:
+
+.. code-block:: php
+
+    $map = new mapObj("mapfile.map");
+    $of = $map->outputformat;
+    echo $map->extent->minx." - ".$map->extent->miny." - ".$map->extent->maxx." - ".$map->extent->maxy."\n";
+    echo "Outputformat name: $of->name\n";
+    unset($of);
+    unset($map); // Even if we unset the php variables, resources wont be freed
+    // Resources will be only freed at the end of the script
+
+and the same script that frees resources as soon as it can
+
+.. code-block:: php
+
+    $map = new mapObj("mapfile.map");
+    $of = $map->outputformat;
+    echo $map->extent->minx." - ".$map->extent->miny." - ".$map->extent->maxx." - ".$map->extent->maxy."\n";
+    echo "Outputformat name: $of->name\n";
+    unset($of);
+    $map->free(); // break the circular references
+    // at this place, the outputformat ($of) and the rect object ($map->extent) resources are freed
+    unset($map);
+    // the map object is immediately freed after the unset (before the end of the script)
+ 
 
