@@ -238,8 +238,13 @@ using the utility).
 You can set the *DEBUG* level by passing the :ref:`shp2img` following parameters to your commandline call:
 
 .. NOTE::
-   If you have already set *MS_ERRORFILE* and *DEBUG* in your mapfile, you must comment these out
+   If you have already set *MS_ERRORFILE* in your mapfile, you must comment this out
    in order to use these :ref:`shp2img` options
+   
+.. NOTE::
+   When using :ref:`shp2img` to debug, your layer's STATUS should be set to ON or DEFAULT.  If the 
+   layer's STATUS is set to OFF, you must additionally pass the layer name to :ref:`shp2img` by using the 
+   "``-l layername``" syntax
    
 -all_debug
 ^^^^^^^^^^
@@ -475,9 +480,106 @@ If you are using PHP MapScript in your application, here are some important note
 Debugging MapServer using Compiler Debugging Tools
 ==================================================
 
-Once you build MapServer in debug mode (*./configure --enable-debug*), you should be 
-able to debug MapServer with most debugging tools. `GDB <http://www.gnu.org/software/gdb/>`__ 
-is an example of a popular debugger tool, that works well with MapServer.
+Running MapServer in GDB (Linux/Unix)
+-------------------------------------
+
+Building with Symbolic Debug Info
+*********************************
+
+It is not strictly necessary to build MapServer with debugging enabled
+in order to use `GDB <http://www.gnu.org/software/gdb/>`__ on linux, but it does 
+ensure that more meaningful information is reported within GDB.  To enable full 
+symbolic information use the *--enable-debug* configure switch.  Note that use of 
+this switch disables optimization and so it should not normally be used for production
+builds where performance is important.
+
+::
+
+  ./configure --enable-debug <other switches>
+  make clean
+  make
+
+Running in the Debugger
+***********************
+
+To run either mapserv or shp2img, give the name of the executable as an
+argument to the "gdb" command.  If it is not in the path, you will need
+to provide the full path to the executable.
+
+::
+
+  gdb shp2img
+  GNU gdb (GDB) 7.0-ubuntu
+  Copyright (C) 2009 Free Software Foundation, Inc.
+  License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+  This is free software: you are free to change and redistribute it.
+  There is NO WARRANTY, to the extent permitted by law.  Type "show copying"
+  and "show warranty" for details.
+  This GDB was configured as "x86_64-linux-gnu".
+  For bug reporting instructions, please see:
+  <http://www.gnu.org/software/gdb/bugs/>...
+  Reading symbols from /wrk/home/warmerda/mapserver/shp2img...done.
+  (gdb)
+
+Once you are at the "(gdb)" prompt you can use the run command with the
+arguments you would normally have passed to the mapserv or shp2img
+executable.
+
+::
+
+  (gdb) run -m test.map -o out.png
+  Starting program: /wrk/home/warmerda/mapserver/shp2img -m test.map -o out.png
+  [Thread debugging using libthread_db enabled]
+
+  Program received signal SIGSEGV, Segmentation fault.
+  0x00007ffff67594a2 in JP2KAKDataset::Identify (poOpenInfo=0x0)
+    at jp2kakdataset.cpp:962
+  962         if( poOpenInfo->nHeaderBytes < (int) sizeof(jp2_header) )
+  Current language:  auto
+  The current source language is "auto; currently c++".
+  (gdb)
+
+If the program is crashing, you will generally get a report like the above
+indicating the function the crash occurred in, and some minimal
+information on why.  It is often useful to request a traceback to see
+what functions led to the function that crashed.  For this use the "where"
+command.
+
+::
+
+  (gdb) where
+  #0  0x00007ffff67594a2 in JP2KAKDataset::Identify (poOpenInfo=0x0)
+      at jp2kakdataset.cpp:962
+  #1  0x00007ffff67596d2 in JP2KAKDataset::Open (poOpenInfo=0x7fffffffb6f0)
+      at jp2kakdataset.cpp:1025
+  #2  0x00007ffff6913339 in GDALOpen (
+      pszFilename=0x83aa60 "/home/warmerda/data/jpeg2000/spaceimaging_16bit_rgb.jp
+  2", eAccess=GA_ReadOnly) at gdaldataset.cpp:2170
+  #3  0x00007ffff69136bf in GDALOpenShared (
+      pszFilename=0x83aa60 "/home/warmerda/data/jpeg2000/spaceimaging_16bit_rgb.jp
+  2", eAccess=GA_ReadOnly) at gdaldataset.cpp:2282
+  #4  0x0000000000563c2d in msDrawRasterLayerLow (map=0x81e450, layer=0x839140,
+      image=0x83af90, rb=0x0) at mapraster.c:566
+  #5  0x000000000048928f in msDrawRasterLayer (map=0x81e450, layer=0x839140,
+      image=0x83af90) at mapdraw.c:1390
+  #6  0x0000000000486a48 in msDrawLayer (map=0x81e450, layer=0x839140,
+      image=0x83af90) at mapdraw.c:806
+  #7  0x00000000004858fd in msDrawMap (map=0x81e450, querymap=0) at mapdraw.c:459
+  #8  0x0000000000446410 in main (argc=5, argv=0x7fffffffd918) at shp2img.c:300
+  (gdb)
+
+It may also be helpful to examine variables used in the line where the
+crash occured.   Use the print command for this.
+
+::
+
+  (gdb) print poOpenInfo
+  $1 = (GDALOpenInfo *) 0x0
+
+In this case we see that the program crashed because poOpenInfo was NULL (zero).
+Including a traceback like the above in bug report can help the developers
+narrow down a problem more quickly, especially if it is one that is difficult
+for the developers to reproduce themselves.
 
 Debugging Older Versions of MapServer (before 5.0)
 ==================================================
