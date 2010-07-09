@@ -1,3 +1,9 @@
+**2010-07-09 - MapServer 5.6.4 and 4.10.6 are released with security fixes**
+
+MapServer 5.6.4 and 4.10.6 have been released, containing important security fixes.  See the
+`Announcement <http://lists.osgeo.org/pipermail/mapserver-users/2010-July/066052.html>`__
+for more details and head to :ref:`download` to obtain copies.
+
 **2010-03-22 - MapServer 5.6.3 is released**
 
 MapServer 5.6.3 has been released. See `the release announcement <http://lists.osgeo.org/pipermail/mapserver-users/2010-March/064997.html>`__ 
