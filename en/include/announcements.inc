@@ -1,3 +1,9 @@
+**2010-07-14 - MapServer 5.6.5 released, fixes a scale calculation issue in 5.6.4**
+
+MapServer 5.6.3 has been released, fixing a scale calculation issue that was introduced in 5.6.4.  See the
+`Announcement <http://lists.osgeo.org/pipermail/mapserver-users/2010-July/066134.html>`__
+for more details and head to :ref:`download` to obtain copies.
+
 **2010-07-09 - MapServer 5.6.4 and 4.10.6 are released with security fixes**
 
 MapServer 5.6.4 and 4.10.6 have been released, containing important security fixes.  See the
