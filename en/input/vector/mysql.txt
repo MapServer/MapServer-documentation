@@ -4,39 +4,152 @@
 MySQL
 ***************************************************
 
-:Revision: $Revision$
-:Date: $Date$
 :Author: David Fawcett
 :Contact: david.fawcett at moea.state.mn.us
+:Author: Jeff McKenna
+:Contact: jmckenna at gatewaygeomatics.com
+:Last Updated: 2010-07-29
 
 .. contents::
-    :depth: 2
+    :depth: 3
     :backlinks: top
 
 
 Introduction
 ============
 
-This method takes advantage of OGR's MySQL driver and avoids the need to set
-up an ODBC connection.
+The following methods connect to MySQL through OGR's `MySQL driver <http://www.gdal.org/ogr/drv_mysql.html>`__, 
+thus avoiding the need to set up an ODBC connection.
 
-This is the primitive MySQL support for point data, not the recently added
-`MySQL spatial support found in GDAL/OGR 1.3.2`_ .
+Connecting to Spatial Data in MySQL
+===================================
+
+This section describes how to display a spatial MySQL table (meaning that the table has a column of type
+geometry) in MapServer.  OGR's `MySQL driver <http://www.gdal.org/ogr/drv_mysql.html>`__ was expanded in 
+OGR version 1.3.2 to support access to MySQL spatial tables.
+
+Requirements
+------------
+
+- MapServer compiled with OGR support
+- OGR/GDAL version 1.3.2 or more recent compiled with MySQL support
+
+Verify MySQL Support in OGR Build
+---------------------------------
+
+You can verify that your local build of OGR contains MySQL support by using the ogrinfo commandline
+utility, and making sure that "MySQL" is returned:
+
+::
+
+  ogrinfo --formats
+  
+  Supported Formats:
+    -> "ESRI Shapefile" (read/write)
+    -> "MapInfo File" (read/write)
+    ...
+    -> "PostgreSQL" (read/write)
+    -> "MySQL" (read/write)
+    ...
+
+Test Connection with ogrinfo
+----------------------------
+
+MySQL connection strings in OGR are in the following format:
+
+::
+
+  MYSQL:database,host=yourhost,user=youruser,password=yourpass,tables=yourtable
+  
+Therefore an example ogrinfo command would be:
+
+::
+
+  > ogrinfo MYSQL:test,user=root,password=mysql,port=3306
+  
+which should return a list of all of your tables in the 'test' database:
+
+::
+
+  INFO: Open of `MYSQL:test,user=root,password=mysql,port=3306'
+        using driver `MySQL' successful.
+  1: province (Polygon)
+  
+and you can return a summary of the MySQL spatial layer:
+
+::
+
+  > ogrinfo MYSQL:test,user=root,password=mysql,port=3306 province -summary
+  
+  
+      INFO: Open of `MYSQL:test,user=root,password=mysql,port=3306'
+      using driver `MySQL' successful.
+
+      Layer name: province
+      Geometry: Polygon
+      Feature Count: 48
+      Extent: (-13702.315770, 3973784.599548) - (1127752.921471, 4859616.714055)
+      Layer SRS WKT:
+      PROJCS["ED50_UTM_zone_30N",
+      ...
+      FID Column = OGR_FID
+      Geometry Column = SHAPE
+      id: Real (2.0)
+      ...
+
+Create MapServer Layer
+----------------------
+
+::
+
+  LAYER
+    NAME "spain_provinces_mysql_spatial"
+    TYPE POLYGON
+    STATUS DEFAULT
+    CONNECTIONTYPE OGR
+    CONNECTION "MySQL:test,user=root,password=mysql,port=3306"
+    DATA "SELECT SHAPE,admin_name from province"
+    LABELITEM "admin_name"  
+    CLASS
+      NAME "Spain Provinces"
+      STYLE
+        COLOR 240 240 240
+        OUTLINECOLOR 199 199 199    
+      END
+      LABEL
+       COLOR  0 0 0
+       FONT sans
+       TYPE truetype
+       SIZE 8
+       POSITION AUTO      
+       PARTIALS FALSE
+       OUTLINECOLOR 255 255 255     
+      END     
+    END
+  END # layer 
+
+The DATA parameter is used to perform the SQL select statement to access your table in MySQL. The geometry
+column is required in the select statement; in the above example the `SHAPE` column is the geometry column 
+in the `province` table.
+
+Connecting to non-Spatial Data in MySQL
+=======================================
+
+This section describes how to display a non-spatial MySQL table (meaning the table does not
+have a column of type geometry) in MapServer.
  
 Support for this functionality is found in GDAL/OGR 1.2.6 and older on Windows
 and GDAL/OGR 1.3.2 on Linux.
 
-The `MySQL wiki page <http://trac.osgeo.org/mapserver/wiki/MySQL>`__ might
-contain additional information.
-
-**Needed**
+Requirements
+------------
 
 - MySQL database containing a table with fields containing x and y coordinates
 - .ovf file, a small xml file you will create
 - MapServer compiled with OGR version supporting this functinality
 
 Create .ovf file
-===========================
+----------------
 
 Here is the .ovf file named aqidata.ovf
 
@@ -60,9 +173,8 @@ If you look at the connection string in <SrcDataSource>
 Use the GeometryField element to tell OGR which fields store the x and y
 coordinate data. Mine are simply named x and y.
 
-
 Test Connection with ogrinfo
-==============================
+----------------------------
 
 :: 
 
@@ -88,25 +200,25 @@ To see the actual data
 # usr/local/bin/ogrinfo /maps/aqidata.ovf -al  
 
 Create MapServer Layer
-=======================
+----------------------
 
 ::
 
    LAYER
-       NAME "MyAqi"
-       STATUS DEFAULT
-       TYPE POINT
-       CONNECTIONTYPE OGR  
-       CONNECTION "aqidata.ovf"
-       DATA "aqidata"
-       CLASS 
-          NAME "MyClass"
-	      STYLE
-	          SYMBOL 'circle'
-                  SIZE 15
-	          COLOR 0 255 0
-	      END
+     NAME "MyAqi"
+     STATUS DEFAULT
+     TYPE POINT
+     CONNECTIONTYPE OGR  
+     CONNECTION "aqidata.ovf"
+     DATA "aqidata"
+     CLASS 
+       NAME "MyClass"
+       STYLE
+         SYMBOL 'circle'
+         SIZE 15
+	 COLOR 0 255 0
        END
+     END
    END  
 
 DATA in the LAYER definition should be the same as the name attribute of the
@@ -118,9 +230,6 @@ have a symbol called 'circle' in your symbols.sym file.*
 More Information
 =================
 
-* :ref:`ogr` 
-* :ref:`vector`
-
-.. #### rST Link Section ####
-
-.. _`MySQL spatial support found in GDAL/OGR 1.3.2`: http://www.gdal.org/ogr/drv_mysql.html 
+* :ref:`ogr` (MapServer OGR document)
+* :ref:`vector` (MapServer Vector Data Access Guide)
+* `MySQL wiki page <http://trac.osgeo.org/mapserver/wiki/MySQL>`__ (describes the deprecated mygis support)
