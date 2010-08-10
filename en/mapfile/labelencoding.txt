@@ -1,0 +1,188 @@
+.. _debugging:
+
+*****************************************************************************
+ Display of International Characters in MapServer
+*****************************************************************************
+
+:Author: Jeff McKenna
+:Contact: jmckenna at gatewaygeomatics.com
+:Last Updated: 2010-08-10
+
+.. contents:: Table of Contents
+    :depth: 3
+    :backlinks: top
+
+Credit
+======
+
+The following functionality was added to MapServer 4.4.0 as a part of a project sponsored by the 
+Information-technology Promotion Agency (IPA), in Japan.  Project members included: Venkatesh Raghavan, 
+Masumoto Shinji, Nonogaki Susumu, Nemoto Tatsuya, Hirai Naoki (Osaka City University, Japan),
+Mario Basa, Hagiwara Akira, Niwa Makoto, Mori Toru (Orkney Inc., Japan), and Hattori Norihiro 
+(E-Solution Service, Inc., Japan).
+
+Related Links
+=============
+
+- MapServer `ticket:858 <http://trac.osgeo.org/mapserver/ticket/858/>`__ 
+
+Requirements
+============
+
+- MapServer >= 4.4.0
+- MapServer compiled with the libiconv library
+
+How to Enable in Your Mapfile
+=============================
+
+The mapfile :ref:`LABEL <label>` object's parameter named *ENCODING* can be used to convert strings from its original 
+encoding system into one that can be understood by the True Type Fonts.
+The *ENCODING* parameter accepts the encoding name as its parameter.
+
+This uses GNU's libiconv ( http://www.gnu.org/software/libiconv/ ) so theoretically, every string 
+with an encoding system supported by libiconv can be displayed as labels in MapServer as long as 
+it has a matching font-set.
+
+Step 1: Verify ICONV Support and MapServer Version
+--------------------------------------------------
+
+Execute ''mapserv -v' at the commandline, and verify that your MapServer version >= 4.4.0 and it includes ''SUPPORTS=ICONV'', such as:
+
+::
+
+   > mapserv -v
+
+     MapServer version 5.6.5 OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG OUTPUT=WBMP OUTPUT=PDF OUTPUT=SWF OUTPUT=SVG 
+     SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER 
+     SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER 
+     SUPPORTS=FASTCGI SUPPORTS=THREADS SUPPORTS=GEOS SUPPORTS=RGBA_PNG SUPPORTS=TILECACHE INPUT=JPEG 
+     INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE
+
+Step 2: Verify That Your Files' Encoding is Supported by ICONV
+--------------------------------------------------------------
+
+Since MapServer uses the libiconv library to handle encodings, you can check the list of supported encodings 
+here: http://www.gnu.org/software/libiconv/
+
+Unix users can also use the *iconv -l* command on a system with
+libiconv installed to get the complete list of supported encodings on
+that specific system. 
+
+Step 3: Add ENCODING Parameter to your LABEL Object
+---------------------------------------------------
+
+Now you can simply add the ENCODING parameter to your mapfile LAYER object, such as:
+
+.. code-block:: mapfile
+
+   MAP
+    ...
+    LAYER
+      ...
+      CLASS
+        ...
+        LABEL
+          ...
+          ENCODING "SHIFT_JIS"
+        END
+      END
+    END
+   END
+
+
+One of the benefits of having an "ENCODING" parameter within the LABEL object is that different LAYERS with different encoding systems can be combined together and display labels within a single map.  For example, labels from a Layer using Shapefile as it source which contains attributes in SHIFT-JIS can be combined with a Layer from a PostGIS database server with EUC-JP attributes.
+A sample Mapfile can look like this:
+
+.. code-block:: mapfile
+
+   LAYER
+     NAME "chimei"
+     DATA chimei
+     STATUS DEFAULT
+     TYPE POINT
+     LABELITEM "NAMAE"
+     CLASS
+       NAME "CHIMEI"
+       STYLE
+         COLOR 10 100 100
+       END
+       LABEL
+         TYPE TRUETYPE
+         FONT kochi-gothic
+         COLOR 220 20 20
+         SIZE 10
+         POSITION CL
+         PARTIALS FALSE
+         BUFFER 0
+         ENCODING SJIS
+       END
+     END
+   END
+
+   LAYER
+     NAME "chimeipg"
+     CONNECTION "user=username password=password dbname=gis host=localhost port=5432"
+     CONNECTIONTYPE postgis
+     DATA "the_geom from chimei"
+     STATUS DEFAULT
+     TYPE POINT
+     LABELITEM "NAMAE"
+     CLASS
+       NAME "CHIMEI PG"
+       STYLE
+         COLOR 10 100 100
+       END
+       LABEL
+         TYPE TRUETYPE
+         FONT kochi-mincho
+         COLOR 20 220 20
+         SIZE 10
+         POSITION CL
+         PARTIALS FALSE
+         BUFFER 0
+         ENCODING EUC-JP
+       END
+     END
+   END 
+
+Step 4: Test with the shp2img utility
+-------------------------------------
+
+- see :ref:`shp2img commandline utility <shp2img>`
+
+Example Using PHP MapScript
+===========================
+
+For PHP Mapscript, the *Encoding* parameter is included in the LabelObj Class, so that the 
+encoding parameter of a layer can be modified such as:
+
+::
+
+    // Loading the php_mapscript library
+    dl("php_mapscript.so");
+
+    // Loading the map file
+    $map = ms_newMapObj("example.map");
+
+    // get the desired layer
+    $layer = $map->getLayerByName("chimei");
+
+    // get the layer's class object
+    $class = $layer->getClass(0);
+
+    // get the class object's label object
+    $clabel= $class->label;
+
+    // get encoding parameter
+    $encode_str = $clabel->encoding;
+    print "Encoding = ".$encode_str."\n";
+
+    // set encoding parameter
+    $clabel->set("encoding","UTF-8"); 
+
+
+Notes
+=====
+
+During initial implementation, this was was tested using the different Japanese encoding systems: 
+Shift-JIS, EUC-JP, UTF-8, as well as Thai's TIS-620 encoding system. 
