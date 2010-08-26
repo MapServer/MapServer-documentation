@@ -1,0 +1,160 @@
+.. _rfc60:
+
+====================================================================== 
+MS RFC 60: Labeling enhancement: ability to skip ANGLE FOLLOW labels with too much character overlap
+======================================================================
+
+:Date: 2009/06/26
+:Authors: Daniel Morissette (dmorissette at mapgears.com)
+:Authors: Alan Boudreault (aboudreault at mapgears.com)
+:Last Edited: 2010-08-25
+:Status:  Draft
+:Version: MapServer 6.0
+:Id: $Id: $
+
+Overview
+------------------------------------------------------------------------------
+
+At the moment, ANGLE FOLLOW labels on very sharp curved lines can result
+in labels on which some characters overlap, resulting in either bad looking or
+sometimes completely unreadable labels.
+
+This RFC proposes a mechanism to detect overlapping characters in ANGLE FOLLOW
+labels and simply skip them, leaving room for other/better labels to fall
+around the same spot, leading to better looking maps.
+
+In ticket `#2221 <http://trac.osgeo.org/mapserver/ticket/2221>`__, several 
+options were discussed to improve problematic ANGLE FOLLOW labels, including 
+line smoothing, or increasing the spacing between the characters when 
+overlaps are detected, those approaches may have potential but will be 
+dealt with separately (i.e. in their own RFCs). 
+
+This RFC deals specifically with skipping bad labels with too much character 
+overlap and ticket `#3523 <http://trac.osgeo.org/mapserver/ticket/3523>`__ 
+has been created for it.
+
+Background
+------------------------------------------------------------------------------
+
+This issue was found as part of the FOSS4G 2010 Benchmarking exercise where one
+of the layers to render was contours with labels. We've seen that MapServer  
+did a poor job of labeling some contours with sharp curves using ANGLE FOLLOW,
+resulting in overlapping characters and unreadable labels.
+
+OTOH, we found that GeoServer for instance didn't have this type of 
+problematic labels because it simply detected the overlapping chars and 
+skipped those labels. This is the approach we propose to implement here.
+
+Here are two maps of the same area, the first produced by MapServer with the
+bad labels and the second by GeoServer without the bad labels:
+
+http://trac.osgeo.org/mapserver/attachment/ticket/3523/mapserver-wms.png
+
+http://trac.osgeo.org/mapserver/attachment/ticket/3523/geoserver-wms.png
+
+Experiments
+------------------------------------------------------------------------------
+
+We have found that it is of no use to test the character bboxes for 
+overlap since most of them overlap in normal situations as we can see in 
+the following image:
+
+.... 
+
+OTOH we found that we could compare the angles of consecutive characters 
+within a given label and use that as a better indicator of 
+possible overlap. In most cases, a overlap of more than 22.5 degrees 
+is a good threshold to use to decide to skip a given label.
+
+The following image shows the same contours in which labels with character
+overlap larger than 22.5 degrees are skipped:
+
+http://trac.osgeo.org/mapserver/attachment/ticket/3523/mapserver-label-with-fix.png
+
+
+Technical Solution
+------------------------------------------------------------------------------
+
+A new MAXOVERLAPANGLE keyword will be added to the LABEL object, whose
+value is the angle threshold to use in filtering out ANGLE FOLLOW labels in 
+which characters overlap (floating point value in degrees). 
+
+NOTE: Better suggestions for the MAXOVERLAPANGLE keyword name are much welcome!
+
+Setting MAXOVERLAPANGLE in a given LABEL block will
+enable this option and the docs will recommend a default value of 22.5 degrees.
+Users will be free to tune the value up or down depending on the type of data
+they are dealing with and their tolerance to bad overlap in labels.
+
+The default behavior of the software if this parameter is not set will 
+remain unchanged, i.e. this test will be disabled by default and no labels 
+will be skipped.
+
+Usage example
+------------------------------------------------------------------------------
+
+This example will enable filtering out of ANGLE FOLLOW using a threshold of
+22.5 degrees of overlap between two consecutive characters:
+
+::
+
+  MAP
+    ...
+    LABEL
+       ANGLE FOLLOW
+       ...
+       MAXOVERLAPANGLE 22.5
+    END
+    ...   
+  END
+
+
+Keep in mind that this option can be combined with REPEATDISTANCE and 
+MINDISTANCE to produce maps with even more labels. Here is an example:
+
+::
+
+  MAP
+    ...
+    LABEL
+       ANGLE FOLLOW
+       ...
+       MAXOVERLAPANGLE 22.5
+       REPEATDISTANCE 400
+       MINDISTANCE 100
+    END
+    ...   
+  END
+
+... and here is the resulting contour map with the above settings:
+
+http://trac.osgeo.org/mapserver/attachment/ticket/3523/mapserver-collisions-repeatdistance-400-min-100.png
+
+
+Backwards Compatibility Issues
+------------------------------------------------------------------------------
+
+There is no backwards compatibility issues. By default the
+LABEL.MAXOVERLAPANGLE parameter is set to 0, so not applied.
+
+Files Impacted
+------------------------------------------------------------------------------
+
+* TODO
+
+
+Ticket Id
+------------------------------------------------------------------------------
+
+Main ticket:
+* http://trac.osgeo.org/mapserver/attachment/ticket/3523
+
+See also:
+* http://trac.osgeo.org/mapserver/attachment/ticket/2221
+
+
+
+Voting History
+------------------------------------------------------------------------------
+
+Draft. No vote yet.
