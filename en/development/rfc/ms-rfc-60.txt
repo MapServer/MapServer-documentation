@@ -57,7 +57,7 @@ Experiments
 
 We have found that it is of no use to test the character bboxes for 
 overlap since most of them overlap in normal situations as we can see in 
-the following image:
+the following images:
 
 http://trac.osgeo.org/mapserver/attachment/ticket/3523/mapserver-label-boxes.png
 
@@ -71,6 +71,10 @@ overlap larger than 22.5 degrees are skipped:
 
 http://trac.osgeo.org/mapserver/attachment/ticket/3523/mapserver-label-with-fix.png
 
+Here is another example with a street map:
+
+http://trac.osgeo.org/mapserver/attachment/ticket/3523/maxoverlapangle-2.png
+
 
 Technical Solution
 ------------------------------------------------------------------------------
@@ -79,22 +83,23 @@ A new MAXOVERLAPANGLE keyword will be added to the LABEL object, whose
 value is the angle threshold to use in filtering out ANGLE FOLLOW labels in 
 which characters overlap (floating point value in degrees). 
 
-NOTE: Better suggestions for the MAXOVERLAPANGLE keyword name are much welcome!
+This filtering will be enabled by default starting with MapServer 6.0. The 
+default MAXOVERLAPANGLE value will be 22.5 degrees, which also matches the
+default in GeoServer. Users will be free to tune the value up or down 
+depending on the type of data they are dealing with and their tolerance 
+to bad overlap in labels.
 
-Setting MAXOVERLAPANGLE in a given LABEL block will
-enable this option and the docs will recommend a default value of 22.5 degrees.
-Users will be free to tune the value up or down depending on the type of data
-they are dealing with and their tolerance to bad overlap in labels.
-
-The default behavior of the software if this parameter is not set will 
-remain unchanged, i.e. this test will be disabled by default and no labels 
-will be skipped.
+Setting MAXOVERLAPANGLE == 0 will completely disable filtering of labels
+based on this criteria, restoring the pre-6.0 behavior.
 
 Usage example
 ------------------------------------------------------------------------------
 
-This example will enable filtering out of ANGLE FOLLOW labels using a 
-threshold of 22.5 degrees of overlap between two consecutive characters:
+This feature is enabled by default with a default value of 22.5 degrees, 
+so no mapfile changes are required to enable it.
+
+This example will increase the MAXOVERLAPANGLE to 30 degrees, resulting in 
+less labels being skipped:
 
 ::
 
@@ -103,7 +108,7 @@ threshold of 22.5 degrees of overlap between two consecutive characters:
     LABEL
        ANGLE FOLLOW
        ...
-       MAXOVERLAPANGLE 22.5
+       MAXOVERLAPANGLE 30
     END
     ...   
   END
@@ -134,8 +139,14 @@ http://trac.osgeo.org/mapserver/attachment/ticket/3523/mapserver-collisions-repe
 Backwards Compatibility Issues
 ------------------------------------------------------------------------------
 
-There is no backwards compatibility issues. By default the
-LABEL.MAXOVERLAPANGLE parameter is set to 0, so not applied.
+This new feature will be enabled by default with a default MAXOVERLAPANGLE 
+value of 22.5 degreees. Existing mapfiles will work without any change, but 
+may end up producing maps with less labels if they contain several bad labels 
+with overlapping characters. It is always possible to come back to the old
+behavior (disabling filtering) using MAXOVERLAPANGLE 0 or to tune the value
+up or down to get better results.
+
+There is no other backwards compatibility issue.
 
 Files Impacted
 ------------------------------------------------------------------------------
