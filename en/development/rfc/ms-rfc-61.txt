@@ -1,0 +1,133 @@
+.. _rfc61:
+
+===============================================================
+  MS RFC 61: Enhance MapServer Feature Style Support
+===============================================================
+
+:Date: 2010/09/11
+:Author: Tamas Szekeres
+:Contact: szekerest at gmail.com
+:Last Edited: $Date$
+:Status: Proposed
+:Id: $Id$
+
+Description: This RFC proposes a generic implementation for rendering
+the feature styles retrieved from the various data sources. In this
+regard we intend to enhance the existing STYLEITEM "AUTO" option
+which could now be specified for all layer types and not restricted
+to the OGR driver.
+
+Background
+~~~~~~~~~~
+
+Currently only the OGR driver supports rendering the styles attached
+to a feature in the OGR data sources. Theoretically only a few data
+sources support storing the styles along with the features
+(like MapInfo, AutoCAD DXF, Microstation DGN), however those styles 
+can easily be transferred to many other data sources as a separate attribute 
+by using the ogr2ogr SQL option as follows:
+
+::
+
+   ogr2ogr -sql "select *, OGR_STYLE from srclayer" "dstlayer" "srclayer"
+
+
+As a result of the transfer, the OGR style string is added to the 
+destination layer as a separate attribute. We could also rename this
+attribute during the transfer according to the following example:
+
+::
+
+  ogr2ogr -sql "select *, OGR_STYLE as mystyleattribute from srclayer" "dstlayer" "srclayer"
+
+
+Currently the style string transferred this way can only be rendered by
+the MapServer OGR driver, however it would be reasonable to implement this
+option for all layer types in MapServer.
+
+Proposed New Syntax
+~~~~~~~~~~~~~~~~~~~
+
+We can continue to use the current STYLEITEM "AUTO" syntax, which
+will now be implemented for all layers. In this case the default
+implementation will retrieve the style string from the attribute
+with the name 'OGR_STYLE'.
+
+In addition, we will implement support to specify the renamed
+attributes by using the STYLEITEM "mystyleattribute" in the layer
+definitions of the mapfile.
+
+Implementation Details
+~~~~~~~~~~~~~~~~~~~~~~
+
+In order to implement this enhancement the following changes should be
+made in the MapServer codebase:
+
+1) Modify msOGRLayerGetAutoStyle (in mapogr.cpp) and extract the bulk of the style
+   initialization into a separate function. We would add a new function where the style manager
+   would be initialized by using OGRStyleMgr::InitStyleString instead of OGRStyleMgr::InitFromFeature
+   msOGRLayerGetAutoStyle should also support extracting the style from an arbitrary field as
+   specified by the STYLEITEM parameter.
+
+2) Modify LayerDefaultGetAutoStyle (in maplayer.c) to retrieve the style string attribute
+   and call the appropriate function in mapogr.cpp described above.
+   
+3) Modify msLayerWhichItems in (maplayer.c) to retrieve the attribute containing the style string
+   specified in the STYLEITEM parameter. Using STYLEITEM "AUTO" would require to retrieve the
+   attribute with name 'OGR_STYLE'. For those layers which override LayerGetAutoStyle with
+   a custom implementation (like the OGR driver) no additional attribute will be retrieved.
+
+MapScript Issues
+~~~~~~~~~~~~~~~~
+
+There's no need to modify the MapScript interface since the styleitem parameter has
+already been exposed. However this attribute will now support the name of the style
+attribute not only the "AUTO" value.
+
+Files affected
+~~~~~~~~~~~~~~
+
+To implement the solution the following files would require to be changed:
+
+- mapserver.h => Add the declaration of a new function implemented in mapogr.cpp
+- mapogr.cpp => Add a new function to process the style string
+- maplayer.c => Implement LayerDefaultGetAutoStyle, modify msLayerWhichItems
+
+Backwards Compatibilty Issues
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Currently STYLEITEM "AUTO" has only been implemented in the OGR driver which
+overrides LayerGetAutoStyle with a custom implementation. This behaviour would
+continue to work as previously since the generic implementation would not affect those
+drivers which provide custom implementation. However msOGRLayerGetAutoStyle should also
+be modified to initialize the style from an arbitrary attribute in addition to the
+"AUTO" option.
+
+Further Considerations
+~~~~~~~~~~~~~~~~~~~~~~
+
+In the future we may provide support further style representations in addition to
+the OGR style strings. Handling multiple style representations are not covered by
+this RFC, however the generic style implementation could easily be extended in this regard.
+This would require to add a new parameter (or a layer processing) option to select
+how the style attribute should actually be handled in MapServer.
+
+This generic approach would require the OGR driver to be compiled in. If we compile
+MapServer without OGR support we continue to provide an error message in case of an
+attempt to use the STYLEITEM option in the mapfiles.
+
+Currently the OracleSpatial driver does override LayerGetAutoStyle just because to provide a
+custom error message when the STYLEITEM option is used. For this driver we should
+probably switch back to the "generic" implementation during the vtable initialization.
+
+Bug ID
+~~~~~~
+
+Not yet assigned
+
+Voting history
+~~~~~~~~~~~~~~
+
+None
+
+
