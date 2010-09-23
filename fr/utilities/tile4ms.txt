@@ -1,0 +1,142 @@
+.. _tile4ms:
+
+*****************************************************************************
+ tile4ms
+*****************************************************************************
+
+Objectif
+-----------------------------------------------------------------------------
+Créé un index de tuile au format shapefile pour utiliser avec la fonction TILEINDEX de 
+MapSever. Le programme créé un shapefile contenant des rectangles à partir des 
+étendues de tous les shapefiles listé dans [metafile] (un nom de shapefile par ligne) et 
+les DBF associés avec le nom du fichier pour chaque tuile dans une colonne nommée 
+LOCATION comme cela est demandé par mapserv.
+
+Description
+-----------------------------------------------------------------------------
+Cette commande créé un shapefile contenant le MBR (rectangle englobant minimal) de tous 
+les shapes dans les fichiers fournis, qui peut être utilisé dans le paramètre TILEINDEX de 
+l'objet LAYER du mapfile. Le nouveau fichier créé avec cette commande est utilisé par 
+MapServer pour charger seulement les fichiers associés avec cette étendue (ou tuile).
+
+Syntaxe
+-----------------------------------------------------------------------------
+::
+  
+    tile4ms <meta-file> <tile-file> [-tile-path-only]
+    <meta-file>    fichier INPUT  contenant la liste des noms de shapefile
+                    (chemin complet 255 car. max., sans extension)
+    <tile-file>     fichier shape OUTPUT des rectangles d'étendue et noms des 
+                    tuiles dans <tile-file>.dbf
+    -tile-path-only Optionel. Si définie alors seul les chemins des fichiers shapes
+                    seront stocké dans le champ LOCATION au lieu de stocker le nom
+                    du fichier complet.
+
+
+
+Exemple court
+-----------------------------------------------------------------------------
+Créé le fichier tileindex.shp pour toutes les tuiles dans le répertoire /chemin/vers/donnees :
+
+::
+
+       <on Unix> 
+     
+    cd /chemin/vers/donnees
+    find . -name "/*.shp" -print > metafile.txt
+    tile4ms metafile.txt tileindex
+
+       <on Windows>   
+
+    dir /b /s *.shp > metafile.txt
+    tile4ms metafile.txt tileindex
+    
+Exemple long
+-----------------------------------------------------------------------------
+Cet exemple utilise les données TIGER Census, dans lesquelles les données 
+contiennent des fichiers divisés par communes (en fait il y a plus de 3 200 
+communes, un jeu de données très important). Dans cet exemple nous 
+montrerons comment afficher tous les lacs de l'état du Minnesota (notez qu'ici 
+nous avons déjà convertie les données TIGER au format shapefile, mais vous 
+pouvez garder les fichiers au format TIGER et utiliser la commande ogrtindex 
+à la place). Les données TIGER Census pour le Minnesota sont constituées de 
+87 communes différentes, chacune contenant ses propres fichiers lacs ('wp.shp').
+
+1. Nous devons créer le 'meta-file' pour la commande tile4ms.  C'est un fichier texte
+   contenant les chemins de tous les fichiers 'wp.shp' pour l'état MN.  Pour créer ce 
+  fichier nous pouvons utiliser quelques commandes simples :
+
+ ::
+ 
+    DOS: dir wp.shp /b /s > wp_list.txt
+    (cela inclus les chemins complets aux données, vous pouvez éditer le fichier txt 
+    pour supprimer le chemin complet)
+
+    UNIX: find -name *wp.shp -print > wp_list.txt
+    
+Le nouveau fichier créé devrait ressembler à cela (après avoir supprimer le chemin complet) :
+ 
+ ::
+ 
+   001\wp.shp
+   003\wp.shp
+   005\wp.shp
+   007\wp.shp
+   009\wp.shp
+   011\wp.shp
+   013\wp.shp
+   015\wp.shp
+   017\wp.shp
+   019\wp.shp
+   . . .
+
+2. Éxécutez la commande tile4ms avec le nouveau meta-file créé pour générer le fichier index :
+
+ ::
+ 
+   tile4ms wp_list.txt index
+     Processed 87 of 87 files
+
+3. Un nouveau fichier nommé 'index.shp'a été créé. C'est le fichier index avec les MBRs 
+   de tous les fichiers 'wp.shp' pour l'état entier, comme indiqué à la figure 1. La table
+   d'attribut de ce fichier contient un champ nommé 'LOCATION', qui contient le chemin vers 
+   chaque fichier 'wp.shp file', comme indiqué figure 2.
+
+ **Figure 1 : Fichier index créé par la commande tile4ms**
+
+ .. image:: ../images/tile4ms-view.png
+
+
+ **Figure 2 : Attributs du fichier index créés par la commande tile4ms**
+
+ .. image:: ../images/tile4ms-attributes.png
+
+4. L'étape finale est de l'utiliser dans votre mapfile. 
+    - TILEINDEX de l'objet LAYER - doit pointer sur la localisation du fichier index
+    - TILEITEM de l'objet LAYER - définie le nom du champ du fichier index
+      contenant les chemins ('location' par défaut)
+    - ne nécessiet pas d'utiliser le paramètre DATA de l'objet LAYER
+ 
+ Par exemple :
+
+     ::
+     
+       LAYER
+         NAME 'mn-lakes'
+         STATUS ON
+         TILEINDEX "index"
+         TILEITEM "location"
+         TYPE POLYGON
+         CLASS
+           NAME "mn-lakes"
+           STYLE
+             COLOR 0 0 255
+           END
+         END
+       END
+ 
+Lorsque vous visualisez la couche dans une application MapServer, vous noterez
+que lorsque vous zoomez à une grande échelle de l'état seul ces couches lacs sont 
+chargées, ce qui accélère l'application.
+
+$ revision: 9764 $

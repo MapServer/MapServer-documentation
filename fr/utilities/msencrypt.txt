@@ -1,0 +1,129 @@
+.. _msencrypt:
+
+*****************************************************************************
+ msencrypt
+*****************************************************************************
+
+
+Objectif
+-----------------------------------------------------------------------------
+
+Utilisé pour créer une clé de chiffrage ou pour chiffrer des parties de la chaîne 
+de conenxion dans le mapfile (ajouté dans la version 4.10). Typiquement vous pouvez 
+vouloir chiffrer une partir du paramètre CONNECTION pour la connexion à une base de 
+données. Les types de connexion suivantes sont gérés pour utiliser la méthode de 
+chiffrage :
+
+::
+  
+    OGR
+    Oracle Spatial
+    PostGIS
+    SDE
+
+Syntaxe
+-----------------------------------------------------------------------------
+
+Pour créer une nouvelle clé de chiffrage :
+  
+::
+  
+    msencrypt -keygen [key_filename]
+    
+Pour chiffrer une chaîne de caractères :
+  
+::
+  
+    msencrypt -key [key_filename] [string_to_encrypt]
+
+Utilisation dans un Mapfile
+-----------------------------------------------------------------------------
+
+La localisation de la clé de chiffrage peut être définie par deux mécanismes, soit 
+en définissant la variable d'environnement MS_ENCRYPTION_KEY soit en utilisant le 
+paramètre CONFIG  dans l'objet MAP de votre mapfile. Par exemple : 
+  
+::
+  
+	CONFIG MS_ENCRYPTION_KEY "/path/to/mykey.txt"
+	
+Utiliser les caractères { et } comme délimiteur pour chiffrer les chaînes de caractères 
+au sein du paramètre CONNECTION d'une base de données dans votre mapfile. Par exemple :
+  
+::
+  
+	CONNECTIONTYPE ORACLESPATIAL
+	CONNECTION "user/{MIIBugIBAAKBgQCP0Yj+Seh8==}@service"
+	
+Exemple
+.............................................................................
+
+.. note:
+    
+    L'exemple suivant pour PostGIS nécessire au moins MapServer 5.0.3 ou 5.2. 
+    Disons que nous avons une LAYER qui utilise une connexion PostGIS comme cela :
+  
+::
+  
+    LAYER
+      NAME "provinces"
+      TYPE POLYGON
+      CONNECTIONTYPE POSTGIS
+      CONNECTION "host=127.0.0.1 dbname=gmap user=postgres password=iluvyou18 port=5432"
+      DATA "the_geom FROM province using SRID=42304"
+      STATUS DEFAULT
+      CLASS
+        NAME "Countries"
+        COLOR 255 0 0
+      END
+    END
+    
+Voici les étapes pour chiffre le mot de passe dans la connexion ci-dessus :
+  
+1. Générez une clé de chiffrage (notez que cette clé ne doit pas être stockée quelque part 
+  dans un répertoire accessible par le serveur web) :
+   
+::
+   
+    msencrypt -keygen "E:\temp\mykey.txt"
+
+et ce fichier de clé généré peut contenir quelque chose comme : 
+    
+::
+    
+    2137FEFDB5611448738D9FBB1DC59055
+      
+2. Chiffrez le mot de passe de la connexion en utilisant la clé générée :
+
+::
+    
+    msencrypt -key "E:\temp\macle.txt" "iluvyou18"
+
+qui renvoie le mot de passe chiffré, en ligne de commande (vous allez l'utiliser rapidement)
+
+::
+      
+    3656026A23DBAFC04C402EDFAB7CE714
+
+3. Éditez le mapfile pour vous assurez que le fichier :file:'mykey.txt' peut être trouvé, 
+  en utilisant la variable d'environnement "MS_ENCRYPTION_KEY". Le paramètre CONFIG dans l'objet
+  MAP peut être utilisé pour définir la variable d'environnement dans le mapfile :
+
+::
+    
+    MAP
+        ...
+        CONFIG "MS_ENCRYPTION_KEY" "E:/temp/macle.txt"
+        ...
+    END #mapfile
+      
+4. Modifiez le paramètre CONNECTION de la couche pour utiliser la clé du mot de passe généré,
+   assurez vous d'utiliser les accolades “{}” autour de la clé :
+    
+::
+    
+    CONNECTION "host=127.0.0.1 dbname=gmap user=postgres password={3656026A23DBAFC04C402EDFAB7CE714} port=5432"
+ 
+5. Terminé ! Testez le nouveau mapfile chiffré avec la commande :ref:`shp2img` !
+
+$ revision: 9764 $

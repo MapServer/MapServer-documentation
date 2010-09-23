@@ -1,0 +1,89 @@
+.. _mapcontext_cgi:
+
+*****************************************************************************
+ Fichiers de Contexte de Carte
+*****************************************************************************
+
+Gestion des fichiers de contexte de carte locale
+---------------------------------------------------------------
+Il y a un paramètre CGI appellé CONTEXT qui est utilisé pour définir un 
+fichier contexte local. L'utilisateur peut alors utiliser MapServer pour 
+demander une carte en utilisant la syntaxe suivante :
+
+::
+
+    http://localhost/mapserver.cgi?MODE=map&MAP=/path/to/mapfile.map&CONTEXT=
+                         /path/to/contextfile.xml&LAYERS=layer_name1 layers_name2 
+   
+.. note::
+
+    Toutes les couches crées à partir du fichier contexte ont leur status à ON. Pour afficher 
+    des couches, l'utilisateur doit ajouter l'argument LAYERS dans l'URL.
+
+Gestion de fichier de contexte accédé par une URL
+--------------------------------------------------------------------
+La syntaxe pour utiliser un fichier de contexte accessible par le web devrait 
+être similaire à l'accès d'un fichier de contexte local.
+
+::
+
+    http://localhost/mapserver.cgi?MODE=map&MAP=/path/to/mapfile.map&CONTEXT=
+                http://URL/path/to/contextfile.xml&LAYERS=layers_name1 layer_name2 
+
+En raison de problèmes de sécurité, le chargement de fichier à partir d'une 
+URL est désactivé par défaut. Pour activer cette fonctionnalité, l'utilisateur 
+doit définir un paramètre CONFIG appelé CGI_CONTEXT_URL dans le fichier 
+map par défaut qui permettra cette fonctionnalité.  Voici un exemple d'un fichier 
+map avec le paramètre CONFIG :
+
+::
+
+    # Début du fichier map
+    NAME DEMO
+    STATUS ON
+    SIZE 400 300
+    EXTENT -2200000 -712631 3072800 3840000
+    UNITS METERS
+    IMAGECOLOR 255 255 255
+    IMAGETYPE png
+    CONFIG "CGI_CONTEXT_URL" "1"
+    ...
+
+Fichier de carte par défaut
+------------------------------------
+Pour exécuter une application avec le CGI de MapServer en douceur avec un contexte de carte, 
+l'application de l'administrateur doit fournir un fichier map par défaut avec au moins
+les paramètres de base nécessaires qui seront utilisés avec le fichier de contexte. Ce
+fichier map par défaut peut contenir aussi peu d'informations que ImagePath et
+ImageUrl ou contenir une liste de couches. Les informations provenant du contexte
+(Par exemple : couches, largeur, hauteur, etc.) seront soit ajoutées ou remplaceront
+les valeurs trouvées dans le fichier de la carte.
+
+Voici un exemple d'un fichier map par défaut contenant les paramètres 
+minimales obligatoire :
+
+::
+
+    NAME CGI-CONTEXT-DEMO
+    STATUS ON
+    SIZE 400 300
+    EXTENT -2200000 -712631 3072800 3840000
+    UNITS METERS
+    IMAGECOLOR 255 255 255
+    IMAGETYPE png
+    #
+    # Début de la définition de l'interface web
+    #
+    WEB
+      MINSCALE 2000000
+      MAXSCALE 50000000
+    #
+    # Sur les systèmes Windows, /tmp et /tmp/ms_tmp/ doivent être créé à la racine
+    # du disque où le fichier .MAP résident.
+    #
+      IMAGEPATH "/ms4w/tmp/ms_tmp/" 
+      IMAGEURL "/ms_tmp/"
+    END
+    END # Map File                      
+
+$ revision: 9764 $

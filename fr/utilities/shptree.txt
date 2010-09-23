@@ -1,0 +1,86 @@
+.. _shptree:
+
+*****************************************************************************
+ shptree
+*****************************************************************************
+
+
+Objectif
+-----------------------------------------------------------------------------
+Créé un index spatial basé sur les quadrants pourun shapefile. La profondeur 
+par défaut est calculé afin que chaque noeud de l'arbre (les cellules du 
+quadrant) contient 8 géométries. N'utilisez pas la valeur par défaut avec les 
+points, une valeur entre 6 et 10 semble fonctionner. Vos valeurs peuvent être 
+différente et nécessitent quelques tests.
+
+La `page wiki shptree <http://trac.osgeo.org/mapserver/wiki/ShpTree>`__ peut 
+également contenir des informations sur cette commande.
+
+Description
+-----------------------------------------------------------------------------
+Cette commande est un must pour n'importe quelle application MapServer qui utilise 
+des shapefiles. Shptree créé un index spatial de votre shapefile, en utilisant la 
+méthode quadtree. Cela signifie que MapServer utilisera cet index pour trouver 
+rapidement la géométrie appropriée. Il créé un fichier du même nom que votre shapefile
+avec une extension *.qix*. La méthode quadtree découpe le fichier en 4 parties 
+(quadrant), récurcicevement jusqu'à ce que seules quelques géométries sont contenu 
+dans chaque quadrant. Ce nombre minimal peut être définie avec le paramètre <depth> 
+de la commande.
+
+Syntaxe
+-----------------------------------------------------------------------------
+::
+  
+    shptree <shpfile> [<depth>] [<index_format>]
+      Où :
+      <shpfile> est le nom du fichier .shp à indexer
+      <depth>   (optionel) est la profndeur maximale de l'index à créer
+           par défaut 0 ce qui signifie que shptre calculera une 
+           profondeur raisonable.
+      <index_format> (optionel) parmis :
+           NL : Ordre des octets LSB, en utilisant le nouveau format d'index
+           NM : Ordre des octets MSB, en utilisant le nouveau format d'index
+       Les anciennes options suivantes sont dépréciées :
+           N :  Ordre des octets natifs
+           L :  Ordre des octets LSB (intel)
+           M :  Ordre des octets MSB
+       L'index_format par défaut sur ce système est : NL
+       
+Exemple
+
+::
+  
+    shptree us_states.shp
+      creating index of new  LSB format   
+      
+Résultat
+  Un fichier nommé 'us_states.qix' a été créé au même endroit (notez que vous pouvez utiliser
+  la commande shptreevis, décrite à la page suivante, pour visualiser les quadrants quadtree 
+  réel qui seront utilisés par MapServer dans ce fichier qix)
+  
+Remarques sur le Mapfile
+-----------------------------------------------------------------------------
+
+Les shapefiles sont géré en natif par MapServer et ne nécessient pas l'extension *.shp*
+dans le chemin DATA de l'objet LAYER. En fait, vous NE DEVEZ PAS définir l'extension pour
+que MapServer utilise les fichiers *.qix*, par exemple :
+  
+.. code-block:: mapfile
+  
+    LAYER
+      ...
+      DATA "us_states"    #MapServer cherchera us_states.qix et le trouvera
+      ...
+    END
+  
+    LAYER
+      ...
+      DATA "us_states.shp"    #MapServer cherchera us_states.shp.qix et ne le trouvera pas
+      ...
+    END
+
+.. note::
+    À partir de MapServer 5.2 le fichier qix sera utilisé même lorsque l'extension .shp est spécifiée.
+
+
+$ revision: 9764 $

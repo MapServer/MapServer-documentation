@@ -1,0 +1,674 @@
+.. _faq:
+
+***************************************************
+ FAQ
+***************************************************
+
+Où sont les fichiers logs de MapServer ?
+-------------------------------------------------------------------------------
+
+Voir :ref:`rfc28`
+
+Quels livres sont disponible sur MapServer ?
+-------------------------------------------------------------------------------
+
+`"Mapping Hacks" <http://www.oreilly.com/catalog/mappinghks/>`__ par Schuyler
+Erle, Rich Gibson, et Jo Walsh est disponible via O'Reilly.
+
+`"Web Mapping Illustrated" <http://oreilly.com/catalog/webmapping>`__ par Tyler
+Mitchell est disponible chez O'Reilly. Introduit MapServer et plusieurs autres
+outils connexes dont GDAL/OGR, MapScript, PostGIS, map projections,
+etc.
+
+`"MapServer: Open Source GIS Development"
+<http://www.apress.com/book/bookDisplay.html?bID=443>`__ par Bill Kropla.
+
+
+Comment je compile MapServer pour Windows ?
+-------------------------------------------------------------------------------
+
+Voir :ref:`win32`. Vous pouvez également utiliser les bibliothèques de développement sur :ref:`OSGeo4W
+<windows>` comme base de départ au lieu de compiler toutes les dépendances vous même.
+
+Que signifie les numéros de version de MapServer ?
+-------------------------------------------------------------------------------
+
+Le schéma de numérotation des versions de MapServer est très similaire à celui de Linux. 
+Par exemple, un numéro de version de MapServer de 4.2.5 peut être décodé comme cela :
+
+- 4 : Numéro de version majeur. MapServer publie une version majeure tous les deux ou trois ans.
+- 2 : Numéro de version mineur. L'incrémentation d'un numéro de version mineure est toujours 
+  lié à des ajouts de fonctionnalités.
+- 5 : Numéro de révision. Les révisions sont des corrections de bug seulement. Aucunes 
+  nouvelles fonctionnalités n'est fournie dans ces révisions.
+
+D'un point de vue d'un développeur, le schéma de numérotation des versions de MapServer 
+est identique à celle de Linux. Les numéros de version pairs (0..2..4..6) sont des versions 
+publiées, et les versions impairs (1..3..5..7) correspondent à des versions de développement.
+
+Est ce que MapServer est Thread-safe?
+-------------------------------------------------------------------------------
+
+**Q** : Est ce que MapServer est thread-safe?
+
+**R** : D'un point de vue générale, non (mais lisez la section suivante). Plusieurs composants 
+de MapServer utilisent des données globales ou statiques qui peuvent être potentiellement 
+modifiées par un autre thread. Sous une charge importante cela devient inévitable et il peut 
+subevenir des erreurs ponctuels.
+
+**Q** : Est il possible d'utiliser MapServer dans une application multi-threaded en toute sécurité ?
+
+**R** : Certaines oui, avec une attention particulière. Ou avec Python :) Les développeurs doivent
+soit éviter d'utiliser des composants non sécurisés de MapServer ou placer soigneusement des blocages 
+sur ceux-ci. Le blocage de l'interpreteur global de Python immunise contre les problèmes de threading
+de MapServer ; puisque aucun code mapscript ne publie le GIL toutes les fonctions ou méthodes 
+de MapServer sont atomique. Les utilisateurs de mapscript et de JAVA, .NET, mod_perl, ou mod_php 
+n'ont pas cette couche supplémentaire de protection.
+
+**Q** : Quels composants doivent être évité ?
+
+**R** : Ci-dessous est la liste des composants non protégé ou non sécurisé et les composants non 
+sécurisé mais bloqué.
+
+Non sécurisé :
+
+- Couches OGR : utilisation de services CPL non sécurisé
+- Rendu Cartoline : données statiques
+- Export Imagemap : données statiques
+- Export SWF : données statiques et utilisation de msGetBasename() non sécurisé
+- Export SVG : données statiques
+- Serveur WMS/WFS : données statiques utilisé pour l'état du dispatcher
+- Forcer une base des fichiers temporaires (une fonctionnalité obscure) : données statiques
+- MyGIS : quelques données statiques
+
+Non sécurisé, mais bloqué :
+
+- Chargement du fichier map de configuration : parseur global
+- Définition des expressions de filtre de couche ou de classe (parseur global)
+- Évaluation des expressions des classes (parseur global)
+- Définition des projections des couches et des cartes (PROJ)
+- Requêtage et rendu des couches raster (GDAL)
+- Connexion aux bases de données (mappool.c)
+- Gestion de PostGIS
+- Oracle Spatial (utilise une simple prise en charge de l'environnement pour la connexion)
+- Gestion de SDE (cache global des couches)
+- Prise en charge des erreurs (dépôt statique des objets d'erreur)
+- Connexions cliente de WMS/WFS : potential race condition in Curl initialization
+- Couches Plugin (dépôt statique de dll-s chargés)
+
+Des serrures secondaires sont plutôt mis en place pour ce qui précède. Seul un thread 
+peut utiliser un parseur global à la fois, et seul un thread peut accéder à des données
+raster par GDAL au même moment. La performance est échangée pour la sécurité.
+
+Que signifie STATUS dans une LAYER ?
+-------------------------------------------------------------------------------
+
+STATUS ON et STATUS OFF définie le status par défaut de la couche. Si une couche est demandée,
+ces couches seront définie à ON/OFF à moins que cela soit définie différement via le paramètre LAYER.
+Cela est particulièrement le cas lorsque vous utilisez MapScript et le mécanisme de template 
+incorporé de MapServer, mais est également utile lorsque vous écrivez vos propres applications
+et définissez la vue initiale de la carte.
+
+STATUS DEFAULT signifie que la couche est toujours affichée, même si elle n'est pas définie 
+dans le paramètre LAYER. Le status de la couche peut être changé de DEFAULT à OFF en MapScript, 
+sinon elle est toujours à ON.
+
+:ref:`cgi` modifie toutes les valeurs qui ne sont pas en STATUS DEFAULT à la valeur OFF afin
+que toutes les couches démarrent dans le même état (c'est à dire OFF) et doit être explicitement 
+demandée pour être dessinée ou requêtée. Cet état commun rend le développement plus facile (du 
+mois dans mon esprit). Je veux dire que si une couche "lakes" est définie à ON, l'appel de layer=lakes
+la rendra à OFF. Je veux donc supprimer cette ambiguité au démarrage.
+
+Comment puis rendre le rendu de mes cartes plus rapide ?
+-------------------------------------------------------------------------------
+
+Il y a de nombreuses approches différentes pour améliorer les performances de 
+votre carte, à part bien évidemment d'acheter du matériel honéreux et plus rapide.
+ Voici quelques liens de howto individuels de différentes optimisation.
+
+* :ref:`Tunez votre mapfile pour améliorer les performances <mapfile_tuning>`
+* :ref:`Optimiser les performances des sources de données vecteurs <vector_optimization>`
+* :ref:`Optimiser les performances des sources de données raster <raster_optimization>`
+* :ref:`Tileindexes pour mosaiquer et améliorer les performances <tileindex>`
+
+Quelques astuces générales pour tous les cas :
+
+* Tout d'abord le matériel. Une barette de mémoire supplémentaire améliorera les 
+  performances au delà de toutes considérations sur vos données. Au prix de la barette 
+  de mémoire de nos jours cela est peu honéreux et facile avec une mise à jour facilité.
+
+* Utilisez des méthodes scientifique. Changez une chose à la fois, et regardez quel effet
+  cela entraîne. Essayez de désactiver toutes les couches puis activer les une par une
+  jusqu'à ce que vous trouvez celle qui pose problème.
+
+* Utilisez le programme :ref:`shp2img` pour chronométrer vos résultats. Celui-ci est lancé
+  à partir de la ligne de commande et dessine une image de votre carte entière. Puisqu'il 
+  est lancé à partir de la ligne de commande, il ne subit pas les délais d'Internet et 
+  vous donerra des mesures plus cohérentes que votre navigateur.
+
+
+Que signifie Polyline dans MapServer ?
+-------------------------------------------------------------------------------
+Il y a des confusions entre la signification de POLYLINE dans MapServer et ESRI. 
+Dans MapServer POLYLINE signifie simplement une représentation linéaire de données
+POLYGON. Avec ESRI les polylignes signifie multi-ligne. Les anciennes versions de
+la description technique du Shapefile ne parle même pas des polylignes, juste des 
+lignes. Les Shapefiles polyligne d'ESRI sont juste des lignes et peuvent seulement 
+être dessinée comme des couches LINE. Ces shapefiles n'ont pas de contraintes de 
+fermeture géométrique comme les Shapefiles polygonaux, c'est pourquoi la distinction 
+est si importante. Je suppose qu'il y a un meilleur choix que POLYLINE mais je ne 
+vois pas lequel.
+
+.. note::
+    La seule différences entre les couches POLYLINE et LINE est la manière dont 
+    les étiquettes sont placées.
+
+Qu'est ce que MapScript ?
+-------------------------------------------------------------------------------
+
+MapScript est l'interface de script de MapServer, généré habituellement par 
+:term:`SWIG` (sauf pour :ref:`php`). MapScript vous permet de programmer avec 
+les objets de MapServer directement au lieu d'interagire avec MapServer via le 
+script :ref:`cgi` et les :ref:`mapfile`.
+
+Est ce que MapServer gère le reverse géocoding ?
+-------------------------------------------------------------------------------
+
+Non.
+
+Le reverse géocoding est la possibilité de générer des adresses postales à partir 
+d'une liste de géométrie. Ce type de fonctionnalité spatiale est fournie par des 
+applications propriétaires  tels que la suite ESRI ou par des services tels que 
+ceux fournie par GDT. MapServer sert au *rendu cartographique* et ne fournie pas
+ d'opérations spatiales avancées telle que celle-ci.
+
+Est ce que MapServer gère le géocoding ?
+-------------------------------------------------------------------------------
+
+Non.
+
+Le géocoding est la possibilité de générer des points en latitude et longitude à 
+partir d'une liste d'adresses. Ce type de fonctionnalité spatiale est fournie par des 
+applications propriétaires  tels que la suite ESRI ou par des services tels que 
+ceux fournie par GDT. MapServer sert au *rendu cartographique* et ne fournie pas
+ d'opérations spatiales avancées telle que celle-ci.
+
+Si vous utilisez MapScript, il y a un géocoder libre disponible à travers XMLRPC 
+et SOAP à http://geocoder.us . Vous pouvez lier votre application à ce service 
+pour fournir des coordonnées pour les adresses, puis utiliser MapServer pour 
+afficher ces points.
+
+Comment je définie une largeur de ligne dans ma carte ?
+-------------------------------------------------------------------------------
+
+Vous devez définir un symbol 'circle' pour la LAYER puis définir la taille du 
+symbol à la largeur désirée. Un symbole 'circle' peut être définie comme ceux-ci :
+
+.. code-block:: mapfile
+
+      SYMBOL
+        NAME 'circle'
+        TYPE ELLIPSE
+        FILLED TRUE
+        POINTS 1 1 END
+      END
+
+Pourquoi mes images en JPEG ne sont pas jolie via MapServer ?
+-------------------------------------------------------------------------------
+
+Le format de sortie de MapServer est le format PNG pseudo-couleur en 8 bit ou 
+le format GIF. Intrinsèquement, il y aura une certaine dégradation de la couleur
+lors de la conversion d'une image 24 bits (16 millions de couleurs) en image en 
+8 bits (256 couleurs).
+
+Mais dans le but d'assurer un rendu rapide MapServer utilise une méthode simple 
+pour réaliser la transformation, en convertissant les pixels à la couleur la 
+plus proche dans le cube de couleur à 175 couleurs. Cela entrainera des couleurs 
+tachetées dans une image assez facilement différentes.
+
+Parmi les solutions possibles :
+
+- Sélectionnez un rendu en 24 bit. Cela peut être aussi facile que de rajouter 
+  "IMAGETYPE JPEG" dans votre objet MAP.
+- Activer le tramage (PROCESSING "DITHER=YES") pour produire une meilleure 
+  apparence des couleurs.
+- Prétraitez vos images en 8 bit avant de l'utiliser dans MapServer avec une 
+  application externe comme le script rgb2pct.py  de GDAL.
+
+Pour plus d'information lisez :ref:`raster`.
+
+Quel format d'image doit je utiliser ?
+-------------------------------------------------------------------------------
+Bien que MapScript puisse générer une carte dans n'importe quel format d'image, 
+il est suffisant de considérer les trois plus importants : JPEG, PNG, et GIF.
+
+JPEG est un format d'image qui utilise un algorithme de compression avec perte 
+pour réduire la taille de l'image et il est utilisé lorsque la parte de détails 
+à cause de la compression est soit pas visible soit négligeable comme dans la 
+plupart des photos. Les cartes d'un autre côté consiste principalement en ligne 
+fine et en surface colorée, ce qui n'est pas connu pour être affiché 
+correctement par le format JPEG. De plus les cartes, sauf si elles incluent 
+des images aériennes et satellites, utilise généralement très peu de couleur. 
+ Le format JPEG avec sa profondeur de couleur à 24 bit est capable d'afficher 
+environ 16,7 millions de couleurs n'est pas pertinent pour cet objectif. Les 
+formats GIF et PNG cependant utilisent une palette de couleur indexée qui peut 
+être optimisé pour n'importe quel nombre (jusqu'à 256) de couleurs ce qui les 
+rend pertinent pour les icônes, logos, graphique et cartes. La comparaison 
+suivante (taille d'image générée ; et pas la durée de génération des fichiers) 
+incluera donc ces deux formats de fichiers :
+
+.. table:: Taille des images générées en GIF, PNG et PNG24
+
+    +----------------------------------------------------------+-------+-------+-------+
+    |                                                          | GIF   | PNG   | PNG24 |
+    +==========================================================+=======+=======+=======+
+    |Données vecteur seulement                                 | 59kb  | 26kb  | 69kb  |
+    +----------------------------------------------------------+-------+-------+-------+
+    |Vector Data Données vecteur & Image Satellite colorée     | 156kb | 182kb | 573kb |
+    +----------------------------------------------------------+-------+-------+-------+
+    |Vector Data Données vecteur & Image Satellite monochrome  | 142kb | 134kb | 492kb |
+    +----------------------------------------------------------+-------+-------+-------+
+
+(résultats basés sur une carte de 630x396 avec plusieurs couleurs, symboles, étiquettes/annotations, etc.)
+
+Bien que le format GIF montre des performances quantitative ainsi que qualitative sur 
+le format PNG lors de la génération d'une carte qui contient des images colorées de 
+capteur distant, le format PNG est clairement le vainqueur quantitatif en terme de 
+taille de fichiers générés pour les cartes avec ou sans images additionnelle monochrome 
+et doit donc être le format d'image préféré. Si l'application cartographique peut 
+aussi afficher des images satellites ou aérienne en pleine couleur, le format de fichier 
+en sortie peut être changé dynamiquement soit pour le format GIF ou le format PNG24 
+pour atteindre la qualité d'image la plus importante possible.
+
+Pourquoi la bibliothèque PIL (Python Imaging Library) n'ouvre pas mes PNG ?
+-------------------------------------------------------------------------------
+
+`PIL <http://www.pythonware.com/products/pil/>`__ ne gère pas les PNG entrelacés 
+pour l'instant (aucune planification de quand cela le sera n'a été définie). Pour 
+lire des PNG dans PIL, ceux-ci ne doivent pas être entrelacé. Modifier l'objet 
+OUTPUTFORMAT avec un paramètre FORMATOPTION comme ceci :
+
+.. code-block:: mapfile
+
+      OUTPUTFORMAT
+        NAME png
+        DRIVER "GD/PNG"
+        MIMETYPE "image/png"
+        IMAGEMODE RGB
+        EXTENSION "png"
+        FORMATOPTION "INTERLACE=OFF
+      END
+
+Pourquoi mes symboles paraissent fade dans les rendues en JPEG ?
+-------------------------------------------------------------------------------
+Quand je fais un rendu de mes symboles en 8 bit (PNG, GIF) ils sont bien rendus, 
+ mais pour un rendu en jpeg en 24 bits ils paraissent vraiment moches.
+
+Dans le but d'afficher des classes de symboles proprement dans un rendu en 24 bit, 
+tels que les symboles des polices true type, il est nécessaire de forcer le rendu 
+en RGBA. Cela peut être réaliser en rajoutant la ligne "TRANSPARENCY ALPHA" dans la 
+définition de la couche. N'utiliser pas cela d'une manière automatique car il y a 
+une perte de performance.
+
+Ce problème affecte également le rendu en PNG24 ou n'importe quel format RVB. Les 
+types de rendu RVBA et 8 bit (PC256) sont déjà correct.
+
+Comment je rajoute un copyright dans le coin de ma carte ?
+-------------------------------------------------------------------------------
+
+Vous pouvez utiliser un objet géométrique avec l'objet :ref:`FEATURE`, pour créer un 
+poiint sur votre carte. Utilisez le paramètre TEXT de l'objet FEATURE pour le texte 
+du copyright, et un objet :ref:`LABEL` pour le styler.
+
+Exemple de couche
+...............................................................................
+
+.. code-block:: mapfile
+
+    LAYER
+      NAME "copyright"
+      STATUS ON
+      TYPE annotation
+      TRANSFORM ll #définie l'origine de l'image à 'en bas à gauche'
+      FEATURE
+        POINTS
+          60 -10 #définie le décalage en peixels à partir du point en bas à gauche
+        END
+        TEXT "© xyz company 2006" #Ceci est votre texte à afficher
+      END   
+      CLASS
+        LABEL #définie la police, la couleur du texte
+          FONT "sans"
+          TYPE TRUETYPE
+          SIZE 8
+          BUFFER 1
+          COLOR 0 0 0
+          BACKGROUNDCOLOR 255 255 255
+          FORCE TRUE
+        END
+      END 
+      UNITS PIXELS #définit les unités pour l'objet géométrique
+    END
+    
+Résultat
+...............................................................................
+
+.. image:: ./images/copyright-image.png
+
+Comment puis je réaliser un polygone qui a à la fois un contour avec une taille et un remplissage ?
+-----------------------------------------------------------------------------------------------------
+
+À chaque fois que je met une couleur (de remplissage) et une couleur de 
+contour avec une taille sur un polygone dans un objet STYLE, la taille du 
+contour n'est pas respecté.
+
+Pour des raisons historiques, la largeur a deux significations lors du 
+remplissage des polygones et les largeurs des traits pour le contour. Si 
+un polygone est rempli, alors la largeur définie la taille du symbole 
+*à l'intérieur* du polygone remplis. Dans ce cas, la largeur du contour 
+est ignorée et il est toujours définie à 1. Pour réaliser à la fois un 
+effet de remplissage et de largeur de contour, vous devez utiliser deux 
+styles dans votre classe.
+
+.. code-block:: mapfile
+
+    STYLE # remplissage solide
+      COLOR 255 0 0
+    END
+    STYLE # contour fin (vous pouvez également utiliser un symbol "cercle" avec une taille)
+      OUTLINECOLOR 0 0 0
+      WIDTH 3
+      ANTIALIAS TRUE
+    END
+
+Comment je peux créer des objets linéaires antialisés ?
+-------------------------------------------------------------------------------
+La manière la plus simple de produire des lignes antialisées est de :
+
+- utliser un type d'image de 24 bit (IMAGEMODE RGB (ou RGBA))
+- définir la couche utilisant les lignes antialisées avec TRANSPARENCY ALPHA
+- définir ANTIALIAS TRUE dans l'élément STYLE de la classe avec des lignes antialisées
+
+L'exemple de mapfile suivant active les frontières antialisées :
+
+.. code-block:: mapfile
+
+  ...
+  IMAGETYPE "png24"
+  ...
+  OUTPUTFORMAT
+    NAME "png24"
+    DRIVER "GD/PNG"
+    MIMETYPE "image/png"
+    IMAGEMODE RGB
+    EXTENSION "png"
+  END
+  ...
+  LAYER
+    NAME "counties"
+    TYPE line
+    STATUS default
+    DATA "bdry_counln2"
+    TRANSPARENCY alpha
+    SYMBOLSCALE 5000000
+    CLASS
+      STYLE
+         WIDTH 3
+         COLOR 1 1 1
+         ANTIALIAS true
+      END
+    END
+  END
+  ...
+ 
+.. note::
+    Le shapefile bdry_counln2 référencé dans la couche counties est un shapefile 
+    linéraire. Un shapefile polygonal peut être substitué avec presque le même
+    résultat, mais en raison de la nature des shapefiles chaque limite serait 
+    affiché à deux reprises et la ligne en sortie qui en résulterait apparaitrerait 
+    probablement légèrement plus épaisse. Alternativement, on peut utiliser un 
+    shapefile polygone, définissez TYPE à POLYGON, et utiliser OUTLINECOLOR 
+    à la place de COLOR dans l'élément STYLE.
+ 
+.. note::
+    Vous pouvez utiliser la combinaison de STYLE->WIDTH et SYMBOLSCALE pour 
+    modifier la largeur des lignes dans les images rendues.
+
+.. seealso::
+    Les symboles :ref:`Cartoline <sym_construction>` peuvent être utilisés 
+   pour réaliser de plus jolie effets.
+ 
+Quelles spécifications OGC sont géré par MapServer ?
+-------------------------------------------------------------------------------
+
+* Web Map Service (OGC:WMS) 1.0.0, 1.0.7, 1.1.0 et 1.1.1
+* Web Feature Service (OGC:WFS) 1.0.0, 1.1.0
+* Web Coverage Service (OGC:WCS) 1.0.0, 1.1.0
+* Geography Markup Language (OGC:GML) 2.1.2, 3.1.0 Level 0 Profile
+* Web Map Context Documents (OGC:WMC) 1.0.0, 1.1.0
+* Styled Layer Descriptor (OGC:SLD) 1.0.0
+* Filter Encoding Specification (OGC:FES) 1.0.0
+* Sensor Observation Service (OGC:SOS) 1.0.0
+* Observations and Measurements (OGC:OM) 1.0.0
+* SWE Common (OGC:SWE) 1.0.1
+* OWS Common (OGC:OWS) 1.0.0, 1.1.0
+
+Pourquoi ma couche WMS demandée ne s'aligne pas correctement ?
+-------------------------------------------------------------------------------
+
+Faire une requête vers certain connecteur ArcIMS entrainent une carte avec des données
+mal alignées (le rapport des pixels semble incorrecte).
+
+Certains sites ArcIMS ne sont pas configuré par défaut pour étirer l'image renvoyée pour 
+correspondre à l'enveloppe demandée. Cela entraine une carte avec des couches de données
+qui se superposent correctement au centre de la couche, mais pas vers les bords. Cela 
+peut être corrigé en ajoutant "*reaspect=false*" à la requête (dans la chaîne de connexion).
+
+Par exemple si votre mapfile est dans une projection différente de EPSG:4326, la couche suivante 
+ne s'affichera pas correctement :
+
+.. code-block:: mapfile
+
+    LAYER
+        NAME "hillshade"
+        TYPE RASTER
+        STATUS OFF
+        TRANSPARENCY 70
+        CONNECTIONTYPE WMS
+        CONNECTION "http://gisdata.usgs.net:80/servlet19/com.esri.wms.Esrimap/USGS_WMS_NED?"
+        PROJECTION
+        	"init=epsg:4326"
+        END
+        METADATA
+        	"wms_srs" "EPSG:4326"
+        	"wms_title" "US_NED_Shaded_Relief"
+        	"wms_name" "US_NED_Shaded_Relief"
+        	"wms_server_version" "1.1.1"
+        	"wms_format" "image/png"
+        END
+    END
+
+En ajoutant "reaspect=false" à la chaîne de connexion cela résoud le problème :
+
+.. code-block:: mapfile
+
+    LAYER
+        NAME "hillshade"
+        TYPE RASTER
+        STATUS OFF
+        TRANSPARENCY 70
+        CONNECTIONTYPE WMS
+        CONNECTION "http://gisdata.usgs.net:80/servlet19/com.esri.wms.Esrimap/USGS_WMS_NED?reaspect=false"
+        PROJECTION
+        	"init=epsg:4326"
+        END
+        METADATA
+        	"wms_srs" "EPSG:4326"
+        	"wms_title" "US_NED_Shaded_Relief"
+        	"wms_name" "US_NED_Shaded_Relief"
+        	"wms_server_version" "1.1.1"
+        	"wms_format" "image/png"
+        END
+    END
+
+Quand je fais une requête GetCapabilities, pourquoi mon navigateur veut télécharger mapserv.exe/mapserv ?
+----------------------------------------------------------------------------------------------------------
+
+Une question de débutant ici .... Je suis débutant sur MapServer et Apache. J'ai MS4W qui fonctionne et qui
+est lancé avec la démo Itasca. Maintenant je veux l'activer en tant que serveur WMS. ``mapserver -v`` en ligne 
+de commande m'informe qu'il gère le service WMS. Quand je point mon navigateur vers celui-ci, il me demande 
+de télécharger mapserv.exe !
+
+Qu'est ce que je fais mal ?
+
+Voici l'util que j'utilise pour tester ma requête GetCapabilities :
+http://localhost/cgi-bin/mapserv.exe?map=../htdocs/itasca/demo.map&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetCapabilities
+
+Les spécifications OGC:WMS 1.1.0 et 1.1.1 (qui sont tous les deux gérés par 
+MapServer) définissent que pour les réponses GetCapabilities, le serveur OGC:WMS renvoie
+un type MIME spécifique (i.e. application/vnd.ogc.xml (voir la sous-clause
+6.5.3 de `OGC:WMS 1.1.1
+<http://portal.opengeospatial.org/files/?artifact_id=1081&version=1&format=pdf>`__.
+
+Un type MIME est renvoyé du serveur web au client (dans votre casz le navigateur)
+avec lequel le client peut décider comment le traiter.
+
+Exemple 1 : en utilisant un navigateur web, si un serveur web renvoie un en-tête HTTP
+"Content-type:image/png", alors le navigateur web saura que c'est une image PNG et l'affichera correctement.
+
+Exemple 2 : en utilisant un navigateur web, si un serveur web renvoie un en-tête HTTP
+"Content-type:text/html", alors le navigateur web saura que c'est une page HTML
+et l'affichera (i.e. tables, divs, etc.)
+
+Tout simplement ce qui arrive est que le OGC:WMS renvoie, dans les en-têtes des réponses
+HTTP, un type MIME que votre navigateur ne comprend pas, ce qui habituellement entraîne 
+l'ouverture d'une boîte de dialogue pour savoir si vous voulez ouvrir ou sauver le contenu
+(i.e. Content-type:application/vnd.ogc.wms_xml).
+
+Vous devez configurer votre navigateur web pour prendre en charge le type MIME 
+application/vnd.ogc.wms_xml d'une certaine façon (i.e. ouvrir dans Notepad, etc.).
+
+Pourquoi mes requêtes GetMap WMS renvoient des exceptions en utilisant MapServer 5.0 ?
+-----------------------------------------------------------------------------------------
+
+Avant de mettre à jour vers MapServer 5.0, j'étais capable de faire de rapides tests GetMap sos la forme :
+http://wms.example.com/wms?service=WMS&version=1.1.1&request=GetMap&layers=foo
+
+Maintenant quand je tente le même test, le WMS de MapServer renvoie un document XML disant qu'il manque 
+des paramètres nécessaires. Que se passe t'il ?
+
+Il y a eut un changement majeure pour la gestion du serveur WMS dans MapServer 5.0. Les requêtes GetMap du serveur 
+WMS de MapServer nécessitent maintenant les paramètres supplémentaires suivant :
+
+* srs
+* bbox
+* width
+* height
+* format
+* styles
+
+.. note:: 
+    Ces paramètres étaient toujours nécessaire pour toutes les versions de la spécification WMS
+     mais MapServer ne les demandaient pas avant dans les requêtes clientes (même si la plupart 
+    des clients WMS OGC les délivreront de toutes façon pour être compatible avec les spec WMS).
+
+La requête ci-dessous constitue maintenant une requête GetMap valide :
+
+::
+
+    http://wms.example.com/wms?service=WMS&version=1.1.1&request=GetMap&layers=foo&srs=EPSG:4326&bbox=-180,-90,180,90&format=image/png&width=400&height=300&styles=default
+
+Ce qui est compatible avec la spécification WMS.
+
+Pour plus d'information sur ces paramètres vous pouvez regarder :ref:`wms_server` et les `spécifications 
+OGC WMS 1.1.1  <http://portal.opengeospatial.org/files/?artifact_id=1081&version=1&format=pdf>`__
+
+Pour plus d'information détaillées, voir le `ticket 1088
+<http://trac.osgeo.org/mapserver/ticket/1088>`__
+
+.. warning::
+    STYLES, bien que paramètre WMS obligatoire, est maintenant optionnel dans 
+    MapServer. Pour plus d'informations voir le `ticket 2427
+    <http://trac.osgeo.org/mapserver/ticket/2427#comment:2>`__
+
+Où puis je trouver mon code :term:`EPSG` ?
+-------------------------------------------------------------------------------
+
+Il y a un fichier texte "epsg" dans votre installation PROJ4 (par exemple dans
+"/usr/local/share/proj/epsg") qui contient les informations EPSG utilisées par 
+PROJ4. Sous Windows, il est souvent localisé dans C:\\proj\\nad ou il peut être
+vie une variable d'environnement appelée PROJ_LIB.
+
+http://spatialreference.org vous permet de faire une recherche des codes EPSG.
+
+Vous pouvez aussi jeter un oeil ici :
+http://ocean.csl.co.uk
+
+Plus d'information sur le code EPSG :
+http://www.epsg.org
+
+Plus d'information sur PROJ4 :
+http://trac.osgeo.org/proj
+
+How can I reproject my data using ogr2ogr?
+-------------------------------------------------------------------------------
+
+With ogr2ogr of course! ogr2ogr is a powerful utility that will transform the
+projections of your shapefiles when passed the appropriate parameters. In my
+case, I was using MapServer to serve data in RI State Plane Feet. In order to
+do so, the data had to first be converted to meters. Here is the command I
+used:
+
+::
+
+    ogr2ogr -t_srs EPSG:32130 output.shp input.shp
+
+Since my data already had a projection defined, I did not need to explicitly
+state a source projection. This command uses the EPSG definition for NAD83
+Rhode Island (32130) and performs the feet to meters conversion.
+
+Now say my data wasn't already projected? Here's how we deal with that:
+
+::
+
+    ogr2ogr -s_srs "+proj=tmerc +lat_0=41.08333333333334 +lon_0=-71.5 +k=0.999994 +x_0=100000 +y_0=0 +ellps=GRS80 +datum=NAD83 +to_meter=0.3408 +no_defs" -t_srs EPSG:32130 output.shp input.shp
+
+Let's examine what is going on here:
+
+The -s_srs parameter explicitly defines a projection for the data. The
+parameters used here were taken out of the EPSG definition (in this case,
+32130) in the epsg file(see the `projection FAQ <epsg_codes>`__ for more
+details on locating EPSG definitions). The entry for RI in the epsg file is as
+follows:
+
+::
+
+    # NAD83 / Rhode Island
+    <32130> +proj=tmerc +lat_0=41.08333333333334 +lon_0=-71.5 +k=0.999994 +x_0=100000 +y_0=0 +ellps=GRS80 +datum=NAD83 +units=m +no_defs  no_defs <>
+
+You can see how the definition in the initial command is formulated. Notice
+that the "+units=m" parameter has been changed to “+to_meter=0.3408”. This is
+important for the conversion. Where did the value of 0.3408 come from you ask?
+From the EPSG file! It has many goodies buried in it so by simply running
+'grep "to_meter" epsg’ you can refresh your memory if you need to.
+
+The next parameter in the command is "-t_srs EPSG:32130". This command tells
+ogr2ogr to transform the data to the EPSG code of 32130. After this is
+declared, all you need to do is declare a file name for your new shape file
+and to set which file is being used as the input (note: make sure you don’t
+confuse the order of these two).
+
+Hit enter, bombs away, and enjoy your new data in meters!
+
+Que signifie le logo de MapServer ?
+------------------------------------------------------------------------------
+
+Le logo de MapServer illustre la confluence des fleuves `Minnesota`_ et `Mississippi`_,
+ proche de la maison de `St. Paul Campus`_ de l'`Université du Minnesota`_, qui était
+le `lieu de naissance de MapServer`_.
+
+.. _`Minnesota`: http://en.wikipedia.org/wiki/Minnesota_River
+.. _`Mississippi`: http://en.wikipedia.org/wiki/Mississippi_River
+.. _`St. Paul Campus`: http://en.wikipedia.org/wiki/University_of_Minnesota#St._Paul_campus
+.. _`Université du Minnesota`: http://en.wikipedia.org/wiki/University_of_Minnesota
+.. _`lieu de naissance de MapServer`: http://lists.osgeo.org/pipermail/mapserver-dev/2009-December/009435.html 

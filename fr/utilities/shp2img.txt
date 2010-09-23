@@ -1,0 +1,114 @@
+.. _shp2img:
+
+*****************************************************************************
+ shp2img
+*****************************************************************************
+
+
+Objectif
+-----------------------------------------------------------------------------
+
+Créé une carte sous forme de fichier image à partir d'un mapfile. Le format de
+sortie est soit le format PNG ou GIF en fonction de la version de la
+bibliothèque GD utilisée. C'est une commande utile pour tester votre mapfile.
+Vous pouvez simplement fournir le chemin vers votr emapfile et le nom d'une
+image en sortie et une image devrait ^etre renvoyée. Si une image ne peut pas
+^etre créé une erreur sera affichée après la ligne de commande qui doit se
+réfèrer à un numéro de ligne du mapfile.
+   
+Syntaxe
+-----------------------------------------------------------------------------
+::
+
+    shp2img -m mapfile [-o image] [-e minx miny maxx maxy] [-s sizex sizey]
+           [-l "layer1 [layers2...]"] [-i format]
+           [-all_debug n] [-map_debug n] [-layer_debug n] [-p n] [-c n] [-d
+          layername datavalue]
+    -m mapfile : fichier Map à utiliser - obligatoire
+    -i format : écrase la valeur du paramètre IMAGETYPE pour définir le format de sortie
+    -o image : nom du fichier en sortie (stdout si aucun n'est définie)
+    -e minx miny maxx maxy : extents à afficher
+    -s sizex sizey : taille de l'image en sortie
+    -l layers : couches à activer - assurez vous qu'elles soient entouré de
+      guillement et espacé par des espaces si plus d'une est listée.
+    -all_debug n : définie le niveau de débugue pour la carte et toutes les
+      couches
+    -map_debug n : définie le niveau de débugue de la carte
+    -layer_debug layer_name n : définie le niveau de débugue des couches 
+    -c n : dessine la carte un nombre de fois égale à n
+    -p n : pause pendant n secondes après avoir lu la carte
+    -d layername datavalue : change la valeur du paramètre DATA pour une couche
+
+
+Exemple #1
+.............................................................................
+
+::
+    
+    shp2img -m vector_blank.map -o test.png
+
+Résultat :
+    Un fichier nommé :file:'test.png' est créé, que vous pouvez afficher dans votre navigateur.  
+
+Exemple #2
+.............................................................................
+
+::
+    
+    shp2img -m gmap75.map -o test2.png -map_debug 3
+
+Résultat :
+    Un fichier nommé :file:'test2.png' est créé, et les vitesses de dessin des couches sont renvoyées, 
+    comme ceci :
+
+::
+
+    msDrawRasterLayerLow(bathymetry): entering
+    msDrawMap(): Layer 0 (bathymetry), 0.601s
+    msDrawMap(): Layer 3 (drain_fn), 0.200s
+    msDrawMap(): Layer 4 (drainage), 0.300s
+    msDrawMap(): Layer 5 (prov_bound), 0.191s
+    msDrawMap(): Layer 6 (fedlimit), 0.030s
+    msDrawMap(): Layer 9 (popplace), 0.080s
+    msDrawMap(): Drawing Label Cache, 0.300s
+    msDrawMap() total time: 1.702s
+    msSaveImage() total time: 0.040s
+
+Exemple #3
+.............................................................................
+
+::
+    
+    shp2img -m gmap75.map -o test3.png -all_debug 3
+
+Résultat :
+    Un fichier nommé :file:'test3.png' est créé, les vitesses de dessin des couches sont renvoyées, 
+    et quelques avertissements sur l'absence des fichiers qix d'index, comme ceci :
+
+::
+
+    msLoadMap(): 0.671s
+    msDrawRasterLayerLow(bathymetry): entering.
+    msDrawGDAL(): src=72,417,3077,2308, dst=0,0,400,300
+    msDrawGDAL(): red,green,blue,alpha bands = 1,0,0,0
+    msDrawMap(): Layer 0 (bathymetry), 0.090s
+    msSearchDiskTree(): Search returned no results. Unable to open spatial index
+    for D:\ms4w\apps\gmap\htdocs/.\../data/drain_fn.qix. In most cases you can
+    safely ignore this message, otherwise check file names and permissions.
+    msDrawMap(): Layer 3 (drain_fn), 0.010s
+    msDrawMap(): Layer 4 (drainage), 0.050s
+    msSearchDiskTree(): Search returned no results. Unable to open spatial index
+    for D:\ms4w\apps\gmap\htdocs/.\../data/province.qix. In most cases you can
+    safely ignore this message, otherwise check file names and permissions.
+    msDrawMap(): Layer 5 (prov_bound), 0.030s
+    msSearchDiskTree(): Search returned no results. Unable to open spatial index
+    for D:\ms4w\apps\gmap\htdocs/.\../data/fedlimit.qix. In most cases you can
+    safely ignore this message, otherwise check file names and permissions.
+    msDrawMap(): Layer 6 (fedlimit), 0.010s
+    msDrawMap(): Layer 9 (popplace), 0.010s
+    msDrawMap(): Drawing Label Cache, 0.201s
+    msDrawMap() total time: 0.401s
+    msSaveImage() total time: 0.010s
+    shp2img total time: 1.082s
+
+$ revision: 9764 $

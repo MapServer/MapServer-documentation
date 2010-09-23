@@ -1,0 +1,128 @@
+.. _runsub:
+
+*****************************************************************************
+ Substitution à la volée
+*****************************************************************************
+
+:Author:        Steve Lime
+:Contact:       steve.lime at DNR.STATE.MN.US
+:Revision: $Revision: 9280 $
+:Date: $Date: 2009-08-28 13:53:52 +0200 (ven., 28 août 2009) $
+:Last Updated: 2005/12/12
+
+.. contents:: Sommaire
+    :depth: 2
+    :backlinks: top
+
+
+Introduction
+-----------------------------------------------------------------------------
+
+La substitution à la volée pour le MapServer CGI a été mise en place depuis la 
+version 4.0 et son utilisation a continué à se développer. En bref, il vous permet 
+de modifier des parties d'un mapfile basée sur les données transmises via une 
+requête CGI. Cette fonctionnalité est uniquement disponible via l'application 
+standard CGI. Dans MapScript il est facile de faire cela puisque le développeur 
+a le contrôle complet sur la façon dont est traitée l'entrée.
+
+Exemple basic
+-----------------------------------------------------------------------------
+
+Disons que vous souhaitez que l'utilisateur définsse dynamiquement une partie 
+d'une expression pour qu'ils puissent mettre en évidence une certaine classe 
+d'occupation des sols, et vous avez un formulaire (appelé ctype) qui leur permettent 
+de choisir entre : forêts, eau, zones humides et développé . Vous pouvez ensuite 
+
+::
+
+    LAYER 
+        NAME 'covertypes' 
+        ... 
+        CLASSITEM 'type' 
+        CLASS # présentation en évidence
+            EXPRESSION '%ctype%' 
+            ... 
+        END 
+        CLASS # présentation par défaut
+            ... 
+        END
+    END
+
+Quand une requête est traitée la valeur pour ctype est remplacé par la
+chaîne %Ctype% et le mapfile est traitée comme d'habitude. Si aucun 
+ctype n'est passé dans EXPRESSION il ne sera jamais vraie alors il ne 
+posera pas de problème sauf par une petite baisse de performance. 
+Souvent, vous devrez définir une classe par défaut poru dessiner les 
+géométries qui ne correspondent pas, mais ce n'est pas obligatoire.
+
+Paramètres gérés
+-----------------------------------------------------------------------------
+Tous les paramètres du mapfile ne sont pas gérés pour la substitution à la volée 
+et une attention a été portée pour essayer de soutenir ceux qui font le plus de 
+sens. N'oubliez pas, vous pouvez aussi configurer à la volée en utilisant la syntaxe 
+du type map_object_property détaillée ailleurs (todo : ajouter un lien). Voici une 
+liste des propriétés dont la substitution à la volée est permise (todo : ajouter la version de MapServer) :
+
+* LAYER: DATA (doit être validé par DATAPATTERN)
+* LAYER: TILEINDEX 
+* LAYER: CONNECTION
+* LAYER: FILTER
+* CLASS EXPRESSION
+
+FILTER
+..............................................................................
+
+Vous pouvez utiliser des substitutions à la volée pour modifier des valeurs 
+dans un FILTER. Par exemple, votre objet FILTER peut être écrit comme ceci::
+
+    FILTER ("multimedia='%multimedia%' and seats >= %nseats% and Sound= '%sound%')
+
+Puis (en supposant que vous utilisez l'interface CGI), vous pourrez passer des 
+variables nommées multimedia, nseats et le sound avec des valeurs définies par 
+l'utilisateur dans un formulaire HTML.
+
+Vous devez également définir des expressions de validation sur ces variables pour prévenir 
+contre la soumission involontaire de requête SQL à PostGIS. Dans la couche
+métadonnées de la couche vous effectuerez les opérations suivantes :
+
+.. code-block:: mapfile
+
+    METADATA
+        'multimedia_validation_pattern' '^yes|no$'
+        'sound_validation_pattern' '^yes|no$'
+        'nseats_validation_pattern' '^[0-9]{1,2}$'
+        '... more metadata ...'
+    END
+
+Les chaînes de validation sont des expressions régulières qui sont appliquées sur les
+valeurs de la variable appropriée avant d'être ajoutée au filtre. Les deux premiers 
+limitent la valeur de multimedia et de sounds à oui ou non. La troisième limite la 
+valeur pour nseats à un nombre entier à 2 chiffres.
+
+Valeurs par défaut si non définie dans l'URL
+--------------------------------------------------------------------------------
+
+Le mécanisme de substitution à la volée créera toujours des mapfiles incorrect 
+au niveau de la syntaxe et presque toujours au niveau sématique si le paramètre 
+de substitution n'a pas été fournie dans l'url.
+
+Depuis la version 5.6, vous pouvez fournir une valeur par défaut pour n'importe 
+quel paramètre de substitution qui seront appliqué si le paramètre n'était pas 
+trouvé dans l'url. Vous pouvez réaliser cela en fournissant une entré spéciale 
+dans les métadonnées de la couche :
+
+.. code-block:: mapfile
+
+    METADATA
+        'default_sound' 'yes'
+        'default_nseats' '5'
+        'default_multimedia' 'yes'
+    END
+
+Dans cet exemple, le mapfile sera créé comme si l'url contenait 
+"&sound=yes&nseats=5&multimedia=yes"
+
+Ce comportement est également accessible par la commande shp2ig, vous permettant 
+de tester la substitution à la volé de mapfile sans utiliser de serveur web.
+
+$ revision: 9764 $
