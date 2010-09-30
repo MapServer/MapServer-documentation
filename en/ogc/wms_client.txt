@@ -42,8 +42,8 @@ Compilation / Installation
 ==========================
 
 The WMS connection type is enabled by the *--with-wmsclient* configure switch. 
-It requires PROJ4, libcurl version 7.10.1 or more recent, and optionally GDAL 
-(see below).  Windows users who do not want to compile MapServer should use 
+It requires PROJ4, GDAL and libcurl version 7.10.1 or more recent.   Windows 
+users who do not want to compile MapServer should use 
 `MS4W`_ (which comes ready for WMS/WFS client and server use), or check for the
 availability of other :ref:`Windows binaries <windows>` with WMS support.
 
@@ -52,15 +52,6 @@ availability of other :ref:`Windows binaries <windows>` with WMS support.
   system. You can find out your libcurl version using *curl-config --version*. 
   (if your system came with an older version of libcurl preinstalled then you MUST 
   uninstall it prior to installing the new version) 
-
-You might want to also include GDAL support if you want your application to be 
-able to reproject map slides received from remote servers. This is because raster 
-resampling works only together with the GDAL library in MapServer. If GDAL is not 
-included in your MapServer build then your application can only serve maps in the 
-subset of the projections supported by all the remote servers (this should be 
-sufficient for most applications). If you compile with GDAL then make sure that 
-your GDAL includes GIF and/or PNG support, depending on which image format you 
-request from remote servers.
 
 Once the required libraries are installed, then configure MapServer using the 
 *--with-wmsclient* switch (plus all the other switches you used to use) and recompile.
@@ -142,10 +133,11 @@ MapFile Configuration
 Storing Temporary Files
 -----------------------
 
-You have to set the IMAGEPATH value in the WEB object of your mapfile to point to a valid and 
+Before version 6.0, and in version 6.0 when wms_cache_to_disk metadata is turned on, 
+you have to set the IMAGEPATH value in the WEB object of your mapfile to point to a valid and 
 writable directory. MapServer will use this directory to store temporary files downloaded from 
 the remote servers. The temporary files are automatically deleted by MapServer so you won't 
-notice them... but a valid IMAGEPATH is still required.
+notice them.
 
 Example 3. Setting IMAGEPATH Parameter in Mapfile
 
@@ -247,7 +239,8 @@ Optional Layer Parameters and Metadata
   This will allow MapServer to request the layer only at scales where it makes sense
 
 - **PROJECTION object** 
-  - it is optional at this point. MapServer will create one internally if needed.
+  - it is optional at this point. MapServer will create one internally if needed.  Including one may 
+    allow MapServer to avoid looking up a definition in the PROJ.4 init files.
 
 - **"wms_auth_username" metadata**
   - msEncrypt-style authorization string.  Empty strings are also accepted.
@@ -423,6 +416,25 @@ Optional Layer Parameters and Metadata
 
 - **"wms_transparent" metadata**
   - specifies whether the map background is to be made transparent or not. TRANSPARENT can take on two values, "TRUE" or "FALSE".  If not specified, MapServer sets default to "TRUE"
+
+- **"wms_cache_to_disk" metadata**
+  - set this to "1" to force MapServer to write fetched images to disk.  Writing to disk 
+  is necessary to take advantage of MapServer's caching logic to avoid refetching WMS
+  requests made previously.  This feature is new to MapServer 6.0 - previously results were always written
+  to disk.
+
+- **"wms_nonsquare_ok" metadata**
+  - set this to "0" to indicate that the remote WMS only supports requests for square pixels.  In this
+  case MapServer will be careful to only make square pixel requests even if it means oversampling in one
+  dimension compared to the resolution of image data required.  This feature is new to MapServer 6.0.
+
+- **"wms_extent" metadata**
+  - If there is exactly one SRS supported by this layer (as listed in the wms_srs metadata), and if 
+  the wms_extent metadata item (or an extent specified via the EXTENT keyword) is set then MapServer will
+  take care to only making requests within this area.  This can short circuit requests completely outside
+  the layer, reduce processing for layers that only partially overlap the target map area and avoid poor
+  behaviors with reprojection in some areas.  The contents of this metadata item should be of the form
+  "minx miny maxx maxy".  This feature is new to MapServer 6.0.
 
 .. note::
 
