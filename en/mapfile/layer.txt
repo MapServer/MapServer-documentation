@@ -473,8 +473,37 @@ STATUS [on|off|default]
 
 
 STYLEITEM [attribute]
-    Item to use for feature specific styling. This is *very* experimental and 
-    OGR only at the moment.
+    Item to use for feature specific styling. The style information may be 
+    represented by a separate attribute (style string) attached to the feature.
+    MapServer supports the following style string representations:
+    
+    - **MapServer STYLE definition** - The style string can be represented as a 
+      MapServer :ref:`STYLE` block according to the following example:
+    
+      .. code-block:: mapfile
+
+          STYLE BACKGROUNDCOLOR 128 0 0 COLOR 0 0 208 END
+
+    - **MapServer CLASS definition** - By specifying the entire :ref:`CLASS` 
+      instead of a single style allows to use further options (like setting 
+      expressions, label attributes, multiple styles) on a per feature basis.
+
+    - **OGR Style String** - MapServer support rendering the OGR style string 
+      format according to the `OGR - Feature Style Specification`_ documentation.
+      Currently only a few data sources support storing the styles along with the 
+      features (like MapInfo, AutoCAD DXF, Microstation DGN), however those styles 
+      can easily be transferred to many other data sources as a separate attribute 
+      by using the `ogr2ogr`_ command line tool as follows:
+
+      .. code-block:: mapfile
+
+          ogr2ogr -sql "select *, OGR_STYLE from srclayer" "dstlayer" "srclayer"      
+      
+.. _`OGR - Feature Style Specification`: http://www.gdal.org/ogr/ogr_feature_style.html
+.. _`ogr2ogr`: http://www.gdal.org/ogr2ogr.html
+             
+    We can specify the value: "AUTO" in order to have the driver to retrieve the 
+    style information. Currently only the OGR driver supports the "AUTO" setting,  
 
 .. index::
     pair: SYMBOLSCALEDENOM; LAYER
