@@ -1,0 +1,131 @@
+.. _mssql:
+
+***************************************************
+MSSQL
+***************************************************
+
+:Author: Tamas Szekeres
+:Contact: szekerest at gmail.com
+:Last Updated: 2010-10-01
+
+.. contents::
+    :depth: 3
+    :backlinks: top
+
+
+Introduction
+============
+
+Microsoft SQL Server 2008+ supports storing spatial data by using the built in geometry/geography data 
+types. MapServer supports a driver to access these tables containing spatial columns, which is 
+compiled as a plugin (msplugin_mssql2008.dll).
+
+Creating spatial data tables in MSSQL 2008
+==========================================
+
+There are several ways to create spatial data tables in MSSQL 2008. Having an existing data you can 
+easily upload that to an MSSQL table by using the `ogr2ogr <http://www.gdal.org/ogr2ogr>`__ commandline 
+tool and the OGR's `MSSQL Spatial driver <http://www.gdal.org/ogr/drv_mssqlspatial.html>`__ 
+
+Connecting to Spatial Data in MSSQL 2008
+========================================
+
+In order to connect to the MSSQL 2008 spatial database you should set up a valid connection string to
+the database like the following example:
+
+::
+
+  Server=.\MSSQLSERVER2008;Database=Maps;Integrated Security=true
+
+Create MapServer Layer
+----------------------
+
+Once the connection can be established to the server the layer can be configured to access MSSQL2008 
+as follows:
+
+::
+
+  LAYER
+    NAME "rivers_mssql_spatial"
+    TYPE POLYGON
+    STATUS DEFAULT
+    CONNECTIONTYPE PLUGIN
+    PLUGIN "msplugin_mssql2008.dll"
+    CONNECTION "Server=.\MSSQLSERVER2008;Database=Maps;Integrated Security=true"
+    DATA "ogr_geometry from rivers USING UNIQUE ogr_fid USING SRID=4326"
+    ...
+  END 
+
+The DATA parameter is used to perform the SQL select statement to access your table in MSSQL. 
+The geometry column is required in the select statement; in the above example the ogr_geometry 
+column is the geometry column in the rivers table. The table should also have an unique column 
+(ogr_fid) which is provided for random access to the features in the feature query operations.
+
+The DATA section should also contain the spatial reference id (SRID) of the features in the data table
+The SRID is used when specifying the search shapes during the intersect operations which should match 
+with the SRID of the features otherwise no features are returned in a particular query.
+if you omit specifying the SRID value in the DATA section the diver will use SRID=0 when defining 
+the search shapes.
+
+The expected location on the plugin dll
+---------------------------------------
+
+On Windows platforms the DLLs needed by the program are searched for in the following order:
+
+1) The directory from which the application loaded.
+   
+2) The current directory.
+
+3) The system directory. Use the `GetSystemDirectory <http://msdn.microsoft.com/en-us/library/ms724373.aspx>`__ 
+   function to get the path of this directory.
+   
+4) The 16-bit system directory.
+
+5) The Windows directory. Use the `GetWindowsDirectory <http://msdn.microsoft.com/en-us/library/ms724454.aspx>`__ 
+   function to get the path of this directory.
+   
+6) The directories that are listed in the PATH environment variable.
+ 
+
+Using spatial indexes
+---------------------
+
+In order to speed up the access to the features a spatial index should be created to the 
+geometry column which could easily be done with the OGR MSSQL Spatial driver like:
+
+::
+
+  ogrinfo -sql "create spatial index on rivers" "MSSQL:server=.\MSSQLSERVER2008;database=Maps;Integrated Security=true"
+  
+In general we can safely rely on the query optimizer to select the most appropriate index in the sql 
+query operations. In some cases - however - we should force the optimizer to use the spatial index 
+by specifying the index hint in the DATA section like:
+
+::
+
+  DATA "ogr_geometry from rivers using index ogr_geometry_sidx USING UNIQUE ogr_fid USING SRID=4326"
+
+Layer Processing Options
+------------------------
+
+We can control the behaviour of the MSSQL driver by using the following PROCESSING options:
+
+    - **CLOSE_CONNECTION=DEFER** - This is where you can enable connection pooling for certain 
+      layer types. Connection pooling will allow MapServer to share the handle to an open database 
+      or layer connection throughout a single map draw process.
+      
+Obtaining binaries containing the MSSQL plugin dll
+==================================================
+
+Currently the following binary distributions contain msplugin_mssql2008.dll
+
+- `MapServer and GDAL binary and SDK packages <http://vbkto.dyndns.org/sdk/>`__
+- `MS4W distributions <http://www.maptools.org/ms4w/>`__
+      
+
+More Information
+=================
+
+* `OGR MSSQL Spatial driver page <http://www.gdal.org/ogr/drv_mssqlspatial.html>`__ (describes the OGR MSSQL support)
+* `ogr2ogr application <http://www.gdal.org/ogr2ogr>`__ (describes the ogr2ogr commandline application)
+* :ref:`vector` (MapServer Vector Data Access Guide)
