@@ -8,9 +8,7 @@
 :Contact:       jmckenna at gatewaygeomatics.com
 :Author:        Yewondwossen Assefa
 :Contact:       assefa at dmsolutions.ca
-:Revision: $Revision$
-:Date: $Date$
-:Last Updated: 2005/09/23
+:Last Updated: 2010-10-07
 
 .. contents:: Table of Contents
     :depth: 2
@@ -146,71 +144,67 @@ MapServer. Please refer to the :ref:`WFS Server HOWTO <wfs_server>` for specific
 There is nothing special that should be added to a WFS server for Filter 
 Encoding, but you should note that, when requesting the capabilities of 
 your WFS server, the document returned should contain the supported filters. 
-Here is part of a Capabilities document as well as the Post support:
+Here is part of a Capabilities document (note the "Filter_Capabilities" section):
 
 .. code-block:: guess
     :linenos:
 
-    <?xml version='1.0' encoding="ISO-8859-1" ?>
-    <WFS_Capabilities 
-       version="1.0.0" 
-       updateSequence="0" 
-       xmlns="http://www.opengis.net/wfs" 
-       xmlns:ogc="http://www.opengis.net/ogc" 
-       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-       xsi:schemaLocation="http://www.opengis.net/wfs http://ogc.dmsolutions.ca/wfs/1.0.0/WFS-capabilities.xsd">
+	<?xml version="1.0" encoding="ISO-8859-1"?>
+	<WFS_Capabilities version="1.0.0" updateSequence="0" xmlns="http://www.opengis.net/wfs" xmlns:ogc="http://www.opengis.net/ogc" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.opengis.net/wfs http://schemas.opengis.net/wfs/1.0.0/WFS-capabilities.xsd">
 
-    <!-- MapServer version 4.1 OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG OUTPUT=WBMP 
-    OUTPUT=PDF OUTPUT=SWF SUPPORTS=PROJ SUPPORTS=FREETYPE SUPPORTS=WMS_SERVER 
-    SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT INPUT=POSTGIS 
-    INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE -->
+	<!-- MapServer version 5.6.5 OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG OUTPUT=WBMP OUTPUT=SWF OUTPUT=SVG SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=ICONV SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER SUPPORTS=GEOS SUPPORTS=RGBA_PNG INPUT=EPPL7 INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE -->
 
-    <Service>
-      <Name>MapServer WFS</Name>
-      <Title>GMap WMS Demo Server</Title>
-      <OnlineResource>http://localhost/cgi-bin/mapserv.exe?map=
-        c:/msapps/wfs_filter/htdocs/ns_wfsserver.map&</OnlineResource>
-    </Service>
+	<Service>
+	  <Name>MapServer WFS</Name>
+	  <Title>WMS Demo Server for MapServer</Title>
+	  <Abstract>This demonstration server showcases MapServer (www.mapserver.org) and its OGC support</Abstract>
+	  <OnlineResource>http://demo.mapserver.org/cgi-bin/wfs?</OnlineResource>
+	</Service>
 
-    <Capability>
-      <Request>
-        <GetCapabilities>
-          <DCPType>
-            <HTTP>
-              <Get onlineResource="http://localhost/cgi-bin/mapserv.exe?map=
-                c:/msapps/wfs_filter/htdocs/ns_wfsserver.map&" />
-            </HTTP>
-          </DCPType>
-          <DCPType>
-            <HTTP>
-              <Post onlineResource="http://localhost/cgi-bin/mapserv.exe?map=
-                c:/msapps/wfs_filter/htdocs/ns_wfsserver.map&" />
-            </HTTP>
-          </DCPType>
-        </GetCapabilities>
+	<Capability>
+	  <Request>
+	    <GetCapabilities>
+	      <DCPType>
+		<HTTP>
+		  <Get onlineResource="http://demo.mapserver.org/cgi-bin/wfs?"/>
+		</HTTP>
+	      </DCPType>
+	      <DCPType>
+		<HTTP>
+		  <Post onlineResource="http://demo.mapserver.org/cgi-bin/wfs?"/>
+		</HTTP>
+	      </DCPType>
+	    </GetCapabilities>
+            ...
+	  </Request>
+	</Capability>
         ...
-      </Request>
-    </Capability>
-    ...
-    <Filter_Capabilities>
-      <Spatial_Capabilities>
-        <Spatial_Operators>
-                 <Intersect/>
-                 <DWithin/>
-               <BBOX/>
-        </Spatial_Operators>
-      </Spatial_Capabilities>
-      <Scalar_Capabilities>
-        <Logical_Operators />
-        <Comparison_Operators>
-          <Simple_Comparisons />
-          <Like />
-          <Between />
-        </Comparison_Operators>
-      </Scalar_Capabilities>
-    </Filter_Capabilities>
+	<ogc:Filter_Capabilities>
+	  <ogc:Spatial_Capabilities>
+	    <ogc:Spatial_Operators>
+	      <ogc:Equals/>
+	      <ogc:Disjoint/>
+	      <ogc:Touches/>
+	      <ogc:Within/>
+	      <ogc:Overlaps/>
+	      <ogc:Crosses/>
+	      <ogc:Intersect/>
+	      <ogc:Contains/>
+	      <ogc:DWithin/>
+	      <ogc:BBOX/>
+	    </ogc:Spatial_Operators>
+	  </ogc:Spatial_Capabilities>
+	  <ogc:Scalar_Capabilities>
+	    <ogc:Logical_Operators/>
+	    <ogc:Comparison_Operators>
+	      <ogc:Simple_Comparisons/>
+	      <ogc:Like/>
+	      <ogc:Between/>
+	    </ogc:Comparison_Operators>
+	  </ogc:Scalar_Capabilities>
+	</ogc:Filter_Capabilities>
 
-    </WFS_Capabilities>
+	</WFS_Capabilities>
     
 Client Side
 -----------
@@ -221,39 +215,44 @@ server. Following is an example of a valid WFS client layer with a filter:
 
 .. code-block:: mapfile
 
-    LAYER
-      NAME popplace
-      METADATA
-        "wfs_version"   "1.0.0"       
-        "wfs_typename"  "popplace"
-        "wfs_filter"    "<PropertyIsGreaterThan><PropertyName>POP_RANGE</PropertyName>
-                                         <Literal>4</Literal></PropertyIsGreaterThan>"        
-      END
-      TYPE POINT
-      STATUS ON
-      PROJECTION
-        "init=epsg:42304"
-      END
-      CONNECTIONTYPE WFS
-      CONNECTION "http://www2.dmsolutions.ca:8090/cgi-bin/mswfs_filter?"
-      LabelItem "Name"  
-      CLASSITEM "Capital" 
-      CLASS
-        SYMBOL 2
-        SIZE 8
-        NAME "Cities"
-        LABEL
-          COLOR  255 0 0
-          FONT fritqat-italic
-          TYPE truetype
-          SIZE 8
-          POSITION AUTO         
-          OUTLINECOLOR 255 255 255  
-          FORCE TRUE
-        END 
-        COLOR 0 0 0
-      END
-    END # Layer
+	LAYER 
+	  NAME "cities"
+	  TYPE POINT
+	  STATUS ON  
+	  CONNECTION "http://demo.mapserver.org/cgi-bin/wfs?"
+	  CONNECTIONTYPE WFS
+	  METADATA
+	    "wfs_typename"          "cities"
+	    "wfs_version"           "1.0.0"
+	    "wfs_connectiontimeout" "60"
+	    "wfs_maxfeatures"       "100"
+	    "wfs_filter"    "<PropertyIsGreaterThan><PropertyName>POPULATION</PropertyName>
+	                                   <Literal>10000000</Literal></PropertyIsGreaterThan>"    
+	  END
+	  PROJECTION
+	    "init=epsg:4326"
+	  END
+	  LABELITEM    'NAME'
+	  DUMP TRUE
+	  CLASS
+	    NAME       'World Cities'
+	    STYLE
+	      COLOR    255 128 128
+	      OUTLINECOLOR 128 0 0
+	      SYMBOL   'circle'
+	      SIZE     9
+	    END
+	    LABEL
+	      COLOR    0 0 0
+	      OUTLINECOLOR 255 255 255                 
+	      TYPE     TRUETYPE
+	      FONT     sans
+	      SIZE     7
+	      POSITION UC
+	      PARTIALS FALSE
+	    END
+	  END
+	END 
 
 *Note:*
 
@@ -279,136 +278,134 @@ Here are some test URLs for the different supported filters:
 
 ::
 
-  http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
-  TYPENAME=popplace&Filter=<Filter><PropertyIsEqualTo><PropertyName>NAME</PropertyName>
-  <Literal>Digby</Literal></PropertyIsEqualTo></Filter> 
+  http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
+  TYPENAME=cities&Filter=<Filter><PropertyIsEqualTo><PropertyName>NAME</PropertyName>
+  <Literal>Halifax</Literal></PropertyIsEqualTo></Filter> 
   
 - `PropertyIsNotEqualTo`_
 
 ::
 
-  http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
-  TYPENAME=popplace&Filter=<Filter><PropertyIsNotEqualTo><PropertyName>NAME</PropertyName>
-  <Literal>Digby</Literal></PropertyIsNotEqualTo></Filter>
+  http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
+  TYPENAME=cities&Filter=<Filter><PropertyIsNotEqualTo><PropertyName>NAME</PropertyName>
+  <Literal>Halifax</Literal></PropertyIsNotEqualTo></Filter>
 
 - `PropertyIsLessThan`_
 
 ::
 
-  http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
-  TYPENAME=popplace&Filter=<Filter><PropertyIsLessThan><PropertyName>POP_RANGE</PropertyName>
-  <Literal>2</Literal></PropertyIsLessThan></Filter>
+  http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
+  TYPENAME=cities&Filter=<Filter><PropertyIsLessThan><PropertyName>POPULATION</PropertyName>
+  <Literal>1000</Literal></PropertyIsLessThan></Filter>
 
 - `PropertyIsGreaterThan`_
 
 ::
 
-  http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
-  TYPENAME=popplace&Filter=<Filter><PropertyIsGreaterThan><PropertyName>POP_RANGE</PropertyName>
-  <Literal>5</Literal></PropertyIsGreaterThan></Filter>
+  http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
+  TYPENAME=cities&Filter=<Filter><PropertyIsGreaterThan><PropertyName>POPULATION</PropertyName>
+  <Literal>10000000</Literal></PropertyIsGreaterThan></Filter>
 
 - `PropertyIsLessThanOrEqualTo`_
 
 ::
 
-  http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
-  TYPENAME=popplace&Filter=<Filter><PropertyIsLessThanOrEqualTo><PropertyName>POP_RANGE</PropertyName>
-  <Literal>2</Literal></PropertyIsLessThanOrEqualTo></Filter>
+  http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
+  TYPENAME=cities&Filter=<Filter><PropertyIsLessThanOrEqualTo><PropertyName>POPULATION</PropertyName>
+  <Literal>499</Literal></PropertyIsLessThanOrEqualTo></Filter>
 
 - `PropertyIsGreaterThanOrEqualTo`_
 
 ::
 
-  http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
-  TYPENAME=popplace&Filter=<Filter><PropertyIsGreaterThanOrEqualTo><PropertyName>POP_RANGE</PropertyName>
-  <Literal>5</Literal></PropertyIsGreaterThanOrEqualTo></Filter>
+  http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
+  TYPENAME=cities&Filter=<Filter><PropertyIsGreaterThanOrEqualTo><PropertyName>POPULATION</PropertyName>
+  <Literal>10194978</Literal></PropertyIsGreaterThanOrEqualTo></Filter>
 
 - `PropertyIsBetween`_
 
 ::
 
-  http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
-  TYPENAME=popplace&Filter=<Filter><PropertyIsBetween><PropertyName>POP_RANGE</PropertyName>
-  <LowerBoundary>5</LowerBoundary><UpperBoundary>6</UpperBoundary></PropertyIsBetween></Filter>
+  http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
+  TYPENAME=cities&Filter=<Filter><PropertyIsBetween><PropertyName>POPULATION</PropertyName>
+  <LowerBoundary>10194978</LowerBoundary><UpperBoundary>12116379</UpperBoundary></PropertyIsBetween></Filter>
 
 - `PropertyIsLike`_
 
 ::
 
-  http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
-  TYPENAME=popplace&Filter=<Filter><PropertyIsLike wildcard='*' singleChar='.' escape='!'>
+  http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
+  TYPENAME=cities&Filter=<Filter><PropertyIsLike wildcard='*' singleChar='.' escape='!'>
   <PropertyName>NAME</PropertyName><Literal>Syd*</Literal></PropertyIsLike></Filter>
 
 - `Logical operator OR`_
 
 ::
 
-  http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
-  TYPENAME=popplace&Filter=<Filter><OR><PropertyIsEqualTo><PropertyName>NAME</PropertyName>
+  http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
+  TYPENAME=cities&Filter=<Filter><OR><PropertyIsEqualTo><PropertyName>NAME</PropertyName>
   <Literal>Sydney</Literal></PropertyIsEqualTo><PropertyIsEqualTo><PropertyName>NAME</PropertyName>
-  <Literal>Digby</Literal></PropertyIsEqualTo></OR></Filter>
+  <Literal>Halifax</Literal></PropertyIsEqualTo></OR></Filter>
 
 - `Logical operator AND`_ 
 
 ::
 
-  http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
-  TYPENAME=popplace&Filter=<Filter><AND><PropertyIsLike wildcard='*' singleChar='.' escape='!'>
+  http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
+  TYPENAME=cities&Filter=<Filter><AND><PropertyIsLike wildcard='*' singleChar='.' escape='!'>
   <PropertyName>NAME</PropertyName><Literal>Syd*</Literal></PropertyIsLike><PropertyIsEqualTo>
-  <PropertyName>POP_RANGE</PropertyName><Literal>4</Literal></PropertyIsEqualTo></AND></Filter>
+  <PropertyName>POPULATION</PropertyName><Literal>4250065</Literal></PropertyIsEqualTo></AND></Filter>
 
 - `Logical operator NOT`_
 
 ::
 
-  http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
-  TYPENAME=popplace&Filter=<Filter><AND><NOT><PropertyIsEqualTo><PropertyName>POP_RANGE</PropertyName>
-  <Literal>2</Literal></PropertyIsEqualTo></NOT><NOT><PropertyIsEqualTo><PropertyName>POP_RANGE</PropertyName>
-  <Literal>3</Literal></PropertyIsEqualTo></NOT></AND></Filter> 
+  http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&
+  TYPENAME=cities&Filter=<Filter><AND><NOT><PropertyIsEqualTo><PropertyName>POPULATION</PropertyName>
+  <Literal>0</Literal></PropertyIsEqualTo></NOT><NOT><PropertyIsEqualTo><PropertyName>POPULATION</PropertyName>
+  <Literal>12116379</Literal></PropertyIsEqualTo></NOT></AND></Filter> 
 
 - `Spatial operator BBOX`_
 
 ::
 
-  http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=popplace&
+  http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=cities&
   Filter=<Filter><BBOX><PropertyName>Name>NAME</PropertyName><Box%20srsName='EPSG:42304'>
-  <coordinates>2518000,150000 2918000,450000</coordinates></Box></BBOX></Filter>
+  <coordinates>135.2239,34.4879 135.8578,34.8471</coordinates></Box></BBOX></Filter>
 
 - `Spatial operator Dwithin`_
 
 ::
 
-  http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=popplace&Filter=
-  <Filter><DWithin><PropertyName>Geometry</PropertyName><gml:Point><gml:coordinates>2587598.000000,404010.531250</gml:coordinates>
-  </gml:Point><Distance units='m'>1000</Distance></DWithin></Filter>
+  http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=cities&Filter=
+  <Filter><DWithin><PropertyName>Geometry</PropertyName><gml:Point><gml:coordinates>135.500000,34.666667</gml:coordinates>
+  </gml:Point><Distance units='m'>10000</Distance></DWithin></Filter>
 
 - `Spatial operator Intersects`_
 
 ::
 
-  http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=popplace&Filter=<Filter>
+  http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=cities&Filter=<Filter>
   <Intersect><PropertyName>Geometry</PropertyName><gml:Polygon><gml:outerBoundaryIs><gml:LinearRing>
-  <gml:coordinates>2488789,289552 2588789,289552 2588789,389552 2488789,389552 2488789,289552</gml:coordinates>
+  <gml:coordinates>135.5329,34.6624 135.4921,34.8153 135.3673,34.7815 135.3800,34.6216 135.5361,34.6210 135.5329,34.6624</gml:coordinates>
   </gml:LinearRing></gml:outerBoundaryIs></gml:Polygon></Intersect></Filter>
 
-.. _`PropertyIsEqualTo`: http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=popplace&Filter=<Filter><PropertyIsEqualTo><PropertyName>NAME</PropertyName><Literal>Digby</Literal></PropertyIsEqualTo></Filter>
-.. _`PropertyIsNotEqualTo`: http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=popplace&Filter=<Filter><PropertyIsNotEqualTo><PropertyName>NAME</PropertyName><Literal>Digby</Literal></PropertyIsNotEqualTo></Filter>
-.. _`PropertyIsLessThan`: http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=popplace&Filter=<Filter><PropertyIsLessThan><PropertyName>POP_RANGE</PropertyName><Literal>2</Literal></PropertyIsLessThan></Filter>
-.. _`PropertyIsGreaterThan`: http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=popplace&Filter=<Filter><PropertyIsGreaterThan><PropertyName>POP_RANGE</PropertyName><Literal>5</Literal></PropertyIsGreaterThan></Filter>
-.. _`PropertyIsLessThanOrEqualTo`: http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=popplace&Filter=<Filter><PropertyIsLessThanOrEqualTo><PropertyName>POP_RANGE</PropertyName><Literal>2</Literal></PropertyIsLessThanOrEqualTo></Filter>
-.. _`PropertyIsGreaterThanOrEqualTo`: http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=popplace&Filter=<Filter><PropertyIsGreaterThanOrEqualTo><PropertyName>POP_RANGE</PropertyName><Literal>5</Literal></PropertyIsGreaterThanOrEqualTo></Filter>
-.. _`PropertyIsBetween`: http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=popplace&Filter=<Filter><PropertyIsBetween><PropertyName>POP_RANGE</PropertyName><LowerBoundary>5</LowerBoundary><UpperBoundary>6</UpperBoundary></PropertyIsBetween></Filter>
-.. _`PropertyIsLike`: http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=popplace&Filter=<Filter><PropertyIsLike%20wildcard='*'%20singleChar='.'%20escape='!'><PropertyName>NAME</PropertyName><Literal>Syd*</Literal></PropertyIsLike></Filter>
-.. _`Logical operator OR`: http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=popplace&Filter=<Filter><OR><PropertyIsEqualTo><PropertyName>NAME</PropertyName><Literal>Sydney</Literal></PropertyIsEqualTo><PropertyIsEqualTo><PropertyName>NAME</PropertyName><Literal>Digby</Literal></PropertyIsEqualTo></OR></Filter>
-.. _`Logical operator AND`: http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=popplace&Filter=<Filter><AND><PropertyIsLike%20wildcard='*'%20singleChar='.'%20escape='!'><PropertyName>NAME</PropertyName><Literal>Syd*</Literal></PropertyIsLike><PropertyIsEqualTo><PropertyName>POP_RANGE</PropertyName><Literal>4</Literal></PropertyIsEqualTo></AND></Filter>
-.. _`Logical operator NOT`: http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=popplace&Filter=<Filter><AND><NOT><PropertyIsEqualTo><PropertyName>POP_RANGE</PropertyName><Literal>2</Literal></PropertyIsEqualTo></NOT><NOT><PropertyIsEqualTo><PropertyName>POP_RANGE</PropertyName><Literal>3</Literal></PropertyIsEqualTo></NOT></AND></Filter> 
-.. _`Spatial operator BBOX`: http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=popplace&Filter=<Filter><BBOX><PropertyName>Name>NAME</PropertyName><Box%20srsName='EPSG:42304'><coordinates>2518000,150000%202918000,450000</coordinates></Box></BBOX></Filter>
-.. _`Spatial operator Dwithin`: http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=popplace&Filter=<Filter><DWithin><PropertyName>Geometry</PropertyName><gml:Point><gml:coordinates>2587598.000000,404010.531250</gml:coordinates></gml:Point><Distance%20units='m'>1000</Distance></DWithin></Filter>
-.. _`Spatial operator Intersects`: http://www2.dmsolutions.ca/cgi-bin/mswfs_filter?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=popplace&Filter=<Filter><Intersect><PropertyName>Geometry</PropertyName><gml:Polygon><gml:outerBoundaryIs><gml:LinearRing><gml:coordinates>2488789,289552%202588789,289552%202588789,389552%202488789,389552%202488789,289552</gml:coordinates></gml:LinearRing></gml:outerBoundaryIs></gml:Polygon></Intersect></Filter>
+.. _`PropertyIsEqualTo`: http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=cities&Filter=<Filter><PropertyIsEqualTo><PropertyName>NAME</PropertyName><Literal>Halifax</Literal></PropertyIsEqualTo></Filter>
+.. _`PropertyIsNotEqualTo`: http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=cities&Filter=<Filter><PropertyIsNotEqualTo><PropertyName>NAME</PropertyName><Literal>Halifax</Literal></PropertyIsNotEqualTo></Filter>
+.. _`PropertyIsLessThan`: http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=cities&Filter=<Filter><PropertyIsLessThan><PropertyName>POPULATION</PropertyName><Literal>1000</Literal></PropertyIsLessThan></Filter>
+.. _`PropertyIsGreaterThan`: http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=cities&Filter=<Filter><PropertyIsGreaterThan><PropertyName>POPULATION</PropertyName><Literal>10000000</Literal></PropertyIsGreaterThan></Filter>
+.. _`PropertyIsLessThanOrEqualTo`: http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=cities&Filter=<Filter><PropertyIsLessThanOrEqualTo><PropertyName>POPULATION</PropertyName><Literal>499</Literal></PropertyIsLessThanOrEqualTo></Filter>
+.. _`PropertyIsGreaterThanOrEqualTo`: http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=cities&Filter=<Filter><PropertyIsGreaterThanOrEqualTo><PropertyName>POPULATION</PropertyName><Literal>10194978</Literal></PropertyIsGreaterThanOrEqualTo></Filter>
+.. _`PropertyIsBetween`: http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=cities&Filter=<Filter><PropertyIsBetween><PropertyName>POPULATION</PropertyName><LowerBoundary>10194978</LowerBoundary><UpperBoundary>12116379</UpperBoundary></PropertyIsBetween></Filter>
+.. _`PropertyIsLike`: http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=cities&Filter=<Filter><PropertyIsLike%20wildcard='*'%20singleChar='.'%20escape='!'><PropertyName>NAME</PropertyName><Literal>Syd*</Literal></PropertyIsLike></Filter>
+.. _`Logical operator OR`: http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=cities&Filter=<Filter><OR><PropertyIsEqualTo><PropertyName>NAME</PropertyName><Literal>Sydney</Literal></PropertyIsEqualTo><PropertyIsEqualTo><PropertyName>NAME</PropertyName><Literal>Halifax</Literal></PropertyIsEqualTo></OR></Filter>
+.. _`Logical operator AND`: http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=cities&Filter=<Filter><AND><PropertyIsLike%20wildcard='*'%20singleChar='.'%20escape='!'><PropertyName>NAME</PropertyName><Literal>Syd*</Literal></PropertyIsLike><PropertyIsEqualTo><PropertyName>POPULATION</PropertyName><Literal>4250065</Literal></PropertyIsEqualTo></AND></Filter>
+.. _`Logical operator NOT`: http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=cities&Filter=<Filter><AND><NOT><PropertyIsEqualTo><PropertyName>POPULATION</PropertyName><Literal>0</Literal></PropertyIsEqualTo></NOT><NOT><PropertyIsEqualTo><PropertyName>POPULATION</PropertyName><Literal>12116379</Literal></PropertyIsEqualTo></NOT></AND></Filter> 
+.. _`Spatial operator BBOX`: http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=cities&Filter=<Filter><BBOX><PropertyName>Name>NAME</PropertyName><Box%20srsName='EPSG:4326'><coordinates>135.2239,34.4879%20135.8578,34.8471</coordinates></Box></BBOX></Filter>
+.. _`Spatial operator Dwithin`: http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=cities&Filter=<Filter><DWithin><PropertyName>Geometry</PropertyName><gml:Point><gml:coordinates>135.500000,34.666667</gml:coordinates></gml:Point><Distance%20units='m'>10000</Distance></DWithin></Filter>
+.. _`Spatial operator Intersects`: http://demo.mapserver.org/cgi-bin/wfs?&VERSION=1.0.0&SERVICE=WFS&REQUEST=GetFeature&TYPENAME=cities&Filter=<Filter><Intersect><PropertyName>Geometry</PropertyName><gml:Polygon><gml:outerBoundaryIs><gml:LinearRing><gml:coordinates>135.5329,34.6624%20135.4921,34.8153%20135.3673,34.7815%20135.3800,34.6216%20135.5361,34.6210%20135.5329,34.6624</gml:coordinates></gml:LinearRing></gml:outerBoundaryIs></gml:Polygon></Intersect></Filter>
    
-- Tests using MapServer as a WFS client and a WFS server are available at http://www2.dmsolutions.ca/msapps/wfs_fe/.
-
-- The OGC conformance tests (http://cite.occamlab.com/tsOGC/) have been run on 
+- The OGC conformance tests (http://cite.opengeospatial.org/test_engine) have been run on 
   the FE support. The following table and notes reflect the current status.
 
 **Table 2. WFS OGC test suite (over the HTTP Get and Post method)**
@@ -446,7 +443,7 @@ Test #   Description                                               # of Tests # 
 
 The OGC Cite WFS test suite can be found on the `OGC Cite portal`_.
 
-.. _`OGC Cite portal`: http://cite.occamlab.com/test_engine/wfs_1_0_0/wfs_1_0_0.html
+.. _`OGC Cite portal`: http://cite.opengeospatial.org/test_engine/wfs/1.0.0
 
 Following are some MapServer specific notes on this test suite:
 
