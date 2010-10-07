@@ -8,9 +8,7 @@
 :Contact: jdoyon at nrcan.gc.ca
 :Author: Jeff McKenna
 :Contact: jmckenna at gatewaygeomatics.com
-:Revision: $Revision$
-:Date: $Date$
-:Last Updated: 2006/05/02
+:Last Updated: 2010-10-07
 
 .. contents::
     :depth: 2
@@ -66,7 +64,8 @@ Storing Temporary Files
 -----------------------
 
 You must set the :ref:`IMAGEPATH <web>` parameter in your mapfile since MapServer uses this 
-directory to store temporary files downloaded from the remote WFS server.
+directory to store temporary files downloaded from the remote WFS server.  **Windows** users must specify 
+a full path for IMAGEPATH, such as: *IMAGEPATH "C:/tmp/ms_tmp/"*
 
 .. code-block:: mapfile
 
@@ -90,7 +89,7 @@ the CONNECTION parameter and the layer's METADATA.  The necessary mapfile parame
 are defined below:
 
 - *CONNECTIONTYPE*: must be "wfs"
-- *CONNECTION*: The URL to the WFS Server. e.g. http://www2.dmsolutions.ca/cgi-bin/mswfs_gmap? 
+- *CONNECTION*: The URL to the WFS Server. e.g. http://demo.mapserver.org/cgi-bin/wfs?
   The path to the mapfile on the WFS server is required if it was required in the 
   GetCapabilities request e.g. you would have to specify the MAP parameter in the 
   CONNECTION for the following server:
@@ -140,9 +139,9 @@ are defined below:
 
   - *wfs_typename* (required): the <Name> of the layer found in the GetCapabilities. 
     An example GetCapabilities request is:
-    `http://www2.dmsolutions.ca/cgi-bin/mswfs_gmap?SERVICE=WFS&VERSION=1.0.0&REQUEST=getcapabilities`__
+    `http://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=1.0.0&REQUEST=GetCapabilities`__
     
-    __ http://www2.dmsolutions.ca/cgi-bin/mswfs_gmap?SERVICE=WFS&VERSION=1.0.0&REQUEST=getcapabilities
+    __ http://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=1.0.0&REQUEST=GetCapabilities
   
   - *wfs_version* (required): WFS version, currently "1.0.0"
   
@@ -159,26 +158,25 @@ Example WFS Layer
 .. code-block:: mapfile
 
     LAYER
-      NAME "park"
+      NAME "continents"
       TYPE POLYGON
       STATUS ON
+      CONNECTION "http://demo.mapserver.org/cgi-bin/wfs?"
       CONNECTIONTYPE WFS
-      CONNECTION "http://www2.dmsolutions.ca/cgi-bin/mswfs_gmap?"
       METADATA
-        "wfs_typename"          "park"
+        "wfs_typename"          "continents"
         "wfs_version"           "1.0.0"
-        "wfs_request_method"    "GET"
         "wfs_connectiontimeout" "60"
-        "wfs_maxfeatures"       "1"
+        "wfs_maxfeatures"       "10"
       END
       PROJECTION
-        "init=epsg:42304"
+        "init=epsg:4326"
       END
       CLASS
-        NAME "Parks"
+        NAME "Continents"
         STYLE
-          COLOR 200 255 0
-          OUTLINECOLOR 120 120 120
+	  COLOR 255 128 128
+	  OUTLINECOLOR 96 96 96 
         END
       END
     END # Layer
@@ -193,7 +191,7 @@ TYPENAME will be fetched from the CONNECTION, as shown below
 
 .. code-block:: mapfile
 
-    CONNECTION    "http://www2.dmsolutions.ca/cgi-bin/mswfs_gmap?SERVICE=WFS&VERSION=1.0.0&TYPENAME=park"
+    CONNECTION    "http://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=1.0.0&TYPENAME=continents"
     
 TODO / Known Limitations
 ========================
