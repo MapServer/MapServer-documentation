@@ -21,9 +21,9 @@ Capabilities
 Requesting the capabilities using the GetCapabilities request to a WFS server returns an XML document showing what layers and  projections are available, etc.
 Example of a WFS GetCapabilities URL:
 
-::
 
-	http://www2.dmsolutions.ca/cgi-bin/mswfs_gmap?VERSION=1.0.0&SERVICE=wfs&REQUEST=GetCapabilities
+
+	http://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=1.0.0&REQUEST=GetCapabilities
 
 Example of the Resulting XML from GetCapabilties:
 
@@ -31,27 +31,21 @@ Example of the Resulting XML from GetCapabilties:
 
 	...
 	<FeatureTypeList>
-  	<Operations>
-		<Query/>
-	</Operations>
-	<FeatureType>
-		<Name>park</Name>
-		<Title>Parks</Title>
-		<SRS>EPSG:42304</SRS>
-		<LatLongBoundingBox minx="-173.433" miny="41.4271" maxx="-13.0481" maxy="83.7466" />
-	</FeatureType>
-	<FeatureType>
-		<Name>road</Name>
-		<Title>Roads</Title>
-		<SRS>EPSG:42304</SRS>
-		<LatLongBoundingBox minx="-148.059" miny="35.882" maxx="-33.7745" maxy="72.5503" />
-	</FeatureType>
-	<FeatureType>
-		<Name>popplace</Name>
-		<Title>Cities</Title>
-		<SRS>EPSG:42304</SRS>
-		<LatLongBoundingBox minx="-172.301" miny="36.3541" maxx="-12.9698" maxy="83.4832" />
-	</FeatureType>
+	  <Operations>
+	    <Query/>
+	  </Operations>
+	    <FeatureType>
+		<Name>continents</Name>
+		<Title>World continents</Title>
+		<SRS>EPSG:4326</SRS>
+		<LatLongBoundingBox minx="-180" miny="-90" maxx="180" maxy="83.6274"/>
+	    </FeatureType>
+	    <FeatureType>
+		<Name>cities</Name>
+		<Title>World cities</Title>
+		<SRS>EPSG:4326</SRS>
+		<LatLongBoundingBox minx="-178.167" miny="-54.8" maxx="179.383" maxy="78.9333"/>
+	    </FeatureType>
 	</FeatureTypeList>
 	...
 
@@ -74,37 +68,43 @@ Data Access / Connection Method
 
 Example of a WFS Request Directly Through the Browser:
 
-The following URL requests the GML for the layer road.  (see the 
+The following URL requests the GML for the layer continents.  (see the 
 GetCapabilities above for the possible layers available on this 
-test server) .  The URL is all one line, broken up here for readability.
+test server) .  The URL is all one line, broken up here for readability (click `here <http://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=1.0.0&REQUEST=getfeature&TYPENAME=continents&MAXFEATURES=100>`__ for a working link).
 ::
 	
-	http://www2.dmsolutions.ca/cgi-bin/mswfs_gmap
-	?VERSION=1.0.0
-	&SERVICE=wfs
-	&REQUEST=getfeature&TYPENAME=road
+	http://demo.mapserver.org/cgi-bin/wfs?
+	SERVICE=WFS&
+	VERSION=1.0.0&
+	REQUEST=getfeature&
+	TYPENAME=continents&
+	MAXFEATURES=100
 
-Map File Example:
+Map File Example
+----------------
 
-::
+.. code-block:: mapfile
 
 	LAYER
-	NAME "wfs_gmap_roads"
-	STATUS DEFAULT
-	TYPE LINE
-	CONNECTIONTYPE WFS
-	CONNECTION "http://www2.dmsolutions.ca/cgi-bin/mswfs_gmap?
-	METADATA
-		"wfs_version" "1.0.0"
-		"wfs_srs" "EPSG:42304"
-		"wfs_typename" "road"
-		"wfs_request_method" "GET"
-		"wfs_service" "WFS"
-	END
-	CLASS
-		NAME "roads"
-		STYLE
-			COLOR 0 0 0
-		END
-	END
-	END  # layer
+	  NAME "continents"
+	  TYPE POLYGON
+	  STATUS ON
+	  CONNECTION "http://demo.mapserver.org/cgi-bin/wfs?"
+	  CONNECTIONTYPE WFS
+	  METADATA
+	    "wfs_typename"          "continents"
+	    "wfs_version"           "1.0.0"
+	    "wfs_connectiontimeout" "60"
+	    "wfs_maxfeatures"       "10"
+	  END
+	  PROJECTION
+	    "init=epsg:4326"
+	  END
+	  CLASS
+	    NAME "Continents"
+	    STYLE
+	      COLOR 255 128 128
+	      OUTLINECOLOR 96 96 96 
+	    END
+	  END
+	END # Layer
