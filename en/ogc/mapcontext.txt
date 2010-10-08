@@ -6,9 +6,7 @@
 
 :Author:       Jeff McKenna
 :Contact:      jmckenna at gatewaygeomatics.com
-:Revision: $Revision$
-:Date: $Date$
-:Last Updated: 2008/03/20
+:Last Updated: 2010-10-07
 
 .. contents::
     :depth: 2
@@ -245,72 +243,64 @@ Sample Map Context Mapfile
 .. code-block:: mapfile
     :linenos:
 
-    NAME WMS_CONTEXT
-    STATUS ON
-    SIZE 400 300
-    SYMBOLSET ../etc/symbols.sym
-    EXTENT -2200000 -712631 3072800 3840000
-    UNITS METERS
-    SHAPEPATH "../data"
-    IMAGECOLOR 255 255 255
-    FONTSET ../etc/fonts.txt
+	MAP
 
-    WEB
-      IMAGEPATH "/ms4w/tmp/ms_tmp/" 
-      IMAGEURL "/ms_tmp/"
-      METADATA
-        "wms_abstract" "Demo for map context document. Blah blah..."
-        "wms_title" "Map Context demo"   #### REQUIRED
-      END
-    END
+	NAME "mapcontext"
+	STATUS ON
+	SIZE 400 300
+	SYMBOLSET "../etc/symbols.txt"
+	EXTENT -180 -90 180 90
+	UNITS DD
+	SHAPEPATH "../data"
+	IMAGECOLOR 255 255 255
+	FONTSET "../etc/fonts.txt"
 
-    PROJECTION
-      "init=epsg:42304"
-    END
 
-    LAYER
-      NAME "prov_bound"
-      TYPE RASTER
-      STATUS ON
-      CONNECTION "http://www2.dmsolutions.ca/cgi-bin/mswms_gmap?"
-      CONNECTIONTYPE WMS
-      METADATA
-        "wms_name"            "prov_bound"
-        "wms_server_version"  "1.1.1"
-        "wms_server_title"    "GMap WMS Demo Server"
-        "wms_format"          "image/gif"
-        "wms_srs"             "EPSG:42304"   
-        "wms_title"           "Canadian boundaries"  #### REQUIRED
-        "wms_onlineresource"  "http://www2.dmsolutions.ca/cgi-bin/mswms_gmap?"  #### REQUIRED
-        "wms_dimensionlist"             "time,width"    
-        "wms_dimension"                 "time"
-        "wms_dimension_time_unitsymbol" "t"    
-        "wms_dimension_time_units"      "ISO8601"
-        "wms_dimension_time_uservalue"  "1310"
-        "wms_dimension_time_default"    "1310"     
-        "wms_dimension_time_multiplevalues"  "1310,1410" 
-        "wms_dimension_time_nearestvalue"  "0"        
-      END
-    END  
+	#
+	# Start of web interface definition
+	#
+	WEB
+	  IMAGEPATH "/ms4w/tmp/ms_tmp/" 
+	  IMAGEURL "/ms_tmp/"
+	  METADATA
+	    "wms_abstract" "Demo for map context document. Blah blah..."
+	    "wms_title" "Map Context demo"   #### REQUIRED
+	  END
+	END
 
-    LAYER
-      NAME popplace
-      TYPE RASTER
-      STATUS ON
-      CONNECTIONTYPE WMS
-      CONNECTION "http://www2.dmsolutions.ca/cgi-bin/mswms_gmap?"
-      METADATA
-        "wms_name"              "popplace"
-        "wms_server_version"    "1.1.1"
-        "wms_server_title"      "GMap WMS Demo Server"
-        "wms_format"            "image/png"
-        "wms_srs"               "EPSG:42304"
-        "wms_title"             "Canadian Cities" #### REQUIRED
-        "wms_onlineresource"    "http://www2.dmsolutions.ca/cgi-bin/mswms_gmap?" #### REQUIRED    
-      END
-    END # Layer
+	PROJECTION
+	  "init=epsg:4326"
+	END
 
-    END # Map File
+	#
+	# Start of layer definitions
+	#
+
+	    LAYER
+	      NAME "country_bounds"
+	      TYPE RASTER
+	      STATUS ON
+	      CONNECTION "http://demo.mapserver.org/cgi-bin/wms?"
+	      CONNECTIONTYPE WMS
+	      METADATA
+		"wms_title"                     "World Country Boundaries"  #### REQUIRED
+		"wms_onlineresource"            "http://demo.mapserver.org/cgi-bin/wms?"  #### REQUIRED      
+		"wms_srs"                       "EPSG:4326"
+		"wms_name"                      "country_bounds"
+		"wms_server_version"            "1.1.1"
+		"wms_format"                    "image/gif"
+		"wms_dimensionlist"             "time,width"    
+		"wms_dimension"                 "time"
+		"wms_dimension_time_unitsymbol" "t"    
+		"wms_dimension_time_units"      "ISO8601"
+		"wms_dimension_time_uservalue"  "1310"
+		"wms_dimension_time_default"    "1310"     
+		"wms_dimension_time_multiplevalues"  "1310,1410" 
+		"wms_dimension_time_nearestvalue"  "0"          
+	      END
+	    END
+
+	END # Map File
 
 Testing Map Context Support
 ---------------------------
@@ -322,9 +312,9 @@ Testing Map Context Support
    .. code-block:: php
    
       <?php
-        dl("php_mapscript.dll");
-        $oMap = ms_newMapObj("gmap_wms_context.map");
-        $oMap->saveMapContext("gmap_wms_context_output.xml");
+        if (!extension_loaded("MapScript")) dl(MODULE);
+        $oMap = ms_newMapObj("mapcontext.map");
+        $oMap->saveMapContext("mapcontext_output.xml");
       ?>               
                 
 2. Scan the XML output to look for *<!-- WARNING: ... -->* comments. Then make 
@@ -343,11 +333,11 @@ The following is a sample Map Context document:
     :linenos:
     
 	<?xml version='1.0' encoding="ISO-8859-1" standalone="no" ?>
-	<ViewContext version="1.1.0" id="WMS_CONTEXT" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ogc="http://www.opengis.net/ogc" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.opengis.net/context" xmlns:sld="http://www.opengis.net/sld" xsi:schemaLocation="http://www.opengis.net/context http://schemas.opengis.net/context/1.1.0/context.xsd">
+	<ViewContext version="1.1.0" id="mapcontext" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:ogc="http://www.opengis.net/ogc" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns="http://www.opengis.net/context" xmlns:sld="http://www.opengis.net/sld" xsi:schemaLocation="http://www.opengis.net/context http://schemas.opengis.net/context/1.1.0/context.xsd">
 	  <General>
 	    <Window width="400" height="300"/>
 	    <!-- Bounding box corners and spatial reference system -->
-	    <BoundingBox SRS="EPSG:42304" minx="-2200000.000000" miny="-712631.000000" maxx="3072800.000000" maxy="3840000.000000"/>
+	    <BoundingBox SRS="EPSG:4326" minx="-180.000000" miny="-90.000000" maxx="180.000000" maxy="90.000000"/>
 	    <!-- Title of Context -->
 	    <Title>Map Context demo</Title>
 	    <Abstract>Demo for map context document. Blah blah...</Abstract>
@@ -356,29 +346,17 @@ The following is a sample Map Context document:
 	  </General>
 	  <LayerList>
 	    <Layer queryable="0" hidden="0">
-	      <Server service="OGC:WMS" version="1.1.1" title="Canadian boundaries">
-		<OnlineResource xlink:type="simple" xlink:href="http://www2.dmsolutions.ca/cgi-bin/mswms_gmap?"/>
+	      <Server service="OGC:WMS" version="1.1.1" title="World Country Boundaries">
+		<OnlineResource xlink:type="simple" xlink:href="http://demo.mapserver.org/cgi-bin/wms?"/>
 	      </Server>
-	      <Name>prov_bound</Name>
-	      <Title>Canadian boundaries</Title>
-	      <SRS>EPSG:42304</SRS>
+	      <Name>country_bounds</Name>
+	      <Title>World Country Boundaries</Title>
+	      <SRS>EPSG:4326</SRS>
 	      <FormatList>
 		<Format current="1">image/gif</Format>
 	      </FormatList>
 	      <DimensionList>
 		<Dimension name="time" units="ISO8601" unitSymbol="t" userValue="1310" default="1310" multipleValues="1310,1410" nearestValue="0" current="1"/>
-	      </DimensionList>
-	    </Layer>
-	    <Layer queryable="0" hidden="0">
-	      <Server service="OGC:WMS" version="1.1.1" title="Canadian Cities">
-		<OnlineResource xlink:type="simple" xlink:href="http://www2.dmsolutions.ca/cgi-bin/mswms_gmap?"/>
-	      </Server>
-	      <Name>popplace</Name>
-	      <Title>Canadian Cities</Title>
-	      <SRS>EPSG:42304</SRS>
-	      <FormatList>
-		<Format current="1">image/png</Format>
-	      </FormatList>
 	      </DimensionList>
 	    </Layer>
 	  </LayerList>
