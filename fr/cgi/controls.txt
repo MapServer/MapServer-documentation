@@ -1,371 +1,400 @@
 .. _cgi_controls:
 
-*****************************************************************************
- MapServer CGI Controls
-*****************************************************************************
+:Revision: $Revision: 9764 $
+:Date: $Date: 2010-09-23 21:11:00 +0000 (Sat, 29 Sept 2010) $
 
+*****************************************************************************
+Contrôles CGI pour MapServer
+*****************************************************************************
 
 Variables
 =========
 
 BUFFER [distance]
-    A distance, in the same coordinate system as the map file, used in 
-    conjunction with MAPXY to create an new map extent. 
+    Une distance, dans le même système de coordonnées que le mapfile, 
+    utilisée en conjonction avec MAPXY pour créer une nouvelle étendue de carte.
 
 CONTEXT [filename]
-    Path to a context file. Path is relative to the map file to be used, or 
-    can also be a URL path (See the section "Map Context Support Through 
-    CGI" below for more details). 
+    Chemin vers un fichier contexte. Le chemin est relatif au mapfile à 
+    utiliser ou peut être également un chemin URL (voir la section "Support 
+    du Web Map Context (WMC) via CGI" plus bas dans ce document pour 
+    plus de détails).
 
 ICON [layername],[classindex]
-    Used in MODE=legendicon to generate a legend icon for a layer.  The 
-    class index value is optional and defaults to 0.
+    Utilisé avec MODE=legendicon pour générer une icône de légende pour 
+    une couche. La valeur classindex est optionnelle et vaut 0 par défaut.
 
 ID [id-string]
-    By default MapServer generates a uniq session id based on system time 
-    and process id. This parameter overwrites the default. 
+    Par défaut MapServer génère un identifiant unique de session basé sur 
+    l'heure du système et l'identifiant du processus. Ce paramètre remplace 
+    la valeur par défaut.
 
 IMG
-    The name associated with the inline map image used to record user clicks. 
-    What actually is passed are two variables, img.x and img.y.
+    Le nom associé à l'image de la carte embarquée est utilisé pour enregistrer 
+    les clics de l'utilisateur. Ce sont deux variables img.x et img.y qui sont passées.
 
-    For the CGI Applications this is an essential variable, see the examples 
-    for sample usage.
+    Pour les applications CGI c'est une variable essentielle, regardez les 
+    exemples pour son utilisation.
 
 IMGBOX [x1] [y1] [x2] [y2]
-    Coordinates (in pixels) of a box drag in the image. Most often used in 
-    conjunction with Java based front ends to the MapServer.
+    Coordonnées (en pixels) du cadre dessiné dans l'image. La plupart du 
+    temps utilisé en conjonction avec un frontend Java pour MapServer.
 
 IMGEXT [minx] [miny] [maxx] [maxy]
-    The spatial extent of the existing inline image, that is, the image the 
-    users can see in their browser.
+    L'étendue spatiale de l'image embarquée existante que les utilisateurs 
+    peuvent visualiser dans leur navigateur.
 
 IMGSHAPE [x1 y1 x2 y2 x3 y3 ...]
-    Shape given in image coordinates.
+    Shape donné en coordonnées d'image.
 
-    An arbitrary polygon shape to be used for query purposes. Multiple 
-    instances simply add parts to the shape so it is possible to construct 
-    a shape with holes. Used with modes NQUERY and NQUERYMAP. 
+    Un polygone arbitraire est utilisé pour les requêtes. Plusieurs instances 
+    peuvent simplement additionner des éléments d'un Shape, il est donc 
+    possible de construire un Shape avec des trous. Utilisé avec les modes 
+    NQUERY et NQUERYMAP.
 
 IMGSIZE [cols] [rows]
-    The size (in pixels) of the exiting inline image.
+    La taille (en pixels) de l'image embarquée existante.
 
 IMGXY [x] [y]
-    Coordinates (in pixels) of a single mouse click. Used most often in 
-    conjunction with Java based front ends to the MapServer.
+    Coordonnées (en pixels) d'un simple clic de souris. Utilisé le plus souvent 
+    en conjonction avec un frontend Java pour MapServer.
 
 LAYER [name]
-    The name of a layer as it appears in the map file. Sending mapserv a layer 
-    name sets that layer's STATUS to ON.
+    Le nom d'une couche tel qu'il apparaît dans le map file. Envoie à mapserv le 
+    nom d'une couche dont l'état (STATUS) passera à ON.
 
 LAYERS [name name ...]
-    The names of the layers to be turned on. Layer names must be seperated by 
-    spaces.
+    Les noms des couches à activer. Les noms des couches doivent être séparés 
+    par des espaces.
 
-    Version 4.4 and above: passing 'LAYERS=all' will automatically turn on all 
-    layers.
+    Dans les versions 4.4 et supérieures : LAYERS=all activera automatiquement 
+    toutes les couches.
 
 MAP [filename]
-    Path, relative to the CGI directory, of the map file to be used.
+    Chemin, relatif au répertoire CGI, du map file à utiliser.
 
 MAPEXT [minx] [miny] [maxx] [maxy] , MAPEXT (shape)
-    The spatial extent of the map to be created.
+    L'étendue spatiale de la carte à créer. 
 
-    Can be set to shape as an alternative option. In this case mapextent is 
-    set to the extent of a selected shape. Used with queries. 
+    Peut être renseignée avec "shape" comme option alternative. Dans ce 
+    cas MAPEXT sera défini par l'étendue du Shape sélectionné. A utiliser 
+    avec les requêtes.
 
 MAPSIZE [cols] [rows]
-    The size (in pixels) of the image to be created. Useful for allowing users 
-    to change the resolution of the output map dynamically.
+    La taille (en pixels) de l'image à créer. Particulièrement utile pour 
+    permettre aux utilisateurs de changer dynamiquement la résolution 
+    de la carte de sortie.
 
 MAPSHAPE [x1 y1 x2 y2 x3 y3 ...]
-    Shape in map coordinates.
+    Shape en coordonnées de la carte.
 
-    An arbitrary polygon shape to be used for query purposes. Multiple 
-    instances simply add parts to the shape so it is possible to construct a 
-    shape with holes. Used with modes NQUERY and NQUERYMAP.
+    Un polygone arbitraire est utilisé pour les requêtes. Plusieurs instances 
+    peuvent simplement additionner des éléments d'un Shape, il est donc 
+    possible de construire un Shape avec des trous. Utilisé avec les modes 
+    NQUERY et NQUERYMAP.
 
 MAPXY [x] [y] , MAPXY (shape)
-    A point, in the same coordinate system as the shapefiles, to be used in 
-    conjuction with a buffer or a scale to construct a map extent.
+    Un point, dans le même système de coordonnées que les fichiers Shape, 
+    à utiliser en conjonction avec un tampon (buffer) ou une échelle pour 
+    construire une étendue de carte.
 
-    Can be set to shape as an alternative option. In this case mapextent is 
-    set to the extent of a selected shape. Used with queries. 
+    Peut être renseigné avec "shape"  comme option alternative. Dans ce 
+    cas l'étendue de la carte sera définie par l'étendue du Shape sélectionné. 
+    À utiliser avec les requêtes.
 
 MINX | MINY | MAXX | MAXY [number]
-    Minimum/Maximum x/y coordinate of the spatial extent for a new map/query. 
-    This set of parameters are the pieces of MAPEXT.
+    Coordonnées x/y minimales/maximales de l'étendue spatiale pour une 
+    nouvelle carte/requête. Ces paramètres sont des éléments de MAPEXT.
 
 MODE [value]
-    Mode of operation. The following options are supported (note that all of 
-    the query modes also support map-only modes, e.g. ITEMQUERYMAP, which 
-    for brevity are not all listed):
+    Mode de l'opération. Les options suivantes sont supportées (notez que tous 
+    les modes de requêtes supportent également les modes carte seule, par 
+    exemple ITEMQUERYMAP, mais ceux-ci ne sont pas listés pour rester bref) :
 
     BROWSE
-        Fully interactive interface where maps (and interactive pages) are 
-        created. This is the default mode. 
+        Interface totalement interactive dans laquelle les cartes (et les pages 
+        interactives) sont créées. Ceci est le mode par défaut.
 
     QUERY
-        A spatial search (finds closest) is triggered by a click in a map.
+       Une recherche spatiale (trouve le plus proche) est déclenchée par un clic 
+       sur une carte.
 
     NQUERY
-        A spatial search (finds all) is triggered by a click in a map or by 
-        user-define selection box.
+        Une recherche spatiale (trouve tout) est déclenchée par un clic sur une 
+        carte ou par un cadre de sélection défini par l'utilisateur.
 
     ITEMQUERY
-        A text search of attribute data is triggered using a layer QSTRING. 
-        Returns 1st match.
+        Une recherche textuelle dans les données attributaires est déclenchée 
+        en utilisant une couche QTRING. Retourne la première correspondance.
 
     ITEMNQUERY
-        A text search of attribute data is triggered using a QSTRING. 
-        Returns all matches.
+        Une recherche textuelle dans les données attributaires est déclenchée 
+        en utilisant un QTRING. Retourne toutes les correspondances.
 
     FEATUREQUERY
-        A spatial search that uses one feature from SLAYER to query other 
-        layers.
+        Une recherche spatiale qui utilise une entité de SLAYER pour 
+        interroger les autres couches.
 
     FEATURENQUERY
-        A spatial search that uses multiple features from SLAYER to query 
-        other layers.
+        Une recherche spatiale qui utilise plusieurs entités de SLAYER pour 
+        interroger les autres couches.
 
     ITEMFEATUREQUERY
-        A text search of attribute data is triggered using a QSTRING. Returns 
-        first match. Layer to be searched is defined using slayer parameter. 
-        The results of this search are applied to other searchable layers 
-        (which can be limited using the QLAYER parameter).
+        Une recherche textuelle dans les données attributaires est déclenchée 
+        par un QSTRING. Retourne la première correspondance. La couche 
+        cherchée est définie en utilisant le paramètre slayer. Les résultats de 
+        cette recherche sont appliqués aux autres couches interrogeables (qui 
+        peuvent être limitées en utilisant le paramètre QLAYER).
 
     ITEMFEATURENQUERY
-        A text search of attribute data is triggered using a QSTRING. Returns 
-        all matches. Layer to be searched is defined using slayer parameter. 
-        The results of this search are applied to other searchable layers 
-        (which can be limited using the QLAYER parameter).
+        Une recherche textuelle dans les données attributaires est déclenchée 
+        par un QSTRING. Retourne toutes les correspondances. La couche à 
+        chercher est définie en utilisant le paramètre slayer. Les résultats de 
+        cette recherche sont appliqués aux autres couches interrogeables (qui 
+        peuvent être limitées en utilisant le paramètre QLAYER).
 
     LEGENDICON
-        A legend icon is returned.  The ICON parameter must also be used
-        to specify the layername and a class index.  Class index value is 
-        optional and defaults to 0.  For example:
+        Une icône de légende est retournée. Le paramètre ICON peut également 
+        être utilisé pour spécifier le nom de la couhe et un index de classe. La 
+        valeur de l'index de classe est optionnelle et vaut 0 par défaut. Par exemple :
 
         ::
 
           mapserv.exe?map=/ms4w/apps/gmap/htdocs/gmap75.map&MODE=legendicon&ICON=popplace,0
 
     MAP
-        The created map is returned. Used within an <img ... > tag. 
+        La carte de référence créée est retournée. Utilisé avec une balise <img ... >.
 
     REFERENCE
-        The created reference map is returned. Used within an <img ... > tag. 
+        La carte de référence créée est retournée. Utilisé avec une balise <img ... >.
 
     SCALEBAR
-        The created scalebar is returned. Used within an <img ... > tag. 
+        L'échelle créée est retournée. Utilisé avec une balise <img ... >.
 
     LEGEND
-        The created legend is returned. Used within an <img ... > tag. 
+        La légende créée est retournée. Utilisé avec une balise <img ... >.
 
     ZOOMIN
-        Switch to mode BROWSE with ZOOMDIR=1 
+        Modifie le mode de navigation (BROWSE) avec ZOOMDIR=1.
 
     ZOOMOUT
-        Switch to mode BROWSE with ZOOMDIR=-1 
+        Modifie le mode de navigation (BROWSE) avec ZOOMDIR=-1.
 
     INDEXQUERY
-        Looks up a feature based on the values of SHAPEINDEX and TILEINDEX 
-        parameters. SHAPEINDEX is required, TILEINDEX is optional and is only 
-        used with tiled shapefile layers. 
+        Consulte une entité basée sur les valeurs des paramètres SHAPEINDEX 
+        et TILEINDEX. SHAPEINDEX est obligatoire, TILEINDEX est optionnel et 
+        est utilisé seulement avec les couches shapefile assemblées.
 
     COORDINATE
-        To be clarified. 
+        À clarifier.
 
 QLAYER [name]
-    Query layer. The name of the layer to be queried as it appears in the map 
-    file. If not specified then all layers are searched in turn.
+    Interrogation de couche. Le nom de la couche qui doit être interrogée tel 
+    qu'il apparaît dans le mapfile. S'il n'est pas indiqué alors toutes les couches 
+    sont interrogées successivement.
 
 QITEM [name] (optional)
-    The name of an attribute in a layer attribute table to query on. The 
-    parameter is optional and used in conjunction with the QSTRING for 
-    attribute queries. 
+    Le nom d'un attribut dans la table attributaire d'une couche à interroger. 
+    Le paramètre est optionnel et est utilisé en conjonction avec QSTRING pour 
+    les requêtes attributaires.
 
 QSTRING [expression]
-    Attribute queries: Query string passed to the query function. 
+   Requêtes attributaires : le texte de la requête est passé à la fonction de requête.
 
 QUERYFILE [filename]
-    Used with BROWSE or NQUERY mode. This option identifies a query file to 
-    load before any regular processing. In BROWSE mode this result in a query 
-    map being produced instead of a regular map. This is useful when you want 
-    to hilite a feature while still in a pan/zoom mode. In NQUERY mode you'd 
-    gain access to any of the templates used in normally presenting the query, 
-    so you have access to query maps AND attribute information. 
-    See the SAVEQUERY option.
+    Utilisé avec les modes BROWSE ou NQUERY. Cette option identifie un 
+    fichier requête à charger avant tout processus régulier. Dans le mode 
+    BROWSE cela produit une carte requise à la place d'une carte normale. 
+    Ceci est utile quand vous voulez mettre en évidence une entité lors d'un 
+    changement de zoom (mode pan/zoom). Dans le mode NQUERY vous 
+    obtenez l'accès à l'un des modèles utilisés normalement dans la présentation 
+    de la requête, ainsi vous avez accès aux cartes requises ET aux informations 
+    attributaires. Voyez l'option SAVEQUERY.
 
 REF
-    The name associated with the inline reference map image used to record 
-    user clicks. What actually is passed are two variables, ref.x and ref.y.
-    
-    For the CGI Applications this is an essential variable when reference 
-    maps are used, see the examples for sample usage. 
+    Le nom associé à l'image embarquée de la carte de référence utilisé pour 
+    enregistrer les clics de l'utilisateur. Deux variables sont passées, ref.x et 
+    ref.y.
+
+    Pour les applications CGI ce sont des variables essentielles quand les cartes 
+    de référence sont utilisées, voyez les exemples.
 
 REFXY [x] [y]
-    Coordinates (in pixels) of a single mouse click in the reference image. 
-    Used in conjunction with Java based front ends to the MapServer. 
+    Coordonnées (en pixels) d'un simple clic de souris sur l'image de 
+    référence. Utilisé en conjonction avec une frontend Java pour 
+    MapServer.
 
 SAVEQUERY
-    When used with any of the query modes this tells the MapServer to save the 
-    query results to a temporary file for use in subsequent operations 
-    (see QUERYFILE). Useful for making queries persistent.
+    Utilisé avec n'importe quel autre des modes de requête, ceci indique à 
+    MapServer de sauvegarder les résultats de la requête vers un fichier 
+    temporaire pour des opérations ultérieures (voir QUERYFILE). Très 
+    utile pour rendre des requêtes permanentes.
 
 SCALEDENOM [number]
-    Scale to create a new map at. Used with mapxy. Scale is given as the
-    denominator of the actual scale fraction, for example for a map at a scale
-    of 1:24,000 use 24000.  Implemented in MapServer 5.0, to replace the
-    deprecated SCALE parameter.
+    Échelle pour créer une nouvelle carte. L'échelle donnée est le dénominateur 
+    de la fraction de l'échelle réelle, par exemple pour une carte d'échelle 
+    1:24000, utilisez 24000. Implémenté dans MapServer 5.0 pour remplacer 
+    le paramètre obsolète SCALE.
 
 SCALE [number] - deprecated
-    Since MapServer 5.0 the proper parameter to use is SCALEDENOM
-    instead.  The deprecated SCALE is the scale to create a new map at. Used
-    with mapxy. Scale is given as the denominator of the actual scale fraction,
-    for example for a map at a scale of 1:24,000 use 24000.
+    Depuis MapServer 5.0 le bon paramètre à utiliser est SCALEDENOM à 
+    la place de SCALE. Ce paramètre obsolète est l'échelle à laquelle créer une 
+    nouvelle carte. Utilisé avec MAPXY. L'échelle donnée est le dénominateur 
+    de la fraction de l'échelle réelle, par exemple pour une carte d'échelle 
+    1:24000, utilisez 24000.
 
 SEARCHMAP
-    It is possible to do pan/zoom interfaces using querymaps. In these cases 
-    you will likey want information about the contents of the new map rather 
-    than the previous map which is the normal way queries work. When 
-    searchmap is specified the new map is created and it's extent is used 
-    to query layers. Useful with NQUERY mode only.
+    Il est possible de créer des interfaces pour gérer le zoom (pan/zoom) 
+    en utilisant des querymaps. Dans ces cas, vous aimerez avoir l'information 
+    sur les contenus de la nouvelle carte plutôt que celle de la précédente carte 
+    ce qui est la façon normale de fonctionnement des requêtes. Quand 
+    SEARCHMAP est spécifié la nouvelle carte est créée et son étendue est 
+    utilisée pour les couches de requêtes. Très utile avec le mode NQUERY 
+    uniquement.
 
 SHAPEINDEX [index]
-    Used for index queries (in conjunction with INDEXQUERY). 
+    Utilisé pour indexer les requêtes (en combinaison avec INDEXQUERY).
 
 SLAYER [name]
-    Select layer. The name of the layer to be used for any of the feature 
-    (i.e. staged) query modes. The select layer must be a polygon layer. The 
-    selection feature(s) are available for presentation to the user.
+    Couche de sélection. Le nom de la couche devant être utilisé pour 
+    l'une des fonctions de recherche sur l'entité (par exemple STAGED). 
+    La couche sélectionnée doit être une couche de polygones. La ou les 
+    entités sélectionnées sont disponibles pour être présentées à l'utilisateur.
 
 TILEINDEX [index]
-    Used for index queries (in conjunction with INDEXQUERY), used with tiled 
-    shapefile layers. 
+    Utilisé pour indexer les requêtes (en combinaison avec INDEXQUERY), 
+    utilisé avec les couches de Shape assemblés (tiled shapefiles).
 
 ZOOM [number]
-    Zoom scaling to apply to the creation of the new map. Values greater than 
-    0 resulting in zooming in, 0 is a pan, and values less than zero are for 
-    zooming out. A value of 2 means "zoom in twice".
+    Echelle de zoom à appliquer lors de la création d'une nouvelle carte. Les 
+    valeurs supérieures à 0 indiquent un agrandissement (zoom in), 0 pour 
+    la vue d'ensemble (pan), et les valeurs négatives indiquent un 
+    rétrécissement (zoom out). Une valeur de 2 indique un "agrandissement 
+    par deux".
 
-    ZOOM can be used as a shortcut for the combination ZOOMDIR/ZOOMSIZE.
-    The zoom is limited by the MINZOOM/MAXZOOM settings compiled into the 
-    MapServer (-25/25) by default.
+    ZOOM peut être utilisé comme un raccourci de la combinaison 
+    ZOOMDIR/ZOOMSIZE. Le zoom est limité par le paramètre 
+    MINZOOM/MAXZOOM compilé dans MapServer (-25/25) par défaut.
 
 ZOOMDIR [1 | 0 | -1]
-    Direction to zoom. See above. 
+    Direction du zoom. Voir ci-dessus.
 
 ZOOMSIZE [number]
-    Absolute magnitude of a zoom. Used with ZOOMDIR.
+    Grandeur absolue d'un zoom. Utilisé avec ZOOMDIR.
 
-    ZOOMDIR is limited to MAXZOOM compiled into the MapServer (25 by default).
+    ZOOMDIR est limité par MAXZOOM compilé dans MapServer (25 par défaut).
 
-Changing map file parameters via a form or a URL
+Modifier les paramètres du mapfile via un formulaire ou une URL
 ================================================
 
-Begining with version 3.3 it is possible to change virtually any map file 
-value from a form or a URL. The syntax for this is fairly straight forward,
-and depends on what version of MapServer you are using. One potentially very 
-powerful use of this ability to change mapfile parameters through a URL 
-involves changing class expressions on-the-fly.  Try it out.
+À partir de la version 3.3 il est possible de changer virtuellement toute valeur 
+du mapfile via un formulaire ou une URL. La syntaxe pour cela est assez simple 
+et dépend de la version de MapServer que vous utilisez. Une utilisation potentielle 
+très puissante de cette capacité est de changer les paramètres du mapfile via une 
+URL entrainant le changement des expressions de classe à la volée.
 
 
-Using MapServer version >= 5
-----------------------------
+Utilisation d'une version de MapServer >= 5
+------------------------------------------------------------
 
-Previous versions of the MapServer CGI program allowed certain parameters
-to be changed via a URL using a cumbersome syntax such as 
-map_layer_0_class_0_color=255+0+0 which changes the color in one classObj.
-So, in the past you have to change parameters one-at-a-time. Now you can
-pass chunks of mapfiles (with security restrictions) to the CGI interface.
-The map_object notation is still necessary to identify which object you
-want to modify but you can change multiple properties at one time. Note 
-that you can use either a '_' or a '.' to seperate identifiers.
+Les versions précédentes du programme MapServer CGI permettaient de 
+changer certains paramètres via une URL en utilisant une syntaxe lourde 
+comme map_layer_0_class_0_color=255+0+0 qui change la couleur 
+d'une classObj. Il fallait donc par le passé changer les paramètres un à la 
+fois. Maintenant vous pouvez envoyer des morceaux de mapfile (avec des 
+restrictions de sécurité) à l'interface CGI. La notation map object reste 
+nécessaire pour identifier quel objet vous voulez modifier mais vous pouvez 
+changer plusieurs propriétés en même temps. Notez que vous pouvez 
+utiliser un '_' ou un '.' pour séparer les identifiants.
 
-Example 1, changing a scalebar object:
+Exemple 1, changement de l'objet scalebar :
 
 ::
 
   ...&map.scalebar=UNITS+MILES+COLOR+121+121+121+SIZE+300+2&...
 
-Example 2, changing a presentation style:
+Exemple 2, changement du style de présentation :
 
 ::
 
  ...&map.layer[lakes].class[0].style[0]=SYMBOL+crosshatch+COLOR+151+51+151+SIZE+15&...
 
-Example 3, creating a new feature
+Exemple 3, création d'une nouvelle entité :
 
 ::
 
   ...&map_layer[3]=FEATURE+POINTS+500000+1000000+END+TEXT+'A+test+point'+END&...
   
-Example 4, set multiple web object parameters
+Exemple 4, définition des paramètres de plusieurs objets web :
 
 ::
 
   ...&map_web=imagepath+/ms4w/tmp/ms_tmp/+imageurl+/ms_tmp/
   
-Example 5, set the map size
+Exemple 5, définition de la taille de la carte :
 
 ::
 
   ...&map_size=800+400
 
-The variable identifies an object uniquely (by name or index in the case of
-layerObj's and classObj's). The value is a snippet of a mapfile. You
-cannot create new objects other than inline features at this point.
+La variable identifie un objet unique (par son nom ou son index dans le cas de 
+layerObj et de classObj). La valeur est un extrait d'un mapfile. Vous ne pouvez 
+pas créer de nouveaux objets autres que les entités embarquées à ce niveau.
 
-Using MapServer version < 5
----------------------------
+Utilisation d'une version de MapServer < 5
+------------------------------------------------------------------
 
-For MapServer version < 5, any value can be expressed using the hierarchy used 
-in a map file. A map contains a layer, which contains a class, which contains a label, 
-which has a color. This hierarchy is expressed as a sequence of MapServer keywords 
-seperated by underscores. For example to change the color of a layer called 
-"lakes" with only one class defined you would use a form variable named 
-"map_lakes_class_color" and could assign it a color like "0 0 255". Layers can 
-be referenced by index (i.e. map_layer_0...) or by name as shown above. Layer 
-classes are referenced by index value (i.e. map_layer_0_class_2). If there is 
-only 1 class for a layer then the index should be ommited. These variables must 
-always begin with the sequence "map\_". Values assigned must conform to the 
-syntax of a map file.
+Pour les versions de MapServer < 5, toute valeur peut être exprimée en utilisant 
+la hiérarchie du mapfile. Une carte contient une couche, qui contient une classe, 
+qui contient une étiquette (label), qui a une couleur. Cette hiérarchie est exprimée 
+comme une séquence de mots-clés MapServer séparés par des underscores. Par 
+exemple pour changer la couleur d'une couche nommée "lakes" avec une seule classe 
+définie, vous devriez utiliser une variable de formulaire nommée 
+"map_lakes_class_color" et lui assigner une couleur comme "0 0 255". Les couches 
+peuvent être référencées par un index (par exemple map_layer_0...) ou par un 
+nom comme montré ci-dessus. Les classes de couche sont référencées par une 
+valeur d'index (par exemple map_layer_0_class_2). S'il n'y a qu'une seule classe 
+pour une couche alors l'index devrait être omis. Ces variables doivent toujours 
+commencer par la séquence "map_". Les valeurs assignées doivent être conformes 
+à la syntaxe d'un mapfile.
 
-It is also possible to define inline features using this mechanism. This is 
-the only case where you can add on to the map file. You can edit/change layer 
-parameters but you cannot create a new layer. With inline features you have 
-to first create a feature and then build upon it, however, the layer the feature 
-belongs to must exist. Here's a snippet from a GET request that adds a feature 
-to a webuser layer:
+Il est également possible de définir des entités embarquées en utilisant ce 
+mécanisme. C'est le seul cas où vous pouvez ajouter quelque chose au mapfile. 
+Vous pouvez éditer/changer les paramètres de la couche mais vous ne pouvez 
+pas créer une nouvelle couche. Avec les entités embarquées vous devez d'abord 
+créer une entité et ensuite construire sur cette ase, cependant, la couche à 
+laquelle appartient l'entité doit exister. Voici un extrait d'une requête GET qui 
+ajoute une entité à une couche utilisateur :
 
 ::
 
       . . . &map_webuser_feature=new&map_webuser_feature_points=12345.6789+12345.6789&map_webuser_feature_text=My+House!& . . .
 
-The "map_webuser_feature=new" creates a new feature for the webuser layer. 
-All subsequent calls to the feature object for that layer will modify the new 
-feature. You can repeat the process to create additional features. This is 
-really intended for very small (point, rectangle) amounts of data.
+Le "map_webuser_feature=new" crée une nouvelle entité pour la couche 
+utilisateur. Tous les appels ultérieurs à cet objet entité pour cette couche 
+modifieront la nouvelle entité. Vous pouvez répéter ce processus pour créer 
+des entités supplémentaires. Ceci reste réellement applicable pour de très 
+petits ensembles de données (point, rectangle).
 
-
-ROSA-Applet Controls
+Contrôles de l'applet ROSA
 ====================
 
-*note: Active development and maintenance of the ROSA Applet has stopped*
+*Note : le développement et la maintenance de ROSA ont été stoppés.*
 
-The ROSA Applet parameters were added to the CGI MapServer in version 3.6. 
-This Java Applet provides a more intuitive user interface to MapServer. The 
-MapTools site provides detailed information on the ROSA Applet.
+Les paramètres de l'applet ROSA ont été ajoutés à MapServer CGI dans la version 
+3.6. Cette applet Java fournit une interface utilisateur plus intuitive à MapServer. 
+Le site MapTools fournit des informations détaillées sur l'applet ROSA.
 
-The parameters can also be used by other interfaces/tools, if set to the right 
-values. Please note that the two parameters have to be handed over to te CGI 
-application in the order identified below.
+Les paramètres peuvent également être utilisés par d'autres interfaces et outils 
+s'ils ont les bonnes valeurs. Veuillez noter que les deux paramètres doivent être 
+envoyés à l'application CGI  dans l'ordre indiqué ci-dessous.
 
 INPUT_TYPE (auto_rect | auto_point)
-    The INPUT_TYPE parameter is needed to identify if the coordinates handed 
-    over to the mapserver have to be interpreted as rectangular or point data.
+    Le paramètre INPUT\_TYPE est nécessaire pour identifier si les coordonnées 
+    envoyées à MapServer doivent être interprétées comme un rectangle ou une 
+    donnée ponctuelle.
 
 INPUT_COORD [minx,miny;maxx,maxy]
-    The ROSA-Applet always fills the pair of coordinates. In case of a point 
-    (input_type=auto_point) min and max coordinate are equal (MapServer 
-    uses the min value).
+    L'applet ROSA renseigne toujours la paire de coordonnées. Dans le cas d'un 
+    point (input\_type=auto\_point) les coordonnées min et max sont égales 
+    (Mapserver utilise la valeur min).

@@ -1,0 +1,238 @@
+.. _class:
+
+*****************************************************************************
+ CLASS
+*****************************************************************************
+
+BACKGROUNDCOLOR [r] [g] [b]
+    Couleur à utiliser pour les symboles non transparents.
+  
+COLOR [r] [g] [b]
+    Couleur à utiliser pour dessiner les entités.
+
+.. index::
+    pair: DEBUG; CLASS
+    
+DEBUG [on|off]
+    Active le débugage de l'objet classe. Une sortie verbeuse est générée et 
+    envoyée au canal de sortie standard des erreurs (STDERR) ou vers le 
+    fichier de trace ("log") de MapServer si celui-ci est précisé dans le 
+    paramètre LOG de l'objet :ref:`WEB`.
+    
+    .. seealso::
+        
+        :ref:`rfc28`
+
+.. index::
+    pair: EXPRESSION; CLASS
+    
+:ref:`EXPRESSION <expressions>` [string]
+    Quatre types d'expressions sont maintenant supportées pour définir 
+    l'appartenance à une classe. Les comparaisons de chaînes, les expressions
+     régulières, les expressions logiques simples et les fonctions de chaînes. 
+    Si aucune expression n'est donnée, alors toutes les entités sont 
+    considérées comme appartenant à cette classe.
+
+    - Les comparaisons de chaînes sont sensibles à la casse et sont les plus 
+      rapides à analyser. Il n'y a pas de caractère délimiteur à utiliser 
+      cependant la chaîne doit être entre quotes si elle contient des caractères 
+      spéciaux (Afin de prendre de bonnes habitudes, il est recommandé de 
+      mettre entre quotes toutes vos chaînes).
+      
+    - Les expressions régulières fonctionnent de la même façon que dans les 
+      précédentes versions de MapServer. Cependant vous devez dorénavant 
+      délimiter toute expression régulière en utilisant /regex/. Aucune quote 
+      ne doit être utilisée.
+
+    - Les expressions logiques vous permettent de construire des tests assez 
+      complexes basés sur un ou plusieurs attributs et sont donc seulement 
+      utilisables avec les fichiers Shape. Les expressions logiques sont délimitées 
+      par des parenthèses "(expression)". Les noms des attributs sont délimités 
+      par des crochets "[ATTRIBUT]". Ces noms sont sensibles à la casse et 
+      doivent correspondre aux objets dans le fichier Shape. Par exemple : 
+      
+      ::
+      
+        EXPRESSION ([POPULATION] > 50000 AND '[LANGUAGE]' eq 'FRENCH')
+
+      Seront sélectionnés les objets dont la valeur de l'attribut [POPULATION] 
+      est strictement supérieure à 50000 et dont l'attribut [LANGUAGE] vaut 
+      "FRENCH".
+
+      Les opérateurs logiques suivants sont supportés :
+
+      =,>,<,<=,>=,=,or,and,lt,gt,ge,le,eq,ne
+
+      Comme vous pouvez vous y attendre, ce niveau de complexité est plus lent à traiter.
+
+    - Une fonction de chaînes existe : length(). Elle calcule évidemment la longueur 
+      d'une chaîne. Voici un exemple :
+
+      ::
+        
+         EXPRESSION (length('[NAME_E]') < 8)                      
+                                
+      Les comparaisons de chaînes et les expressions régulières fonctionnent avec 
+      le "classitem" défini au niveau de la couche. Vous pouvez mélanger les types 
+      d'expressions avec les différentes classes d'une couche.
+
+.. index::
+    pair: GROUP; CLASS
+    
+GROUP [string]
+    Permet de grouper des classes. C'est utilisé seulement si CLASSGROUP est 
+    défini au niveau de :ref:`LAYER`. Si le paramètre CLASSGROUP est défini, 
+    seules les classes qui ont le même nom de groupe seront considérées pour 
+    l'affichage. Voici un exemple de couche avec des classes groupées :
+
+    .. code-block:: mapfile
+
+      LAYER
+        ...
+        CLASSGROUP "group1"
+        ...
+        CLASS
+          NAME "name1"
+          GROUP "group1"
+          ...
+        END
+        CLASS
+          NAME "name2"
+          GROUP "group2"
+          ...
+        END
+        CLASS
+          NAME "name3"
+          GROUP "group1"
+          ...
+        END
+        ...
+      END # layer
+
+
+.. index::
+    pair: KEYIMAGE; CLASS
+
+.. _KEYIMAGE:
+     
+KEYIMAGE [filename]
+    Nom complet du fichier image de la légende pour la :ref:`CLASS`. Cette 
+    image est utilisée lors de la construction de la légende (ou lors de la 
+    demande d'une icône de légende via MapScript ou :ref:`l'application CGI <cgi>`).
+    
+:ref:`LABEL`
+    Indique le commencement d'un objet :ref:`LABEL`.
+
+.. index::
+    pair: MAXSCALEDENOM; CLASS
+    
+MAXSCALEDENOM [double]
+    Échelle maximale pour laquelle la :ref:`CLASS` est dessinée. L'échelle est 
+    donnée comme dénominateur de la fraction de l'échelle actuelle. Par 
+    exemple pour une carte à l'échelle de 1:24000, il s'agit de 24000. 
+    Implémenté dans MapServer 5.0 pour remplacer le paramètre obsolète 
+    MAXSCALE.
+
+    .. seealso::
+        
+        :term:`Map Scale`
+
+MAXSCALE [double] - obsolète
+    Depuis MapServer 5.0 le bon paramètre à utiliser à la place de celui-ci est 
+    MAXSCALEDENOM. MAXSCALE (obsolète) était l'échelle maximale pour 
+    laquelle la CLASS était dessinée. L'échelle est donnée comme dénominateur 
+    de la fraction de l'échelle actuelle. Par exemple pour une carte à l'échelle de 
+    1:24000, il s'agit de 24000.
+    
+    .. deprecated: 5.0
+    
+MAXSIZE [integer]
+    Taille maximale en pixels pour dessiner un symbole. Le défaut est de 50.
+
+.. index::
+    pair: MINSCALEDENOM; CLASS
+    
+MINSCALEDENOM [double]
+    L'échelle minimale pour laquelle la :ref:`CLASS` est dessinée. L'échelle est 
+    donnée comme dénominateur de la fraction de l'échelle actuelle. Par 
+    exemple pour une carte à l'échelle de 1:24000, il s'agit de 24000. 
+    Implémenté dans MapServer 5.0 pour remplacer le paramètre obsolète 
+    MINSCALE.
+    
+    .. seealso::
+        
+        :term:`Map Scale`
+
+MINSCALE [double] - obsolète
+    Depuis MapServer 5.0 le bon paramètre à utiliser à la place de celui-ci est 
+    MINSCALEDENOM. MINSCALE (obsolète) était l'échelle minimale pour laquelle 
+    la CLASS était dessinée. L'échelle est donnée comme dénominateur de la fraction 
+    de l'échelle actuelle. Par exemple pour une carte à l'échelle de 1:24000, il s'agit 
+    de 24000.
+
+    .. deprecated: 5.0
+    
+MINSIZE [integer]
+    Taille minimale en pixels pour dessiner un symbole. Le défaut est de 0.
+    
+NAME [string]
+    Nom à utiliser dans les légendes pour cette CLASS. Si ce n'est pas défini, 
+    la CLASS n'apparaitra pas dans une légende.
+    
+OUTLINECOLOR [r] [g] [b]
+    Couleur à utiliser pour les polygones et certains symboles de marquage. 
+    Les symboles de ligne ne gèrent pas ce paramètre.
+    
+SIZE [integer]
+    Hauteur, en pixels, du symbole/motif à utiliser. Seulement utile avec 
+    les symboles rééchantillonnables. Pour les symboles de type vecteur 
+    (et ellipse), la taille par défaut est basée sur la gamme des valeurs de Y 
+   dans les POINTS définissant le symbole. Pour les rasters, le défaut est la 
+   taille verticale de l'image. La taille par défaut est de 1 pour les symboles 
+   TTF.
+    
+STATUS [on|off]
+    Définit le statut d'affichage actuelle de la CLASS. Par défaut la CLASS 
+    est activée.
+
+:ref:`STYLE`
+    Indique le commencement d'un objet STYLE. Une CLASS peut contenir 
+    plusieurs styles.
+
+:ref:`SYMBOL` [integer|string|filename]
+    Le nom du symbole ou le numéro à utiliser pour toutes les entités si les 
+    tables d'attributs ne sont pas utilisées. Le numéro est l'index du symbole 
+    dans le fichier de symboles, celui-ci commence à 1, le 5ième symbole 
+    dans le fichier est donc le symbole numéro 5. Vous pouvez aussi donner 
+    des noms à vos symboles en utilisant le mot-clé NAME dans le fichier de 
+    définition des symboles puis l'utiliser pour y faire référence. 0 est la 
+    valeur par défaut ce qui produit un simple pixel, une ligne simple fine 
+    ou un polygone plein selon le type de la couche.
+
+    Vous pouvez aussi spécifier un fichier GIF ou PNG. Le chemin est relatif 
+    à l'emplacement du mapfile.
+    
+:ref:`TEMPLATE <template>` [filename]
+    Fichier template ou URL à utiliser pour présenter les résultats des 
+    requêtes à l'utilisateur. Voyez la référence :ref:`template` pour plus 
+    d'information.
+    
+TEXT [string]
+    Texte fixe pour étiqueter les entités de cette classe. Ceci écrase les valeurs 
+    obtenues par LABELITEM. La chaîne de caractères peut être donnée comme 
+    une expression délimitée par des parenthèses. Ceci vous permet de 
+    concaténer plusieurs attributs en une seule étiquette. Par exemple : 
+    ([FIRSTNAME],[LASTNAME]).
+
+
+Vous pouvez aussi "empiler" 2 symboles pour obtenir des effets intéressants. Vous définissez le second symbole, qui est effectivement plaqué "par dessus" le symbole normalement défini ci-dessus. Voyez la référence :ref:`sym_construction` pour plus d'information.
+
+Les paramètres suivants vous permettent de définir le symbole. Ils sont équivalents à leurs contreparties non recouvrables :
+
+- OVERLAYBACKGROUNDCOLOR
+- OVERLAYCOLOR
+- OVERLAYOUTLINECOLOR
+- OVERLAYSIZE
+- OVERLAYMINSIZE
+- OVERLAYMAXSIZE
+- OVERLAYSYMBOL
