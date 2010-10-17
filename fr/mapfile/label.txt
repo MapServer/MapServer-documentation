@@ -1,0 +1,270 @@
+.. _label:
+
+*****************************************************************************
+ LABEL
+*****************************************************************************
+
+.. index:: LABEL
+
+ALIGN [left|center|right]
+    Depuis la version 5.4. Définie l'alignement du texte pour les étiquettes de
+    plusieurs lignes (voir WRAP_). Notez que l'algorithme pour l'alignement
+    est loin d'être précis, n'espérez pas de résultats fabuleux (spécialement 
+    pour l'alignement à *droite*) si vous n'utilisez pas une police à taille fixe.
+
+ANGLE [double|auto|follow|attribute]
+    - Angle, données en degrées, pour dessiner l'étiquette.
+    - AUTO permet à MapServer de calculer l'angle. Valide uniquement pour les 
+      couches de type ligne (LINE).
+    - FOLLOW a été implémenté dans la version 4.10 et indique à MapServer 
+      de calculer une étiquette courbe appropriée aux entités linéaires (cf. la 
+      :ref:`RFC11` pour les détails).
+    - [ATTRIBUTE] a été implémenté dans la version 5.0 pour spécifier le nom 
+      de l'attribut dans la table attributaire à utiliser pour les valeurs angulaires. 
+      Les crochets [] sont nécessaires. Par exemple, si le fichier DBF de votre 
+      fichier Shape contient un champ nommé "MONANGLE" qui indique la 
+      valeur de l'angle pour chaque enregistrement, votre objet LABEL doit contenir :
+
+      .. code-block:: mapfile
+
+        LABEL
+          COLOR  150 150 150
+          OUTLINECOLOR 255 255 255     
+          FONT "sans"
+          TYPE truetype
+          SIZE 6
+          ANGLE [MYANGLE]
+          POSITION AUTO      
+          PARTIALS FALSE
+        END 
+
+      le document RFC associé pour cette fonctionnalité est :ref:`RFC19`.
+
+.. index::
+    pair: LABEL; ANTIALIAS
+
+ANTIALIAS [true|false]
+    Le texte doit-il être antialiasé ? Notez que ceci nécessite un plus grand 
+    nombre de couleurs, diminue les performances de rendu et génère des 
+    images plus lourdes.
+
+BACKGROUNDCOLOR [r] [g] [b]
+    Couleur à utiliser pour dessiner un rectangle d'arrière plan (panneau 
+    d'étiquette ("billboard")). Désactivé par défaut.
+
+BACKGROUNDSHADOWCOLOR [r] [g] [b]
+    Couleur à utiliser pour dessiner l'ombre d'un rectangle d'arrière plan 
+    (panneau d'étiquette ("billboard")). Désactivé par défaut.
+
+BACKGROUNDSHADOWSIZE [x][y]
+    Jusqu'où le rectangle d'arrière plan doit être décalé ? 1 par défaut.
+
+BUFFER [integer]
+    Remplissage, en pixels, autour des étiquettes. Utile pour maintenir un 
+    espace autour du texte pour en améliorer sa lecture. Disponible 
+    seulement pour les étiquettes "cachables". 0 par défaut.
+
+COLOR [r] [g] [b] | [attribute]
+    - Couleur à utiliser pour dessiner le texte.
+    - [*ATTRIBUTE*] a été implémenté dans la version 5.0 pour spécifier 
+      le nom de l'attribut dans la table attributaire à utiliser pour les valeurs 
+      de couleur. Les crochets [] sont nécessaires. Par exemple, si le fichier 
+      DBF de votre fichier Shape contient un champ nommé "MACOULEUR" 
+      qui indique la valeur de la couleur pour chaque enregistrement, votre 
+      objet LABEL doit contenir :
+
+      .. code-block:: mapfile
+
+        LABEL
+          COLOR  [MACOULEUR]
+          OUTLINECOLOR 255 255 255     
+          FONT "sans"
+          TYPE truetype
+          SIZE 6
+          POSITION AUTO      
+          PARTIALS FALSE
+        END 
+
+      Le document RFC associé pour cette fonctionalité est :ref:`RFC19`.
+
+ENCODING [string]
+    Format d'encodage géré à utiliser pour les étiquettes. Si le format n'est pas 
+    géré, l'étiquette ne sera pas dessinée. Nécessite la bibliothèque iconv (
+    présente sur la plupart des systèmes). La bibliothèque est toujours 
+    détectée si elle est présente sur le système mais si celle-ci n'est pas 
+    présente, l'étiquette ne sera pas dessinée.
+
+    Nécessaire pour afficher des caractères internationaux dans MapServer. 
+    Plus d'informations sur :
+    http://www.foss4g.org/FOSS4G/MAPSERVER/mpsnf-i18n-en.html
+
+FONT [name|attribute]
+    - Nom de la police de caractères (comme défini dans le FONTSET) à 
+    utiliser pour les étiquettes.
+    - [*Attribute*] a été introduit dans la version 5.6 pour définir l'alias de la police.
+
+.. _FORCE:
+
+FORCE [true|false]
+    Force l'affichage des étiquettes d'une classe particulière, sans s'occuper 
+    des superpositions (collisions). Disponible seulement pour les étiquettes 
+    en cache. Désactivé par défaut.
+
+.. _MAXLENGTH:
+
+MAXLENGTH [integer]
+    Introduit dans mapserver 5.4, ce mot clé interagit avec le mot clé 
+    WRAP_ afin que les retours à la lignes aient lieu seulement après 
+    un nombre définie de caractères.
+
+    .. csv-table:: Interaction avec le mot clé WRAP_ 
+
+        "", **maxlength = 0** ,  **maxlength > 0**,  **maxlength < 0**
+        **wrap = ‘char’** ,retour à la ligne au caractère WRAP_ ,nouvelle ligne dès le premier caractère WRAP_  après MAXLENGTH_ caractères, retour fixe (toujours exactement après MAXLENGTH_ caractères)
+        **pas de wrap** ,aucun traitement, ignore l'étiquette s'il contient plus que MAXLENGTH_ caractères , retour fixe (toujours exactement après MAXLENGTH_ caractères)
+
+    Le document RFC associé pour cette fonctionalité est :ref:`RFC40`.
+
+MAXSIZE [integer]
+    Taille maximale de la police de caractères à utiliser pour 
+    redimensionner le texte (en pixels). 256 par défaut.
+
+MINDISTANCE [integer]
+    Distance minimale entre des étiquettes en double, en pixels.
+
+MINFEATURESIZE [integer|auto]
+    Taille minimale d'une entité devant être étiquettée, en pixels. Pour les
+    données linéaires, la longueur totale de la ligne affichée est utilisée,
+    pour les entités polygonales la taille du plus petit côté du rectangle
+    englobant est utilisée. Le mot-clé "Auto" indique à MapServer d'étiqueter
+    uniquement les entités plus grandes que leur propre étiquette. Disponible
+    seulement pour les étiquettes en cache.
+
+MINSIZE [integer]
+    Taille minimale de la police de caractères à utiliser pour redimensionner le
+    texte (en pixels). 4 par défaut.
+
+OFFSET [x][y]
+    Valeurs de décalage pour les étiquettes, relatives au coin inférieur gauche
+    de l'étiquette ou du point d'insertion de l'étiquette, en pixels. Dans le
+    cas d'un texte tourné (rotation), cette commande spécifie les valeurs comme
+    si toutes les étiquettes étaient horizontales et toute rotation sera
+    compensée.
+
+.. _OUTLINECOLOR:
+
+OUTLINECOLOR [r] [g] [b] | [attribute]
+    - Couleur utilisée pour dessiner une ligne d'un pixel autour du texte.
+    - [*ATTRIBUTE*] a été implémenté dans la version 5.0 pour spécifier le nom
+      de l'attribut dans la table attributaire à utiliser pour les valeurs de
+      couleur. Les crochets [] sont nécessaires. Par exemple, si le fichier DBF
+      de votre fichier Shape contient un champ nommé "MACOULEUREXTERIEURE" qui
+      indique la valeur de la couleur pour chaque enregistrement, votre objet
+      LABEL doit contenir :
+
+      .. code-block:: mapfile
+
+        LABEL
+          COLOR  150 150 150
+          OUTLINECOLOR [MACOULEUREXTERIEURE]     
+          FONT "sans"
+          TYPE truetype
+          SIZE 6
+          POSITION AUTO      
+          PARTIALS FALSE
+        END 
+
+      Le document RFC associé pour cette fonctionalité est :ref:`RFC19`.
+
+OUTLINEWIDTH [integer]
+    Largeur du contour si OUTLINECOLOR_ a été définie. 1 par défaut. Pour
+    l'instant sur le moteur de rendu AGG gère des valeurs supérieures à 1, et
+    rend un contour avec un effet "d'halo" : valeurs recommendées : 3 ou 5.
+
+PARTIALS [true|false]
+    Le texte peut-il être caché s'il n'apparait qu'en partie sur la carte ?
+    Activé par défaut.
+
+POSITION [ul|uc|ur|cl|cc|cr|ll|lc|lr|auto]
+    Position de l'étiquette relative au point d'insertion (couches seulement).
+    La première lettre est la position en "Y", la seconde lettre est la position
+    en "X". "Auto" indique à MapServer de calculer une position d'étiquette qui
+   n'interférera pas avec d'autres étiquettes. Avec des points, MapServer
+    sélectionne l'une des 8 positions extérieures (c'est à dire en excluant cc).
+    Avec les polygones, MapServer sélectionne cc (ajouté dans MapServer 5.4),
+    uc, lc, cl et cr comme positions possible. Avec des lignes, il utilise
+    seulement lc ou uc, jusqu'à ce    qu'il trouve une position qui n'entraîne
+    pas de chevauchement (collision) avec des étiquettes déjà dessinées. Si
+    toutes les positions entraînent un conflit, alors l'étiquette n'est pas
+    dessinée (sauf si le paramètre d'étiquette FORCE_ est activé). "Auto" est
+    seulement disponible avec les étiquettes en cache.
+
+PRIORITY [integer]|[item_name]|[attribute]
+    Le paramètre de priorité (ajouté dans la version 5.0) prend un chiffre
+    entier entre 1 (la plus basse) et 10 (la plus haute). La valeur par défaut
+    est de 1. Il est également possible d'affecter la priorité à un attribut
+    (item_name) en utilisant des crochets autour de l'attribut. Par exemple :
+    "PRIORITY [monattribut]".
+
+    Les étiquettes sont stockées dans le cache des étiquettes et sont dessinées
+    par ordre de priorité : les plus hauts niveaux de priorité sont dessinés
+    en premier. Spécifier dans le mapfile une valeur en dehors de la plage
+    correcte du paramètre PRIORITY entrainera une erreur ("parse error"). Une
+    valeur en dehors de la plage correcte récupérée depuis MapScript ou
+    depuis un attribut prendra la valeur minimale ou maximale de PRIORITY au
+    moment du rendu. Il n'y a pas d'impact attendu sur les performances lors de
+    l'utilisation des priorités des étiquettes.
+
+     [*Attribute*] a été introduit dans la version 5.6.
+
+REPEATDISTANCE [integer] 
+    - Introduit à la version 5.6. L'étiquette sera répétée sur chaque ligne
+      d'une géoémtrie multligne et sera répétée plusieurs fois le long d'une
+    ligne donnée dans un interval de REPEATDISTANCE pixels.
+
+     Le document RFC associé pour cette fonctionalité est :ref:`RFC57`.
+
+SHADOWCOLOR [r] [g] [b]
+    Couleur de l'ombre.
+
+SHADOWSIZE [x][y]
+    Décalage de l'ombre en pixels.
+
+SIZE [integer]|[tiny|small|medium|large|giant]|[attribute]
+    - Taille du texte. Utiliser "integer" pour donner la taille en pixels de
+      votre police de caractères TrueType ou utilisez l'un des 5 mots-clés
+      listés pour les polices de caractères bitmap.
+    - [*Attribute*]  a été implémenté dans la version 5.0 pour spécifier le nom
+      de l'attribut dans la table attributaire à utiliser pour les valeurs de
+      taille. Les crochets [] sont nécessaires. Par exemple, si le fichier DBF
+      de votre fichier Shape contient un champ nommé "MATAILLE" qui indique la
+      valeur de la taille pour chaque enregistrement, votre objet LABEL doit
+      contenir :
+
+      .. code-block:: mapfile
+
+        LABEL
+          COLOR  150 150 150
+          OUTLINECOLOR 255 255 255     
+          FONT "sans"
+          TYPE truetype
+          SIZE [MYSIZE]
+          POSITION AUTO      
+          PARTIALS FALSE
+        END 
+
+      Le document RFC associé pour cette fonctionalité est :ref:`RFC19`.
+
+TYPE [bitmap|truetype]
+    Type de police de caractères à utiliser. Généralement les polices bitmap
+    sont plus rapides à dessiner que les polices TrueType. Cependant les polices
+    TrueType sont redimensionnables et disponibles sous de nombreuses formes.
+    Assurez-vous que le paramètre FONT est activé si vous choisissez "TrueType".
+
+.. _WRAP:
+
+WRAP [character]
+    Caractère qui représente une rupture de ligne dans le texte de l'étiquette
+    et qui entraine la création d'une étiquette multi-ligne. Interagit avec
+    MAXLENGTH_ pour le retour à la ligne conditionnel après un nomber de
+    caractères données.

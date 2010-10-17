@@ -1,0 +1,283 @@
+.. _join:
+
+*****************************************************************************
+ JOIN
+*****************************************************************************
+
+.. index:: Join
+
+Description
+===========
+
+Les jointures sont définies au sein d'un objet LAYER. Il est important de 
+comprendre que les jointures sont *UNIQUEMENT* disponibles une fois qu'une 
+requête a été exécutée. Vous ne pouvez pas utiliser les jointures pour modifier
+ l'apparence d'une carte. L'objectif principal est de permettre de lier une table à 
+des données codées (par exemple 1 => Forêt) mais d'autres utilisations sont 
+possibles.
+
+Formats gérés
+=================
+ 
+- DBF/XBase files
+- CSV (Fichier texte délimité par des virgules)
+- tables PostgreSQL et PostGIS
+- tables MySQL
+
+Paramètres du MapFIle :
+===================
+
+CONNECTION [string]
+   Paramètres nécessaires pour effectuer la jointure sur une base de données 
+   (non nécessaires pour des jointures vers DBF ou CSV). L'exemple suivant 
+   est pour  :ref:`PostgreSQL <input_postgis>` :
+
+.. code-block:: mapfile
+
+    CONNECTION "host=127.0.0.1 port=5432 user=postgres password=postgres dbname=somename"
+
+CONNECTIONTYPE [string]
+   Type de connexion (non nécessaire pour des jointures vers DBF ou CSV). 
+   L'exemple suivant est pour PostgreSQL :
+
+.. code-block:: mapfile
+
+    CONNECTIONTYPE ogr 
+
+FROM [item]
+    Objet de jointure dans les données. Sensible à la casse.
+
+NAME [string]
+    Nom unique de cette jointure. Obligatoire.
+
+TABLE [filename|tablename]
+   Pour les jointures basées sur des fichiers, il s'agit du nom de la XBase ou 
+   du fichier texte délimité (par rapport au mapfile) sur lequel effectuer la 
+   jointure. Pour les bases de données PostgreSQL et MySQL, il s'agit du 
+   nom de la table PostgreSQL/MySQL sur laquelle effectuer la jointure.
+
+TEMPLATE [filename]
+   Modèle ("template") à utiliser pour les jointure 1-n (1 vers plusieurs). 
+   Le modèle est généré une fois pour chaque enregistrement et ne peut contenir 
+   que des substitutions pour les objets de la table jointe. Faites référence à la 
+   colonne de la table jointe dans votre modèle comme ceci : 
+   [joinname_columnname] où "joinname" est le NAME spécifié pour l'objet JOIN.
+
+TO [item]
+    Objet de jointure dans la table à joindre. Sensible à la casse.
+
+TYPE [ONE-TO-ONE|ONE-TO-MANY]
+    Le type de jointure. Par défaut 1-1.
+
+Exemple 1 : jointure d'un fichier SHP et d'un fichier DBF
+=========================================
+
+Couche mapfile
+----------------
+
+.. code-block:: mapfile
+
+      LAYER
+        NAME "prov_bound"
+        TYPE POLYGON
+        STATUS DEFAULT
+        DATA "prov.shp"
+        CLASS
+          NAME "Province"
+          STYLE
+            OUTLINECOLOR 120 120 120
+            COLOR 255 255 0
+          END
+        END
+        TEMPLATE "../htdocs/cgi-query-templates/prov.html"
+        HEADER "../htdocs/cgi-query-templates/prov-header.html"
+        FOOTER "../htdocs/cgi-query-templates/footer.html"
+        JOIN
+          NAME "test"
+          TABLE "../data/lookup.dbf"
+          FROM "ID"
+          TO "IDENT"
+          TYPE ONE-TO-ONE
+        END
+      END # layer
+
+Ogrinfo
+-------
+
+::
+
+  >ogrinfo lookup.dbf lookup -summary
+  INFO: Open of `lookup.dbf'
+  using driver `ESRI Shapefile' successful.
+
+  Layer name: lookup
+  Geometry: None
+  Feature Count: 12
+  Layer SRS WKT:
+  (unknown)
+  IDENT: Integer (2.0)
+  VAL: Integer (2.0)
+
+::
+
+  >ogrinfo prov.shp prov -summary
+  INFO: Open of `prov.shp'
+  using driver `ESRI Shapefile' successful.
+
+  Layer name: prov
+  Geometry: Polygon
+  Feature Count: 12
+  Extent: (-2340603.750000, -719746.062500) - (3009430.500000, 3836605.250000)
+  Layer SRS WKT:
+  (unknown)
+  NAME: String (30.0)
+  ID: Integer (2.0)
+
+Modèle
+--------
+
+::
+
+  <tr bgcolor="#EFEFEF"><td align="left">[NAME]</td><td align="left">[test_VAL]</td></tr> 
+
+
+Exemple 2 : jointure d'un fichier SHP et d'une table PostgreSQL
+=================================================
+
+Couche mapfile
+---------------
+
+.. code-block:: mapfile
+
+      LAYER
+        NAME "prov_bound"
+        TYPE POLYGON
+        STATUS DEFAULT
+        DATA "prov.shp"
+        CLASS
+          NAME "Province"
+          STYLE
+            OUTLINECOLOR 120 120 120
+            COLOR 255 255 0
+          END
+        END
+        TOLERANCE 20
+        TEMPLATE "../htdocs/cgi-query-templates/prov.html"
+        HEADER "../htdocs/cgi-query-templates/prov-header.html"
+        FOOTER "../htdocs/cgi-query-templates/footer.html"  
+        JOIN
+          NAME "test"
+          CONNECTION "host=127.0.0.1 port=5432 user=postgres password=postgres dbname=join"
+          CONNECTIONTYPE ogr
+          TABLE "lookup"
+          FROM "ID"
+          TO "ident"
+          TYPE ONE-TO-ONE
+        END
+      END # layer
+
+Ogrinfo
+-------
+
+::
+
+  >ogrinfo -ro PG:"host=127.0.0.1 port=5432 user=postgres password=postgre dbname=join" lookup -summary
+  INFO: Open of `PG:host=127.0.0.1 port=5432 user=postgres password=postgres dbname=join'
+  using driver `PostgreSQL' successful.
+
+  Layer name: lookup
+  Geometry: Unknown (any)
+  Feature Count: 12
+  Layer SRS WKT:
+  (unknown)
+  ident: Integer (0.0)
+  val: Integer (0.0)
+
+Modèle
+--------
+
+::
+
+  <tr bgcolor="#EFEFEF"><td align="left">[NAME]</td><td align="left">[test_val]</td></tr>
+
+.. note::
+
+    Quand vous testez cette jointure postgreSQL avec MapServer 4.10.0 sur Windows
+    entraîne un crash de mapserv.exe. Cependant si vous testez ceci avec une version 
+    > 4.10.0 ce crash n'arrive pas.
+
+Exemple 3 : jointure d'un fichier SHP et d'un fichier CSV
+=========================================
+
+Couche mapfile
+----------------
+
+.. code-block:: mapfile
+
+      LAYER
+        NAME "prov_bound"
+        TYPE POLYGON
+        STATUS DEFAULT
+        DATA "prov.shp"
+        CLASS
+          NAME "Province"
+          STYLE
+            OUTLINECOLOR 120 120 120
+            COLOR 255 255 0
+          END
+        END
+        TOLERANCE 20
+        TEMPLATE "../htdocs/cgi-query-templates/prov.html"
+        HEADER "../htdocs/cgi-query-templates/prov-header.html"
+        FOOTER "../htdocs/cgi-query-templates/footer.html"  
+        JOIN
+          NAME "test"
+          TABLE "../data/lookup.csv"
+          FROM "ID"
+          TO "IDENT"
+          TYPE ONE-TO-ONE
+        END
+      END # layer
+
+Structure du fichier CSV
+------------------------
+
+::
+
+  "IDENT","VAL"
+  1,12
+  2,11
+  3,10
+  4,9
+  5,8
+  6,7
+  7,6
+  8,5
+  9,4
+  10,3
+  11,2
+  12,1
+
+Ogrinfo
+-------
+
+::
+
+  >ogrinfo lookup.csv lookup -summary
+  INFO: Open of `lookup.csv'
+  using driver `CSV' successful.
+
+  Layer name: lookup
+  Geometry: None
+  Feature Count: 12
+  Layer SRS WKT:
+  (unknown)
+  IDENT: String (0.0)
+  VAL: String (0.0)
+
+Modèle
+--------
+
+::
+
+  <tr bgcolor="#EFEFEF"><td align="left">[NAME]</td><td align="left">[test_VAL]</td></tr>

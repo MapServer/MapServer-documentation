@@ -1,0 +1,99 @@
+.. _include:
+
+*****************************************************************************
+ INCLUDE
+*****************************************************************************
+
+.. index::
+    pair: INCLUDE; MAP
+
+Quand cette commande est rencontrée pendant la lecture du mapfile, le fichier 
+inclus est immédiatement lu. En conséquence, le fichier inclus peut être composé 
+d'une syntaxe de mapfile valide. Par exemple :
+
+.. code-block:: mapfile
+
+    INCLUDE 'myLayer.map'
+
+Les performances ne semblent pas être très diminuées lors d'une utilisation 
+limitée, cependant dans des sessions à haute charge vous devriez utiliser les 
+INCLUDE dans une étape intermédiaire avant de construire le mapfile de 
+production. Le pré-processeur C peut également être utilisé (mais avec une 
+syntaxe différente) et est beaucoup plus puissant.
+
+Notes
+-----
+
+- Géré dans les versions 4.10 et supérieures.
+
+- Le nom du fichier à inclure **DOIT être entre quotes**(simples ou doubles).}
+
+- Les inclusions peuvent être imbriquées, jusqu'à 5.
+
+- L'emplacement du fichier peut être donné par un chemin complet vers le 
+  fichier ou (dans MapServer >= 4.10.1) par un chemin relatif au mapfile.
+
+- Le débogage peut être problématique car : 
+
+  1) une erreur dans le fichier n'est pas renvoyée à l'utilisateur ;
+
+  2) le compteur du nombre de lignes n'est pas remis à zéro pour chaque fichier. 
+    Ci-dessous une des erreurs possibles qui se produit quand le fichier à inclure 
+    ne peut pas etre trouvé :
+
+     ::
+
+          msyylex(): Unable to access file. Error opening included file "parks_include.map"
+
+Exemple
+-------
+
+::
+
+      MAP
+       NAME "include_mapfile"
+       EXTENT 0 0 500 500
+       SIZE 250 250
+ 
+       INCLUDE "test_include_symbols.map"
+       INCLUDE "test_include_layer.map"
+      END
+
+où test_include_symbols.map contient :
+
+::
+
+      SYMBOL
+         NAME 'square'
+         TYPE VECTOR
+         FILLED TRUE
+         POINTS 0 0 0 1 1 1 1 0 0 0 END
+      END
+
+et où test_include_layer.map contient :
+
+::
+
+      LAYER
+        TYPE POINT
+        STATUS DEFAULT
+        FEATURE
+          POINTS 10 10 40 20 300 300 400 10 10 400 END
+        END
+        CLASS
+          NAME 'Church'
+          COLOR 0 0 0
+          SYMBOL 'square'
+          SIZE 7
+          STYLE
+            SYMBOL "square"
+            SIZE 5
+            COLOR 255 255 255
+          END
+          STYLE
+            SYMBOL "square"
+            SIZE 3
+            COLOR 0 0 255
+          END
+        END
+      END
