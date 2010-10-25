@@ -1,0 +1,319 @@
+.. _ogr_output:
+
+*****************************************************************************
+ OGR Output
+*****************************************************************************
+
+:Author: Frank Warmerdam
+:Contact: warmerdam at pobox.com
+:Revision: $Revision$
+:Date: $Date$
+:Last Updated: 2010/10/22
+
+.. contents:: Table of Contents
+    :depth: 2
+    :backlinks: top
+
+
+Introduction
+============
+
+OGR output support was added to MapServer 6.0.  It provides an output driver
+to produce feature style output suitable as a return result from WMS 
+GetFeatureInfo or WFS GetFeature requests.  OGR feature output depends on
+MapServer being built against the GDAL/OGR library.  The OGR output driver 
+should be enabled in MapServer 6.0 or newer when INPUT=OGR appears in the 
+version string. 
+
+OUTPUTFORMAT Declarations
+=========================
+
+Details of OGR output formats allowed are controlled by an OUTPUTFORMAT
+declaration.  The declarations define the OGR format driver to be used, 
+creation options specific to that driver, and more general instructions to
+MapServer on how to package multi-file results and whether to try and 
+build the result on disk or in memory.
+
+Examples::
+
+  OUTPUTFORMAT
+    NAME "CSV"
+    DRIVER "OGR/CSV"
+    MIMETYPE "text/csv"
+    FORMATOPTION "LCO:GEOMETRY=AS_WKT"
+    FORMATOPTION "STORAGE=memory"
+    FORMATOPTION "FORM=simple"
+    FORMATOPTION "FILENAME=result.csv"
+  END
+
+  OUTPUTFORMAT
+    NAME "OGRGML"
+    DRIVER "OGR/GML"
+    FORMATOPTION "STORAGE=filesystem"
+    FORMATOPTION "FORM=multipart"
+    FORMATOPTION "FILENAME=result.gml"
+  END
+
+  OUTPUTFORMAT
+    NAME "SHAPEZIP"
+    DRIVER "OGR/ESRI Shapefile"
+    FORMATOPTION "STORAGE=memory"
+    FORMATOPTION "FORM=zip"
+    FORMATOPTION "FILENAME=result.zip"
+  END
+
+The OGR format driver to be used is determined by the name appearing 
+after "OGR/" in the DRIVER argument.  This name should match one of 
+the formats listed as supported for the "-f" argument to ogr2ogr in the
+ogr2ogr usage message.  
+
+The IMAGEMODE for OGR output is FEATURE, but this is implicit and does
+not need to be explicitly stated for OGR output driver declarations.
+
+The OGR renderer will support the following FORMATOPTION declarations:
+
+**DSCO:\***
+  Anything prefixed by DSCO: is used as a dataset creation option with the
+  OGR driver. See the OGR web page for the particular format driver to see
+  layer creation options available.
+
+**LCO:\*** 
+  Anything prefixed by LCO: is used as a layer creation option.  See
+  the OGR web page for the particular format driver to see layer creation
+  options available.w
+
+**FORM=simple/zip/multipart**
+  Indicates whether the result should be a simple single file (single), a
+  mime multipart attachment (multipart) or a zip file (zip).  "zip" is
+  the default.
+
+**STORAGE=memory/filesystem/stream**
+  Indicates where the datasource should be stored while being written. 
+  "file" is the default.
+
+  If "memory" then it will be created in /vsimem/ - but this is only suitable
+  for drivers supporting VSI*L which we can't easily determine automatically.
+
+  If "file" then a temporary directory will be created under the IMAGEPATH
+  were the file(s) will be written and then read back to stream to the 
+  client.
+
+  If "stream" then the datasource will be created with a name "/vsistdout"
+  as an attempt to write directly to stdout.  Only a few OGR drivers will 
+  work properly in this mode (ie. CSV, perhaps kml, gml). 
+
+**FILENAME=name**
+  Provides a name for the datasource created, default is "result.dat".  
+
+
+LAYER Metadata
+==============
+
+The OGR output driver utilizes several items from the LAYER level METADATA
+object.  Some of these were originally intended for GML output or are 
+primarily intended to support WFS.
+
+
+**wfs_getfeature_formatlist**
+  (Optional) A comma delimited list of formats supported for WFS GetFeature 
+  responses.  The OUTPUTFORMAT NAME values should be listed.
+
+  ::
+
+    "wfs_getfeature_formatlist" "OGRGML,SHAPEZIP,CSV"
+
+**gml_include_items**
+  (Optional) A comma delimited list of items to include, or keyword
+  "all".  You can enable full exposure by using the keyword "all".  
+  
+  ::
+
+    "gml_include_items" "all"
+    
+  You can specify a list of attributes (fields) for partial exposure, such as:
+  
+  ::
+
+    "gml_include_items" "Name,ID"
+    
+  The new default behaviour is to expose no attributes at all.
+
+**gml_include_items**
+  (Optional) A comma delimited list of items to include, or keyword
+  "all". As of MapServer 4.6, you can control how many attributes (fields) you expose 
+  for your data layer with this metadata. The previous behaviour was simply to expose 
+  all attributes all of the time. You can enable full exposure by using the keyword "all", 
+  such as:
+  
+  ::
+  
+    "gml_include_items" "all"
+    
+  You can specify a list of attributes (fields) for partial exposure, such as:
+  
+  ::
+  
+    "gml_include_items" "Name,ID"
+    
+  The new default behaviour is to expose no attributes at all.
+
+**gml_[item name]_alias**
+  (Optional) An alias for an attribute's name.  The resulting file will refer
+  to this attribute by the alias.  Here is an example:
+
+  ::
+  
+    "gml_province_alias" "prov"
+    
+**gml_[item name]_type**
+  (Optional) Specifies the type of the attribute.  Valid values
+  are Integer|Real|Character|Date|Boolean. 
+
+**gml_[item name]_width**
+  (Optional) Specifies the width of the indicated field for formats where
+  this is significant, such as Shapefiles. 
+
+**gml_[item name]_precision**
+  (Optional) Specifies the precision of the indicated field for formats where
+  this is significant, such as Shapefiles.  Precision is the number of decimal
+  places, and is only needed for "Real" fields.
+
+**gml_types**
+  (Optional) If this field is "auto" then some input feature drivers (ie. 
+  OGR, and native shapefiles) will automatically populate the type, width and
+  precision metadata for the layer based on the source file. 
+
+  ::
+
+    "gml_types"   "auto"
+
+**ows/wfs_geomtype**
+  (Optional) Set the geometry type of OGR layers created from this MapServer
+  LAYER.  One of "Point", "LineString", "Polygon", "MultiPoint", 
+  "MultiLineString", "MultiPolygon", "GeometryCollection", "Geometry", 
+  or "None".  Most are fairly obvious, but "Geometry" can be used to represent
+  a mix of geometry types, and "None" is sometimes suitable for layers without
+  geometry.  Note that layers which are a mix of polygon and multipolygon 
+  would normally have to be described as "Geometry".
+
+  ::
+
+    "ows_geomtype"  "Polygon"
+
+
+MAP / WEB Metadata
+==================
+
+**wms_feature_info_mime_type**
+  In order for WMS GetFeatureInfo to allow selection of OGR output formats, 
+  the mime type associated with the OUTPUTFORMAT must be listed in this metadata
+  item.
+
+  ::
+ 
+    "wms_feature_info_mime_type" "text/csv"
+
+
+Geometry Types Supported
+========================
+
+In MapServer we have POINT, LINE and POLYGON layers which also allow for 
+features with multiple points, lines or polygons.  However, in the OGC Simple 
+Feature geometry model used by OGR a point and multipoint layer are quite 
+distinct.  Likewise for a LineString and MultiLineString and Polygon an 
+MultiPolygon layer type. 
+
+To work around the mismatches between the MapServer and OGR geometry models,
+there is a mechanism to specify the geometry type to be used when exporting
+through OGR.  This is the "wfs/ows_geomtype" metadata item on the layer. It
+may be one of one of "Point", "LineString", "Polygon", "MultiPoint", 
+"MultiLineString", "MultiPolygon", "GeometryCollection", "Geometry", or "None".
+
+If this item is not specified, then "Point", "LineString" or "Polygon" will
+be used depending on the TYPE of the LAYER.   In cases of mixed geometry
+types (ie. polygons and multipolygons) the geometry type should be set to 
+"Geometry" which means any geometry type. 
+
+  ::
+
+    "ows_geomtype" "Geometry"
+
+
+Attribute Field Definitions
+===========================
+
+For OGR output it is highly desirable to be able to create the output fields 
+with the appropriate datatype, width and precision to reflect the source 
+feature definition. 
+
+It is possible to set the gml_[item]_type, gml_[item]_width and 
+gml_[item]_precision metadata on the layer to provide detailed field 
+definitions::
+
+    METADATA
+      "gml_ID_type"        "Integer"
+      "gml_ID_width"       "8"
+      "gml_AREA_type"      "Real"
+      "gml_AREA_width"     "15"
+      "gml_AREA_precision" "6"
+      "gml_NAME_type"      "Character"
+      "gml_NAME_width"     "64"
+      ...
+
+However, doing this manually is tedious and error prone.  For that reason
+some feature sources (at least OGR, Shapefiles, POSTGIS and ORACLESPATIAL) 
+support a mechanism to automatically populate this information from the 
+source datastore.  To accomplish this specify::
+
+    "gml_types"            "auto"
+
+If no effort is made to set type, width and precision information for
+attribute fields, they will all be treated as variable length character
+fields when writing through OGR.
+
+Return Packaging
+================
+
+One of the challenges returning generalized feature formats is that
+many such formats consists of multiple files which must be returned in 
+the result.  There are three approaches taken to this based on the 
+FORM FORMATOPTION in the OUTPUTFORMAT declaration. 
+
+**simple**
+  In this case a single result is returned.  This is suitable for format
+  drivers that produce a single file.  The return result will have the 
+  mimetype listed in the OUTPUTFORMAT declaration.  Note that if the OGR
+  driver actually returns multiple files, only the primary one (the one
+  with a name matching the filename passed into the OGR CreateDataSource call)
+  will be returned.  The return result will have a suggested filename based
+  on the FILENAME FORMATOPTION.
+
+**multipart**
+  In this case all the files produced are returned as a multipart mime
+  result.  In this case the MIMETYPE of the OUTPUTFORMAT is ignored.  All
+  component files are returned with a mime type of "application/binary" and
+  the whole package is "multipart/mixed".  
+
+**zip**
+  In this case all the files produced are bundled into one .zip file and
+  this zip file is returned with a mimetype of "application/zip".   The
+  OUTPUTFORMAT MIMETYPE is ignored.
+
+One caveat with "zip" results is that this option is only available if 
+the GDAL/OGR version is 1.8 or newer (or a 1.8 development later than 
+approximately Oct 15, 2010).  Earlier versions of GDAL/OGR lacked the
+zipping capability needed.
+
+Test Suite Example
+==================
+
+The MSAutoTest test suite contains a test case for use of OGR Output from
+WFS.   The mapfile is at:
+
+  http://svn.osgeo.org/mapserver/trunk/msautotest/wxs/wfs_ogr.map
+
+The comments at the start of the file have a variety of sample requests 
+that can be run against the map, as long as [MAPFILE] is replaced with the
+mapfile name.  They requests should be run against mapserv sitting in the
+msautotest/wxs directory.
+

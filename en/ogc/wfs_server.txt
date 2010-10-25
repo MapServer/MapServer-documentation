@@ -66,6 +66,7 @@ test this by adding an 'OUTPUTFORMAT' parameter to a GetFeature request, such as
 
 For a detailed discussion on the versions supported, see `bug#884`_.
 
+
 Configuring your MapFile to Serve WFS layers
 ============================================
 
@@ -301,6 +302,12 @@ MapServer WFS Extensions
   provides for the ability to use WFS GetFeature to page through results. 
   Note that STARTINDEX=1 means start with the first feature, skipping none.
 
+**OUTPUTFORMAT**
+  Normally OUTPUTFORMAT should be GML2 for WFS 1.0 and either "text/xml; 
+  subtype=gml/2.1.2" or "text/xml; subtype=gml/3.1.1" for WFS 1.1.  However
+  as an extension to the specification, it is also possible to configure
+  MapServer for a variety of other feature output formats.  This is discussed
+  in some detail in the :ref:`OGR Output <ogr_output>` document.
 
 Reference Section
 =================
@@ -476,6 +483,28 @@ Layer Object
 - *Description:* (Optional) Specifies the type of the attribute.  Valid values
   are Integer|Real|Character|Date|Boolean.
 
+**gml_[item name]_width**
+  (Optional) Specifies the width of the indicated field for formats where
+  this is significant, such as Shapefiles. 
+
+**gml_[item name]_precision**
+  (Optional) Specifies the precision of the indicated field for formats where
+  this is significant, such as Shapefiles.  Precision is the number of decimal
+  places, and is only needed for "Real" fields.  Currently this is only used
+  for OGR based output formats, not the WFS GML2/GML3 output.
+
+**gml_types**
+  (Optional) If this field is "auto" then some input feature drivers (ie. 
+  OGR, POSTGIS, ORACLESPATIAL and native shapefiles) will automatically 
+  populate the type, width and precision metadata for the layer based on the
+  source file. Currently this is only used
+  for OGR based output formats, not the WFS GML2/GML3 output.
+
+  ::
+
+    "gml_types"   "auto"
+
+
 **gml_xml_items**
 
 - *Description:* (Optional) A comma delimited list of items that should not be 
@@ -553,8 +582,8 @@ To-do Items and Known Limitations
 ==================================
 
 - This is just a basic WFS (read-only): transaction requests are not supported 
-  and probably never will given the nature of MapServer.  `GeoServer`_ is
-  recommended for those needing WFS-T support.
+  and probably never will given the nature of MapServer.  `GeoServer`_ or 
+  `TinyOWS`_ is recommended for those needing WFS-T support.
 
 - WFS spec. seems to require that features of a given feature type must all be 
   of the same geometry type (point, line, polygon). This works fine for shapefiles, 
@@ -576,6 +605,7 @@ To-do Items and Known Limitations
 .. _`uDig`: http://udig.refractions.net/
 .. _`WFS 1.0.0 spec`: https://portal.opengeospatial.org/files/?artifact_id=7176
 .. _`GeoServer`: http://geoserver.org
+.. _`TinyOWS`: http://www.tinyows.org
 .. _`GML2 request output`: http://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=1.0.0&REQUEST=getfeature&TYPENAME=continents&MAXFEATURES=1&OUTPUTFORMAT=gml2
 .. _`GML3 request output`: http://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=1.0.0&REQUEST=getfeature&TYPENAME=continents&MAXFEATURES=1&OUTPUTFORMAT=gml3
 .. _`bug#884`: http://trac.osgeo.org/mapserver/ticket/884
