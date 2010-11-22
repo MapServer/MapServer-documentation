@@ -1,0 +1,59 @@
+===============================================================
+  RFC 65 - Single-pass Query Changes for 6.0
+===============================================================
+
+:Date: 2010/11/18
+:Author: Steve Lime
+:Contact: sdlime at comcast.net
+:Last Edited: 2010-11-18
+:Status: Draft
+
+Overview 
+------------------------------------------------------------------------------
+
+This is a proposal to straighten out issues introduced in 5.6 with the single-pass query support. We probably introduced more
+change than necessary in hindsight. This RFC represents a simplification of both the C and MapScript APIs.
+
+Single-pass query is really a misnomer. Pre-5.6 we would do an initial query (by point, bbox or whatever) to identify candidate
+shapes and then n small queries to retrieve each result. This was obviously very slow in some cases, particular with the RDBMS 
+drivers. In 5.6 we switched things to basically hold a result set open post query and retain index values to the result set. We
+still make 2 passes through the results but this is much more efficient than before.
+
+Initially we stuck the result set id in the shapeindex attribute of a result (of type resultCacheMemberObj). This index was later
+used to retrive the feature. Long story short, at the NYC sprint we discovered that some drivers were doing things differently. 
+For Oracle, the result set ID was being passed in the tileindex and the shapeindex contained the global shape id. This was a 
+reasonable thing to do and the PostGIS driver was changed at the sprint to behave the same way. So, the shapeindex contains the
+overall record index and the tileindex contains the index relative to the query result set. This re-use of the tileindex takes
+advantage of a an attribute that otherwise would go unused and saves us from further complicating things. Layers that use
+tile indexes are always file-based and don't suffer (generally) from the performance problems what caused the changes in the
+first place. 
+
+Proposed Techincal Changes
+------------------------------------------------------------------------------
+
+1) Drop the layer API function msLayerResultsGetShape() in favor of msLayerGetShape().
+2) Edit the msLayerGetShape() for drivers that support the result set indexes (now passed as a tile index value) to look for the
+   tile index and if present work of the existing result set. If not, then work of the global id. That is, merge msLayerResultsGetShape() 
+   and msLayerGetShape() into a new msLayerGetShape().
+3) Remove resultsGetShape() from MapScript.
+4) Consider removing getShape() in favor of getFeature(). The getFeature() method has an argument list that makes more sense and 
+   returns a shapeObj- again, a more intuitive implementation.
+
+I'd also like to consider adding another query saving function to MapScript, something like saveQueryFeatures(). This function would write
+a pre-5.6 query file which consisted of a series of shape and tile indexes. We wouldn't write tile indexes for layers that weren't tiles.
+This would restore some usefull funcitonallity that was removed with the 5.6 changes.
+
+TODO: Add MapScript code snippet of query processing.  
+
+The changes are relatively technically mild. The changes in MapScript are big in that scripts that process query results will need
+an update. In the end I think that's worth it and this will be more intuitive for users.
+
+Bug ID
+------------------------------------------------------------------------------
+
+None assigned.
+
+Voting history
+------------------------------------------------------------------------------
+
+Draft, no vote yet.
