@@ -28,22 +28,61 @@ advantage of a an attribute that otherwise would go unused and saves us from fur
 tile indexes are always file-based and don't suffer (generally) from the performance problems what caused the changes in the
 first place. 
 
+Drivers that Implement msLayerResultsGetShape()
+------------------------------------------------------------------------------
+
+* Oracle Spatial as msOracleSpatialLayerResultGetShape()
+* PostGIS as msPostGISLayerResultsGetShape()
+* OGR as msOGRLayerResultGetShape() (is identical to msOGRLayerGetShape())
+
 Proposed Techincal Changes
 ------------------------------------------------------------------------------
+
+Cleaning up the query result portion of the code.
 
 1) Drop the layer API function msLayerResultsGetShape() in favor of msLayerGetShape().
 2) Edit the msLayerGetShape() for drivers that support the result set indexes (now passed as a tile index value) to look for the
    tile index and if present work of the existing result set. If not, then work of the global id. That is, merge msLayerResultsGetShape() 
    and msLayerGetShape() into a new msLayerGetShape().
-3) Remove resultsGetShape() from MapScript.
-4) Consider removing getShape() in favor of getFeature(). The getFeature() method has an argument list that makes more sense and 
-   returns a shapeObj- again, a more intuitive implementation.
+3) Remove resultsGetShape() and getFeature() methods from MapScript.
+4) Refactor getShape() MapScript method to a) return a shapeObj * like getFeature() does and to b) take a resultCacheMemberObj as input
+   instead of the shape and tile indexes. That simplifies the inferface and abstracts the indexes so that we have more flexibility moving
+   forward. We wouldn't necessarily have to change the driver implementations to take a resultCacheMemberObj at this point, that could 
+   be done later.
+
+The refactored getShape() signature would like so (in layer.i for SWIG):
+ 
+::
+
+	%newobject getShape; 
+	shapeObj *getShape(resultCacheMemberObj *r)
+
 
 I'd also like to consider adding another query saving function to MapScript, something like saveQueryFeatures(). This function would write
-a pre-5.6 query file which consisted of a series of shape and tile indexes. We wouldn't write tile indexes for layers that weren't tiles.
-This would restore some usefull funcitonallity that was removed with the 5.6 changes.
+a pre-5.6 query file which consisted of a series of shape and tile indexes. We wouldn't write tile indexes for layers that weren't tiled 
+(e.g. layers that didn't have a TILEINDEX). This would restore some usefull funcitonallity that was removed with the 5.6 changes.
 
-TODO: Add MapScript code snippet of query processing.  
+1) Add signatures to the two styles of query files (query parameters and query results). This will allow us to write a single loader function
+   and improve security.
+2) Add an optional flag to saveQuery() method in MapScript to save the actual query results (e.g. all the resultCacheMemberObj's) instead
+   of just the query parameters.
+
+Post RFC a query action in MapScript would look like so:
+
+::
+
+	...
+	my $rect = new mapscript::rectObj(420000, 5120000, 582000, 5200000);
+	$layer->queryByRect($map, $rect); # layer is left open after this operation
+
+	for(my $i=0; $i<$layer->getNumResults(); $i++) {
+	       my $shape = $layer->getShape($layer->getResult($)); # much simpler
+	       ...
+	}
+
+	# save query
+	$map->saveQuery('myquery.qy'); # new style (query parameters)
+	$map->saveQuery('myquery.qy', 1); # old style (query feature indexes)
 
 The changes are relatively technically mild. The changes in MapScript are big in that scripts that process query results will need
 an update. In the end I think that's worth it and this will be more intuitive for users.
