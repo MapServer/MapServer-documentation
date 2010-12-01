@@ -4,10 +4,14 @@
  PostGIS/PostgreSQL
 *****************************************************************************
 
+.. contents:: Table of Contents
+    :depth: 3
+    :backlinks: top
+
 PostGIS/PostgreSQL
 ------------------
 
-`PostGIS <http://postgis.refractions.net/>`_ spatially enables the 
+`PostGIS <http://postgis.org/>`_ spatially enables the 
 Open Source `PostgreSQL`_ database.
 
 .. _`PostgreSQL`: http://www.postgresql.org/
@@ -140,4 +144,205 @@ Mapfile Example
     END
   END
 
-For more info about PostGIS and MapServer see the PostGIS docs: http://postgis.refractions.net/docs/
+For more info about PostGIS and MapServer see the PostGIS docs: http://postgis.org/documentation/
+
+Support for SQL/MM Curves
+-------------------------
+
+PostGIS is able to store circular interpolated curves, as part of the SQL Multimedia Applications 
+Spatial specification (read about the `SQL/MM specification <http://subs.emis.de/LNI/Proceedings/Proceedings26/GI-Proceedings.26-17.pdf>`__).
+For more information about PostGIS' support, see the *SQL-MM Part 3* section in the PostGIS documentation, such
+as `here <http://www.postgis.org/documentation/manual-1.5/ch04.html#SQL_MM_Part3>`__.
+
+As of MapServer 6.0, the PostGIS features CircularString, CompoundCurve, CurvePolygon, MultiCurve, and MultiSurface can be 
+drawn through MapServer directly.
+
+Example#1: CircularString in MapServer
+######################################
+
+The following is the Well Known Text of the feature loading into PostGIS:
+
+::
+
+  INSERT INTO test ( g, id ) VALUES ( ST_GeomFromText('CIRCULARSTRING(0 0, 4 0, 4 4, 0 4, 0 0)', -1), 2);
+
+An example MapServer layer might look like:
+
+::
+
+  LAYER
+    NAME "curves_poly"
+    STATUS DEFAULT
+    TYPE POLYGON
+    CONNECTIONTYPE postgis
+    CONNECTION "user=postgres password=postgres dbname=curves host=localhost port=5432"
+    DATA "g from test using SRID=-1 using unique id"
+    CLASS
+      STYLE
+        COLOR 128 128 128
+        ANTIALIAS true   
+      END      
+    END
+  END
+  
+And testing with :ref:`shp2img` should produce a map image of:
+
+.. image:: ../../images/circularstring.png
+
+Example#2: CompoundCurve in MapServer
+#####################################
+
+The following is the Well Known Text of the feature loading into PostGIS:
+
+::
+
+  INSERT INTO test ( g, id ) VALUES ( ST_GeomFromText('COMPOUNDCURVE(CIRCULARSTRING(0 0, 1 1, 1 0),(1 0, 0 1))', -1), 3);
+
+An example MapServer layer might look like:
+
+::
+
+  LAYER
+    NAME "curves_poly"
+    STATUS DEFAULT
+    TYPE POLYGON
+    CONNECTIONTYPE postgis
+    CONNECTION "user=postgres password=postgres dbname=curves host=localhost port=5432"
+    DATA "g from test using SRID=-1 using unique id"
+    CLASS
+      STYLE
+        COLOR 128 128 128
+        ANTIALIAS true   
+      END      
+    END
+  END
+  
+And testing with :ref:`shp2img` should produce a map image of:
+
+.. image:: ../../images/compoundcurve.png
+
+Example#3: CurvePolygon in MapServer
+####################################
+
+The following is the Well Known Text of the feature loading into PostGIS:
+
+::
+
+  INSERT INTO test ( g, id ) VALUES ( ST_GeomFromText('CURVEPOLYGON(CIRCULARSTRING(0 0, 4 0, 4 4, 0 4, 0 0),(1 1, 3 3, 3 1, 1 1))', -1), 4);
+
+An example MapServer layer might look like:
+
+::
+
+  LAYER
+    NAME "curves_poly"
+    STATUS DEFAULT
+    TYPE POLYGON
+    CONNECTIONTYPE postgis
+    CONNECTION "user=postgres password=postgres dbname=curves host=localhost port=5432"
+    DATA "g from test using SRID=-1 using unique id"
+    CLASS
+      STYLE
+        COLOR 128 128 128
+        ANTIALIAS true   
+      END      
+    END
+  END
+  
+And testing with :ref:`shp2img` should produce a map image of:
+
+.. image:: ../../images/curvepolygon.png
+
+Example#4: MultiCurve in MapServer
+##################################
+
+The following is the Well Known Text of the feature loading into PostGIS:
+
+::
+
+  INSERT INTO test ( g, id ) VALUES ( ST_GeomFromText('MULTICURVE((0 0, 5 5),CIRCULARSTRING(4 0, 4 4, 8 4))', -1), 6);
+
+An example MapServer layer might look like:
+
+::
+
+  LAYER
+    NAME "curves_poly"
+    STATUS DEFAULT
+    TYPE POLYGON
+    CONNECTIONTYPE postgis
+    CONNECTION "user=postgres password=postgres dbname=curves host=localhost port=5432"
+    DATA "g from test using SRID=-1 using unique id"
+    CLASS
+      STYLE
+        COLOR 128 128 128
+        ANTIALIAS true   
+      END      
+    END
+  END
+  
+And testing with :ref:`shp2img` should produce a map image of:
+
+.. image:: ../../images/multicurve.png
+
+Example#5: MultiSurface in MapServer
+####################################
+
+The following is the Well Known Text of the feature loading into PostGIS:
+
+::
+
+  INSERT INTO test ( g, id ) VALUES ( ST_GeomFromText('MULTISURFACE(CURVEPOLYGON(CIRCULARSTRING(0 0, 4 0, 4 4, 0 4, 0 0),(1 1, 3 3, 3 1, 1 1)),((10 10, 14 12, 11 10, 10 10),(11 11, 11.5 11, 11 11.5, 11 11)))', -1), 7);
+
+An example MapServer layer might look like:
+
+::
+
+  LAYER
+    NAME "curves_poly"
+    STATUS DEFAULT
+    TYPE POLYGON
+    CONNECTIONTYPE postgis
+    CONNECTION "user=postgres password=postgres dbname=curves host=localhost port=5432"
+    DATA "g from test using SRID=-1 using unique id"
+    CLASS
+      STYLE
+        COLOR 128 128 128
+        ANTIALIAS true   
+      END      
+    END
+  END
+  
+And testing with :ref:`shp2img` should produce a map image of:
+
+.. image:: ../../images/multisurface.png
+
+Using MapServer < 6.0
+#####################
+
+If you cannot upgrade to MapServer 6.0, then you can use the PostGIS function *ST_CurveToLine()* in your
+MapServer LAYER to draw the curves (note that this is much slower however):
+
+::
+
+  LAYER
+    NAME "curves_poly"
+    STATUS DEFAULT
+    TYPE POLYGON
+    CONNECTIONTYPE postgis
+    CONNECTION "user=postgres password=postgres dbname=curves host=localhost port=5432"
+    DATA "wkb_geometry from (select c.id, ST_CurveToLine(c.g) as wkb_geometry from c) as subquery using unique id using SRID=-1"  
+    CLASS
+      STYLE
+        COLOR 128 128 128
+        ANTIALIAS true   
+      END      
+    END
+  END
+
+
+
+
+
+ 
+ 
