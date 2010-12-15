@@ -1,6 +1,6 @@
-var lon = 240750;
-var lat = 5070290;
-var zoom = 5;
+var lon = -104.98903;
+var lat = 39.761633;
+var zoom = 8;
 var map;
 
 
@@ -28,9 +28,10 @@ OpenLayers.Control.PanZoom.prototype.draw = function(px) {
     return this.div;
 };
 
+/*
 function restrictExtent() {
         var re;
-        //return;
+        return;
         if(map.zoom >= 9) {
                 re = new OpenLayers.Bounds(232128.90549511,5061987.4207997,251589.88109746,5081199.6882021);
                 map.restrictedExtent = re;
@@ -51,34 +52,42 @@ function restrictExtent() {
             if(!re.containsBounds(map.getExtent())) {
                 map.panTo(new OpenLayers.LonLat(lon,lat));
             }
-        }
+        }*/
 
 function olmapinit(){
-    map = new OpenLayers.Map( 'olmap', {eventListeners: {"zoomend": restrictExtent},
-controls:[new OpenLayers.Control.Navigation(),
-new OpenLayers.Control.PanZoom()]
-});
-  
-        var wms = new OpenLayers.Layer.TileCache( "Barcelona", 
-        ['http://mapserver-tile-1.osgeo.org/tilecache',
-        'http://mapserver-tile-2.osgeo.org/tilecache'],
-        'bcn',
-        {
-          maxExtent: new OpenLayers.Bounds(-20000000,-20000000,20000000,20000000),
-          scales: [5000,10000,25000,50000,100000,250000,500000,1000000,2500000,5000000,10000000,25000000],
-          units: 'm',
-          projection:new OpenLayers.Projection("EPSG:900913"),
-          buffer:0,
-          isBaselayer:true
-        } );
+     
+        map = new OpenLayers.Map( 'map' );
 
-map.addLayers([wms]);
-OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
-if(!map.getCenter())
-  map.setCenter(new OpenLayers.LonLat(lon, lat), zoom);
-var  controls = map.getControlsByClass('OpenLayers.Control.Navigation');
-for(var i = 0; i<controls.length; ++i)
-       controls[i].disableZoomWheel();
+        var wms = new OpenLayers.Layer.WMS( "WMS","http://demo.mapserver.org/cgi-bin/foss4g?",
+        {
+        /*
+        var wms = new OpenLayers.Layer.WMS( "WMS",
+
+                "http://127.0.0.1:8081/cgi-bin/mapserv.exe?",
+                {map: 'D:/ms4w/apps/osm/map/osm.map',*/
+
+
+        layers: 'default',
+        format: 'aggpng24',
+        transparent: 'off'},
+        {maxExtent: new OpenLayers.Bounds(-105.208290,39.542378,-104.769779,39.980889),
+        scales: [5000,10000,25000,50000,100000,250000,500000,
+                 1000000,2500000,5000000,10000000,25000000,50000000,100000000],
+        units: 'dd',
+        gutter:0,
+        ratio:1,
+        wrapDateLine: true,
+        isBaselayer:true,
+        singleTile:true,
+        transitionEffect:'resize'} );     
+
+        map.addLayers([wms]);
+        OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
+        if(!map.getCenter())
+          map.setCenter(new OpenLayers.LonLat(lon, lat), zoom);
+        var  controls = map.getControlsByClass('OpenLayers.Control.Navigation');
+        for(var i = 0; i<controls.length; ++i)
+          controls[i].disableZoomWheel();
 }
 OpenLayers.Event.observe(window, "load", olmapinit);
 
