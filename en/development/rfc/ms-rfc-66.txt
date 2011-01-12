@@ -1,0 +1,85 @@
+.. _rfc66:
+
+===============================================================
+  MS RFC 66: Better handling of temporary files
+===============================================================
+
+:Date: 2011-01-12
+:Author: Alan Boudreault (aboudreault at mapgears.com)
+:Author: Daniel Morissette (dmorissette at mapgears.com)
+:Last Edited: 2011-01-12
+:Status: Draft
+:Version: MapServer 6.0
+:Id: $Id: ms-rfc-63.txt 10711 2010-11-09 12:42:11Z dmorissette $
+
+Overview
+------------------------------------------------------------------------------
+
+At the moment, we write some temporary files in the web-accessible
+IMAGEPATH directory, this was a poor practice but still okay for some uses
+in the past (such as writing CONNECTIONTYPE WMS and WFS responses while we
+process them), but as our need for temporary files increase, we need to
+ensure that temp files are handled in a proper and safer way.
+
+This is a proposal for a better handling of the temporary files. The goal
+of this RFC is to use memory for temporary files when available and to add
+the ability to configure the temporary path.
+
+Proposed Solution
+------------------------------------------------------------------------------
+
+By default, the temporary files will be written in memory. This will only
+be available if MapServer is built with gdal/cpl, which has a virtual io
+support. This is more efficient than writing files on disk. The virtual
+file system interface approach will be based on the RFC 62 `CPL Services
+<http://mapserver.org/development/rfc/ms-rfc-62.html#use-of-cpl-services>`_
+implementation, which already uses memory files. If the memory cannot be
+used, the files will be written on the disk. The temporary path can be set
+by the two following ways:
+
+* The environment variable MS_TEMPPATH.
+* In the mapfile
+
+::
+
+ WEB
+   TEMPPATH "/tmp/"
+ END
+
+If the temporary path is not set, the function will try the standard path
+depending on the OS. "/tmp/" for Linux/MAC and "C:/temp" for Windows. Most
+of the work will be to modify the msTmpFile function.
+
+
+
+Files affected
+------------------------------------------------------------------------------
+
+* maputil.c: The msTmpFile function.
+* All files that call msTmpFile(). 
+
+Bug ID
+------------------------------------------------------------------------------
+
+The ticket for RFC-66 (containing the implementation) can be found here.
+
+Ticket 3354_
+ 
+.. _3354: http://trac.osgeo.org/mapserver/ticket/3354
+
+References
+------------------------------------------------------------------------------
+
+RFC 62 `CPL Services <http://mapserver.org/development/rfc/ms-rfc-62.html#use-of-cpl-services>`_
+
+
+Ticket 3570_
+ 
+.. _3570: http://trac.osgeo.org/mapserver/ticket/3570
+
+
+Voting history
+------------------------------------------------------------------------------
+
+Not voted yet.
+
