@@ -10,7 +10,6 @@
 :Last Edited: 2011-01-12
 :Status: Draft
 :Version: MapServer 6.0
-:Id: $Id: ms-rfc-63.txt 10711 2010-11-09 12:42:11Z dmorissette $
 
 Overview
 ------------------------------------------------------------------------------
@@ -22,17 +21,10 @@ process them), but as our need for temporary files increase, we need to
 ensure that temp files are handled in a proper and safer way.
 
 This is a proposal for a better handling of the temporary files. The goal
-of this RFC is to use memory for temporary files when available and to add
-the ability to configure the temporary path.
+is to add the ability to configure the temporary path.
 
 Proposed Solution
 ------------------------------------------------------------------------------
-
-I propose the phase 1 to be implemented for MapServer 6.0. The phase 2,
-which complicated things, should be implemented in the future.
-
-Phase 1
-=======
 
 The files will still be written on the disk. The temporary path can be set
 by the two following ways:
@@ -50,21 +42,6 @@ If the temporary path is not set, the function will try the standard path
 depending on the OS. "/tmp/" for Linux/MAC and "C:/temp" for Windows. Most
 of the work will be to modify the msTmpFile function.
 
-Phase 2
-=======
-
-The default bahvior will be changed to write the temporary files in
-memory. This will only be available if MapServer is built with gdal/cpl,
-which has a virtual io support. This is more efficient than writing files
-on disk. The virtual file system interface approach will be based on the
-RFC 62 `CPL Services
-<http://mapserver.org/development/rfc/ms-rfc-62.html#use-of-cpl-services>`_
-implementation, which already uses memory files.
-
-This phase will need the implementation of a few generic functions (or
-using msIO* functions) to open/read/write/close a file using the CPL
-functions when available. A memory file can only be handled by the CPL
-services.
 
 Purposes of temporary files
 ------------------------------------------------------------------------------
@@ -98,6 +75,23 @@ Files affected
 
 * maputil.c: The msTmpFile function.
 * All files that call msTmpFile(). 
+
+Future enhancement
+------------------------------------------------------------------------------
+
+The default behavior could be changed to write the temporary files in
+memory. This will only be available if MapServer is built with gdal/cpl,
+which has a virtual io support. This is more efficient than writing files
+on disk. The virtual file system interface approach will be based on the
+RFC 62 `CPL Services
+<http://mapserver.org/development/rfc/ms-rfc-62.html#use-of-cpl-services>`_
+implementation, which already uses memory files.
+
+This will need the implementation of a few generic functions (or using
+msIO* functions) to open/read/write/close a file using the CPL functions
+when available. A memory file can only be handled by the CPL services.
+
+This is not a part of the RFC enhancement will require another RFC.
 
 Bug ID
 ------------------------------------------------------------------------------
