@@ -1,0 +1,633 @@
+.. _layer:
+
+*****************************************************************************
+ LAYER
+*****************************************************************************
+
+:ref:`CLASS`
+    Indique le début d'un objet :ref:`CLASS`.
+
+    Dans unn couche, une seule classe sera utilisé pour afficher une feature. 
+    Chaque feature est testée en fonction d'une classe dans l'ordre dans 
+    laquelle celles-ci  apparaissent dans le mapfile. La première classe dont les 
+    contraintes d'échelle min/max et la vérification de 
+    l':ref:`EXPRESSION <expressions>`fonctionnent pour la feature en cours 
+    sera utilisée pour le rendu.
+
+.. index::
+    single: CLASSITEM
+    
+.. _CLASSITEM:
+
+CLASSITEM [attribut]
+    Nom de l'élément dans la table attributaire à utiliser dans les correspondances de classe.
+
+CLASSGROUP  [string]
+   Spécifie le groupe de la classe qui sera pris en compte au moment du rendu. Le 
+   paramètre GROUP de l'objet :ref:`CLASS`doit être utilisé en combinaison avec 
+   CLASSGROUP.
+    
+CONNECTION [string]
+    Chaîne de caractères pour une connexion distante à une base de données.
+
+    Une chaîne de caractères pour une connexion SDE est composée d'un nom de 
+    serveur ("hostname"), d'un nom d'instance, d'un nom de base de données, d'un 
+    nom d'utilisateur et de son mot de passe séparés par des virgules.
+
+    Une chaîne de caractères pour une connexion PostGIS est sensiblement identique 
+    à une connexion pour PostgreSQL, elle prend la forme 
+    "user=nomuser password=****** dbname=dbname host=localhost port=5432"
+
+    Une chaîne de caractères pour une connexion Oracle s'écrit comme ceci : 
+    utilisateur/motdepasse[@basededonnees].
+   
+    .. seealso::
+        Voir :ref:`vector` pour les informations de conenxion spécifique pour les différentes 
+        sources de données.
+
+CONNECTIONTYPE [local|sde|ogr|postgis|oraclespatial|wms]
+    Type de connexion. Par défaut "local". Voir la documentation additionnelle pour les 
+    autres types.
+
+    .. seealso::
+        Voir :ref:`vector` pour les informations de conenxion spécifique pour les différentes 
+        sources de données.
+
+DATA [nom de fichier]|[paramètres sde ][colonne et table postgis ][colonne et table oracle]
+    Nom complet du fichier de données spatiales à traiter. Aucune extension n'est 
+    nécessaire pour les fichiers Shape. Un chemin relatif par rapport à l'option 
+    SHAPEPATH de l'objet Map peut être utilisé.
+
+    S'il s'agit d'une couche SDE, le paramètre devrait inclure le nom de la couche 
+    ainsi que la colonne de géométrie, par exemple "mylayer,shape,myversion".
+
+    S'il s'agit d'une couche PostGIS, le paramètre devrait être de la forme 
+    "<columnname> from <tablename>", où "columnname" est le nom de la 
+    colonne contenant les objets géométriques et où "tablename" est le nom de la 
+    table depuis laquelle les données géométriques seront lues.
+
+    Pour Oracle, utilisez "shape FROM table" ou "shape FROM (SELECT statement)" 
+    ou n'importe quelle autre requête complexe conforme à Oracle! Notez que l'impact 
+    sur les performances est toujours important lors de l'utilisation de sous-requêtes 
+    spatiales. Essayez plutôt d'utiliser l'option FILTER de MapServer aussi souvent 
+    que possible. Vous pouvez aussi voir les requêtes SQL soumises en forçant une 
+    erreur, par exemple en soumettant un paramètre DATA invalide, en utilisant 
+    par exemple un mauvais nom de colonne.
+
+    .. seealso::
+        Voir :ref:`vector` pour les informations de conenxion spécifique pour les différentes 
+        sources de données.
+
+.. index::
+    pair: DEBUG; LAYER
+     
+DEBUG [off|on|0|1|2|3|4|5]
+    Active le débugage de la couche dans la carte courante.
+
+    *Débugage avec les versions de MapServer >= 5.0 :*
+
+    Une sortie "verbeuse" est générée et envoyée dans la sortie standard des erreurs 
+    (STDERR) ou dans le fichier d'erreurs de MapServer si celui-ci est défini via la 
+    variable d'environnement "MS_ERRORFILE". Vous pouvez définir la variable 
+    d'environnement en utilisant le paramètre CONFIG au niveau MAP du mapfile, 
+    comme ceci :
+
+    .. code-block:: mapfile
+
+      CONFIG "MS_ERRORFILE" "/ms4w/tmp/ms_error.txt"
+
+    Vous pouvez également définir la variable d'environnement dans Apache en 
+    ajoutant la ligne suivante à votre fichier httpd.conf :
+
+    ::
+
+      SetEnv MS_ERRORFILE "/ms4w/tmp/ms_error.txt"
+
+    Une fois que la variable d'environnement est définie, le paramètre DEBUG 
+    du mapfile peut être utilisé pour contrôler le niveau de débugage en sortie. 
+    Voici une description des valeurs possibles de DEBUG :
+
+    - **DEBUG O ou OFF** - Seuls les appels msSetError() sont enregistrés dans 
+      MS_ERRORFILE. Aucune sortie msDebug(). C'est la valeur par défaut et 
+      correspond au comportement d'origine de MS_ERRORFILE dans MapServer 
+      4.x.
+
+    - **DEBUG 1 ou ON** - Inclut toutes les sorties de DEBUG 0 plus les 
+      avertissements msDebug() au sujet des erreurs communes, des affirmations 
+      fausses et de situations d'erreur non fatale (par exemple des valeurs 
+      manquantes ou invalides pour certains paramètres, des fichiers Shape 
+      manquants dans "tileindex", des erreurs de délai dépassé depuis un serveur 
+      WMS/WFS distant, ...).
+
+    - **DEBUG 2** - Inclut toutes les sorties de DEBUG 1 plus des avis et une 
+      information temporelle utiles pour la modification des mapfiles et des 
+      applications.
+
+    - **DEBUG 3** - Toutes les sorties de DEBUG 2 plus quelques sorties de 
+      débugage utiles dans les problèmes de fonctionnement comme les URLs 
+      appelées pour les connexions WMS, les appels à une base de données 
+    distante, ... C'est le niveau recommandé pour débuguer les mapfiles.
+
+    - **DEBUG 4** - DEBUG 3 plus quelques détails supplémentaires ...
+
+    - **DEBUG 5** - DEBUG 4 plus les sorties msDebug() plus utiles aux 
+      développeurs qu'aux utilisateurs.
+
+    Vous pouvez également définir le niveau de débugage en utilisant la variable 
+    d'environnement "MS_DEBUGLEVEL".
+
+    Le paramètre DEBUG peut également être spécifié pour toute la carte, en 
+    définissant ce paramètre DEBUG dans l'objet :ref:`MAP` object.
+
+    Pour plus de détails sur le mécanisme de débugage, consultez la :ref:`RFC28`..
+
+    *Débugage avec les versions de MapServer < 5.0 :*
+
+    Une sortie "verbeuse" est générée et envoyée dans la sortie standard des erreurs 
+    (STDERR) ou dans le fichier d'erreurs de MapServer si celui-ci est défini par le 
+    paramètre LOG dans l'objet WEB. Les utilisateurs Apache verront les temps de 
+    traitement du rendu dans le fichier error_log d'Apache. MapServer doit être 
+    compilé avec l'option DEBUG=MSDEBUG (option du "configure" : --with-debug).
+
+DUMP [true|false]
+    Commutateur permettant à MapServer de retourner les données au format 
+    GML. Très utile quand vous utilisez les opérations "GetFeatureInfo" de WMS. 
+    Désactivé par défaut.
+
+EXTENT [minx] [miny] [maxx] [maxy]
+    L'étendue spatiale des données. Dans la plupart des cas vous n'avez pas 
+    besoin de définir ceci, mais il peut être utilisé pour éviter le coût sur la 
+    vitesse lorsque MapServer calcul l'étendue des données. Une application 
+    peut également utiliser cette valeur pour écraser l'étendue de la carte.
+
+:ref:`FEATURE`
+    Indique le commencement d'un objet :ref:`FEATURE`.
+
+.. _FILTER:
+    
+FILTER [string]
+    Ce paramètre permet de filtrer les données selon un attribut particulier 
+    en même temps que le filtrage spatial, mais avant que toute expression 
+    de CLASS soit évaluée. Pour OGR et les fichiers Shape, la chaîne de 
+    caractères est simplement une expression régulière MapServer. Pour les 
+    bases de données spatiales, la chaîne de caractères est une requête SQL 
+    "WHERE" adaptée à la base de données concernée.
+
+    Par exemple : FILTER ([type]='road' and [size]<2)
+
+FILTERITEM [attribut]
+    Élément à utiliser avec des expressions FILTER_ simples. OGR et fichiers 
+    Shape seulement.
+
+FOOTER [nom de fichier]
+    Mise en forme ("template") à utiliser après qu'un jeu de résultats d'une 
+    couche ait été envoyé. Modes de requête "multirésultat" seulement.
+
+:ref:`GRID`
+    Indique le commencement d'un objet :ref:`GRID`.
+
+GROUP [name]
+    Nom d'un groupe auquel la couche appartient. Le nom de groupe peut 
+    ensuite être référencé comme un nom normal de couche dans les fichiers 
+    de mise en forme ("template"), ce qui permet de faire certaines 
+    opérations comme afficher ou cacher un groupe de plusieurs couches 
+    en une seule opération.
+
+HEADER [nom de fichier]
+    Mise en forme ("template") à utiliser avant qu'un jeu de résultats 
+    d'une couche ait été envoyé. Mode de requête "multirésultat" seulement.
+
+:ref:`JOIN`
+    Indique le commencement d'un objet :ref:`JOIN`.
+
+LABELANGLEITEM [attribut]
+    (À partir de MapServer 5.0 ce paramètre n'est plus disponible. Voyez 
+    le paramètre ANGLE de l'objet :ref:`LABEL`)
+    Pour les versions < 5.0 de MapSever c'est le nom de l'élément dans la 
+    table attributaire à utiliser pour la valeur des angles de la classe 
+    d'annotation. Les valeurs doivent être exprimées en degrés.
+    
+    .. deprecated:: 5.0
+
+LABELCACHE [on|off]
+    Specifie si les étiquettes doivent être dessinées comme des entités de 
+    la couche en cours de dessin, ou si elles doivent être cachées et dessinées 
+    après que toutes les couches aient été dessinées. Activé par défaut. La 
+    suppression des superpositions d'étiquettes, le placement automatique 
+    etc... ne sont disponibles que lorsque le cache d'étiquette est actif.
+
+LABELITEM [attribut]
+    Nom de l'élément dans la table attributaire à utiliser comme classe 
+    d'annotation (par exemple pour l'étiquetage).
+
+.. index::
+    pair: LABELMAXSCALEDENOM; LAYER
+
+LABELMAXSCALEDENOM [double]
+    Échelle maximale pour laquelle la couche est étiquettée. L'échelle est 
+    donnée comme dénominateur de la fraction de l'échelle actuelle. Par 
+    exemple pour une carte à l'échelle de 1:24000, il s'agit de 24000. 
+    Implémenté dans MapServer 5.0 pour remplacer le paramètre obsolète 
+    LABELMAXSCALE.
+
+    .. seealso::
+        
+        :term:`Map Scale`
+
+LABELMAXSCALE [double] - déprécié
+    Depuis MapServer 5.0, le bon paramètre à utiliser est LABELMAXSCALEDENOM. 
+    Le paramètre obsolète LABELMAXSCALE était l'échelle maximale à laquelle la 
+    couche était étiquettée. L'échelle est donnée comme dénominateur de la fraction 
+    de l'échelle actuelle. Par exemple pour une carte à l'échelle de 1:24000, il s'agit 
+    de 24000.
+    
+    .. deprecated:: 5.0
+
+.. index::
+    pair: LABELMINSCALEDENOM; LAYER
+
+LABELMINSCALEDENOM [double]
+    Échelle minimale pour laquelle la couche est étiquettée. L'échelle est 
+    donnée comme dénominateur de la fraction de l'échelle actuelle. Par 
+    exemple pour une carte à l'échelle de 1:24000, il s'agit de 24000. 
+    Implémenté dans MapServer 5.0 pour remplacer le paramètre obsolète 
+    LABELMINSCALE.
+
+    .. seealso::
+        
+        :term:`Map Scale`
+
+LABELMINSCALE [double] - déprécié
+    Depuis MapServer 5.0, le bon paramètre à utiliser est LABELMINSCALEDENOM. 
+    Le paramètre obsolète LABELMINSCALE était l'échelle minimale à laquelle la 
+    couche était étiquettée. L'échelle est donnée comme dénominateur de la fraction 
+    de l'échelle actuelle. Par exemple pour une carte à l'échelle de 1:24000, il s'agit 
+    de 24000.
+
+    .. deprecated:: 5.0
+
+.. _LABELREQUIRES:
+
+LABELREQUIRES [expression]
+    Définit le contexte pour l'étiquetage de cette couche, par exemple :
+
+    .. code-block:: mapfile
+    
+        LABELREQUIRES "![orthoquads]"
+
+    ... signifie que cette couche ne sera pas étiquetée si la couche 
+    nommée "orthoquads" est visible ("on"). La syntaxe consiste en une 
+    expression booléenne basée sur le statut des autres couches, chaque 
+    sous-chaîne [layer name] est remplacée par un 0 ou un 1 selon le 
+    paramètre STATUS_ de la couche et ensuite évaluée normalement. 
+    Les opérateurs logiques AND et OR peuvent être utilisés.
+
+LABELSIZEITEM [attribut]
+    (À partir de MapServer 5.0 ce paramèter n'est plus disponible. Voyez 
+    le paramètre SIZE de l'objet :ref:`LABEL`)
+    Pour les versions < 5.0 de MapServer, c'est le nom de l'élément de la 
+    table attributaire à utiliser comme classe des tailles d'annotation. Les 
+    valeurs doivent être en pixels.
+    
+    .. deprecated:: 5.0
+
+MAXFEATURES [entier]
+    Specifie le nombre d'entités qui seront dessinées pour cette couche dans la 
+    fenêtre COURANTE. Utilisation intéressante avec les étiquettes et les données 
+    triées (par exemle les lacs par zone).
+
+.. index::
+    pair: MAXSCALEDENOM; LAYER
+
+MAXSCALEDENOM [double]
+    Echelle maximale pour laquelle cette couche est dessinée. L'échelle est 
+    donnée comme dénominateur de la fraction de l'échelle actuelle. Par exemple 
+    pour une carte à l'échelle de 1:24000, il s'agit de 24000. Implémenté dans 
+    MapServer 5.0 pour remplacer le paramètre obsolète MAXSCALE.
+
+    .. seealso::
+        
+        :term:`Map Scale`
+
+MAXSCALE [double] - déprécié
+    Depuis MapServer 5.0, le bon paramètre à utiliser est MAXSCALEDENOM. 
+    Le paramètre obsolète MAXSCALE était l'échelle maximale à laquelle la couche 
+    était dessinée. L'échelle est donnée comme dénominateur de la fraction de 
+    l'échelle actuelle. Par exemple pour une carte à l'échelle de 1:24000, il s'agit de 
+    24000.
+
+    .. deprecated:: 5.0
+
+METADATA
+    Ce mot-clé permet d'enregistrer des données arbitraires comme un couple de 
+    valeurs. Ceci est utilisé avec :ref:`OGC WMS <wms_server>` pour définir 
+    des éléments comme le titre de la couche. Il peut aussi permettre plus de 
+    souplesse lors de la création des mises en forme ("template"), puisque tout ce 
+    que vous mettrez ici sera accessible via les balises du template.
+
+    Exemple :
+    
+    .. code-block:: mapfile
+    
+        METADATA
+            title "Titre de ma couche"
+            author "Moi !"
+        END
+
+.. index::
+    pair: MINSCALEDENOM; LAYER
+
+MINSCALEDENOM [double]
+    Echelle minimale pour laquelle cette couche est dessinée. L'échelle est 
+    donnée comme dénominateur de la fraction de l'échelle actuelle. Par 
+    exemple pour une carte à l'échelle de 1:24000, il s'agit de 24000. 
+    Implémenté dans MapServer 5.0 pour remplacer le paramètre 
+    obsolète MINSCALE.
+
+    .. seealso::
+        
+        :term:`Map Scale`
+
+MINSCALE [double] - déprécié
+    Depuis MapServer 5.0, le bon paramètre à utiliser est MINSCALEDENOM. 
+    Le paramètre obsolète MINSCALE était l'échelle minimale à laquelle la couche 
+    était dessinée. L'échelle est donnée comme dénominateur de la fraction de 
+    l'échelle actuelle. Par exemple pour une carte à l'échelle de 1:24000, il s'agit 
+    de 24000.
+
+    .. deprecated:: 5.0
+
+NAME [string]
+    Nom court de cette couche. La limite est de 20 caractères. Ce nom est le 
+    lien entre le mapfile et les interfaces web qui se réfèrent à ce nom. Ils doivent 
+    être identiques. Le nom doit être unique, sinon une couche en remplacera une 
+    autre à différentes échelles. Utilisez l'option GROUP pour associer les couches 
+    entre elles.
+
+OFFSITE [r] [g] [b]
+    Sélectionne l'index de couleur utilisé pour la transparence des couches raster.
+
+.. _OPACITY:
+
+OPACITY [entier|alpha]
+    Définit le niveau d'opacité (autrement dit l'incapacité de voir à traver la couche) 
+    de tous les pixels classés pour une couche donnée. La valeur peut être soit un 
+    entier compris entre 0 et 100 soit le mot-clé nommé "ALPHA". Une valeur de 
+    100 est opaque et une valeur de 0 est complétement transparente. Implémenté 
+    dans MapServer 5.0 pour remplacer le paramètre obsolète TRANSPARENCY.
+
+    Le mot-clé "ALPHA" indique au moteur de rendu de MapServer de prendre en 
+    compte la transparence indexée ou alpha des symboles pixmap utilisés pour 
+    styler une couche. C'est uniquement nécessaire en cas de formats de sortie 
+    RVB et ne devrait être utilisé que lorsque cela est nécessaire car il est coûteux 
+    de rendre transparents des symboles pixmap sur une image de carte RGB.
+
+POSTLABELCACHE [true|false]
+    Indique à MapServer de dessiner cette couche après que toutes les étiquettes 
+    en cache auront été dessinées. Très utile pour ajouter une touche finale et 
+    d'autres éléments similaires. Désactivé par défaut.
+
+.. index:: PROCESSING, Raster options, Special options
+
+PROCESSING [string]
+    Passe une directive de procédure à utiliser avec cette couche. Les 
+    directives de procédure reconnues varient en fonction du type de 
+    couche et du pilote sous-jacent qui les traitera. 
+     
+    - **Attributes Directive** - L'option ITEMS de processing permet de 
+      définir le nom des attributs pour les couches en ligne ou de spécifier
+      le sous-ensemble des attributs à utiliser par la couche, par exemple :
+    
+      .. code-block:: mapfile
+
+          PROCESSING "ITEMS=itemname1,itemname2,itemname3"
+
+    - **Connection Pooling Directive** - C'est également ici que vous pouvez 
+      activer le groupement de connexions pour certains types de couches. Le 
+      groupement de connexion permettra à MapServer de partager une 
+      connexion à une base de données ouverte ou à une couche via un seul 
+      processus de rendu de carte. De plus, si FastCGI est activé, la connexion 
+      sera maintenue ouverte indéfiniment ou selon les options spécifiées dans 
+      la configuration de :ref:`FastCGI <fastcgi>`. :ref:`oci`, :ref:`arcsde`,
+      :ref:`ogr` et :ref:`input_postgis` gèrent actuellement cette approche.
+
+      .. code-block:: mapfile
+
+          PROCESSING "CLOSE_CONNECTION=DEFER"
+          
+    - **OGR Styles Directive** - Cette directive peut être utilisée pour obtenir 
+      les styles de labels via MapScript. Pour plus d'inforamtion lisez le  
+      :ref:`document OGR avec MapServer <styleitemauto-label-styles>`.
+      
+      .. code-block:: mapfile
+
+          PROCESSING "GETSHAPE_STYLE_ITEMS=all"
+          
+    - **Raster Directives** - Toutes les options des procédures 
+      raster sont décrites dans le HOWTO:ref:`raster`.  Ici nous 
+      voyons les directives SCALE et BAND utilisées pour 
+      redimensionner les données raster et modifier le mappage 
+      des bandes.
+
+      .. code-block:: mapfile
+    
+          PROCESSING "SCALE=AUTO"
+          PROCESSING "BANDS=3,2,1"
+
+:ref:`PROJECTION`
+    Indique le commencement d'un objet :ref:`PROJECTION`.
+
+REQUIRES [expression]
+    Définit le contexte pour l'affichage de cette couche (voir LABELREQUIRES_).
+
+SIZEUNITS [pixels|feet|inches|kilometers|meters|miles|nauticalmiles]
+    Définit l'unité des valeurs SIZE de l'objet :ref:`CLASS` (en pixels par 
+    défaut). Très utile pour simuler des tampons (buffers). `Nauticalmiles` a été 
+    ajouté dans MapServer 5.6.
+
+.. _STATUS:
+
+STATUS [on|off|défaut]
+    Définit le statut actuel de la couche. Fréquemment modifié par MapServer 
+    lui-même. default active la couche ("on") en permanence.
+    
+    .. note::
+        En mode :ref:`CGI <cgi>`, les couches avec STATUS DEFAULT ne peuvent pas 
+        être désactivées par les mécanismes classiques. Il est recommandé de 
+        définir des couches en STATUS DEFAULT lorsque l'on souhaite débuguer un 
+        problème puis de les redéfinir à ON/OFF en utilisation normale.
+    
+    .. note::
+        Pour le :ref:`WMS <wms_server>`, les couches dans le mapfile du serveur 
+        dont le paramètre STATUS vaut DEFAULT sont toujours envoyées au client.
+
+STYLEITEM [attribut]
+    Elément à utiliser pour le style spécifiques à une feature. Ceci est *très* 
+    expérimental et seulement avec OGR pour l'instant.
+
+.. index::
+    pair: SYMBOLSCALEDENOM; LAYER
+
+SYMBOLSCALEDENOM [double]
+    L'échelle à laquelle les symboles et/ou les textes apparaissent à leur 
+    taille normale. Cela permet une échelle dynamique des objets en fonction de 
+    l'échelle de la carte. S'il n'est pas défini alors cette couche apparaitra 
+    toujours à la même taille. La mise à l'échelle a lieu seulement entre les 
+    limites comprises entre MINSIZE et MAXSIZE comme décrit plus haut. L'échelle 
+    est donnée comme le dénominateur de la fraction de l'échelle, par exemple, 
+    pour une carte à l'échelle de 1:24 000 utilisez 24000. Implémenté dans 
+    MapServer 5.0, pour remplacer le paramètre déprécié SYMBOLSCALE.
+
+    .. seealso::
+        
+        :term:`Map Scale`
+
+SYMBOLSCALE [double] - déprécié
+    Depuis MapServer 5.0 le paramètre correct à utiliser est SYMBOLSCALEDENOM. 
+    Le paramètre SYMBOLSCALE déprécié est l'échelle à laquelle les symboles et/ou 
+    les textes apparaissent à leur taille normale.Cela permet une échelle 
+    dynamique des objets en fonction de l'échelle de la carte. S'il n'est pas 
+    défini alors cette couche apparaitra toujours à la même taille. La mise à 
+    l'échelle a lieu seulement entre les limites comprises entre MINSIZE et 
+    MAXSIZE comme décrit plus haut. L'échelle est donnée comme le dénominateur 
+    de la fraction de l'échelle, par exemple, pour une carte à l'échelle de 
+    1:24 000 utilisez 24000. Implémenté dans MapServer 5.0, pour remplacer le 
+    paramètre déprécié SYMBOLSCALE.
+
+    .. deprecated:: 5.0
+
+:ref:`TEMPLATE <template>` [fichier|url]
+    Utilisé comme une alternative globale au TEMPLATE CLASS.
+
+:ref:`TILEINDEX <tileindex>` [nom de fichier|nom de couche]
+    Nom du fichier d'index de tuile ou de la couche. Un index de tuile est 
+    similaire à un index de bibliothèque d'ArcInfo. L'index de tuile contient 
+    des objets polygones pour chaque tuile. Le champ qui contient la localisation 
+    des données tuilées est données par le paramètre TILEITEM. Quand un fichier 
+    est utilisé comme index de tuile pour des couches shapefile ou raster, l'index
+    de tuile doit être un shapefile. Pour les couches OGR avec CONNECTIONTYPE, 
+    n'importe quelle source de données gérée par OGR peut être un index de 
+    tuile. Normallement la localisation doit contenir le chemin vers le fichier 
+    tuile relatif au shapepath, non à l'index de tuile lui-même. Si le paramètre 
+    DATA contient une valeur alors il est ajouté à la fin de la localisation. 
+    Quand une couche d'index de tuile est utilisée, elle fonctionne de la même 
+    manière qu'en référençant directement un fichier, mais n'importe quel source 
+    de données peut être utilisé (ie. postgres, oracle).
+
+    .. note::
+    
+        Tous les fichiers dans l'index de tuile doivent avoir le même système de 
+        coordonnées, et pour les fichiers vecteurs le même nombre d'attribut et 
+        dane le même ordre.
+
+TILEITEM [attribut]
+    Champ qui contient la localisation d'une tuile individuelle, "location" par 
+    défaut.
+
+.. _TOLERANCE:
+
+TOLERANCE [double]
+    Sensibilité pour les requêtes basées sur un point (i.e. via la souris et/ou 
+    les coordonnées de la carte). Donné en TOLERANCEUNITS. Si la couche est un 
+    POINT ou une LINE, 3 par défaut. Pour tous les autres types de couche, 0 est 
+    la valeur par défaut. Pour restreindre les recherches de polygone afin que le 
+    point doit tomber dans le polygone définissez la tolérance à zéro.
+
+TOLERANCEUNITS [pixels|feet|inches|kilometers|meters|miles|nauticalmiles|dd]
+    Unités de la valeur de la TOLERANCE. pixels est la valeur par défaut. 
+    `Nauticalmiles` a été ajouté dans MapServer 5.6.
+
+TRANSPARENCY [entier|alpha] - déprécié
+    Depuis MapServer 530 le paramètre correct à utiliser OPACITY. Le paramètre 
+    TRANSPARENCY déprécié définie le niveau de transparence de tous les pixels 
+    des classes pour une couche donnée. La valeur peut être soit un entier dans 
+    le domaine (0-100) ou le terme "ALPHA". Bien que ce paramètre est nommée 
+    "transparency", les valeurs entières définissent en réalité l'opacité de la 
+    couche. Une valeur de 100 est opaque et 0 est complètement transparente.
+
+    Le terme "ALPHA" oblige le moteur de rendu de MapServer à honorer la 
+    transparence alpha ou indéxée des symboles pixmap utilisé pour styler une 
+    couche. Cela est seulement nécessaire dans le cas de formats de sortie RGBA, 
+    et doit donc être utilisé quand cela est nécessaire car source de consommation 
+    lors du rendu de symboles pixmap transparent dans une image RGB.
+
+    .. deprecated:: 5.0
+
+    .. seealso::
+        
+        :ref:`OPACITY <opacity>`
+        
+TRANSFORM [true|false ul|uc|ur|lc|cc|lr|ll|lc|lr]
+    Informe MapServer si une couche particulière nécessite ou non d'être 
+    transformée à partir d'un système de coordonnées vers des coordonnées image.
+    True par défaut. Cela vous permet de créer des shapefiles en coordonnées 
+    image ou graphique et donc d'avoir des objets qui seront toujours affichées 
+    dans au même endroit pour chaque carte. L'idéal pour placer des logos ou du 
+    texte sur des cartes. Souvenez vous que le système de coordonnés graphique 
+    a une origine en haut à gauche de l'image, contrairement à la plupart des 
+    systèmes de coordonnées des cartes.
+
+    La version 4.10 introduit la possibilité de définir des features avec des 
+    coordonnées données en pixel (ou en pourcentage, voir UNITS), la plupart du 
+    temps des features inline, relative à un autre endroit que le coin UL (haut, 
+    gauche) d'une image. C'est ce que signifie 'TRANSFORM FALSE'. En définissant 
+    une origine alternative cela vous permet d'ancrer quelque chose comme un 
+    copyright ou un autre morceau d'image d'une manière indépendante de la 
+    taille de l'image.
+
+TYPE [point|line|polygon|circle|annotation|raster|query|chart]
+    Définie comme les données doivent être dessinées. Ne doit pas être 
+    nécessairement le même que celui du type du shapefile. Par exemple, un 
+    shapefile de type polygone peut être dessiné comme une couche point, mais un 
+    shapefile de type point ne peut pas être dessiner comme une couche polygone. 
+    Règle de bon sens. Annotation signifie qu'un point étiquette sera calculé 
+    pour les features, mais la feature en elle-même ne sera pas dessinée bien 
+    qu'un marqueur peut être optionnellement dessiné. Cela permet l'étiquetage 
+    avancé comme numéroter les autoroutes. Les points sont étiqueté de cette 
+    manière. Les polygone sont d'abord étiqueté en utilisant un centroïde, et 
+    s'il ne tombe pas dans le polygone une approche de "scan de ligne" est 
+    utilisée pour garantir que l'étiquette tombe dans la feature. Les lignes sont 
+    étiquetées au milieu de l'arc le plus long dans la portion visible de la 
+    ligne. query signifie seulement que la couche peut être interrogée mais pas 
+    dessinée.
+
+    Dans le but de différencier les POLYGON et les POLYLINE (qui n'existe pas en 
+    tant que type), utilisez ou omettez simplement respectivement le mot-clé 
+    COLOR lors de la classification. Si vous l'utilisez, c'est un polygone avec 
+    une couleur de remplissage, sinon ce sera une polyligne avec seulement un 
+    OUTLINECOLOR.
+
+    Un cercle doit être définie par une limite rectangulaire minimale. Pour cela, 
+    deux points définissent le plus petit carré qui peut y être contenu. Ces deux 
+    points sont les deux coins opposés de cette boîte.
+
+    Ce qui suit est un exemple d'utilisation de points inline pour dessiner un 
+    cercle :
+
+    .. code-block:: mapfile
+      
+      LAYER
+        NAME 'inline_circles'
+        TYPE CIRCLE
+        STATUS ON
+        FEATURE
+          POINTS
+            74.01 -53.8
+            110.7 -22.16
+          END
+        END  
+        CLASS
+          STYLE
+            COLOR 0 0 255
+          END
+        END
+      END
+
+    .. seealso::
+        
+        Pour les couches CHART, voyez le howto :ref:`Dynamic Charting<dynamic_charting>`.
+
+UNITS [feet|inches|kilometers|meters|miles|nauticalmiles|dd|pixels|percentages]
+    Unités de la couche. `Percentages` a été ajouté dans MapServer 4.10 et est 
+    plutôt utilisé pour les features inline. `Nauticalmiles` a été ajouté dans 
+    MapServer 5.6.
