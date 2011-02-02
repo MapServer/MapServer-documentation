@@ -1,0 +1,133 @@
+.. _rfc67:
+
+===============================================================
+  MS RFC 67:  Enable/Disable Layers in OGC Web Services
+===============================================================
+
+:Date: 2011-02-01
+:Author: Alan Boudreault (aboudreault at mapgears.com)
+:Author: Daniel Morissette (dmorissette at mapgears.com)
+:Last Edited: 2011-02-01
+:Status: Draft
+:Version: MapServer 6.0
+
+Overview
+------------------------------------------------------------------------------
+
+At the moment, it is not possible to hide/disable a layer in OGC Web
+Services. Everybody recognizes the need to be able to hide layers from a
+given mapfile from some or all OGC Web Service (OWS) requests.
+
+This is a proposal to add the ability to enable/disable layers in OGC Web Services in
+MapServer.
+
+There was also a discussion on this topic in the wiki at http://trac.osgeo.org/mapserver/wiki/HidingLayersInOGCWebServices
+
+Use Cases
+---------
+
+Here are some use cases to demonstrate the need of hiding layers:
+
+* One needs the ability to hide tileindex layers to all OGC services 
+* In a WMS mapfile where multiple scale-dependent layers are in a common group, we want only the group to appear in GetCapabilities? and not the individual layers. However the layers should not be completely turned off since we want them to be visible in GetMap and queryable with GetFeatureInfo when the group is selected. This use case is common for WMS and may (or may not) apply to other OGC services. 
+* One may want to offer a given layer via WMS but not via WFS (or any combination of services). In other words, we need the ability to select in which OGC services a given layer is exposed. 
+* The copyright notice (i.e. layer with STATUS DEFAULT) shall not appear in the GetCapabilities output and shall not be queryable. 
+* Not about hiding a full layer, but setting the ability to say that one wants a certain layer to return the geometry as gml in a wms-getfeatureinfo-response (at this moment it is never returned) 
+* Handle wms_group_layers as real layers (relevant for INSPIRE), but move the rendering part into hidden layers in order to avoid redundant style configurations in the group layer and the sub layer. 
+
+
+Proposed Solution
+-----------------
+
+The main concern was to minimalize user's changes in their
+mapfiles. It seems that the easier way to go would be to use metadata,
+as we already do currently for some ows settings.
+
+All OWS services will be disabled by default unless enabled at map or layer
+level. The OWS services can be enabled using the following metadata:
+
+* ows_enable_request: Apply to all OGC Web Services
+* wms_enable_request: Apply to Web Map Service (WMS)
+* wfs_enable_request: Apply to Web Feature Service (WFS)
+* sos_enable_request: Apply to Sensor Observation Service (SOS)
+* wcs_enable_request: Apply to Web Coverage Service (WCS)
+
+The value of the metadata is a list of the requests to enable:
+::
+ "GetMap GetFeature GetFeatureInfo"
+
+For convenience, there are also two special characters we can use in the
+requests list:
+
+* *: Used alone, means all requests
+* !: Placed before a request name, means disable this request
+* !*: Means disable all requests
+
+Examples:
+
+Fully enable WMS:
+::
+ wms_enable_request "*"
+
+Enable WMS, all requests except GetFeatureInfo:
+::
+ wms_enable_request "* !GetFeatureInfo"
+
+Enable WMS with only GetMap and GetFeatureInfo:
+::
+ wms_enable_request "GetMap GetFeatureInfo"
+
+Enable any/all OGC Web Service request types:
+::
+ ows_enable_request "*"
+
+Disable any/all OGC Web Service request types, mostly useful at the layer level to hide a specific layer:
+::
+ ows_enable_request "!*"
+
+Inheritance
+-----------
+
+A particularity of the proposed solution is the inheritance of settings between the
+map and the layer level. The settings at the map level apply to all layers
+unless they are overriden at the layer level. Example:
+
+Fully enable WFS for all layers at the map level:
+::
+ wfs_enable_request "*"
+
+Disable WFS GetFeature request in a specific layer (All other requests will remain enabled):
+::
+ wfs_enable_request "!GetFeature"
+
+
+Improved handling of wms_group_layers as real layers
+----------------------------------------------------
+
+... TODO...
+
+
+Backwards Compatibilty Issues
+-----------------------------
+
+All OWS services will be disabled by default. This implies that all users
+will have to modify their mapfiles and add the following line to get their
+ogc services working as before.
+
+::
+ ows_enable_request "*"
+
+
+Related tickets
+---------------
+
+* http://trac.osgeo.org/mapserver/ticket/337 : Need a way to prevent layers from being served via WMS
+* http://trac.osgeo.org/mapserver/ticket/300 : Extend behavior of DUMP mapfile parameter for GML output
+* http://trac.osgeo.org/mapserver/ticket/1952 : Tileindex Layer and WMS Get Capabilities
+* http://trac.osgeo.org/mapserver/ticket/1632 : support for named group layers using wms_layer_group
+* http://trac.osgeo.org/mapserver/ticket/3608 : INSPIRE related suport 
+
+Voting history
+--------------
+
+...
