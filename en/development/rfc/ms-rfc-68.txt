@@ -1,0 +1,218 @@
+.. _rfc68:
+
+=========================================================================
+MS RFC 68: Support for combining features from multiple layers
+=========================================================================
+
+:Date:  2011/02/10
+:Author: Tamas Szekeres
+:Contact: szekerest at gmail.com
+:Last Edited: $Date$
+:Status: Discussion Draft
+:Version: MapServer 6.0
+:Id: $Id$
+
+Description: This RFC proposes an implementation for creating a new data
+provider (CONNECTIONTYPE=CLUSTER) which provides an option to combine multiple features
+from multiple layers to single (aggregated) features.
+
+Background
+~~~~~~~~~~
+
+In order to make the maps perspicuous at a given view, we may require to limit
+the number of the features rendered at neighbouring locations which would normally
+overlap each other. Currently there's no such mechanism in MapServer which would
+prevent from the symbols to overlap based on their relative locations. In a feasible
+solution we should provide rendering the isolated symbols as is, but create new 
+(combined) features for those symbols that would overlap in a particular scale.
+The combined features can the be labeled based on their aggregate attributes.
+
+General principles of the solution
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This addition will require a mechanism to compare the features from one or more
+layers (called as 'source layers') and form clusters based on their relative positions
+in the current scale. The combined features (clusters) are rendered at averaged
+positions calculated from the related features and contain aggregated attributes 
+(like the count of the features belonging to this cluster). This aggregation layer 
+will be implemented as a new layer type (with CONNECTIONTYPE=CLUSTER).
+
+Each source layer will be marked with the following processing option:
+
+::
+
+  PROCESSING "TARGETLAYER=[name of the aggregate layer]"
+
+
+This will ensure that the source layers can be identified during the clustering process. The vtable
+of the source layers will also be modified by overriding the functions implemented by the
+cluster data provider. This will allow the cluster provider to have enough control which features
+should be rendered from the source layer and from the aggregate layer.
+
+The aggregate (cluster) layer will use futher processing options to control the clustering
+operation, like:
+
+::
+
+  PROCESSING "CLUSTERMAXDISTANCE=20"  # the maximum distance allowed between the features without forming a cluster
+  PROCESSING "CLUSTERMAXCOUNT=100"    # the maximum number of the features in a cluster 
+
+
+The desired functionality will in fact require to split the drawing process into 2 phases.
+
+1) Data preprocessing phase
+2) Rendering phase
+
+Data preprocessing phase
+~~~~~~~~~~~~~~~~~~~~~~~~
+
+The preprocessing phase would be triggered when MapServer starts accessing the cluster layer or any 
+of the source layers (either when drawing or querying) in a WhichItems call. In this phase the source layers 
+(marked with the 'TARGETLAYER' processing option) will be preprocessed. The features of the current extent
+are retrieved from the original data source and passed through a clustering process with the following steps: 
+
+1) For each feature we create a tentative cluster and create the aggregate attributes 
+   (like the feature count and the average position)
+2) We will retrieve all the neighbouring shapes (that has already been retrieved earlier) by using a quadtree
+   (implemented in maptree.c) and then update a feature counts and the average positions at each intersecting cluster.
+3) In a second turn we evaluate the tentative clusters based on their feature count and the offset of the 
+   average position related to the initial position.
+4) From the best ranking clusters we create new features and add them to the 'features' collection of the aggregate layer
+   (as inline features)
+5) The features from remaining tentative clusters (containing individual features only) will be added to the 
+   features collection of their source layers.
+
+Rendering phase
+~~~~~~~~~~~~~~~
+
+The rendering phase will be implemented in the same way as it stands for the inline layers now, assuming that the
+'features' collection has already been populated.
+
+Projections
+~~~~~~~~~~~
+
+It is suggested to use the same projection of the aggregate layer and the source layers. The clustering process
+will anyway support transforming the feature positions between the layers. The clustering process itself is
+happening in the projection of the aggregate layer.
+
+Handling the feature attributes
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+By default we will retrieve all items from the original data sources during the clustering process. msLayerWhichItems will
+also be modified to always get all items for the cluster layer and the source layers as well.
+We should however mention that the set of the items can manually be overridden by using a processing option as follows:
+
+::
+
+  PROCESSING "ITEMS=itemname1,itemname2,itemname3"
+
+In this case the user must manually select all of those items which would normally be required when rendering the layer.
+
+Query processing
+~~~~~~~~~~~~~~~~
+
+According to the TEMPLATE parameter of the aggregate layer we will provide 2 query modes:
+ 
+1) If the TEMPLATE parameter of the aggregate layer is not set, then the query operations will be redirected
+   to the data sources and the query would retrieve the features provided by the original sources. No features 
+   would be retrieved from the aggregate layer in this case.
+2) If the TEMPLATE parameter of the aggregate layer is set, then only the combined features and the individual features
+   would be retrieved (as shown on the map).
+   
+When drawing the query map, the background is drawn by using the copy to the original layer which would in fact
+copy the inline features as well, so there's no need to restart the clustering process during the rendering.    
+
+Handling classes and styles
+~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+For each source feature msShapeGetClass will be called to identify and preserve their classindex throughout 
+the clustering process (features with classindex = -1 will be omitted).
+The aggregate layer can be classified based on their supported attributes. In addition to the feature count
+attribute we intend to support further attributes, like the classname, layername and groupname in case if the 
+features belong to the same class, layer or layergroup actually.
+We don't intend to support STYLEITEM AUTO which would normally require to store the classes along with 
+the features. However in most cases we can work around this limitation by retrieving the feature style 
+as an attribute and then use STYLEITEM "[style attribute]" when configuring the source layers (as per MS-RFC-61).
+
+Preserving the features between rendering sessions
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We intend to preserve the generated features as long as possible. We consider to rebuild the features in the 
+WhichItems call only when the map extent is changing (the parameters will be stored in the DATA section 
+of the cluster layer)
+
+Using multiple aggregate layers
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+It is supported to use multiple aggregate layers in the same map, which would allow to create separate
+sets of the combined features for particular groups of layers. In this case the features would not be 
+negotiated between these partitions would be allowed to overlap. 
+However we won't support to set multiple TARGETLAYER for the same source layer which would require 
+merging the features coming from the different cluster sets.
+
+Implementation Details
+~~~~~~~~~~~~~~~~~~~~~~
+
+In order to implement this enhancement the following changes should be made in the MapServer codebase:
+
+1) Modify msInitializeVirtualTable (in maplayer.c) to call the current method 
+   (renamed as msInitializeVirtualTableOriginal), and then override the vtable based on the existence 
+   of the TARGETLAYER processing option. Having these 2 functions in place, the cluster layer provider 
+   will easily switch to the source vtable during the preprocessing.
+   
+2) Modify msLayerWhichItems (in maplayer.c) to retrieve all items for these layers
+   
+3) Expose the functions treeNodeCreate and treeAddShapeId from maptree.c to allow using the quadtree
+   implementation during the clustering process.
+   
+4) Modify the lexer to interpret this new connection type.
+
+5) Implement mapcluster.c containing the code of the cluster layer data source.
+
+Files affected
+~~~~~~~~~~~~~~
+
+The following files will be modified/created by this RFC:
+
+::
+
+  maptree.c
+  maptree.h
+  maplayer.c
+  maplexer.l
+  mapserver.h
+  Makefile.vc
+  Makefile.in
+  mapcluster.c  (new)
+
+MapScript Issues
+~~~~~~~~~~~~~~~~
+
+There's no need to modify the MapScript interface within the scope of this RFC.
+
+Backwards Compatibilty Issues
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+This change provides a new functionality with no backwards compatibility issues being considered.
+
+Further Considerations
+~~~~~~~~~~~~~~~~~~~~~~
+
+Should we provide a dedicated keyword for TARGETLAYER instead of a processing key?
+Should we prevent from writing the inline features in writeLayer?
+
+Bug ID
+~~~~~~
+
+The ticket for RFC-68 can be found here.
+
+Bug XXXX_
+ 
+.. _XXXX: http://trac.osgeo.org/mapserver/ticket/XXXX 
+
+Voting history
+~~~~~~~~~~~~~~
+
+None
+
+
