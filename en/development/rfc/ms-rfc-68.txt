@@ -93,8 +93,8 @@ processing option:
 
 At this stage of the development, the driver will expose the following additional attributes:
 
-1) Combine:SourceLayerName - The name of the source layer the feture belongs to
-2) Combine:SourceLayerGroup - The group of the source layer the feture belongs to
+1) Combine:SourceLayerName - The name of the source layer the feature belongs to
+2) Combine:SourceLayerGroup - The group of the source layer the feature belongs to
 
 2.2 Projections
 ---------------
@@ -123,6 +123,7 @@ work in case if the source layer supports it.
 This functionality will be implemented as a new layer data source (CONNECTIONTYPE=CLUSTER) which will
 operate in the following way:
 
+In LayerOpen it will open the source layer specified in the SOURCELAYER processing option.
 In the LayerWhichShapes call we start a preprocessing phase. The features of the current extent
 are retrieved from the source layer and passed through a clustering process with the following steps: 
 
@@ -132,11 +133,9 @@ are retrieved from the source layer and passed through a clustering process with
    (implemented in maptree.c) and then update a feature counts and the average positions at each intersecting cluster.
 3) In a second turn we evaluate the tentative clusters based on their feature count and the offset of the 
    average position related to the initial position.
-4) From the best ranking clusters we create new features and add them to the 'features' collection of the cluster layer
-   (as inline features)
+4) From the best ranking clusters we create new features and add them to the feature list in layerinfo
    
-The preprocessed features are served from the 'features' collection in the same way as the inline layer does it.
-   
+The preprocessed features are served from the collection layerinfo which is preserved until the layer is open.
 The cluster layer will use futher processing options to control the clustering operation, like:
 
 ::
@@ -173,18 +172,9 @@ implementation will also provide the assignment the clustered features to the lo
 3.4 Query processing
 --------------------
 
-The user may select whether the query is happening on the cluster layer or the underlying source layer (by
-setting the template parameter for any of these layers). This doesn't require any further implementation.
-   
-When drawing the query map, the background is drawn by using the copy to the original layer which would in fact
-copy the inline features as well, so there's no need to restart the clustering process during the rendering.    
-
-3.5 Preserving the features between rendering sessions
-------------------------------------------------------
-
-We intend to preserve the generated features as long as possible. We consider to rebuild the features in the 
-WhichItems call only when the map extent is changing (the parameters will be stored in the DATA section 
-of the cluster layer). We may however prevent from writing the inline features in writeLayer.
+The queries on the cluster layer will behave the same like for the other layers. The cluster database is
+preserved until the cluster layer is open. We may however provide an additional option to retrieve the
+individual shapes behind the clusters instead of the clustered shapes.
 
 4. Implementation Details
 -------------------------
@@ -222,11 +212,6 @@ There's no need to modify the MapScript interface within the scope of this RFC.
 ---------------------------------
 
 This change provides a new functionality with no backwards compatibility issues being considered.
-
-4.4 Further Considerations
---------------------------
-
-Should we prevent from writing the inline features in writeLayer?
 
 5. Bug ID
 ---------
