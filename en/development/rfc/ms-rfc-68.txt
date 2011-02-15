@@ -37,14 +37,14 @@ The following example will show how the layers are chained together to provide t
 
   LAYER
     CONNECTIONTYPE CLUSTER
+    CONNECTION "combine"  # reference to the source layer 
     NAME cluster
-    PROCESSING "SOURCELAYER=combine"
     ...
   END
   LAYER
     CONNECTIONTYPE COMBINE
+    CONNECTION "layer1,layer2" # reference to the source layers
     NAME combine
-    PROCESSING "SOURCELAYER=layer1,layer2"
     ...
   END
   LAYER
@@ -67,7 +67,7 @@ visibility of the source layers or the combine layers to false in order to avoid
 This functionality will be implemented as a separate layer data source (CONNECTIONTYPE=COMBINE) which will
 operate in the following way:
 
-1) In LayerOpen it will open all of the source layers specified in the SOURCELAYER processing option
+1) In LayerOpen it will open all of the source layers specified in the CONNECTION parameter
 2) The LayerWhichShapes call is simply delegated to the underlying layers
 3) LayerNextShape will iterate through the layers and call LayerNextShape for the subsequent shapes
    The layer index is assigned to the tileindex of the returned shapes. If we finish retrieving the
@@ -123,7 +123,7 @@ work in case if the source layer supports it.
 This functionality will be implemented as a new layer data source (CONNECTIONTYPE=CLUSTER) which will
 operate in the following way:
 
-In LayerOpen it will open the source layer specified in the SOURCELAYER processing option.
+In LayerOpen it will open the source layer specified in the CONNECTION parameter.
 In the LayerWhichShapes call we start a preprocessing phase. The features of the current extent
 are retrieved from the source layer and passed through a clustering process with the following steps: 
 
