@@ -28,7 +28,7 @@ solution we should provide rendering the isolated symbols as is, but create new
 3. The proposed soution
 -----------------------
 
-This functionality will be implemented as a separate layer data provider (implemented in mapcombine.c)
+This functionality will be implemented as a separate layer data provider (implemented in mapcluster.c)
 This provider will be used internally (being invoked in msDrawVectorLayer) and it could
 as well be compiled as a separate layer data provider (ie a plugin).
 In the first case the clustering parameters will be specified in the same layer from
@@ -93,14 +93,14 @@ in the local clustering database (stored in layerinfo).
 
 The clustering process itself will be implemented in the following way:
 
-1) For each feature we create a tentative cluster and create the aggregate attributes 
-   (like the feature count and the average position, and the variance) the features are added into
-   a customized quedtree data structure which provides quick access when searhing for the
+1) For each feature we create a tentative cluster with some aggregate attributes 
+   (like the feature count, the average position and the variance) the features are added into
+   a customized quadtree data structure which provides quick access when searhing for the
    neighboring shapes
 2) For each feature we will retrieve all the neighbouring shapes (that has already been retrieved earlier) 
-   within the specified distance (CLUSTERMAXDISTANCE) and searc shape (CLUSTERREGION) by using a quadtree seach. 
+   within the specified distance (CLUSTERMAXDISTANCE) and search shape (CLUSTERREGION) by using a quadtree seach. 
    In the related clusters we update the feature count (n) average positions (avg) and the variance (var)
-   for each interseting clusters by using the following recursive formula:
+   for each intersecting clusters by using the following recursive formula:
    
 ::
 
@@ -127,17 +127,18 @@ In LayerClose the vtable of the layer will be restored to the original methods
 
 In this case mapcluster.c will be compiled as a plugin which will set the vtable methods in the
 plugin initialization. The clustering process itself will be handled in the LayerWhichShapes call.
-In this case the features are accessed by opening the source layer (as referred in the CONNECTION parameter)
-but the bulk of the clustering process is the same as described in the previous section.
+With the multiple layer approach the features are accessed by opening the source layer 
+(as referred in the CONNECTION parameter) but the bulk of the clustering process will be the same 
+as described in the previous section.
 
 3.2 Handling the feature attributes (items)
 -------------------------------------------
 
 The cluster layer itself will provide only the "Cluster:FeatureCount" aggregated attribute 
 (which can be used to configure the labels to contain the feature count of the clustered shape), 
-however cluster layer will support to get further attributes from the original data source as 
+however cluster layer will also support to get further attributes from the original data source as 
 referenced in the LAYER configuration.
-The ITEMS processing option can be used to specify the set of the attribures according to the user preference.
+The ITEMS processing option can be used to specify the set of the attributes according to the user preference.
 
 3.2 Projections
 ---------------
@@ -149,7 +150,7 @@ happening in the projection of the cluster layer.
 3.3 Handling classes and styles
 -------------------------------
 
-We can define the symbology and labelling of the combine layers in the same way as any other layer by specifying 
+We can define the symbology and labelling of the clustered layers in the same way as any other layer by specifying 
 the classes and styles. STYLEITEM AUTO is not considered to be supported at this phase.
 
 3.4 Query processing
@@ -158,8 +159,8 @@ the classes and styles. STYLEITEM AUTO is not considered to be supported at this
 In the single layer approach the clustering will only be happen when rendering the layer (background) the query
 itself will operate on the original data source and will retrieve all the features within the specified region.
 In the multiple layer approach the query will be happen in the cluster layer and the clustered fetures can
-be retrieved (as displayed on the screen). The clustered fetures are preserved until the layer is open, so the
-single pass so the single pass query approach is provided by the driver.
+be retrieved (as displayed on the screen). The clustered features are preserved until the layer is open, so the 
+single pass query approach is provided by this driver.
 
 4. Implementation Details
 -------------------------
@@ -178,6 +179,7 @@ The following files will be modified/created by this RFC:
 
   Makefile.vc
   Makefile.in
+  mapdraw.c
   mapcluster.c (new)
 
 4.2 MapScript Issues
