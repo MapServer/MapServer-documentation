@@ -56,8 +56,8 @@ according to the following example:
     PLUGIN "msplugin_cluster.dll"
     CONNECTION "sourcelayer" # reference to the source layer
     NAME combine
-    PROCESSING "CLUSTERMAXDISTANCE=10"
-    PROCESSING "CLUSTERREGION=ellipse"
+    PROCESSING "CLUSTERMAXDISTANCE=10"  # in pixels
+    PROCESSING "CLUSTERREGION=ellipse"  # possible values are rectangle (the default) or ellipse 
     ...
   END
   LAYER
@@ -95,10 +95,10 @@ The clustering process itself will be implemented in the following way:
 
 1) For each feature we create a tentative cluster with some aggregate attributes 
    (like the feature count, the average position and the variance) the features are added into
-   a customized quadtree data structure which provides quick access when searhing for the
+   a customized quadtree data structure which provides quick access when searching for the
    neighboring shapes
 2) For each feature we will retrieve all the neighbouring shapes (that has already been retrieved earlier) 
-   within the specified distance (CLUSTERMAXDISTANCE) and search shape (CLUSTERREGION) by using a quadtree seach. 
+   within the specified distance (CLUSTERMAXDISTANCE) and search shape (CLUSTERREGION) by using a quadtree search. 
    In the related clusters we update the feature count (n) average positions (avg) and the variance (var)
    for each intersecting clusters by using the following recursive formula:
    
@@ -118,7 +118,7 @@ The clustering process itself will be implemented in the following way:
    clusters which are still exist in the quadtree.
 6) Repeat from #4 until we have features in the quadtree.
    
-The finalized features are served from the finalization list which is preserved until the layer is open.
+In LayerNextShape the features are served from the finalization list which is preserved until the layer is open.
 In LayerClose the vtable of the layer will be restored to the original methods 
 (by calling msInitializeVirtualTable)
 
