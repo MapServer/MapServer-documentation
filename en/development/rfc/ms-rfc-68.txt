@@ -13,38 +13,35 @@ MS RFC 68: Support for combining features from multiple layers
 :Id: $Id$
 
 Description: This RFC proposes an implementation for creating a new data
-providers (CONNECTIONTYPE=COMBINE and CONNECTIONTYPE=CLUSTER) which provide an option 
-to combine features from multiple layers into a single layer and to cluster multiple 
-features from a layer to single (aggregated) features based on their relative positions.
+provider (CONNECTIONTYPE=COMBINE) which provides an option to combine features 
+from multiple layers into a single layer.
 
 1. Overview
 -----------
 
-In order to make the maps perspicuous at a given view, we may require to limit
-the number of the features rendered at neighbouring locations which would normally
-overlap each other. Currently there's no such mechanism in MapServer which would
-prevent from the symbols to overlap based on their relative locations. In a feasible
-solution we should provide rendering the isolated symbols as is, but create new 
-(clustered) features for those symbols that would overlap in a particular scale.
-We would like to support clustering features from multiple layers as well. For this
-reason we implement a separate layer data source (CONNECTIONTYPE=COMBINE) to represent 
-features from multiple layers in a single layer then use this single layer as the 
-data source of another layer (CONNECTIONTYPE=CLUSTER) which is responsible to perform
-the clustering process and provide the clustered features at the output.
-The following example will show how the layers are chained together to provide the final result:
+Today, you can combine multiple files using a tileindex, but only if they have 
+the same attributes, and description. In theory, it might be nice to be able to have 
+multiple source layers that have similar attributes and to be able to combine them 
+into a single layer using some compatible subset of the source column attributes so 
+that the combined layer could be treated as a single layer. We could then use this single
+layer in the same way as any other layer when setting up the classes styles and labels.
+This layer could also provide the option to use features from multiple layers when
+configuring clustering support as per :ref:`MS RFC 69 <rfc69>`.
+
+2. The proposed solution
+------------------------
+
+This functionality will be implemented as a separate layer data provider (CONNECTIONTYPE=COMBINE).
+The combine layer will use the CONNECTION parameter to define the source layers in the 
+mapfiles as follows:
 
 ::
 
   LAYER
-    CONNECTIONTYPE CLUSTER
-    CONNECTION "combine"  # reference to the source layer 
-    NAME cluster
-    ...
-  END
-  LAYER
     CONNECTIONTYPE COMBINE
-    CONNECTION "layer1,layer2" # reference to the source layers
+    CONNECTION "layer1,layer2,layer3" # reference to the source layers
     NAME combine
+    PROCESSING "ITEMS=itemname1,itemname2,itemname3"
     ...
   END
   LAYER
@@ -57,22 +54,22 @@ The following example will show how the layers are chained together to provide t
     NAME layer2
     ...
   END
-  
-The order of the layers doesn't affect the result of the data processing, but it is suggested to set the
-visibility of the source layers or the combine layers to false in order to avoid the duplication features on the map.
+  LAYER
+    CONNECTIONTYPE SHAPE
+    NAME layer3
+    ...
+  END
 
-2. Combining features from multiple layers
-------------------------------------------
 
-This functionality will be implemented as a separate layer data source (CONNECTIONTYPE=COMBINE) which will
-operate in the following way:
+The new layer data provider which will work in the following way:
 
 1) In LayerOpen it will open all of the source layers specified in the CONNECTION parameter
-2) The LayerWhichShapes call is simply delegated to the underlying layers
+2) The LayerWhichShapes call will be delegated to the underlying layers and provide the rectangle
+   for the area of interest
 3) LayerNextShape will iterate through the layers and call LayerNextShape for the subsequent shapes
    The layer index is assigned to the tileindex of the returned shapes. If we finish retrieving the
    shapes from one layer we start retrieving the features from the next source layer.
-4) LayerGetShape will retrieve the layer based on the tile index and call LayerGetShape of this layer
+4) LayerGetShape will identify the layer based on the tile index and then call LayerGetShape of this layer
 
 The union layer and the source layers must have the same geometry type otherwise an error is generated in
 the LayerOpen call.
@@ -84,13 +81,8 @@ In general the source layers must provide those attributes which are required wh
 the underlying data may contain further attributes, which are not used when fetching the data from the original source.
 When all attributes are requested (in the query operations) then the union layer will provide only some aggegated
 attributes (like the layer name or the group name of the source layer the feature belongs to). 
-The set of the items can manually be overridden (and further attributes can be exposed) by using the following
-processing option:
-
-::
-
-  PROCESSING "ITEMS=itemname1,itemname2,itemname3"
-
+The set of the items can manually be overridden (and further attributes can be exposed) by using the ITEMS
+processing option.
 At this stage of the development, the driver will expose the following additional attributes:
 
 1) Combine:SourceLayerName - The name of the source layer the feature belongs to
@@ -100,7 +92,7 @@ At this stage of the development, the driver will expose the following additiona
 ---------------
 
 It is suggested to use the same projection of the aggregate layer and the source layers. The layer provider
-will anyway support transforming the feature positions between the source layers and the union layer.
+will however support transforming the feature positions between the source layers and the combine layer.
 
 2.3 Handling classes and styles
 -------------------------------
@@ -113,103 +105,43 @@ may also use the STYLEITEM AUTO setting if the underlying data soure provides th
 2.4 Query processing
 --------------------
 
-The queries on the combined layer will behave the same like for the other layers. All of the source 
+The queries on the combined layer will behave the same like with the other layers. All of the source 
 layers are kept open until the combine layer is open. This will provide the single pass query to
 work in case if the source layer supports it.
 
-3. Clustering the features
---------------------------
-
-This functionality will be implemented as a new layer data source (CONNECTIONTYPE=CLUSTER) which will
-operate in the following way:
-
-In LayerOpen it will open the source layer specified in the CONNECTION parameter.
-In the LayerWhichShapes call we start a preprocessing phase. The features of the current extent
-are retrieved from the source layer and passed through a clustering process with the following steps: 
-
-1) For each feature we create a tentative cluster and create the aggregate attributes 
-   (like the feature count and the average position)
-2) We will retrieve all the neighbouring shapes (that has already been retrieved earlier) by using a quadtree
-   and then update a feature counts and the average positions at each intersecting cluster.
-3) In a second turn we evaluate the tentative clusters based on their feature count and the offset of the 
-   average position related to the initial position.
-4) From the best ranking clusters we create new features and add them to the feature list in layerinfo
-   
-The preprocessed features are served from the collection layerinfo which is preserved until the layer is open.
-The cluster layer will use futher processing options to control the clustering operation, like:
-
-::
-
-  PROCESSING "CLUSTERMAXDISTANCE=20"  # the maximum distance allowed between the features without forming a cluster
-  PROCESSING "CLUSTERMAXCOUNT=100"    # the maximum number of the features in a cluster
-
-3.1 Handling the feature attributes (items)
--------------------------------------------
-
-The items handling approach of the cluster layer will be the same as described for the combine layer
-At this stage of the development the driver will expose the following additional attributes:
-
-1) Cluster:FeatureCount - The number of the features belonging to this cluster
-
-When the source layer is a combine layer, then the related additional attributes 
-(Combine:SourceLayerName and Combine:SourceLayerGroup) will also be available
-
-3.2 Projections
----------------
-
-It is suggested to use the same projection of the cluster layer and the source layers. The cluster layer data provider
-will anyway support transforming the feature positions between the layers. The clustering process itself is
-happening in the projection of the cluster layer. 
-
-3.3 Handling classes and styles
--------------------------------
-
-Since all of the features (including the clusters and the individual features) are served from the same layer
-it is important to support the STYLEITEM AUTO option for the cluster layer as well. This will ensure that the
-individual features will get the same look as it was displayed at the source layer. The STYLEITEM AUTO 
-implementation will also provide the assignment the clustered features to the local class definitions.
-
-3.4 Query processing
---------------------
-
-The queries on the cluster layer will behave the same like for the other layers. The cluster database is
-preserved until the cluster layer is open. We may however provide an additional option to retrieve the
-individual shapes behind the clusters instead of the clustered shapes.
-
-4. Implementation Details
+3. Implementation Details
 -------------------------
 
 In order to implement this enhancement the following changes should be made in the MapServer codebase:
    
-1) Modify the lexer to interpret the connection types (COMBINE and CLUSTER).
+1) Modify the lexer to interpret the new connection type (COMBINE).
 2) Implement mapcombine.c containing the code of the combine layer data source.
-3) Implement mapcluster.c containing the code of the cluster layer data source.
 
-4.1 Files affected
+3.1 Files affected
 ------------------
 
 The following files will be modified/created by this RFC:
 
 ::
 
-  maplexer.l
+  maplexer.l (maplexer.c)
   mapserver.h
   Makefile.vc
   Makefile.in
   mapcombine.c (new)
-  mapcluster.c (new)
 
-4.2 MapScript Issues
+3.2 MapScript Issues
 --------------------
 
-There's no need to modify the MapScript interface within the scope of this RFC.
+The connection type of this new layer will be exposed in the MapScript interface.
+No further impact is taken into account at the moment.
 
-4.3 Backwards Compatibilty Issues
+3.3 Backwards Compatibilty Issues
 ---------------------------------
 
 This change provides a new functionality with no backwards compatibility issues being considered.
 
-5. Bug ID
+4. Bug ID
 ---------
 
 The ticket for RFC-68 (containing implementation code) can be found here.
@@ -218,7 +150,7 @@ Bug 3674_
  
 .. _3674: http://trac.osgeo.org/mapserver/ticket/3674 
 
-6. Voting history
+5. Voting history
 -----------------
 
 None
