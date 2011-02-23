@@ -861,13 +861,13 @@ int setWKTProjection(string proj_params)
 int getNumResults()
     Returns the number of results from this layer in the last query.
 
-resultCacheMemberObj getResult(int index)
-    Returns a resultCacheMemberObj by index from a layer object with 
+resultObj getResult(int index)
+    Returns a resultObj by index from a layer object with 
     index in the range 0 to numresults-1.  
     Returns a valid object or FALSE(0) if index is invalid.
 
 int open()
-    Open the layer for use with getFeature().  
+    Open the layer for use with getShape().  
     Returns MS_SUCCESS/MS_FAILURE.
 
 int whichshapes(rectobj)
@@ -895,13 +895,6 @@ shapeobj nextShape()
 
 void close()
     Close layer previously opened with open().
-
-shapeObj getFeature(int shapeindex [, int tileindex = -1])
-    Retrieve shapeObj from a layer by index.
-    Tileindex is optional and is used only for tiled shapefiles 
-    (you get it from the resultCacheMemberObj returned by getResult()
-    for instance). 
-    Simply omit or pass tileindex = -1 for other data sources.
 
 rectObj getExtent()
     Returns the layer's data extents or NULL on error.
@@ -1019,13 +1012,22 @@ int setConnectionType(int connectiontype [,string plugin_library])
     load by MapServer. For the other connection types this parameter 
     is not used. 
     
-shapeObj resultsGetShape(int shapeindex [, int tileindex = -1])
-    Retrieve shapeObj from a layer's resultset by index.
-    Tileindex is optional and is used only for tiled shapefiles 
-    (you get it from the resultCacheMemberObj returned by getResult()
-    for instance). 
-    Simply omit or pass tileindex = -1 for other data sources.
-    Added in MapServer 5.6.0 due to the one-pass query implementation.
+shapeObj getShape(resultObj result])
+    If the resultObj passed has a valid resultindex, retrieve shapeObj from
+    a layer's resultset. (You get it from the resultObj returned by
+    getResult() for instance). Otherwise, it will do a single query on
+    the layer to fetch the shapeindex
+
+.. code-block:: php
+
+   $map = new mapObj("gmap75.map");
+   $l = $map->getLayerByName("popplace");
+   $l->queryByRect($map->extent);
+   for ($i=0; $i<$l->getNumResults();$i++){
+       $s = $l->getShape($l->getResult($i));
+       echo $s->getValue($l,"Name");
+       echo "\n";
+   }
 
 array getGridIntersectionCoordinates()
     Returns an array containing the grid intersection coordinates. If there
@@ -1943,14 +1945,17 @@ void free()
     Free the object properties and break the internal references. 
     Note that you have to unset the php variable to free totally the resources.
 
-resultCacheMemberObj
+resultObj
 ^^^^^^^^^^^^^^^^^^^^
 
 Constructor
 ...............................................................................
 
-Instances of resultCacheMemberObj are always obtained through 
-`layerObj`_'s getResult() method.
+.. code-block:: php
+
+    new resultObj(int shapeindex)
+
+or using the `layerObj`_'s getResult() method.
 
 Members
 ...............................................................................
@@ -1961,6 +1966,7 @@ Type                Name
 int             shapeindex    (read-only)
 int             tileindex     (read-only)
 int             classindex    (read-only)
+int             resultindex   (read-only)
 =============== ====================================================================
 
 Method
