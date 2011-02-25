@@ -13,8 +13,8 @@ MS RFC 68: Support for combining features from multiple layers
 :Id: $Id$
 
 Description: This RFC proposes an implementation for creating a new data
-provider (CONNECTIONTYPE=COMBINE) which provides an option to combine features 
-from multiple layers into a single layer.
+provider (CONNECTIONTYPE=UNION) which provides an option to represent features 
+from multiple layers in a single layer.
 
 1. Overview
 -----------
@@ -22,25 +22,26 @@ from multiple layers into a single layer.
 Today, you can combine multiple files using a tileindex, but only if they have 
 the same attributes, and description. In theory, it might be nice to be able to have 
 multiple source layers that have similar attributes and to be able to combine them 
-into a single layer using some compatible subset of the source column attributes so 
-that the combined layer could be treated as a single layer. We could then use this single
-layer in the same way as any other layer when setting up the classes styles and labels.
-This layer could also provide the option to use features from multiple layers when
-configuring clustering support as per :ref:`MS RFC 69 <rfc69>`.
+into a single layer (being called as union layer) using some compatible subset of the source 
+column attributes so that the combined layer could be treated as a single layer. 
+We could then use this single layer in the same way as any other layer when setting 
+up the classes styles and labels. This layer could also provide the option to use 
+features from multiple layers when configuring clustering support 
+as per :ref:`MS RFC 69 <rfc69>`.
 
 2. The proposed solution
 ------------------------
 
-This functionality will be implemented as a separate layer data provider (CONNECTIONTYPE=COMBINE).
-The combine layer will use the CONNECTION parameter to define the source layers in the 
+This functionality will be implemented as a separate layer data provider (CONNECTIONTYPE=UNION).
+The union layer will use the CONNECTION parameter to define the source layers in the 
 mapfiles as follows:
 
 ::
 
   LAYER
-    CONNECTIONTYPE COMBINE
+    CONNECTIONTYPE UNION
     CONNECTION "layer1,layer2,layer3" # reference to the source layers
-    NAME combine
+    NAME "union-layer"
     PROCESSING "ITEMS=itemname1,itemname2,itemname3"
     ...
   END
@@ -77,12 +78,14 @@ the LayerOpen call.
 2.1 Handling the layer attributes (items)
 -----------------------------------------
 
-In general the source layers must provide those attributes which are required when rendering the union layer, however 
-the underlying data may contain further attributes, which are not used when fetching the data from the original source.
-When all attributes are requested (in the query operations) then the union layer will provide only some aggegated
-attributes (like the layer name or the group name of the source layer the feature belongs to). 
-The set of the items can manually be overridden (and further attributes can be exposed) by using the ITEMS
-processing option.
+In general the source layers must provide those attributes which are required when 
+rendering the union layer, however the underlying data may contain further attributes, 
+which are not used when fetching the data from the original source.
+When all attributes are requested (in the query operations) then the union layer will 
+provide only some aggegated attributes (like the layer name or the group name of the source 
+layer the feature belongs to). 
+The set of the items can manually be overridden (and further attributes can be exposed) 
+by using the existing ITEMS processing option.
 At this stage of the development, the driver will expose the following additional attributes:
 
 1) Combine:SourceLayerName - The name of the source layer the feature belongs to
@@ -91,31 +94,33 @@ At this stage of the development, the driver will expose the following additiona
 2.2 Projections
 ---------------
 
-It is suggested to use the same projection of the aggregate layer and the source layers. The layer provider
-will however support transforming the feature positions between the source layers and the combine layer.
+It is suggested to use the same projection of the union layer and the source layers. The layer provider
+will however support transforming the feature positions between the source layers and the union layer.
 
 2.3 Handling classes and styles
 -------------------------------
 
-We can define the symbology and labelling of the combine layers in the same way as any other layer by specifying 
-the classes and styles. In addition we will also support the STYLEITEM AUTO option for the combine layer, which
-is essential if we want to display the features in the same way as with the source layers. The source layers 
-may also use the STYLEITEM AUTO setting if the underlying data soure provides that.
+We can define the symbology and labelling of the union layers in the same way as 
+any other layer by specifying the classes and styles. In addition we will also support 
+the STYLEITEM AUTO option for the union layer, which is essential if we want to display 
+the features in the same way as with the source layers. The source layers 
+may also use the STYLEITEM AUTO setting if the underlying data source provides that.
 
 2.4 Query processing
 --------------------
 
-The queries on the combined layer will behave the same like with the other layers. All of the source 
-layers are kept open until the combine layer is open. This will provide the single pass query to
-work in case if the source layer supports it.
+The driver will create (and operate on) a copy of the source layers which will allow to
+keep the underlying layers open until the union layer is open. This will provide the 
+single pass query to work in case if the source layer supports it.
+The queries on the union layer will anyway behave the same like with the other layers.
 
 3. Implementation Details
 -------------------------
 
 In order to implement this enhancement the following changes should be made in the MapServer codebase:
    
-1) Modify the lexer to interpret the new connection type (COMBINE).
-2) Implement mapcombine.c containing the code of the combine layer data source.
+1) Modify the lexer to interpret the new connection type (UNION).
+2) Implement mapunion.c containing the code of the union layer data source.
 
 3.1 Files affected
 ------------------
@@ -128,7 +133,7 @@ The following files will be modified/created by this RFC:
   mapserver.h
   Makefile.vc
   Makefile.in
-  mapcombine.c (new)
+  mapunion.c (new)
 
 3.2 MapScript Issues
 --------------------
