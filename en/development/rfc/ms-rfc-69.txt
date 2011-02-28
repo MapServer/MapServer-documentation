@@ -24,15 +24,16 @@ overlap each other. Currently there's no such mechanism in MapServer which would
 prevent from the symbols to overlap based on their relative locations. In a feasible
 solution we should provide rendering the isolated symbols as is, but create new 
 (clustered) features for those symbols that would overlap in a particular scale.
+According to the example at http://trac.osgeo.org/mapserver/attachment/ticket/3700/cluster.png 
+the number of the features forming the clusters are displayed in the labels for each clustered features.   
+
 
 3. The proposed soution
 -----------------------
 
 This functionality will be implemented as a separate layer data provider (implemented in mapcluster.c)
-This provider will be used internally (being invoked in msDrawVectorLayer) and it could
-as well be compiled as a separate layer data provider (ie a plugin).
-In the first case the clustering parameters will be specified in the same layer from
-which the data is provided actually, like:
+This provider will be used internally (being invoked in msLayerOpen).
+The clustering parameters can be specified for each layer type as follows:
 
 ::
 
@@ -40,48 +41,85 @@ which the data is provided actually, like:
     TYPE POINT
     CONNECTIONTYPE OGR
     NAME cluster
-    PROCESSING "CLUSTERMAXDISTANCE=10"
-    PROCESSING "CLUSTERREGION=ellipse"
+    CLUSTER
+       MAXDISTANCE 20  # in pixels
+       REGION ellipse  # can be rectangle or ellipse
+       GROUP (expression)  # we can define an expression to create separate groups for each value
+       FILTER (expression) # we can define a logical expression to specify the grouping condition
+    END
     ...
   END
-
-In the second case the data provider can be used as a separate layer (compiled as a plugin)
-according to the following example:
+  
+We can also use multiple classes to display the clustered shapes. The referred example above use the
+following layer definition:
 
 ::
 
-  LAYER
-    TYPE POINT
-    CONNECTIONTYPE PLUGIN
-    PLUGIN "msplugin_cluster.dll"
-    CONNECTION "sourcelayer" # reference to the source layer
-    NAME combine
-    PROCESSING "CLUSTERMAXDISTANCE=10"  # in pixels
-    PROCESSING "CLUSTERREGION=ellipse"  # possible values are rectangle (the default) or ellipse 
-    ...
-  END
-  LAYER
-    TYPE POINT
-    CONNECTIONTYPE OGR
-    NAME sourcelayer
-    ...
-  END
+  LAYER 
+      CLUSTER
+          MAXDISTANCE 50
+          REGION "rectangle"
+      END
+      LABELITEM "Cluster:FeatureCount"
+      CLASSITEM "zoomcode"
+      
+      CLASS
+	       TEMPLATE "query.html"
+	       STYLE
+               SYMBOL "image4"
+	       END
+	       LABEL
+		      ...
+	       END
+	       EXPRESSION "Cluster:Empty"
+	    END
+    	
+        CLASS
+	       TEMPLATE "query.html"
+	       STYLE
+               SYMBOL "image1"
+	       END
+	       LABEL
+		      ...
+	       END	
+	       EXPRESSION "5"		
+	    END
+	    CLASS
+	       TEMPLATE "query.html"
+	       STYLE
+               SYMBOL "image2"
+	       END
+	       LABEL
+		      ...
+	       END	
+	       EXPRESSION "4"		
+	    END
+	    CLASS
+	       TEMPLATE "query.html"
+	       STYLE
+               COLOR 0 0 255
+               SYMBOL "image3"
+	       END
+	       LABEL
+		      ...
+	       END
+	       EXPRESSION "3"
+	    END
+	    ...
+    END
 
-We will actually create a single implementation which is suitable for both cases.
-The differences will be separated by the USE_CLUSTER_EXTERNAL define setting.
 
-3.1 Implementing the single layer approach
-------------------------------------------
+3.1 The concept of the implementation
+-------------------------------------
 
-In the single layer approach msDrawVectorLayer we will open this new layer data provider
-depending on the existence of the clustering options, something like:
+In the proposed solution msLayerOpen will call the vtable method of the cluster layer provider
+instead of the original vtable method depending on the existence of the 
+clustering options, something like:
   
 ::
 
-  if (msLayerGetProcessingKey( layer, "CLUSTERMAXDISTANCE" ))
-    status = msClusterLayerOpen(layer);
-  else
-    status = msLayerOpen(layer);
+  if (layer->cluster.region)
+    return msClusterLayerOpen(layer);
 
 
 In msClusterLayerOpen the data provider will override the vtable functions so that
@@ -98,7 +136,7 @@ The clustering process itself will be implemented in the following way:
    a customized quadtree data structure which provides quick access when searching for the
    neighboring shapes
 2) For each feature we will retrieve all the neighbouring shapes (that has already been retrieved earlier) 
-   within the specified distance (CLUSTERMAXDISTANCE) and search shape (CLUSTERREGION) by using a quadtree search. 
+   within the specified distance (CLUSTERMAXDISTANCE) and search shape (CLUSTERREGION) by using a quadtree search. We will also inspect the filter and group conditions in each relations,
    In the related clusters we update the feature count (n) average positions (avg) and the variance (var)
    for each intersecting clusters by using the following recursive formula:
    
@@ -122,53 +160,48 @@ In LayerNextShape the features are served from the finalization list which is pr
 In LayerClose the vtable of the layer will be restored to the original methods 
 (by calling msInitializeVirtualTable)
 
-3.1 Implementing the multiple layer approach
---------------------------------------------
-
-In this case mapcluster.c will be compiled as a plugin which will set the vtable methods in the
-plugin initialization. The clustering process itself will be handled in the LayerWhichShapes call.
-With the multiple layer approach the features are accessed by opening the source layer 
-(as referred in the CONNECTION parameter) but the bulk of the clustering process will be the same 
-as described in the previous section.
-
 3.2 Handling the feature attributes (items)
 -------------------------------------------
 
-The cluster layer itself will provide only the "Cluster:FeatureCount" aggregated attribute 
-(which can be used to configure the labels to contain the feature count of the clustered shape), 
-however cluster layer will also support to get further attributes from the original data source as 
+The clustered layer itself will provide the following aggregate attributes: 
+
+1) Cluster:FeatureCount - count of the features in the clustered shape 
+1) Cluster:Group - The group value of the cluster (to which the group expression is evaluated)
+
+These attributes can be used to configure the labels of the features and can also be used in expressions. 
+The clustered layer will also support to get further attributes from the original data source as 
 referenced in the LAYER configuration.
-The ITEMS processing option can be used to specify the set of the attributes according to the user preference.
+The ITEMS processing option can be used to specify additional attributes from the source layer 
+according to the user preference.
 
-3.2 Projections
----------------
-
-In the multiple layer (plugin) configuration the cluster layer data provider
-will support transforming the feature positions between the layers. The clustering process itself is
-happening in the projection of the cluster layer. 
+If we retrieve the original attributes then the layer provider will provide only those values which
+are equal for each shapes in the cluster. The other values are set to "Cluster:Empty". In the future
+we may probably extend this by implementing aggregate functions to define the attributes, like 
+min([attributename]) or max([attributename])
 
 3.3 Handling classes and styles
 -------------------------------
 
-We can define the symbology and labelling of the clustered layers in the same way as any other layer by specifying 
-the classes and styles. STYLEITEM AUTO is not considered to be supported at this phase.
+We can define the symbology and labelling of the clustered layers in the same way as any other layer by specifying the classes and styles. STYLEITEM AUTO is not considered to be supported at this phase.
 
 3.4 Query processing
 --------------------
 
-In the single layer approach the clustering will only be happen when rendering the layer (background) the query
-itself will operate on the original data source and will retrieve all the features within the specified region.
-In the multiple layer approach the query will be happen in the cluster layer and the clustered fetures can
-be retrieved (as displayed on the screen). The clustered features are preserved until the layer is open, so the 
-single pass query approach is provided by this driver.
+In the query operations the clustered features are retrieved as single shapes with the attribute set
+as specified in the ITEMS processing option. The clustered features are preserved until the layer 
+is open, so the single pass query approach is provided by this driver.
 
 4. Implementation Details
 -------------------------
 
 In order to implement this enhancement the following changes should be made in the MapServer codebase:
    
-1) Modify mapdraw.c to invoke msClusterlayerOpen based on the existence of the clustering parameters.
-2) Implement mapcluster.c containing the code of the cluster layer data source.
+1) Modify the lexer to contain the new keywords
+2) Create a new struct (clusterObj) to contain the clustering parameters and implement the handlers
+   (initCluster, loadCluster, freeCluster, writeCluster) in mapfile.c
+2) Modify maplayer.c to invoke msClusterlayerOpen based on the existence of the clustering parameters,
+   and make msLayerWhichItems aware of the group and filter expressions
+3) Implement mapcluster.c containing the code of the cluster layer data provider
 
 4.1 Files affected
 ------------------
@@ -179,13 +212,17 @@ The following files will be modified/created by this RFC:
 
   Makefile.vc
   Makefile.in
-  mapdraw.c
-  mapcluster.c (new)
+  maplayer.c (msLayerOpen and msLayerWhichItems)
+  mapfile.c, mapfile.h(for handling clusterObj)
+  mapcluster.c (the code of the new data provider)
+  cluster.i (SWIG interface file to expose clusterObj)
+  maplexer.l
+  mapserver.h
 
 4.2 MapScript Issues
 --------------------
 
-There's no need to modify the MapScript interface within the scope of this RFC.
+The new object (clusterObj) will be exposed to the mapscript interface.
 
 4.3 Backwards Compatibilty Issues
 ---------------------------------
