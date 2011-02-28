@@ -141,6 +141,41 @@ for the required parameters.
 
 
 	END # Map File
+
+Output Formats
+--------------
+
+The raster formats supported by MapServer WCS are determined by the wcs_formats
+metadata item on the LAYER.  This should contain a space separated list of 
+OUTPUTFORMAT driver names separated by spaces.  If absent, all raster 
+OUTPUTFORMATs are allowed. 
+
+WCS is a "raw data" oriented format.  So it often most suitable to use it
+with format using the BYTE, INT16 and FLOAT32 IMAGEMODEs with GDAL related 
+output formats rather than the built in "rendering oriented" output formats.
+By default the only GDAL format driver defined is the GTiff driver.  The 
+following are example output format declarations utilizing the raw image modes::
+
+  OUTPUTFORMAT
+    NAME GEOTIFF_16
+    DRIVER "GDAL/GTiff"
+    MIMETYPE "image/tiff"
+    IMAGEMODE FLOAT32
+    EXTENSION "tif"
+  END
+
+  OUTPUTFORMAT
+    NAME AAIGRID
+    DRIVER "GDAL/AAIGRID"
+    MIMETYPE "image/x-aaigrid"
+    IMAGEMODE INT16
+    EXTENSION "grd"
+    FORMATOPTION "FILENAME=result.grd"
+  END
+
+The FORMATOPTION FILENAME defines the preferred name of the result file when
+returned WCS GetCoverage results.  
+  
 	
 Test Your WCS 1.0 Server
 ========================
@@ -430,7 +465,7 @@ Layer Object Metadata
 
 **wcs_formats**
 
-- *Description:* (Optional) The formats which may be requested for this layer, separated by a space. (e.g. "GTiff MrSID")
+- *Description:* (Optional) The formats which may be requested for this layer, separated by a space. (e.g. "GTiff MrSID")  
 
 **wcs_keywords**
 
