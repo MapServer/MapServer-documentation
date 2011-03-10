@@ -1,3 +1,8 @@
+**2011-03-09 - MapServer 6.0.0-beta1 is released**
+
+MapServer 6.0.0-beta1 has been released. See `the release announcement <http://lists.osgeo.org/pipermail/mapserver-users/2011-March/068125.html>`__ 
+for more details and head to :ref:`download` to obtain a copy.
+
 **2011-01-17 - MapServer 5.6.6 is released**
 
 MapServer 5.6.6 has been released. See `the release announcement <http://lists.osgeo.org/pipermail/mapserver-users/2011-January/067705.html>`__ 
