@@ -8,7 +8,7 @@ BUILDDIR     = build
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
-TRANSLATIONS  = de es
+TRANSLATIONS  = de es fr
 LANGUAGES     = en $(TRANSLATIONS) 
 
 # On mapserver.org we need to write alternate links for the language switcher.
