@@ -1,12 +1,12 @@
+**2011-03-18 - MapServer 6.0.0-beta2 is released**
+
+MapServer 6.0.0-beta2 has been released. See `the release announcement <http://lists.osgeo.org/pipermail/mapserver-users/2011-March/068227.html>`__ 
+for more details and head to :ref:`download` to obtain a copy.
+
 **2011-03-15 - MapServer PSC Attend Montreal Code Sprint**
 
 Members of the MapServer Project Steering Committee attend the `Montreal Code Sprint <http://wiki.osgeo.org/wiki/Montreal_Code_Sprint_2011>`__
 event, an international meeting of PostGIS, GDAL, libLAS, GeoPrisma, and MapServer development teams.
-
-**2011-03-09 - MapServer 6.0.0-beta1 is released**
-
-MapServer 6.0.0-beta1 has been released. See `the release announcement <http://lists.osgeo.org/pipermail/mapserver-users/2011-March/068125.html>`__ 
-for more details and head to :ref:`download` to obtain a copy.
 
 **2011-01-17 - MapServer 5.6.6 is released**
 
