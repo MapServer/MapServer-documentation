@@ -74,7 +74,7 @@ meet the following conditions:
 - LAYER metadata "wcs_label" must be set
 - LAYER metadata "wcs_rangeset_name" must be set
 - LAYER metadata "wcs_rangeset_label" must be set
-- LAYER is enabled to be served via WCS (see http://mapserver.org/development/rfc/ms-rfc-67.html)
+- LAYER is enabled to be served via WCS (see `MS RFC 67`_)
 
 
 Example WCS Server Mapfile
@@ -402,47 +402,74 @@ the moment the following documents are available from the
 * `WCS 2.0 Specification - Core`_
 * `WCS 2.0 Specification - KVP Protocol Binding Extension`_
 * `WCS 2.0 Specification - XML/POST Protocol Binding Extension`_
-* `WCS 2.0 Specification - XML/SOAP Protocol Binding Extension`_
 
+Technical changes from WCS version 1.1.2 include entirely building on
+the `GML 3.2.1 Application Schema Coverages`_ and adoption of
+`OWS Common 2.0`_. Another major change is the introduction of trim and
+slice concepts which is explained in more detail below.
 
-
-Technical changes from WCS version 1.1.2 include entirely building on the `GML 3.2.1 Application Schema Coverages`_.
-
-WCS 2.0 is based on OWS Common 2.0 and as the WCS 1.1 implementation
-takes advantage of the OWS metadata services in mapowscommon.c. However,
-because of main technical changes like the adoption of GML 3.2.1 or the
-introduction of trim and slice concepts the implementation is largely
-separated in mapwcs20.c.
-
-The schemas are available at http://schemas.opengis.net/wcs/2.0/
+There are `WCS 2.0 Schemas`_ defined against which all requests and
+responses should validate.
 
 WCS 2.0 KVP request parameters
 ``````````````````````````````
 
-    **COVERAGEID=id:** This parameter is technically the same as the **COVERAGE** parameter for WCS 1.0 or the **IDENTIFIER** parameter for WCS 1.1. In DescribeCoverage requests, multiple IDs can be requested by concatenating them with semicolons.
+The following KVP request parameters are available in WCS 2.0:
 
-    **SUBSET=axis[,crs](low,high):** This parameter subsets the coverage on the given axis. This parameter can be given multiple times, once for each axis. The optional sub-parameter can either be an EPSG definition (like EPSG:4326), an URN or an URI or 'imageCRS' (which is the default). All crs sub-parameters from all **SUBSET** parameters must be equal. (E.g: you canot subset one axis in imageCRS and another in EPSG:4326).
+    **COVERAGEID=id:** This parameter is technically the same as the 
+    **COVERAGE** parameter for WCS 1.0 or the **IDENTIFIER** parameter 
+    for WCS 1.1. In DescribeCoverage requests, multiple IDs can be 
+    requested by concatenating them with commas.
+
+    **SUBSET=axis[,crs](low,high):** This parameter subsets the coverage
+    on the given axis. This parameter can be given multiple times, once 
+    for each axis. The optional sub-parameter can either be an EPSG 
+    definition (like EPSG:4326), an URN or an URI or 'imageCRS' (which 
+    is the default). All crs sub-parameters from all **SUBSET** 
+    parameters must be equal. (e.g: you cannot subset one axis in 
+    imageCRS and another in EPSG:4326).
     
-    **SIZE=axis(value):** This parameter sets the size of the desired axis to the desired value (pixels).
+    **SIZE=axis(value):** This parameter sets the size of the desired 
+    axis to the desired value (pixels).
     
-    **RESOLUTION=axis(value):** This parameter sets the resolution of the desired axis to the desired value (pixels/unit).
+    **RESOLUTION=axis(value):** This parameter sets the resolution of 
+    the desired axis to the desired value (pixels/unit).
     
-The **SIZE** and **RESOLUTION** are mutually exclusive on one axis, but can be mixed on different axes (e.g: SIZE on x-axis and RESOLUTION on y-axis). Also axis names in **SUBSET**, **SIZE** and **RESOLUTION** parameters cannot be mixed. E.g: ...&SUBSET=x(0,100)&SIZE=lon(200)&... is not legal although the axis names logically refer to the same axis.
+Note: The **SIZE** and **RESOLUTION** are mutually exclusive on one 
+axis, but can be mixed on different axes (e.g: SIZE on x-axis and 
+RESOLUTION on y-axis). Also axis names in **SUBSET**, **SIZE** and 
+**RESOLUTION** parameters cannot be mixed. E.g: 
+...&SUBSET=x(0,100)&SIZE=lon(200)&... is not legal although the axis
+names logically refer to the same axis.
 
-Recognized values for the axis sub-parameter are: "x", "xaxis", "x-axis", "x_axis", "long", "long_axis", "long-axis", "lon", "lon_axis", "lon-axis", "y", "yaxis", "y-axis", "y_axis", "lat", "lat_axis" and "lat-axis".
+Note: Recognized values for the axis sub-parameter are: "x", "xaxis", 
+"x-axis", "x_axis", "long", "long_axis", "long-axis", "lon", 
+"lon_axis", "lon-axis", "y", "yaxis", "y-axis", "y_axis", "lat", 
+"lat_axis" and "lat-axis".
 
-    **OUTPUTCRS=crs:** This parameter defines in which crs the output image should be expressed in. 
+    **OUTPUTCRS=crs:** This parameter defines in which crs the output 
+    image should be expressed in. 
 
-    **MEDIATYPE=mediatype:** This parameter is relevant to GetCoverage requests, when multipart XML/image output is desired. It should be set to 'multipart/mixed' (which is currently the only possible value for this parameter).
+    **MEDIATYPE=mediatype:** This parameter is relevant to GetCoverage 
+    requests, when multipart XML/image output is desired. It should be 
+    set to 'multipart/mixed' (which is currently the only possible value
+    for this parameter).
     
-    **INTERPOLATION=intperolation_method:** This defines the interpolation method used, for rescaled images. Possible values are "NEAREST", "BILINEAR" and "AVERAGE".
+    **INTERPOLATION=intperolation_method:** This defines the 
+    interpolation method used, for rescaled images. Possible values are
+    "NEAREST", "BILINEAR" and "AVERAGE".
 
-    **RANGESUBSET=band1[,band2[,...]]:** With this parameter, a selection of the bands can be made. Also the bands can be reordered. The bands can be refered to either by name (which can be retrieved using the DescribeCoverage request) or by index (starting with '1' for the first band).
+    **RANGESUBSET=band1[,band2[,...]]:** With this parameter, a 
+    selection of the bands can be made. Also the bands can be reordered.
+    The bands can be referred to either by name (which can be retrieved 
+    using the DescribeCoverage request) or by index (starting with '1' 
+    for the first band).
 
 Unchanged KVP parameters
 ''''''''''''''''''''''''
 
-The following parameters have not (or just slightly) changed since the last version of the WCS standard.
+The following parameters have not (or just slightly) changed since the 
+last version of the WCS standard.
 
     **VERSION=version:** For WCS 2.0, this should be set to '2.0.0'.
     
@@ -460,11 +487,13 @@ The following parameters have not (or just slightly) changed since the last vers
     
     **ACCEPTLANGUAGES=languages:** This parameter is currently ignored.
     
-    **FORMAT=format:** The desired format can now also be set with the name of the outputformat object defined in the mapfile.
+    **FORMAT=format:** The desired format can now also be set with the 
+    name of the outputformat object defined in the mapfile.
     
     **MAP=mapfile**
     
-All other parameter keys are invalid in WCS 2.0 and will therefore produce an exception message.
+All other parameter keys are invalid in WCS 2.0 and will therefore 
+produce an exception message.
 
 KVP request examples
 ''''''''''''''''''''
@@ -484,97 +513,40 @@ The below sample request outline the new KVP request syntax::
   # GetCoverage 2.0 reproject to EPSG 4326
   http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.0&REQUEST=GetCoverage&COVERAGEID=grey&FORMAT=image/tiff&SUBSET=x,http://www.opengis.net/def/crs/EPSG/0/4326(-121.488744,-121.485169)
 
-Please refer to the tests in msautotest for further sample requests (http://trac.osgeo.org/mapserver/browser/trunk/msautotest/wxs/wcs_simple.map).
-
-HTTP-POST support
------------------
-
-Since version 6.0 MapServer also supports HTTP-POST XML requests. All requests possible via HTTP GET are also able with POST. POST requests are possible for WCS 1.1 or WCS 2.0 requests which adhere to the according standard. 
-
-This is an example GetCapabilities request:
-
-.. code-block:: xml
-
-  <?xml version="1.0" encoding="UTF-8"?>
-  <ows:GetCapabilities service="WCS"> 
-    <ows:AcceptVersions>
-      <ows:Version>2.0.0</ows:Version>
-    </ows:AcceptVersions>
-    <ows:updatesequence>2010-12-21</ows:updatesequence>
-    <ows:Sections>
-      <ows:Section>OperationsMetadata</ows:Section>
-      <ows:Section>ServiceIdentification</ows:Section>
-    </ows:Sections>
-  </ows:GetCapabilities>
-
-This is an example DescribeCoverage request, which is only valid for WCS 2.0.
-
-.. code-block:: xml
-
-  <wcs:DescribeCoverage 
-    xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
-    xsi:schemaLocation="http://www.opengis.net/wcs/2.0 ../../wcsAll.xsd" 
-    xmlns="http://www.opengis.net/wcs/2.0"
-    xmlns:wcs="http://www.opengis.net/wcs/2.0" service="WCS" version="2.0.0">
-    <wcs:CoverageID>SOME_ID</wcs:CoverageID>
-  </wcs:DescribeCoverage>
-
-This example demonstrates the usage of a WCS 2.0 POST-XML GetCoverage request:
-
-.. code-block:: xml
-
-  <?xml version="1.0" encoding="UTF-8"?>
-  <wcs:GetCoverage 
-    xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
-    xsi:schemaLocation="http://www.opengis.net/wcs/2.0 ../../wcsAll.xsd" 
-    xmlns="http://www.opengis.net/wcs/2.0"
-    xmlns:wcs="http://www.opengis.net/wcs/2.0" service="WCS" version="2.0.0">
-    <wcs:Format>image/tiff</wcs:Format>
-    <wcs:Mediatype>multipart/mixed</wcs:Mediatype>
-    <wcs:Resolution dimension="x">0.01</wcs:Resolution>
-    <wcs:Size dimension="y">50</wcs:Size>
-    <wcs:CoverageID>SOME_ID</wcs:CoverageID>
-    <wcs:DimensionTrim>
-      <wcs:Dimension crs="http://www.opengis.net/def/crs/EPSG/0/4326">x</wcs:Dimension>
-      <wcs:TrimHigh>17.25</wcs:TrimHigh>
-      <wcs:TrimLow>16.5</wcs:TrimLow>
-    </wcs:DimensionTrim>
-    <wcs:DimensionTrim>
-      <wcs:Dimension crs="http://www.opengis.net/def/crs/EPSG/0/4326">y</wcs:Dimension>
-      <wcs:TrimLow>47.9</wcs:TrimLow>
-    </wcs:DimensionTrim>
-  </wcs:GetCoverage>
-
-Please refer to the `WCS 2.0 Specification - XML/POST Protocol Binding Extension`_ and the schemas ... for the exact API.
+Please refer to the `WCS 2.0 tests in msautotest`_ for further sample 
+requests.
 
 Changes to previous versions
 ----------------------------
 
-The layer name must be a valid NCName, e.g: must not start with a number and can only contain alphanumerical characters. This constraint derives of the gml:id property which has to be a NCName, that relates to the coverage ID which is itself taken from the layers name.
-
-Issues
-------
-
-If you want to use libxml2 or its derived tools (like xmllint) for validation be aware that there is a bug that breaks the validation of GML 3.2.1.
-
-Additional layer metadata entries
----------------------------------
-
-In this section, WCS 2.0.0 specific layer metadata entries will be discussed.
+The layer name must be a valid NCName, i.e: must not start with a number
+and can only contain alphanumerical characters. This constraint derives 
+of the gml:id property which has to be a NCName, that relates to the 
+coverage ID which is itself taken from the layers name.
 
 New band related metadata entries
-`````````````````````````````````
+---------------------------------
 
-(see http://triton.eox.at/odas/wiki/UsageAndMetadata)
+In this section new WCS 2.0.0 specific layer metadata entries are 
+discussed.
 
-With the following layer metadata fields can be used to return a more detailed description for the range type of a "virtual dataset" coverage. A coverage is considered as a "virtual dataset" if the (wcs|ows)_extent metadata entry is set and one of the (wcs|ows)_size or (wcs|ows)_resolution metadata fields are set.
+The following layer metadata fields can be used to return a more 
+detailed description for the range type of a "virtual dataset" coverage.
+A coverage is considered as a "virtual dataset" if the (wcs|ows)_extent 
+metadata entry and one of the (wcs|ows)_size or (wcs|ows)_resolution 
+metadata entries are set.
 
-First of all, the used version of metadata has to be identified. To identify the bands of a coverage, one of the following fields must be present:
+First of all, the used version of metadata has to be identified. To 
+identify the bands of a coverage, one of the following fields must be 
+present:
 
 * (wcs|ows)_band_names (corresponding to WCS 2.0)
 * (wcs|ows)_rangeset_axes (corresponding to WCS 1.1)
 
-The type of these fields is a space delimited list of names, whereas the count of the names has to match the "bandcount" metadata field. These names are then used as a prefix for other metadata fields only concerning this band. The possible metadata keys are the following:
+The type of these fields is a space delimited list of names, whereas the
+count of the names has to match the "bandcount" metadata field. These 
+names are then used as a prefix for other metadata fields only 
+concerning this band. The possible metadata keys are the following:
 
 * WCS 2.0:
 
@@ -592,9 +564,12 @@ The type of these fields is a space delimited list of names, whereas the count o
   * {band_name}_description
   * {band_name}_interval
 
-All values are interpreted as strings, only "interval" is interpreted as 2 double precision float values separated with a space.
+All values are interpreted as strings, only "interval" is interpreted 
+as 2 double precision float values separated with a space.
 
-For every key, also default values can be configured. These have the same suffix as the band specific keys but start with (wcs|ows) instead of the bands name.
+Also default values can be configured for every key. These have the 
+same suffix as the band specific keys but start with (wcs|ows) instead 
+of the bands name:
 
 * WCS 2.0:
 
@@ -612,9 +587,14 @@ For every key, also default values can be configured. These have the same suffix
   * (wcs|ows)_description
   * (wcs|ows)_interval
   
-If no specific or default value is given, the output is dependant on the metadata key. The UOM, for example will be set to 'W.m-2.Sr-1', interval and significant figures will be determined according to the image type and definition, description and interpretation will not be visible in the output at all.
+If no specific or default value is given, the output is dependant on 
+the metadata key. The UOM, for example will be set to 'W.m-2.Sr-1', 
+interval and significant figures will be determined according to the 
+image type and definition, description, and interpretation will not be 
+visible in the output at all.
 
-This example demonstrates the use of the band-specific metadata fields with their default values.
+This example demonstrates the use of the band-specific metadata fields 
+with their default values:
 
 .. code-block:: mapfile
 
@@ -644,19 +624,28 @@ This example demonstrates the use of the band-specific metadata fields with thei
     "BandA_interval"            "0 255"
   END
 
-The above example would result in having BandA a more specific description, and BandB and BandC having the default description. It would also be possible to only use some of the specific values for BandA and others from the default.
+The above example would result in having BandA a more specific 
+description, and BandB and BandC having the default description. It 
+would also be possible to only use some of the specific values for 
+BandA and others from the default.
 
-If no default and specific values are given for the interval or significant figures metadata field, the a default is generated from the "imagemode" field. (Which itself defaults to FLOAT32).
+If no default and specific values are given for the interval or 
+significant figures metadata field, the a default is generated from the 
+"imagemode" field, which itself defaults to FLOAT32.
 
-The new metadata fields also consist the *(wcs|ows)_nilvalues* and *(wcs|ows)_nilvalues_reasons*
+The new metadata fields also contain the *(wcs|ows)_nilvalues* and 
+*(wcs|ows)_nilvalues_reasons*
 
 * (wcs|ows)_nilvalues
 
-With this field, specific nilvalues can be set. The values have to be delimited by a space.
+With this field, specific nilvalues can be set. The values have to be 
+delimited by a space.
 
 * (wcs|ows)_nilvalues_reasons
 
-This field defines the reasons for the specific nilvalues. The reasons are also space delimited and reference the nilvalue with the same index. The reasons should be a URIs/URNs.
+This field defines the reasons for the specific nilvalues. The reasons 
+are also space delimited and reference the nilvalue with the same 
+index. The values for the reasons should be URIs or URNs.
 
 The following example demonstrates the use of both metadata fields:
 
@@ -673,6 +662,78 @@ The following example demonstrates the use of both metadata fields:
     "wcs_nilvalues" "0 255"
     "wcs_nilvalues_reasons" "urn:ogc:def:nil:OGC::BelowDetectionLimit urn:ogc:def:nil:OGC::AboveDetectionLimit"
   END
+
+HTTP-POST support
+=================
+
+Since version 6.0 MapServer also supports HTTP-POST XML requests. All 
+requests possible via HTTP GET can also be sent via POST. POST requests 
+are possible for WCS 1.1 or WCS 2.0 which adhere to the according 
+standard.
+
+This is an example GetCapabilities request:
+
+.. code-block:: xml
+
+  <?xml version="1.0" encoding="UTF-8"?>
+  <ows:GetCapabilities service="WCS"> 
+    <ows:AcceptVersions>
+      <ows:Version>2.0.0</ows:Version>
+    </ows:AcceptVersions>
+    <ows:updatesequence>2010-12-21</ows:updatesequence>
+    <ows:Sections>
+      <ows:Section>OperationsMetadata</ows:Section>
+      <ows:Section>ServiceIdentification</ows:Section>
+    </ows:Sections>
+  </ows:GetCapabilities>
+
+This is an example DescribeCoverage request, which is only valid for 
+WCS 2.0:
+
+.. code-block:: xml
+
+  <wcs:DescribeCoverage 
+    xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+    xsi:schemaLocation="http://www.opengis.net/wcs/2.0 http://schemas.opengis.net/wcs/2.0/wcsAll.xsd"
+    xmlns="http://www.opengis.net/wcs/2.0"
+    xmlns:wcs="http://www.opengis.net/wcs/2.0"
+    service="WCS"
+    version="2.0.0">
+    <wcs:CoverageID>SOME_ID</wcs:CoverageID>
+  </wcs:DescribeCoverage>
+
+This example demonstrates the usage of a WCS 2.0 POST-XML GetCoverage 
+request:
+
+.. code-block:: xml
+
+  <?xml version="1.0" encoding="UTF-8"?>
+  <wcs:GetCoverage 
+    xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+    xsi:schemaLocation="http://www.opengis.net/wcs/2.0 http://schemas.opengis.net/wcs/2.0/wcsAll.xsd"
+    xmlns="http://www.opengis.net/wcs/2.0"
+    xmlns:wcs="http://www.opengis.net/wcs/2.0"
+    service="WCS"
+    version="2.0.0">
+    <wcs:Format>image/tiff</wcs:Format>
+    <wcs:Mediatype>multipart/mixed</wcs:Mediatype>
+    <wcs:Resolution dimension="x">0.01</wcs:Resolution>
+    <wcs:Size dimension="y">50</wcs:Size>
+    <wcs:CoverageID>SOME_ID</wcs:CoverageID>
+    <wcs:DimensionTrim>
+      <wcs:Dimension crs="http://www.opengis.net/def/crs/EPSG/0/4326">x</wcs:Dimension>
+      <wcs:TrimHigh>17.25</wcs:TrimHigh>
+      <wcs:TrimLow>16.5</wcs:TrimLow>
+    </wcs:DimensionTrim>
+    <wcs:DimensionTrim>
+      <wcs:Dimension crs="http://www.opengis.net/def/crs/EPSG/0/4326">y</wcs:Dimension>
+      <wcs:TrimLow>47.9</wcs:TrimLow>
+    </wcs:DimensionTrim>
+  </wcs:GetCoverage>
+
+Please refer to the `WCS 2.0 Specification - XML/POST Protocol Binding Extension`_
+and the `WCS 2.0 Schemas`_ for further information on POST request in 
+WCS 2.0.
 
 Reference Section
 =================
@@ -931,15 +992,14 @@ Arcview.
 WCS 2.0 Application Profile - Earth Observation (EO-WCS)
 ========================================================
 
-Open Source implementation based on MapServer available at http://www.eoxserver.org
-<<TBD>>
+OGC is currently discussing the adoption of an Earth Observation 
+(EO) Application Profile for WCS 2.0 (EO-WCS). A draft will be 
+available soon for a public RFC period. For an implementation please 
+refer to the Open Source project `EOxServer`_ which already implements 
+this proposed EO-WCS based on MapServer.
 
 To-do Items and Known Limitations
 =================================
-
-- For now we support only GET requests. The spec also talks about XML-encoded 
-  POST requests but that is not supported at this time. It is anticipated that 
-  a general XML request solution will be created for all OWS services.
 
 - MapServer does not derive all of the metadata it could from a given dataset. 
   For example, you must explicitly list time periods covered by a layer. This 
@@ -949,10 +1009,20 @@ To-do Items and Known Limitations
   with the current implementation. Furture enhancements should allow for arbitrary
   subsets based on pixel values or tile/image attributes.
 
+- The available set of WCS 2.0 specification documents is not yet 
+  complete. Thus, for some implementation details, the content of some 
+  forthcoming extensions had to be anticipated based on the approaches 
+  taken for WCS 1.1 and 1.0. The implementation will be adjusted as 
+  soon as new specification documents become available.
+
+- If you want to use libxml2 or its derived tools (like xmllint) for 
+  validation be aware that there is a currently bug in libxml2 that 
+  breaks the validation of GML 3.2.1.
+
 
 .. #### rST Link Section ####
 
-.. _`Open GIS Consortium's (OGC) Web Coverage Server Interfaces Implementation Specification version 1.0.0`: https://portal.opengeospatial.org/files/?artifact_id=3837
+.. _`Open Geospatial Consortium's (OGC) Web Coverage Service Interfaces Implementation Specification version 1.0.0`: https://portal.opengeospatial.org/files/?artifact_id=3837
 .. _`WCS 1.0.0 specification`: https://portal.opengeospatial.org/files/?artifact_id=3837
 .. _`WCS 1.1.1c1 specification`: http://portal.opengeospatial.org/files/?artifact_id=22560
 .. _`OGC'c WCS Standard page`: http://www.opengeospatial.org/standards/wcs
@@ -960,6 +1030,10 @@ To-do Items and Known Limitations
 .. _`WCS 2.0 Specification - Core`: http://portal.opengeospatial.org/files/?artifact_id=41437
 .. _`WCS 2.0 Specification - KVP Protocol Binding Extension`: http://portal.opengeospatial.org/files/?artifact_id=41439
 .. _`WCS 2.0 Specification - XML/POST Protocol Binding Extension`: http://portal.opengeospatial.org/files/?artifact_id=41440
-.. _`WCS 2.0 Specification - XML/SOAP Protocol Binding Extension`: http://portal.opengeospatial.org/files/?artifact_id=41441
+.. _`WCS 2.0 Schemas`: http://schemas.opengis.net/wcs/2.0/
+.. _`OWS Common 2.0`: http://portal.opengeospatial.org/files/?artifact_id=38867
 .. _`Open Geospatial Consortium (OGC)`: http://www.opengeospatial.org/
 .. _`MapServer for Windows (MS4W)`: http://www.maptools.org/ms4w/index.phtml
+.. _`WCS 2.0 tests in msautotest`: http://trac.osgeo.org/mapserver/browser/trunk/msautotest/wxs/wcs_simple.map
+.. _`MS RFC 67`: http://mapserver.org/development/rfc/ms-rfc-67.html
+.. _`EOxServer`: http://www.eoxserver.org
