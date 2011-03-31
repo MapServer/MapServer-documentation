@@ -1,6 +1,6 @@
-**2011-03-23 - MapServer 6.0.0-beta3 is released**
+**2011-03-30 - MapServer 6.0.0-beta4 is released**
 
-MapServer 6.0.0-beta3 has been released. See `the release announcement <http://lists.osgeo.org/pipermail/mapserver-users/2011-March/068271.html>`__ 
+MapServer 6.0.0-beta4 has been released. See `the release announcement <http://lists.osgeo.org/pipermail/mapserver-users/2011-March/068345.html>`__ 
 for more details and head to :ref:`download` to obtain a copy.
 
 **2011-03-15 - MapServer PSC Attend Montreal Code Sprint**
