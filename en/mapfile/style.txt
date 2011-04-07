@@ -4,19 +4,25 @@
  STYLE
 *****************************************************************************
 
-Style holds parameters for symbolization. Multiple styles may be applied
-within a class.
+Style holds parameters for symbolization and styling.  Multiple styles
+may be applied within a :ref:`CLASS` or :ref:`LABEL`.
 
-This object is new in 4.0 and is intended to separate logic from looks.
-The final intent is to have named styles (Not yet supported) that will be
-re-usable through the mapfile. This is the new, preferred way of defining
-the appearance of an object, notably a class.
+This object appeared in 4.0 and the intention is to separate logic
+from looks.  The final intent is to have named styles (**Not yet
+supported**) that will be re-usable through the mapfile. This is the
+way of defining the appearance of an object (a :ref:`CLASS` or a
+:ref:`LABEL`).
 
 ANGLE [double|attribute|AUTO]
     Angle, given in degrees, to rotate the symbol (counter clockwise).
-    Default is 0 (no rotation).
+    Default is 0 (no rotation).  If you have an attribute that
+    specifies angles in a clockwise direction (compass direction), you
+    have to adjust the angle attribute values before they reach
+    Mapserver (360-ANGLE), as it is not possible to use a mathematical
+    expression for `ANGLE`.
 
-    - For points, it specifies the rotation of the symbol around its center.
+    - For points, it specifies the rotation of the symbol around its
+      center.
     - For decorated lines, the behaviour depends on the value of
       the GAP element.
 
@@ -31,39 +37,35 @@ ANGLE [double|attribute|AUTO]
       symbol (0 - horizontal lines), or it specifies the rotation
       of the symbol used to generate the pattern in a polygon fill
       (it does not specify the rotation of the fill as a whole).
-      For its use with hatched lines, see Example#8 in the
-      :ref:`symbology examples
-      <sym_examples>`.
-    - [*Attribute*] was introduced in version 5.0, to specify the item name in
-      the attribute table to use for angle values. The hard brackets [] are
-      required. For example, if your shapefile's DBF has a field named
-      "MYANGLE" that holds angle values for each record, your STYLE object for
-      hatched lines might contain:
+      For its use with hatched lines, see Example #7 in the
+      :ref:`symbology examples <sym_examples>`.
+    - [*attribute*] was introduced in version 5.0, to specify the item
+      name in the attribute table to use for angle values. The hard
+      brackets [] are required. For example, if your data source has
+      an attribute named "MYROTATE" that holds angle values for each
+      feature, your STYLE object for hatched lines might contain:
 
       .. code-block:: mapfile
 
         STYLE
           SYMBOL 'hatch-test'
           COLOR 255 0 0
-          ANGLE [MYANGLE]
+          ANGLE [MYROTATE]
           SIZE 4
           WIDTH 3
         END
 
       The associated RFC document for this feature is :ref:`RFC19`.
-    - The AUTO keyword was added in version 5.4, and currently only applies
-      when coupled with the GEOMTRANSFORM keyword.
+    - The `AUTO` keyword was added in version 5.4, and currently only
+      applies when coupled with the `GEOMTRANSFORM` keyword.
 
 ANGLEITEM [string]
+    ANGLE[attribute] must now be used instead.
 
-    - this parameter was removed in MapServer 5.0.  You should use
-      the ANGLE [*attribute*] parameter instead.
-    - For MapServer versions <5, this is the attribute/field that stores the
-      angle to be used in rendering. Angle is given in degrees with 0 meaning no
-      rotation.
+    .. deprecated:: 5.0
 
 ANTIALIAS [true|false]
-    Should TrueType fonts and Cartoline symbols be antialiased.
+    Should TrueType fonts be antialiased.
 
 BACKGROUNDCOLOR [r] [g] [b]
     Color to use for non-transparent symbols.
@@ -71,11 +73,11 @@ BACKGROUNDCOLOR [r] [g] [b]
 COLOR [r] [g] [b] | [attribute]
 
     - Color to use for drawing features.
-    - [*Attribute*] was introduced in version 5.0, to specify the item name in
-      the attribute table to use for color values.  The hard brackets [] are
-      required.  For example, if your :ref:`shapefile <shapefiles>`'s DBF has a field named "MYCOLOR"
-      that holds color values for each record, your STYLE object for might
-      contain:
+    - [*attribute*] was introduced in version 5.0, to specify the item
+      name in the attribute table to use for color values.  The hard
+      brackets [] are required.  For example, if your :ref:`shapefile
+      <shapefiles>`'s DBF has a field named "MYCOLOR" that holds color
+      values for each record, your STYLE object for might contain:
 
       .. code-block:: mapfile
 
@@ -86,83 +88,123 @@ COLOR [r] [g] [b] | [attribute]
 
       The associated RFC document for this feature is :ref:`RFC19`.
 
-GAP [int]
-    Given in pixels. This defines a distance between symbols for
-    TrueType lines.  As of MapServer 5.0 this also applies to PixMap symbols.
+GAP [double]
+    `GAP` specifies the distance between `SYMBOL`\s (center to center)
+    for decorated lines and polygon fills in layer `SIZEUNITS`.  For
+    polygon fills, `GAP` specifies the spacing between `SYMBOL`\s in both
+    the X and the Y direction.
+    For lines, the centers of the `SYMBOL`\s are placed on the line.
+    As of MapServer 5.0 this also applies to PixMap symbols.
 
-    When drawing the symbol along a line segment, a negative GAP will will add
-    180 degress to the angle. The TrueType and PixMap symbols are always oriented
-    along the line.  A GAP of 0 (the default value) will cause MapServer to use
-    the symbol as a brush to draw the line.
+    When scaling of symbols is in effect (`SYMBOLSCALEDENOM` is
+    specified for the :ref:`LAYER`), `GAP` specifies the distance in
+    layer `SIZEUNITS` at the map scale 1:`SYMBOLSCALEDENOM`.
+
+    - For lines, the first symbol will be placed `GAP`/2 from the
+      start of the line.
+    - For lines, a negative `GAP` value will cause the symbols' X axis
+      to be aligned relative to the tangent of the line.
+    - For lines, a positive `GAP` value aligns the symbols' X axis
+      relative to the X axis of the output device.
+    - For lines, a `GAP` of 0 (the default value) will cause the symbols
+      not to be drawn.
+
+    The symbol can be rotated using `ANGLE`.
 
     .. versionadded:: 6.0 moved from :ref:`SYMBOL`
 
-GEOMTRANSFORM [start|end|vertices|bbox|centroid]
+GEOMTRANSFORM [bbox|end|labelpnt|labelpoly|start|vertices]
+    Used to indicate that the current feature will be transformed
+    before the actual style is applied. Introduced in version 5.4.
 
-    - Used to indicate that the current feature will be transformed before the actual
-      style is applied. Only applies to versions from 5.4
-    - "bbox": uses the current style for rendering the bounding box of the underlying
-      geometry
-    - "centroid": renders a marker at the centroid of the underlying shape.
-    - "start" and "end": uses the current style to render a marker on the first or last
-      vertex of the current geometry. When used with ANGLE AUTO, this can be used to
-      render arrowheads or tails on line segments.
-    - "vertices": uses the current style for rendering a marker on the intermediate
-      vertices of the underlying geometry. When used with ANGLE AUTO, the marker is
-      oriented by the half angle formed by the two adjacent line segments.
+    - *bbox*: produces the bounding box of the geometry.
+    - *end*: produces the last point of the geometry. When used with
+      `ANGLE` AUTO, it can for instance be used to render an arrowhead.
+    - *labelpnt*: used for :ref:`LABEL` styles.  It produces a point
+      that is placed at the label's reference point.
+    - *labelpoly*: used for :ref:`LABEL` styles.  Produces a polygon
+      that covers the label plus a 1 pixel padding.
+    - *start*: produces the first point of the current geometry. When
+      used with `ANGLE` AUTO, it can for instance be used to render
+      arrow tail on line segments.
+    - *vertices*: produces all the intermediate vertices (points) of
+      the underlying geometry (the start and end are excluded). When
+      used with `ANGLE` AUTO, the marker is oriented by the half angle
+      formed by the two adjacent line segments.
 
 LINECAP [butt|round|square|triangle]
-    Sets the line cap type for the cartoline symbol. Default is butt. Works
-    with the CARTOLINE symbol only!
+    Sets the line cap type for lines. Default is `round`.  See
+    :ref:`sym_construction` for explanation and examples.
 
     .. versionadded:: 6.0 moved from :ref:`SYMBOL`
 
 LINEJOIN [round|miter|bevel]
-    Sets the line join type for the cartoline symbol. Default is "none" -
-    lines will not be joined . Works with the CARTOLINE symbol only!
+    Sets the line join type for lines. Default is `round`.  See
+    :ref:`sym_construction` for explanation and examples.
 
     .. versionadded:: 6.0 moved from :ref:`SYMBOL`
 
 LINEJOINMAXSIZE [int]
-    Sets the max length of the miter line join type. The value represents a
-    coefficient which multiplies a current symbol size. Default is 3.
-    Works with the CARTOLINE symbol only!
+
+    Sets the max length of the `miter` `LINEJOIN` type. The value
+    represents a coefficient which multiplies a current symbol
+    size. Default is 3.  See :ref:`sym_construction` for explanation
+    and examples.
 
     .. versionadded:: 6.0 moved from :ref:`SYMBOL`
 
 MAXSIZE [double]
-    Maximum size in pixels to draw a symbol. Default is 500.  Starting from version 5.4, 
-    the value can also be a fractional value (and not only integer).
+    Maximum size in layer `SIZEUNITS` to draw a symbol. Default is
+    500.  Starting from version 5.4, the value can also be a decimal
+    value (and not only integer).
 
 MAXWIDTH [double]
-    Maximum width in pixels to draw the line work. Default is 32.  Starting from version 5.4, 
-    the value can also be a fractional value (and not only integer).
+    Maximum width in layer `SIZEUNITS` to draw the line work. Default is 32.
+    Starting from version 5.4, the value can also be a decimal
+    value (and not only integer).
 
 MINSIZE [double]
-    Minimum size in pixels to draw a symbol. Default is 0.  Starting from version 5.4, 
-    the value can also be a fractional value (and not only integer).
+    Minimum size in layer `SIZEUNITS` to draw a symbol. Default is 0.  Starting
+    from version 5.4, the value can also be a decimal value (and
+    not only integer).
 
 MINWIDTH [double]
-    Minimum width in pixels to draw the line work.  Starting from version 5.4, 
-    the value can also be a fractional value (and not only integer).
+    Minimum width in layer `SIZEUNITS` to draw the line work. Default
+    is 0.  Starting from version 5.4, the value can also be a decimal
+    value (and not only integer).
 
 OFFSET [x][y]
-    Offset values for shadows, hollow symbols, etc ...
+    Geometry offset values in layer `SIZEUNITS`.
+
+    When scaling of symbols is in effect (`SYMBOLSCALEDENOM` is
+    specified for the :ref:`LAYER`), `OFFSET` gives offset values in
+    layer `SIZEUNITS` at the map scale 1:`SYMBOLSCALEDENOM`.
+
+    An `OFFSET` of `20` `40` will shift the geometry 20 `SIZEUNITS` to
+    the left and 40 `SIZEUNITS` down before rendering.
+
+    For lines, an `OFFSET` of `n` `-99` will produce a line geometry
+    that is shifted `n` SIZEUNITS perpendicular to the original line
+    geometry.  A positive `n` shifts the line to the right when seen
+    along the direction of the line.  A negative `n` shifts the line
+    to the left when seen along the direction of the line.
 
 OPACITY [integer|attribute]
-    - Opacity to draw the current style (applies to 5.2+, :ref:`AGG` only, does not apply to pixmap
-      symbols)
-    - [*Attribute*]  was introduced in version 5.6.
+    Opacity to draw the current style (applies to 5.2+, :ref:`AGG`
+    only, does not apply to pixmap symbols)
+
+    - [*attribute*]  was introduced in version 5.6.
 
 OUTLINECOLOR [r] [g] [b] | [attribute]
+    Color to use for outlining polygons and certain marker symbols
+    (ellipse, vector and truetype).  The width of the outline can be
+    specified using `WIDTH`.
 
-    - Color to use for outlining polygons and certain marker symbols. Line
-      symbols do not support outline colors.
-    - [*Attribute*] was introduced in version 5.0, to specify the item name in
-      the attribute table to use for color values.  The hard brackets [] are
-      required.  For example, if your shapefile's DBF has a field named
-      "MYOUTCOLOR" that holds color values for each record, your STYLE object
-      for might contain:
+    - [*attribute*] was introduced in version 5.0, to specify the item
+      name in the attribute table to use for color values.  The hard
+      brackets [] are required.  For example, if your shapefile's DBF
+      has a field named "MYOUTCOLOR" that holds color values for each
+      record, your STYLE object for might contain:
 
       .. code-block:: mapfile
 
@@ -175,13 +217,14 @@ OUTLINECOLOR [r] [g] [b] | [attribute]
 
 PATTERN [double on] [double off] [double on] [double off] ... END
 
-    Defines a dash pattern for line work (lines, polygon outlines, ...).
-    The numbers (doubles) specify the lengths of the dashes and gaps
-    of the dash pattern in layer `SIZEUNITS`.
+    Currently used to defines a dash pattern for line work (lines,
+    polygon outlines, ...).  The numbers (doubles) specify the lengths
+    of the dashes and gaps of the dash pattern in layer `SIZEUNITS`.
 
-    For scaling symbols (`SYMBOLSCALEDENOM` is specified for the
-    :ref:`LAYER`), the numbers specify the lengths of the dashes
-    and gaps in layer `SIZEUNITS` at the map scale 1:`SYMBOLSCALEDENOM`.
+    When scaling of symbols is in effect (`SYMBOLSCALEDENOM` is
+    specified for the :ref:`LAYER`), the numbers specify the lengths
+    of the dashes and gaps in layer `SIZEUNITS` at the map scale
+    1:`SYMBOLSCALEDENOM`.
 
     To specify a dashed line that is 5 units wide, with dash lengths
     of 5 units and gaps of 5 units, the following style can be used:
@@ -203,16 +246,16 @@ SIZE [double|attribute]
     Only useful with scalable symbols (:ref:`SYMBOL` `TYPE` ellipse,
     hatch, pixmap, truetype, vector). Default is 1.0.
 
-    For scaling symbols (`SYMBOLSCALEDENOM` is specified for the
-    :ref:`LAYER`), `SIZE` gives the height, in layer `SIZEUNITS`,
-    of the symbol/pattern to be used at the map scale
+    When scaling of symbols is in effect (`SYMBOLSCALEDENOM` is
+    specified for the :ref:`LAYER`), `SIZE` gives the height, in layer
+    `SIZEUNITS`, of the symbol/pattern to be used at the map scale
     1:`SYMBOLSCALEDENOM`.
 
     - For symbols of `TYPE` `hatch`, the `SIZE` is the center to
       center distance between the lines. For its use with hatched
       lines, see Example#8 in the
       :ref:`symbology examples <sym_examples>`.
-    - [*Attribute*] was introduced in version 5.0, to specify the
+    - [*attribute*] was introduced in version 5.0, to specify the
       item name in the attribute table to use for size values.
       The hard brackets [] are required.
       For example, if your data set has an attribute named "MYSIZE"
@@ -230,39 +273,39 @@ SIZE [double|attribute]
         END
 
       The associated RFC document for this feature is :ref:`RFC19`.
-    - Starting from version 5.4, the value can also be a fractional
+    - Starting from version 5.4, the value can also be a decimal
       value (and not only integer).
 
 SIZEITEM [string]
+    SIZE [*attribute*] must now be used instead.
 
-    - this parameter was removed in MapServer 5.0.  You should
-      use the SIZE [*attribute*] parameter instead.
-    - For MapServer versions <5, this is the attribute/field that stores the
-      size to be used in rendering. Value is given in pixels.
+    .. deprecated:: 5.0
 
 SYMBOL [integer|string|filename|attribute]
-    The symbol name or number to use for all features if attribute tables are
-    not used. The number is the index of the symbol in the symbol file,
-    starting at 1, the 5th symbol in the file is therefore symbol number 5.
-    You can also give your symbols names using the NAME keyword in the symbol
-    definition file, and use those to refer to them. Default is 0, which
-    results in a single pixel, single width line, or solid polygon fill,
-    depending on layer type.
+    The symbol name or number to use for all features if attribute
+    tables are not used. The number is the index of the symbol in the
+    symbol file, starting at 1, the 5th symbol in the file is
+    therefore symbol number 5.  You can also give your symbols names
+    using the `NAME` keyword in the symbol definition file, and use
+    those to refer to them. Default is 0, which results in a single
+    pixel, single width line, or solid polygon fill, depending on
+    layer type.
 
-    You can also specify a gif or png filename. The path is relative to the
-    location of the mapfile.
+    You can also specify a GIF or PNG filename. The path is relative
+    to the location of the mapfile.
 
-    [*Attribute*] was introduced in version 5.6, to specify the symbol name.
-    The hard brackets [] are required.
+    [*attribute*] was introduced in version 5.6, to specify the symbol
+    name.  The hard brackets [] are required.
 
 WIDTH [double|attribute]
 
-    `WIDTH` refers to the thickness of line work drawn, in layer `SIZEUNITS`.
-    Default is 1.
+    `WIDTH` refers to the thickness of line work drawn, in layer
+    `SIZEUNITS`.  Default is 1.
 
-    For scaling symbols (`SYMBOLSCALEDENOM` is specified for the
-    :ref:`LAYER`), `WIDTH` refers to the thickness of the line work
-    in layer `SIZEUNITS` at the map scale 1:`SYMBOLSCALEDENOM`.
+    When scaling of symbols is in effect (`SYMBOLSCALEDENOM` is
+    specified for the :ref:`LAYER`), `WIDTH` refers to the thickness
+    of the line work in layer `SIZEUNITS` at the map scale
+    1:`SYMBOLSCALEDENOM`.
 
     - If used with `SYMBOL` and `OUTLINECOLOR`, `WIDTH` specifies the
       width of the symbol outlines.  This applies to :ref:`SYMBOL`
@@ -270,12 +313,12 @@ WIDTH [double|attribute]
     - For lines, `WIDTH` specifies the width of the line.
     - For polygons, if used with `OUTLINECOLOR`, `WIDTH` specifies the
       thickness of the polygon outline.
-    - For a `SYMBOL` of :ref:`SYMBOL` `TYPE` `hatch`, `WIDTH`
+    - For a symbol of :ref:`SYMBOL` `TYPE` `hatch`, `WIDTH`
       specifies the thickness of the hatched lines.
-      For its use with hatched lines, see Example#8 in the
+      For its use with hatched lines, see Example #7 in the
       :ref:`symbology examples <sym_examples>`.
-    - [*Attribute*] was added in version 5.2 to specify the item name in
+    - [*attribute*] was added in version 5.2 to specify the item name in
       the attribute table to use for the width value. The hard brackets
       [] are required.
-    - Starting from version 5.4, the value can also be a fractional
+    - Starting from version 5.4, the value can also be a decimal
       value (and not only integer).
