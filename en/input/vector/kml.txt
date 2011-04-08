@@ -4,30 +4,47 @@
  KML - Keyhole Markup Language
 *****************************************************************************
 
-Keyhole Markup Language (KML) is an XML-based language for managing the
-display of 3D geospatial data.
+.. contents:: Table of Contents
+    :depth: 2
+    :backlinks: top
 
+Keyhole Markup Language (KML) is an XML-based language for managing the
+display of 3D geospatial data.  KML is a standard maintained by the Open 
+Geospatial Consoritum (OGC).
+
+Links to KML-Related Information
+--------------------------------
+
+- Google's `KML Reference <http://code.google.com/apis/kml/documentation/kmlreference.html>`__
+- OGC's `KML Specification <http://www.opengeospatial.org/standards/kml>`__
+- `KML Validator <http://feedvalidator.org/>`__
+- `KML Validator <http://www.kmlvalidator.com/home.htm>`__ (against OGC KML 2.2)
 
 Data Access / Connection Method
 ---------------------------------
 
-KML access is available through OGR. See the OGR `driver page`_
+KML access in MapServer is available through OGR. See the OGR `driver page`_
 for specific driver information.  Read support was initially added to 
-GDAL/OGR version 1.5.0.
+GDAL/OGR version 1.5.0.  A more complete KML reader was added to GDAL/OGR in version 1.8.0,
+through the `libKML driver <http://www.gdal.org/ogr/drv_libkml.html>`__ (including the 
+ability to read multigeometry, and KMZ files).
 
 .. _`driver page`: http://www.gdal.org/ogr/drv_kml.html
 
-The CONNECTION parameter must include the kml extension, and the DATA parameter
+The CONNECTION parameter must include the kml or kmz extension, and the DATA parameter
 should be the name of the layer.
 
-::
+.. code-block:: mapfile
 
-  CONNECTIONTYPE ogr
-  CONNECTION "myplaces.kml"
+  CONNECTIONTYPE OGR
+  CONNECTION "filename.kml"
   DATA "layername" 
+  
+Example 1: Displaying a .KML file
+---------------------------------
 
-OGRINFO Examples
-----------------
+OGRINFO
+^^^^^^^
 
 First you should make sure that your GDAL/OGR build contains the "KML" driver,
 by using the '--formats' command:
@@ -87,12 +104,12 @@ Now use ogrinfo to get information on the structure of the layer:
 
 
 Mapfile Example
----------------
+^^^^^^^^^^^^^^^
 
-::
+.. code-block:: mapfile
 
    LAYER
-     NAME kml_places
+     NAME "kml_example"
      TYPE POINT
      STATUS DEFAULT
      CONNECTIONTYPE OGR
@@ -115,3 +132,96 @@ Mapfile Example
      END      
     END
   END
+  
+Example 2: Displaying a .KMZ file
+---------------------------------
+
+OGRINFO
+^^^^^^^
+
+First you should make sure that your GDAL/OGR build contains the "LIBKML" driver,
+by using the '--formats' command:
+
+::
+
+  >ogrinfo --formats
+     Loaded OGR Format Drivers:
+     ...
+     -> "GML" (read/write)
+     -> "GPX" (read/write)
+     -> "LIBKML" (read/write)  
+     -> "KML" (read/write)     
+     ...
+
+If you don't have the driver, you might want to try the `FWTools`_ or `MS4W`_
+packages, which include the driver.  Or you can follow the 
+`compiling notes <http://trac.osgeo.org/gdal/wiki/LibKML>`__ for
+libKML and GDAL/OGR.
+
+.. _`FWTools`: http://fwtools.maptools.org/
+.. _`MS4W`: http://www.maptools.org/ms4w/
+
+Once you have the LIBKML driver you are ready to try an ogrinfo command on your
+file to get a list of available layers:
+
+::
+
+  >ogrinfo Lunenburg_Municipality.kmz
+     INFO: Open of `Lunenburg_Municipality.kmz'
+     using driver `LIBKML' successful.
+     1: Lunenburg_Municipality
+
+Now use ogrinfo to get information on the structure of the layer:
+
+::
+
+  >ogrinfo Lunenburg_Municipality.kmz Lunenburg_Municipality -summary
+     INFO: Open of `Lunenburg_Municipality.kmz'
+        using driver `LIBKML' successful.
+
+     Layer name: Lunenburg_Municipality
+     Geometry: Unknown (any)
+     Feature Count: 1
+     Extent: (-64.946433, 44.133207) - (-64.230281, 44.735125)
+     Layer SRS WKT:
+     GEOGCS["WGS 84",
+         DATUM["WGS_1984",
+             SPHEROID["WGS 84",6378137,298.257223563,
+                 AUTHORITY["EPSG","7030"]],
+             TOWGS84[0,0,0,0,0,0,0],
+             AUTHORITY["EPSG","6326"]],
+         PRIMEM["Greenwich",0,
+             AUTHORITY["EPSG","8901"]],
+         UNIT["degree",0.0174532925199433,
+             AUTHORITY["EPSG","9108"]],
+         AUTHORITY["EPSG","4326"]]
+     Name: String (0.0)
+     description: String (0.0)
+     timestamp: DateTime (0.0)
+     begin: DateTime (0.0)
+     end: DateTime (0.0)
+     altitudeMode: String (0.0)
+     tessellate: Integer (0.0)
+     extrude: Integer (0.0)
+     visibility: Integer (0.0)
+     
+Mapfile Example
+^^^^^^^^^^^^^^^
+
+.. code-block:: mapfile
+
+   LAYER
+     NAME "lunenburg"
+     TYPE POLYGON
+     STATUS DEFAULT
+     CONNECTIONTYPE OGR
+     CONNECTION "Lunenburg_Municipality.kmz"
+     DATA "Lunenburg_Municipality"
+     CLASS
+       NAME "Lunenburg"
+       STYLE
+         COLOR 244 244 16
+         OUTLINECOLOR 199 199 199
+       END
+     END
+   END # layer
