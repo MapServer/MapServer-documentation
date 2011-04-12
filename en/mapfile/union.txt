@@ -10,6 +10,10 @@
 :Contact: jmckenna at gatewaygeomatics.com
 :Last Updated: 2011-04-11
 
+.. contents:: Table of Contents
+    :depth: 3
+    :backlinks: top
+
 Description
 -----------
 
@@ -34,8 +38,7 @@ Mapfile Configuration
     You may wish to disable the visibility (change their STATUS) of the source layers 
     to avoid displaying the features twice.
     
-Mapfile Example
----------------
+For example:
 
 .. code-block:: mapfile
 
@@ -102,8 +105,11 @@ For speed, it is recommended to always use the same projection for the union lay
 MapServer will reproject the source layers to the union layer if requested.  (for more information on projections
 in MapServer refer to :ref:`PROJECTION`)
 
-Working Mapfile Example
------------------------
+Examples
+--------
+
+Mapfile Example
+***************
 
 The follow example contains 3 source layers in different formats, and one layer (yellow)
 in a different projection.  The union layer uses the **STYLEITEM "AUTO"** parameter to 
@@ -184,3 +190,28 @@ features, in EPSG:4326, for the union layer, which is in EPSG:3978).
   END
   
   END # Map
+  
+PHP MapScript Example
+*********************
+
+.. code-block:: php
+
+  <?php
+
+  // open map
+  $oMap = ms_newMapObj( "D:/ms4w/apps/osm/map/osm.map" );
+
+  // create union layer
+  $oLayer = ms_newLayerObj($oMap);
+  $oLayer->set("name", "unioned");
+  $oLayer->set("type", MS_LAYER_POLYGON); 
+  $oLayer->set("status", MS_ON);
+  $oLayer->setConnectionType(MS_UNION);
+  $oLayer->set("connection", "red,green,yellow");
+  $oLayer->set("styleitem", "AUTO");
+  $oLayer->setProjection("init=epsg:3978");
+  // create empty class
+  $oClass = ms_newClassObj($oLayer);
+  ...
+
+  ?>
