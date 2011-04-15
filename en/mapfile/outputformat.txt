@@ -6,18 +6,17 @@
 
 A map file may have zero, one or more OUTPUTFORMAT object declarations, 
 defining available output formats supported including formats like PNG, 
-GIF, JPEG, GeoTIFF and Flash (SWF).
+GIF, JPEG, GeoTIFF, SVG, PDF and KML.
 
 If OUTPUTFORMAT sections declarations are not found in the map file, the 
 following implicit declarations will be made. Only those for which support 
 is compiled in will actually be available. The GeoTIFF depends on building 
-with GDAL support, and the Flash (SWF) depends on compiling with support 
-for the MING library.
+with GDAL support, and the PDF and SVG depend on building with cairo support.
   
 .. code-block:: mapfile
 
     OUTPUTFORMAT
-      NAME "aggpng24"
+      NAME "png"
       DRIVER AGG/PNG
       MIMETYPE "image/png"
       IMAGEMODE RGB
@@ -31,33 +30,34 @@ for the MING library.
       EXTENSION "gif"
     END
     OUTPUTFORMAT
-      NAME png
-      DRIVER "GD/PNG"
-      MIMETYPE "image/png"
-      IMAGEMODE PC256
+      NAME png8
+      DRIVER "AGG/PNG8"
+      MIMETYPE "image/png; mode=8bit"
+      IMAGEMODE RGB
       EXTENSION "png"
+      FORMATOPTION "QUANTIZE_FORCE=on"
+      FORMATOPTION "QUANTIZE_COLORS=256"
     END
     OUTPUTFORMAT
       NAME jpeg
-      DRIVER "GD/JPEG"
+      DRIVER "AGG/JPEG"
       MIMETYPE "image/jpeg"
       IMAGEMODE RGB
       EXTENSION "jpg"
     END
     OUTPUTFORMAT
-      NAME wbmp
-      DRIVER "GD/WBMP"
-      MIMETYPE "image/wbmp"
-      IMAGEMODE PC256
-      EXTENSION "wbmp"
+      NAME svg
+      DRIVER "CAIRO/SVG"
+      MIMETYPE "image/svg+xml"
+      IMAGEMODE RGB
+      EXTENSION "svg"
     END
     OUTPUTFORMAT
-      NAME swf
-      DRIVER "SWF"
-      MIMETYPE "application/x-shockwave-flash"
-      EXTENSION "swf"
-      IMAGEMODE PC256
-      FORMATOPTION "OUTPUT_MOVIE=SINGLE"
+      NAME pdf
+      DRIVER "CAIRO/PDF"
+      MIMETYPE "application/x-pdf"
+      IMAGEMODE RGB
+      EXTENSION "pdf"
     END
     OUTPUTFORMAT
       NAME GTiff
@@ -66,6 +66,28 @@ for the MING library.
       IMAGEMODE RGB
       EXTENSION "tif"
     END
+    OUTPUTFORMAT
+      NAME kml
+      DRIVER "KML"
+      MIMETYPE "application/vnd.google-earth.kml.xml"
+      IMAGEMODE RGB
+      EXTENSION "kml"
+    END
+    OUTPUTFORMAT
+      NAME kmz
+      DRIVER "KMZ"
+      MIMETYPE "application/vnd.google-earth.kmz"
+      IMAGEMODE RGB
+      EXTENSION "kmz"
+    END
+    OUTPUTFORMAT
+      NAME "cairopng"
+      DRIVER CAIRO/PNG
+      MIMETYPE "image/png"
+      IMAGEMODE RGB
+      EXTENSION "png"
+    END
+
 
 NAME [name]
     The name to use use in the IMAGETYPE keyword of the map file to 
@@ -77,8 +99,7 @@ DRIVER [name]
     The name of the driver to use to generate this output format. Some driver 
     names include the definition of the format if the driver supports multiple 
     formats. For AGG, the possbile driver names are "AGG/PNG" and "AGG/JPEG".
-    For GD the possible driver names are "GD/Gif", "GD/PNG", 
-    "GD/WBMP" and "GD/JPEG". For flash the driver is just called "SWF". 
+    For GD the possible driver names are "GD/Gif" and "GD/PNG".
     For output through OGR the OGR driver name is appended, such as 
     "OGR/Mapinfo File".  For output through GDAL the GDAL shortname for the 
     format is appended, such as "GDAL/GTiff". Note that PNG, JPEG and GIF 
@@ -88,10 +109,11 @@ DRIVER [name]
 IMAGEMODE [PC256/RGB/RGBA/INT16/FLOAT32/FEATURE]
     Selects the imaging mode in which the output is generated. Does matter 
     for non-raster formats like Flash. Not all formats support all 
-    combinations. For instance GD/GIF supports only PC256. (optional)
+    combinations. For instance GD supports only PC256. (optional)
 
     - PC256: Produced a pseudocolored result with up to 256 colors in 
-      the palette (traditional MapServer mode)
+      the palette (legacy MapServer mode). Only supported for GD/GIF
+      and GD/PNG.
     - RGB: Render in 24bit Red/Green/Blue mode. Supports all colors 
       but does not support transparency.
     - RGBA: Render in 32bit Red/Green/Blue/Alpha mode. Supports all 
@@ -130,7 +152,7 @@ FORMATOPTION [option]
     Provides a driver or format specific option. Zero or more FORMATOPTION 
     statement may be present within a OUTPUTFORMAT declaration. (optional)
 
-    - GD/JPEG: The "QUALITY=n" option may be used to set the quality of 
+    - AGG/JPEG: The "QUALITY=n" option may be used to set the quality of 
       jpeg produced (value from 0-100).
     - GD/PNG: The "INTERLACE=[ON/OFF]" option may be used to turn 
       interlacing on or off.
@@ -153,25 +175,19 @@ FORMATOPTION [option]
       and 9 meaning best compression. The compression levels come at a cost (be it
       in terms of cpu processing or file size, chose the setting that suits you
       most). The default is COMPRESSION=6.
-    - GD/PNG and AGG/PNG both support quantizing from 24/32 bits to 8bits,
+    - AGG/PNG supports quantizing from 24/32 bits to 8bits,
       in order to reduce the final image size (and therefore save bandwidth) (see
       also http://trac.osgeo.org/mapserver/ticket/2436#comment:4 for strategies
       when applying these options):
 
         - "QUANTIZE_FORCE=on" used to reduce an RGB or RGBA image into an 8bit 
           (or less) paletted images. The colors used in the palette are selected
-          to best fit the actual colors in the RGB image (RGBA quantization was
-          introduced in mapserver 5.2, and requires the --with-experimental-png
-          flag to be used when configuring)
+          to best fit the actual colors in the RGB or RGBA image.
         - "QUANTIZE_COLORS=256" used to specify the number of colors to be used
           when applying quantization. Maximum value is 256. Specifying anything
           between 17 and 255 is probably a waste of quality as each pixel is still
           encoded with a full byte. Specifying a value under 16 will produce tiny
           images, but severly degraded.
-        - "QUANTIZE_NEW=on" used to force using a slower but higher quality 
-          quantization algorithm for RGB images. The default behavior is to use
-          a fast but crude quantization algorithm, that usually results in duplicate
-          entries in the palette, and visible artifacts when tiling.
         - "PALETTE_FORCE=on" is used to reduce image depth with a predefined palette.
           This option is incompatible with the previous quantization options.
         - "PALETTE=/path/to/palette.txt" is used to define the absolute path where 
@@ -179,15 +195,15 @@ FORMATOPTION [option]
           triplets for RGB imagemodes, or r,g,b,a quadruplets for
           RGBA imagemodes. The expected format is one triplet (or quadruplet) per
           line, each value separated by commas, and each triplet/quadruplet on a
-          single line. If less than 256 triplets are found
-          in the file, 256-n remaining colors will be computed by quantization. If
-          you have enabled the *RGBA_PNG* support (the --with-experimental-png option)
-          and want to use transparency with a palette, it is important to have these 
-          two colors in the palette file: 0,0,0,0 and 255,255,255,255.
+          single line. If you want to use transparency with a palette, it is
+          important to have these two colors in the palette file:
+          0,0,0,0 and 255,255,255,255.
 
           .. NOTE::
 	     0,0,0,0 is important if you have fully transparent areas.
 	     255,255,255,255 is opaque white.
 	     The important colors to have in your palette really depend on your
 	     actual map, although 0,0,0,0 , 0,0,0,255 , and 255,255,255,255 are
-             very likely to show up most of the time. 
+	     very likely to show up most of the time.
+
+
