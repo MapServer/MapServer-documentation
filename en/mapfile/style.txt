@@ -39,11 +39,11 @@ ANGLE [double|attribute|AUTO]
       (it does not specify the rotation of the fill as a whole).
       For its use with hatched lines, see Example #7 in the
       :ref:`symbology examples <sym_examples>`.
-    - [*attribute*] was introduced in version 5.0, to specify the item
-      name in the attribute table to use for angle values. The hard
-      brackets [] are required. For example, if your data source has
-      an attribute named "MYROTATE" that holds angle values for each
-      feature, your STYLE object for hatched lines might contain:
+    - [*attribute*] was introduced in version 5.0, to specify the
+      attribute to use for angle values. The hard brackets [] are
+      required. For example, if your data source has an attribute
+      named "MYROTATE" that holds angle values for each feature, your
+      STYLE object for hatched lines might contain:
 
       .. code-block:: mapfile
 
@@ -51,8 +51,8 @@ ANGLE [double|attribute|AUTO]
           SYMBOL 'hatch-test'
           COLOR 255 0 0
           ANGLE [MYROTATE]
-          SIZE 4
-          WIDTH 3
+          SIZE 4.0
+          WIDTH 3.0
         END
 
       The associated RFC document for this feature is :ref:`RFC19`.
@@ -72,19 +72,22 @@ BACKGROUNDCOLOR [r] [g] [b]
 
 COLOR [r] [g] [b] | [attribute]
 
-    - Color to use for drawing features.
-    - [*attribute*] was introduced in version 5.0, to specify the item
-      name in the attribute table to use for color values.  The hard
-      brackets [] are required.  For example, if your :ref:`shapefile
-      <shapefiles>`'s DBF has a field named "MYCOLOR" that holds color
-      values for each record, your STYLE object for might contain:
+    - Color to use for drawing features.  `r`, `g` and `b` shall be
+      integers [0..255].  To specify green, the following is used:
 
       .. code-block:: mapfile
 
-        STYLE
-          COLOR [MYCOLOR]
-          OUTLINECOLOR 150 150 150
-        END
+         COLOR 0 255 0
+
+    - [*attribute*] was introduced in version 5.0, to specify the
+      attribute to use for color values.  The hard brackets [] are
+      required.  For example, if your data set has an attribute named
+      "MYPAINT" that holds color values for each record, use:
+      object for might contain:
+
+      .. code-block:: mapfile
+
+         COLOR [MYPAINT]
 
       The associated RFC document for this feature is :ref:`RFC19`.
 
@@ -193,25 +196,32 @@ OPACITY [integer|attribute]
     Opacity to draw the current style (applies to 5.2+, :ref:`AGG`
     only, does not apply to pixmap symbols)
 
-    - [*attribute*]  was introduced in version 5.6.
+    - [*attribute*]  was introduced in version 5.6, to specify the
+      attribute to use for opacity values.
 
 OUTLINECOLOR [r] [g] [b] | [attribute]
-    Color to use for outlining polygons and certain marker symbols
-    (ellipse, vector and truetype).  The width of the outline can be
-    specified using `WIDTH`.
 
-    - [*attribute*] was introduced in version 5.0, to specify the item
-      name in the attribute table to use for color values.  The hard
-      brackets [] are required.  For example, if your shapefile's DBF
-      has a field named "MYOUTCOLOR" that holds color values for each
-      record, your STYLE object for might contain:
+    - Color to use for outlining polygons and certain marker symbols
+      (ellipse, vector and truetype).  Has no effect for lines.  The
+      width of the outline can be specified using `WIDTH`.  If no
+      WIDTH is specified, an outline of one pixel will be drawn.  `r`,
+      `g` and `b` shall be integers [0..255].  To specify green, the
+      following is used:
 
       .. code-block:: mapfile
 
-        STYLE
-          COLOR 255 0 0
-          OUTLINECOLOR [MYOUTCOLOR]
-        END
+         OUTLINECOLOR 0 255 0
+         WIDTH 3.0
+
+    - [*attribute*] was introduced in version 5.0, to specify the
+      attribute to use for color values.  The hard brackets [] are
+      required.  For example, if your data set has an attribute named
+      "MYPAINT" that holds color values for each record, use:
+      object for might contain:
+
+      .. code-block:: mapfile
+
+         OUTLINECOLOR [MYPAINT]
 
       The associated RFC document for this feature is :ref:`RFC19`.
 
@@ -233,9 +243,9 @@ PATTERN [double on] [double off] [double on] [double off] ... END
 
         STYLE
           COLOR 0 0 0
-          WIDTH 5
+          WIDTH 5.0
           LINECAP BUTT
-          PATTERN 5 5 END
+          PATTERN 5.0 5.0 END
         END
 
     .. versionadded:: 6.0 moved from :ref:`SYMBOL`
@@ -256,9 +266,9 @@ SIZE [double|attribute]
       lines, see Example#8 in the
       :ref:`symbology examples <sym_examples>`.
     - [*attribute*] was introduced in version 5.0, to specify the
-      item name in the attribute table to use for size values.
+      attribute to use for size values.
       The hard brackets [] are required.
-      For example, if your data set has an attribute named "MYSIZE"
+      For example, if your data set has an attribute named "MYHIGHT"
       that holds size values for each feature, your STYLE object for
       hatched lines might contain:
 
@@ -268,8 +278,8 @@ SIZE [double|attribute]
           SYMBOL 'hatch-test'
           COLOR 255 0 0
           ANGLE 45
-          SIZE [MYSIZE]
-          WIDTH 3
+          SIZE [MYHIGHT]
+          WIDTH 3.0
         END
 
       The associated RFC document for this feature is :ref:`RFC19`.
@@ -294,13 +304,13 @@ SYMBOL [integer|string|filename|attribute]
     You can also specify a GIF or PNG filename. The path is relative
     to the location of the mapfile.
 
-    [*attribute*] was introduced in version 5.6, to specify the symbol
-    name.  The hard brackets [] are required.
+    [*attribute*] was introduced in version 5.6, to use an attribute
+    to specify the symbol name.  The hard brackets [] are required.
 
 WIDTH [double|attribute]
 
     `WIDTH` refers to the thickness of line work drawn, in layer
-    `SIZEUNITS`.  Default is 1.
+    `SIZEUNITS`.  Default is 1.0.
 
     When scaling of symbols is in effect (`SYMBOLSCALEDENOM` is
     specified for the :ref:`LAYER`), `WIDTH` refers to the thickness
@@ -317,8 +327,7 @@ WIDTH [double|attribute]
       specifies the thickness of the hatched lines.
       For its use with hatched lines, see Example #7 in the
       :ref:`symbology examples <sym_examples>`.
-    - [*attribute*] was added in version 5.2 to specify the item name in
-      the attribute table to use for the width value. The hard brackets
-      [] are required.
+    - [*attribute*] was added in version 5.2 to specify the attribute
+      to use for the width value. The hard brackets [] are required.
     - Starting from version 5.4, the value can also be a decimal
       value (and not only integer).
