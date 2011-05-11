@@ -8,33 +8,43 @@
 :Contact:       jmckenna at gatewaygeomatics.com
 :Revision: $Revision$
 :Date: $Date$
-:Last Updated: 2008/07/16
+:Author: Håvard Tveite
+:Contact: havard.tveite at umb.no
+:Revision: $Revision$
+:Last Updated: 2011/05/11
 
 .. contents:: Table of Contents
     :depth: 2
     :backlinks: top
     
-The following example creates a dashed line with 10 pixels on, 5 off, 5 on, 10 off ...
-
 Example 1. Dashed Line
 ---------------------------------------------
+This example creates a dashed line that is 5 `SIZEUNITS` wide,
+with 10 `SIZEUNITS` on, 5 off, 5 on, 10 off ...
 
 .. code-block:: mapfile
 
-  SYMBOL
-    NAME 'dashed1'
-    TYPE ELLIPSE
-    POINTS 1 1 END
-    FILLED true
-    PATTERN 10 5 5 10 END
+  LAYER
+    ...
+    CLASS
+      ...
+      STYLE
+        COLOR 0 0 0
+        WIDTH 5
+        LINECAP butt
+        PATTERN 10 5 5 10 END
+      END
+    END
   END
-
-The next example symbol is a star, used to represent the national capital, hence the name. 
-The font name in defined in the :ref:`FONTSET` file. The code number "114" varies, 
-you can use MS Windows' character map to figure it out, or guestimate.
 
 Example 2. TrueType font marker symbol
 ---------------------------------------------
+This example symbol is a star, used to represent the national
+capital, hence the name.
+The font name in defined in the :ref:`FONTSET` file. The code
+number "114" varies, you can use MS Windows' character map to
+figure it out, or guestimate.
+
 
 .. code-block:: mapfile
 
@@ -43,15 +53,15 @@ Example 2. TrueType font marker symbol
     TYPE TRUETYPE
     FONT "geo"
     FILLED true
-    ANTIALIAS true
+    ANTIALIAS true  # only necessary for GD rendering
     CHARACTER "&#114;"
   END
 
-The next example is fairly straight forward. Note that to have 3 sides you need 4 points, 
-hence the first and last points are identical.
-
 Example 3. Vector triangle marker symbol
 ---------------------------------------------
+This example is fairly straight forward.
+Note that to have 3 sides you need 4 points, hence the first and
+last points are identical.  The triangle is not filled.
 
 .. code-block:: mapfile
 
@@ -66,12 +76,11 @@ Example 3. Vector triangle marker symbol
     END
   END
 
-The next example draws a cross, that is 2 lines (vectors) that are not connected 
-end-to-end (Like the triangle in the previous example). The negative 
-values separate the two.
-
 Example 4. Non-contiguous vector marker symbol (Cross)
 -------------------------------------------------------
+This example draws a cross, that is 2 lines (vectors) that are
+not connected end-to-end (Like the triangle in the previous example).
+The negative values separate the two.
 
 .. code-block:: mapfile
 
@@ -79,19 +88,18 @@ Example 4. Non-contiguous vector marker symbol (Cross)
     NAME "cross"
     TYPE vector
     POINTS
-      2 0
-      2 4
+      2.0 0.0
+      2.0 4.0
       -99 -99
-      0 2
-      4 2
+      0.0 2.0
+      4.0 2.0
     END 
   END
 
-The next example creates a simple filled circle. Using non-equal values for the point will give 
-you an actual ellipse.
-            
 Example 5. Circle vector symbol
 ---------------------------------------------
+This example creates a simple filled circle.
+Using non-equal values for the point will give you an actual ellipse.
 
 .. code-block:: mapfile
 
@@ -106,6 +114,8 @@ Example 5. Circle vector symbol
 
 Example 6. Downward diagonal fill
 ---------------------------------------------
+This example creates a symbol that can be used to create
+a downward diagonal fill for polygons.
 
 .. code-block:: mapfile
 
@@ -119,31 +129,12 @@ Example 6. Downward diagonal fill
     END   
   END
    
-The next example creates a dashed line with 10 pixels on, 5 off,... The line
-will have butt caps and short miter joins. For layers with a scaled symbol
-(SYMBOLSCALE, MINSIZE, MAXSIZE, ...) the PATTERN will be resized to maintain
-symbol ratios.
-              
-Example 7. Dashed Cartoline symbol
----------------------------------------------
-
-.. code-block:: mapfile
-
-  SYMBOL   
-    NAME "cartoline"
-    TYPE cartoline
-    LINECAP butt
-    LINEJOIN miter
-    LINEJOINMAXSIZE 1
-    PATTERN 10 5 END
-  END
-
-Example 8. Using the Symbol Type HATCH (new in 4.6)
+Example 7. Using the Symbol Type HATCH (new in 4.6)
 ----------------------------------------------------
 
-As of MapServer 4.6, you can now use the symbol type HATCH to produce hatched
+As of MapServer 4.6, you can use the symbol type HATCH to produce hatched
 lines. The following will display hatched lines at a 45 degree angle, 10
-pixels apart, and 3 pixels wide.
+`SIZEUNITS` apart (center to center), and 3 `SIZEUNITS` wide.
 
 Symbol definition:
 
@@ -172,5 +163,54 @@ Layer definition:
     END
   END                   
                   
-Other parameters available for HATCH are: ANGLEITEM, SIZEITEM, MINWIDTH, and MAXWIDTH.
+Other parameters available for HATCH are: MINSIZE, MAXSIZE, MINWIDTH,
+and MAXWIDTH.
+
+Example 8. Styled lines using GAP
+----------------------------------------------------
+
+This example shows how to style lines with symbols.
+
+A 5 `SIZEUNITS` wide black line is decorated with ellipses that are 15
+`SIZEUNITS` long (and 7.5 `SIZEUNITS`wide).  The ellipses are placed
+30 `SIZEUNITS` apart, and the negative `GAP` value ensures that the
+ellipses are oriented relative to the direction of the line.  The
+ellipses are rotated 30 degrees counter clock-wise from their position
+along the line.
+
+Symbol definition:
+
+.. code-block:: mapfile
+
+  SYMBOL
+    NAME "ellipse2"
+    TYPE ellipse
+    FILLED true
+    POINTS
+      1 2
+    END
+  END
+                  
+Layer definition:
+
+.. code-block:: mapfile
+
+  LAYER
+    ...
+    CLASS
+      ...
+      STYLE
+        WIDTH 5
+        COLOR 0 0 0      
+      END
+      STYLE
+        SYMBOL 'ellipse2'
+        COLOR 0 0 0
+        ANGLE 30
+        SIZE 15
+        GAP -30
+      END
+    END
+  END                   
+                  
 
