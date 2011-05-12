@@ -1,18 +1,20 @@
 .. _sym_construction:
 
 *****************************************************************************
- Cartographic Symbol Construction with MapServer 
+ Cartographical Symbol Construction with MapServer 
 *****************************************************************************
 
 :Author: Peter Freimuth
 :Contact: pf at mapmedia.de
 :Author: Arnulf Christl
 :Contact: arnulf.christl at wheregroup.com
+:Author: Håvard Tveite
+:Contact: havard.tveite at umb.no
 :Revision: $Revision$
 :Date: $Date$
 
 .. contents:: Table of Contents
-    :depth: 2
+    :depth: 3
     :backlinks: top
 
 .. index:
@@ -21,22 +23,18 @@
 Abstract
 ========
 
-This Document refers to the syntax of MAP and symbolfiles for MapServer 4.6. 
-It is based upon the results of a project carried out at the University of 
-Hannover, Institute of Landscape and Nature Conservation. It was initiated by 
-Mr. Dipl. Ing. Roland Hachmann. Parts have been taken from a study carried through 
-by Karsten Hoffmann, student of Geography and Cartography at the FU Berlin. In 
-the context of a hands-on training in the company GraS GmbH Mr. Hoffman mainly 
-dealed with the development of symbols.
-(`Download study report`_ in German)
-His degree dissertation will also concern this subject. 
+This Document refers to the syntax of MAP and symbol files for
+MapServer 6.  The first version of the document was based on the
+results of a project carried out at the University of Hannover,
+Institute of Landscape and Nature Conservation. It was initiated by
+Mr. Dipl. Ing. Roland Hachmann. Parts have been taken from a study
+carried through by Karsten Hoffmann, student of Geography and
+Cartography at the FU Berlin. In the context of a hands-on training in
+the company GraS GmbH Mr. Hoffman mainly dealed with the development
+of symbols.  (`Download study report`_ in German) His degree
+dissertation will also concern this subject.
 
-At the end of this document you will find a link to a paper discussing further 
-development of the UMN MapServer software regarding the cartographic rendering 
-capabilities. We will try to get around to also translating it to English asap.  
-We welcome everybody who is interested in this subject to participate 
-in the discussion. As a result of this discussion we want to put together a list 
-with change requests and new requirements for UMN MapServer.   
+The document has been heavily revised for Mapserver 6.
 
 .. _`Download study report`: http://www.mapmedia.de/fileadmin/user_upload/dokumente/umn_signaturen_howto/Praktikumsarbeit.zip
 
@@ -44,427 +42,1305 @@ with change requests and new requirements for UMN MapServer.
 Introduction
 ============
 
-Cartographic characters can be distinguished as point, line and area 
-symbols. These symbols may vary depending on their special attributes (variables).
-Bertin (1974) created a clear and logical symbol scheme in which symbols can 
-be varied referring to graphical variables. The following variables 
-are used within MapServer: FORM, SIZE, PATTERN, COLOR and LIGHTNESS. Point and 
-area symbols as well as text fonts (ttf) can additionally be displayed 
-with a 1-pixel wide frame which we call OUTLINE.
+A map is an abstract representation that makes use of point, line and
+area symbols.  Bertin (1974) created a clear and logical symbol scheme
+in which symbols can be varied referring to graphical variables.  The
+following graphical variables can be used within MapServer: FORM, SIZE,
+PATTERN, COLOR and LIGHTNESS.  Point and area symbols as well as text
+fonts (ttf) can additionally be displayed with a frame which we call
+OUTLINE.
+
+The following figure shows the theoretical structure of cartographical
+symbols, which are also used in MapServer:
+
+.. figure:: ../../images/carto-elements.png
+   :height: 400
+   :width: 600
+   :align: center
+
+   Structure of Cartographical Symbols`
 
 Multiple Rendering and Overlay
 ------------------------------
 
-Complex cartographic effects can be achieved by rendering the same vector data 
-with different attributes, sizes and colors on top of each other. This is an 
-easy workaround to creating complex signatures but obviously it will also reflect 
-on the performance of the application. Every rendering process of the same 
-geometries will  take up additional processor time. 
+Say you want to display a highway with a black border line, two yellow
+lanes and a red center lane.  This calls for a combination of
+signatures.
 
-As an example consider displaying a highway with a black border line, two yellow 
-lanes and a red center line. You can achieve this by rendering the same highway 
-geometry three times on top of each other. The lowest (in drawing order) is rendered 
-as a broad black line with a width of 9 pixel. The second level lines are rendered 
-in yellow color with a width of 7 pixel. The topmost layer is displayed as the 
-red center line with a width of 3 pixel in size. That way each yellow colored 
-lane will have a width of (7-1)/2 = 3 pixel.
+Complex cartographical effects can be achieved by rendering the same
+vector data with different symbols, sizes and colours on top of each
+other.  This can be done using separate `LAYER`\s.  This could,
+however, have performance effects for the application, as every
+rendering process of the same geometry will take up additional
+processor time.  The preferred solution is to use multiple `STYLE`\s
+to create complex symbols by overlay.
 
-This can be a solution for many kinds of cartographic questions, a combination of
-different geometry types is also possible. First define a polygon layer as 
-TYPE LINE. It will frame the polygons with a line signature. On top of this 
-include the same geometry a second time but now as TYPE POLYGON with a symbol 
-filling the polygon. This way half of the underlying outline is covered by the 
-polygon with the fill symbol. The clipping effect renders an asymmetric line 
-symbol. To present the outline without clipping just reorder the layers 
-and put the outline presentation on top of the layer with the fill symbol.
+To create the highway symbol mentioned above with a total width of 9
+units, the lowest `STYLE` (in drawing order) will be a broad black
+line with a width of 9 units. The second level `STYLE` will be a
+yellow line with a width of 7 units, and the topmost `STYLE` will be a
+red line with a width of 1 unit. That way each yellow coloured lane
+will have a width of (7-1)/2 = 3 units.
 
-Each step growing more complex, yet another way to construct asymmetric line 
-signatures for framed faces is to tamper with the original geometries by buffering 
-or clipping the original geometry such that the new objects lie inside the 
-original polygons or grow over the borders. A new line symbol for these 
-geometries can use the OFFSET parameter with the y-value set to -99. This is 
-where current development stops short this functions has not been developed 
-further. (Anybody need this feature?). Buffer areas may provide ideal geometry
-for ambitious cartography, this should be possible as soon as the GEOS library 
-is implemented in MapServer. Until then using PostGIS helps to solve a lot of 
-problems.       
+Combining symbols can be a solution for many kinds of cartographical
+questions.  A combination of different geometry types is also
+possible.  A polygon data set can be rendered as lines to frame the
+polygons with a line signature.  It can also be rendred as polygons
+with a symbol filling the polygon.  When the polygon fill is rendered
+on top of the lines, the inner part of the underlying outline is
+covered by the fill symbol of the polygon.  What is observed here is a
+clipping effect tha in will result in an asymmetric symbol for the
+boundary line.  To present the outline without clipping, just reorder
+the `LAYER`\s or `STYLE`\s and put the outline presentation on top of
+the fill.
+
+Yet another way to construct advanced line signatures for framed
+polygons is to tamper with the original geometries by buffering or
+clipping the original geometry such that the new objects lie inside
+the original polygons or grow over the borders.  PostGIS can help
+achieve a lot of effects.
+
+The `OPACITY` parameter of `LAYER` and `STYLE` can be used to achieve
+transparency (making lower symbols "shine" through upper symbols).
 
 Symbol Scaling
 --------------
 
-There are two basically different ways to handle the display size of symbols 
-and cartographic elements in a map at different scales. The size of cartographic 
-objects is either set in screen pixel or in real world units.         
+There are two basically different ways to handle the display size of
+symbols and cartographical elements in a map at different scales.  The
+size of cartographical elements is either set in screen pixel or in
+real world units.
 
-- If the size is set in real world units (i.e. meters), then cartographic 
-  objects are scalable, they will shrink and grow together with the scale 
-  at which the map ist displayed.             
+- If the size is set in real world units (for example meters), it will
+  shrink and grow according to the scale at which the map is
+  displayed.
 
-- Object sizes in screen pixel will be displayed in the same size no matter 
-  at what scale the map is displayed.             
+- When sizes are given in screen pixels, symbols look the same at all
+  scales.
 
-UMN MapServer implements the screen pixel size type for displaying cartographic 
-elements. Additionally the size of cartographic elements can be tied to defined
-scales, such that the symbols "grow" and "shrink" with the 
-scale. The involved parameters include SYMBOLSCALE, MINSIZE and MAXSIZE settings 
-in the MAP file.      
+MapServer implements the "screen pixels" size type for displaying
+cartographical elements.  "Real world units", as described above, can
+be achieved using the `SYMBOLSCALEDENOM` parameter of the layer.
 
-All symbol and style definitions referenced in the following section are contained
-in the archive at the end of this document.       
 
-The following figure shows the theoretical structure of cartographic symbols, 
-which are also used in UMN MapServer: 
+Mapserver and symbol specification
+----------------------------------
 
-**Figure1: Structure of Cartographic Symbols`**
+In a MapServer application, symbol parameters are organised in
+the *map* file as follows:
 
-.. image:: ../../images/carto-elements.png
-   :height: 400
-   :width: 600
-
-In a MapServer application symbol parameters are taken from the MAP and symbol
-file as follows: 
-
-*MAP* file:
-
-- The parameter TYPE defines the type of geometry (point, line or polygon)
-  for each layer. The symbols are accordingly rendered as single points,
-  along a line or area symbols.
+- Each `LAYER` has a `TYPE` parameter that defines the type of geometry
+  (point, line or polygon).  The symbols are rendered at points, along
+  lines or over areas accordingly.
   
-- The definition of the color, brightness (through the color parameter),
-  size and outline is set inside the STYLE-section of a CLASS-section
-  by the parameters COLOR, SIZE and OUTLINECOLOR.
+- Basic symbols are defined in `SYMBOL` elements, using the parameters
+  `TYPE`, `POINTS`, `IMAGE`, `FILLED`, and more (`SYMBOL` elements can
+  be collected in separate symbol files for reuse).
   
-- Combining several basic elements to achieve a complex signature
-  with several STYLEs inside one layer (observe the display order).
+- Colour, lightness, size and outline are defined inside the `STYLE`
+  sections of a `CLASS` section using the parameters `COLOR`, `SIZE`,
+  `WIDTH` and `OUTLINECOLOR`.
+
+- Patterns for styling lines and polygons are defined in `STYLE`
+  sections using `GAP` and `PATTERN`.
   
-*Symbol* file:
-
-- Definition of form and pattern with TYPE, POINTS, IMAGE, FILLED,
-  STYLE (meaning fill pattern) and GAP.  
+- Several basic elements can be combined to achieve a complex
+  signature using several `STYLE`\s inside one `CLASS`.
   
-The following figure shows the interaction of these elements and explains 
-the configuration in the MAP and the SYMBOL file sections necessary for 
-rendering cartographic symbols in the map:
+The following example shows the interaction of some of these elements
+and explains the configuration in the `LAYER` and the `SYMBOL`
+sections necessary for rendering a cartographical point symbol (a red
+square with a 1 pixel wide black outline and a smaller blue circle
+inside):
 
-**Figure2: Schema showing interaction of MAP and SYMBOL file**
+.. figure:: ../../images/symcon-overlay.png 
+   :align: center                           
+                                            
+   The generated overlay symbol             
 
-.. image:: ../../images/map-symbolfile-interaction.png
+.. table:: Commented Layer and Symbol sections.
 
-Using Cartographic Symbols in UMN MapServer
-===========================================
+  +----------------------------------------------------------+-----------------------------------------------------------------+
+  | LAYER section of the map file                            | SYMBOL (from a separate symbol file or in-line in the map file) |
+  +==========================================================+=================================================================+
+  |.. code-block:: mapfile                                   |.. code-block:: mapfile                                          |
+  |                                                          |                                                                 |
+  |  LAYER             # Start of the layer definition       |   SYMBOL          # Start of symbol definition                  |
+  |    NAME "mytest"   # The name of the layer               |     NAME "square" # Name of the symbol (referenced in STYLEs)   |
+  |    TYPE POINT      # Point geometries                    |     TYPE vector   # The type of the symbol                      |
+  |    STATUS DEFAULT  # This layer will always be drawn     |     POINTS        # Start of the geometry defining the symbol   |
+  |    DATA test       # Refers to the dataset test.shp      |       0 0                                                       |
+  |    CLASS           # Start of a Class definition         |       0 1                                                       |
+  |      STYLE         # Start of the first Style            |       1 1                                                       |
+  |        SYMBOL "square"    # Symbol to be used (reference)|       1 0                                                       |
+  |        SIZE 16            # Size of the symbol in pixels |       0 0                                                       |
+  |        COLOR 255 0 0      # Colour (RGB) - red           |     END           # end of POINTS                               |
+  |        OUTLINECOLOR 0 0 0 # Outline colour (RGB) - black |     FILLED true   # This area symbol should be filled           |
+  |      END           # end of STYLE                        |   END             # end of SYMBOL                               |
+  |      STYLE         # Start of the second Style           |                                                                 |
+  |        SYMBOL "circle"    # Symbol to be used (reference)|   SYMBOL          # Start of symbol definition                  |
+  |        SIZE 10            # Size of the symbol in pixels |     NAME "circle" # Name of the symbol (referenced in STYLEs)   |
+  |        COLOR 0 0 255      # Colour (RGB) - blue          |     TYPE ellipse  # The type of the symbol                      |
+  |      END           # end of STYLE                        |     FILLED true   # Start of the geometry defining the symbol   |
+  |    END             # end of CLASS                        |     POINTS                                                      |
+  |  END               # end of LAYER                        |       1 1                                                       |
+  |                                                          |     END           # end of POINTS                               |
+  |                                                          |     FILLED true   # This area symbol should be filled           |
+  |                                                          |   END             # end of SYMBOL                               |
+  +----------------------------------------------------------+-----------------------------------------------------------------+
 
-The basic graphic elements in a symbolfile are made up of vectors, truetype
-fonts, raster images or cartolines and are defined by the TYPE-parameter. The
-following section explains all four types of basic graphic elements and how
-they can be combined to create complex cartographic symbols.  
+                         
+Using Cartographical Symbols in MapServer
+=========================================
+
+Vectors, truetype fonts and raster images are basic graphical elements
+that are defined by the `TYPE` parameter in the `STYLE` element. This
+section explains how thezs elements can be combined to create complex
+cartographical symbols, and it describes some other important aspects
+of map rendering in Mapserver.
+
+Output formats
+--------------
+
+MapServer support raster output formats (e.g. PNG, JPEG and GIF) and
+vector output formats (e.g. PDF, SWG).  The raster formats (except for
+GIF) use anti-aliasing.  See :ref:`outputformat` for more.
+
+Symbol units
+------------
+
+The units used for specifying dimensions is defined in the `SIZEUNITS`
+parameter of the `LAYE`R.  `SIZEUNITS` can be `pixels`, `feet`,
+`inches`, `kilometers`, `meters`, `miles`, `dd` and `nauticalmiles`.
+The default is `pixels`.
+
+The `MAP` element's `RESOLUTION` and `DEFRESOLUTION` parameters will
+determine the actual scale of the resulting map and hence the size of
+the symbols on the map.  DEFRESOLUTION is by default 72 dpi (dots per
+inch).  If `RESOLUTION` is specified to 144 (and `DEFRESOLUTION` is
+72), all dimensions specified in the map file will be multiplied by
+144/72 = 2.  This can be used to produce higher resolution images.
+
+Dimensions can be specified using decimals.
 
 Scaling of Symbols
 ------------------
 
-The parameter SYMBOLSCALE in the LAYER section specifies the scale number at
-which the symbol or text label is displayed in exactly the pixel size defined
-by the SIZE parameter. Observe that the SIZE parameter is tightly connected
-to the SYMBOLSCALE parameter. The parameters MAXSIZE and MINSIZE inside the
-STYLE block limit the rendering of symbols to the maximum and minimum scale
-specified here. Both the minimum reasonable display size for symbols and the
-minimum of space required to display a symbol within a polygon should be
-observed.
+The `SYMBOLSCALEDENOM` parameter in the `LAYER` section specifies the
+scale at which the symbol or text label is displayed in exactly the
+dimensions defined in the `STYLE`\s (for instance using `SIZE` and
+`WIDTH`).  Observe that all the parameters concerned with the symbol
+dimensions (SIZE, WIDTH, ...) are tightly connected to the
+SYMBOLSCALEDENOM parameter.  The MAXSIZE and MINSIZE parameters inside the
+STYLE block limit the scaling of symbols to the maximum and minimum
+size specified here (but does not affect the size calculations).
 
-Symbols of TYPE PIXMAP will not be scaled if used as line and polygon fills!
-In addition PIXMAPs will not display nicely when rescaled due to roundings
-caused by the integer arithmetics of the GD. The basic elements of a composite
-cartographic symbol may change their relative positions to each other, especially
-at very small scales (large number). They can also slightly change their form
-when they are displayed as tiny little images.
+When the scale changes, the elements (defined in `STYLE`\s) of a
+composite cartographical symbol may change their positions relative to
+each other, especially at very small map scales (large scale
+denominators). They can also slightly change their shape when they are
+displayed as tiny little images.
 
-Furthermore the gaps of line symbols (the pattern itself) will not be
-scaled. The gaps stay fixed whereas the width is scaled. This can result in
-strange effects seeming to change the original pattern.
+It is not possibile to define the display intervals with MINSCALEDENOM
+and MAXSCALEDENOM in the STYLE-section, so this kind of tuning has to
+be solved at the `LAYER` level.  To do this, create several layers
+with the same geometries for different scale levels.
 
-There is no possibility to separately define the display intervals (gaps) with
-MINSCALE and MAXSCALE in the STYLE-section (anybody need this?), so this tuning
-has to be solved at the LAYER level. TO do this create several layers with the
-same geometries for different scale levels and specify the appropriate sizes
-accordingly.  
+Always observe that cartographical symbols depend a lot on the scale! So
+be careful with the interaction of content, symbols and scale when
+creating projects.  All three parameters heavily interact and have to
+be coordinated to produce a good map.
 
-Always observe that cartographic symbols depend a lot on the scale! So be careful
-with the interaction of content, symbols and scale when creating projects.
-All three parameters heavily interact and have to be coordinated to produce
-a good map.  
+
+Construction of Point Symbols
+=============================
+
+In the figure below, point symbols of `TYPE` `truetype`, `pixmap`,
+`ellipse` and `vector` are demonstrated.  The precise position of the
+point for which the symbol is rendered is shown with a small red dot.
+A small blue dot is used to show an offset position.
+
+.. figure:: ../../images/symcon-points.png
+   :align: center
+
+   Basic point symbol `TYPE`\s, showing effects of size, offset, angle
+   and outlinecolor
 
 Symbols of TYPE VECTOR and ELLIPSE
 ----------------------------------
 
-The TYPE VECTOR defines the form of a symbol by setting x- and y-values in a
-local caresian coordinate system with the origin at the upper left corner.
-Each symbol is parenthesized by the tags POINTS and END. The maximum number of
-points can be increased by changing the parameter MS_MAXVECTORPOINTS in the
-file mapsymbols.h. The current default is 100. Note that by setting the end
-point equal to the start point you obtain a closed form (polygon). To use the
-coordinates -99 -99 to break a line, the following point will not be connected
-by a line with the preceding one.   
+The TYPE `vector` defines the shape of a symbol by setting X and
+Y values in a local two dimensional coordinate system with X values
+increasing to the right and Y values increasing downwards.
 
-When creating symbols of the TYPE VECTOR you should observe some style guidelines.
-Avoid downtilted lines in area symbols, as they will lead to heavy aliasing
-effects. Furthermore you should not go below a useful minimum size, which is
-relevant for all types of symbols. Keep in mind that the points in the local
-coordinate system are rendered as pixel images, thus only integer values make
-any sense. Every symbol of the TYPE VECTOR is first rendered as a pixel image
-and then added to the geometry. This is the basic principle of the GD graphic
-kernel. PIXMAP symbols may be used directly for drawing.  
+The coordinates defining the symbol is listed in the `POINTS` element,
+which is explicitly ended using `END`.  The maximum number of points can
+be increased by changing the parameter `MS_MAXVECTORPOINTS` in the file
+mapsymbols.h before compilation.  The current default is 100. Note
+that by setting the end point equal to the start point you obtain a
+closed shape (polygon).  A `vector` symbol can consist of several
+elements (lines, polygons).  The coordinates -99 -99 are used to
+separate the elements.
 
-To create circles and ellipses use the TYPE ELLIPSE. These forms are created
-by setting the x and y values as the radius of the circle or ellipse inside
-POINTS and END.  
+When creating symbols of `TYPE` `vector` you should observe some style
+guidelines.  Avoid downtilted lines in area symbols, as they will lead
+to heavy aliasing effects. Furthermore you should not go below a
+useful minimum size, which is relevant for all types of symbols. Keep
+in mind that for pixel images, every symbol of `TYPE` `vector` has to
+be rendered using pixels (`pixmap` symbols may be used directly for
+drawing).
 
-Construction of Point Symbols
------------------------------
+.. note::
 
-The following figure shows how to combine several basic elements to create a 
-new point symbol. The combination is achieved by  adding several STYLEs within 
-one layer. Each basic element references one item of the SYMBOL file, which 
-are centered and overlayed when rendered.  
+  Current behaviour is for the bounding box of a vector symbol to
+  always have 0,0 (in the `SYMBOL` coordinate system) as its upper
+  left corner.  This can be used to generate asymmetrical symbols.
 
-Notice that the SIZE parameter in the STYLE section only refers to the width
-of the symbol (size in the y-direction). An edgewise rectangle will thus display
-smaller than a lying rectangle, although both have the same SIZE parameter.
-When combining several point elements on top of each other, they will not always
-be centered correctly. We have not found a regular rule yet. We can only recommend
-to set an even-numbered  SIZE for combined elements. Combining elements with
-even and odd numbered SIZE parameters seem to have larger irregularities.
+To create ellipses (and circles), use the `TYPE` `ellipse`.  The
+shape of the ellipse is set in the `POINTS` elements (X - size in the
+horizontal direction, Y - size in the vertical direction).  To create
+a circle, let X and Y have the same value.
 
-**Figure3: Construction of Point Symbols**
 
-.. image:: ../../images/point-symbols.png
-   :height: 400
-   :width: 600
-
-Construction of Line Symbols
+Symbols of `TYPE` `truetype`
 ----------------------------
 
-For displaying line geometries most often a simple point symbol (filled circle
-/ SYMBOL 0) is used. This point is painted for each pixel along the line, giving
-a continuous line with rounded ends. To create line patterns use the STYLE section
-of the SYMBOL file (do not confuse this with the STYLE-section of the CLASS object).
-Here you state how many pixel of the section shall be displayed and how many
-are left blank. This pattern will be repeated as many times as that pattern
-will fit into the element. The following figure shows this effect. Unfortunately up 
-to now no OFFSET (start gap) can be defined to create asymetric patterns. (anybody need this?) 
+You can use symbols from truetype fonts. The symbol settings are
+defined in the `SYMBOL` element. Specify the character or the ASCII
+number of the character to be used in the `CHARACTER` parameter. The
+`FONT` parameter is used to specify the font to be used (the alias
+name from the font file - often "fonts.list").  The `FONTSET` parameter
+of the `MAP` element must be set for fonts to work.
 
-**Figure4: Construction of Line Symbols**
+??With the parameter `ANTIALIAS` you define whether to apply antialiasing
+to the symbols or characters. It is recommended to do this especially
+with more complex symbols and and whenever they don't fit well into
+the raster matrix or show a visible pixel structure.??
 
-.. image:: ../../images/line-symbols.png
+In the `STYLE` section of the `LAYER` object it is possible to define
+colours for `truetype` symbols (as with signatures of the `TYPE`
+`vector`).  You can specify both fill colour and outline colour.
+
+
+To find out the character number of a symbol use one of the following options:
+
+- Use the software FontMap (Shareware, with free trial version for download, thanks Till!)
+
+- Use the MS Windows truetype map
+ 
+- Trial and Error :-) 
+
+Please note that the numbering of the so-called "symbol fonts" starts at 61440! 
+So if you want to use character &#84, you have to use 61440 + 84 = &#61524. 
+(ain't that a pain!!) 
+
+
+You can also place truetype characters and strings on the map using
+`LABEL`.  The you can control the placing of the text by using the
+`POSITION` parameter [ul|uc|ur|cl|cc|cr|ll|lc|lr], that specifies the
+position relative to the geometric origin of the geometry.
+
+
+
+
+Symbols of `TYPE` `pixmap`
+--------------------------
+
+Symbols of the `TYPE` `pixmap` are simply small raster images. The
+file name of the raster image is specified in the `IMAGE` parameter of
+the `SYMBOL` element.  MapServer supports the raster formats GIF and
+PNG for `pixmap`\s.
+
+Observe the colour depth of the images and avoid using 24 bit PNG
+symbols displayed in 8 bit mode as this may cause unexpected colour
+leaps.
+
+When using raster images, the colour cannot be modified in the SYMBOL
+element subsequently.
+
+You can specify a colour with the `TRANPARENT` parameter which will
+not be displayed - i.e. it will be transparent. As a result, all
+underlying objects and colours are visible.
+
+.. note::
+
+  The `TRANSPARENT` parameter for `pixmap`\s only works for the GD
+  renderer (GIF rendering).  The AGG renderer supports natively
+  transparent images, but does not support the `TRANSPARENT`
+  parameter.
+
+The `SIZE` parameter defines the height of `pixmap` symbols when
+rendered.  The pixel structure will show when the `SIZE` grows too
+large.  If you are using symbol scaling (`SYMBOLSCCALEDENOM` is set)
+and want to prevent this from happening, you should set the `MAXSIZE`
+parameter.
+
+`Pixmap` symbols can be rotated using the `ANGLE` parameter.
+
+
+Symbol definitions for the figure that demonstrates point symbols
+-----------------------------------------------------------------
+
+This code was used to produce the symbols in the point symbol figure.
+
+First, the symbol definitions:
+
+.. code-block:: mapfile
+
+  SYMBOL
+    NAME "o-flag-trans"
+    TYPE pixmap
+    IMAGE "o-flag-trans.png"
+  END # SYMBOL
+
+  SYMBOL
+    NAME "circlef"
+    TYPE ellipse
+    FILLED true
+    POINTS
+      10 10
+    END # POINTS
+  END # SYMBOL
+
+  SYMBOL
+    NAME "P"
+    TYPE truetype
+    FONT "arial"
+    CHARACTER "P"
+  END # SYMBOL
+
+  SYMBOL
+    NAME "v-line"
+    TYPE vector
+    POINTS
+      0  0
+      5  10
+      10 0
+    END
+  END
+
+  SYMBOL
+    NAME "v-poly"
+    TYPE vector
+    FILLED false
+    POINTS
+      0  0
+      3.5 8
+      7 0
+      5.2 0
+      3.5 4
+      1.8 0
+      0 0
+    END
+  END
+
+Then, the layers and styles used for producing the polygon V symbols
+in the point symbol figure:
+
+.. code-block:: mapfile
+
+  LAYER  # Vector v - polygon
+    STATUS DEFAULT
+    TYPE POINT
+    FEATURE
+      POINTS
+        10 30
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        SYMBOL "v-poly"
+        COLOR 0 0 0
+      END # STYLE
+      STYLE
+        SYMBOL "circlef"
+        COLOR 255 0 0
+        SIZE 4
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+  LAYER  # Vector v - polygon, size
+    STATUS DEFAULT
+    TYPE POINT
+    FEATURE
+      POINTS
+        20 30
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        SYMBOL "v-poly"
+        COLOR 0 0 0
+        SIZE 30
+      END # STYLE
+      STYLE
+        SYMBOL "circlef"
+        COLOR 255 0 0
+        SIZE 4
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+  LAYER  # Vector v - polygon, size, angle
+    STATUS DEFAULT
+    TYPE POINT
+    FEATURE
+      POINTS
+        30 30
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        SYMBOL "v-poly"
+        COLOR 0 0 0
+        SIZE 30
+        ANGLE 60
+      END # STYLE
+      STYLE
+        SYMBOL "circlef"
+        COLOR 255 0 0
+        SIZE 4
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+  LAYER  # Vector v - polygon, size, offset
+    STATUS DEFAULT
+    TYPE POINT
+    FEATURE
+      POINTS
+        40 30
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        SYMBOL "v-poly"
+        COLOR 0 0 0
+        SIZE 30
+        OFFSET 0 15
+      END # STYLE
+      STYLE
+        SYMBOL "circlef"
+        COLOR 255 0 0
+        SIZE 4
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+  LAYER  # Vector v - polygon, size, angle, offset
+    STATUS DEFAULT
+    TYPE POINT
+    FEATURE
+      POINTS
+        50 30
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        SYMBOL "v-poly"
+        COLOR 0 0 0
+        SIZE 30
+        ANGLE 60
+        OFFSET 0 15
+      END # STYLE
+      STYLE
+        SYMBOL "circlef"
+        COLOR 255 0 0
+        SIZE 4
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+  LAYER  # Vector v - polygon, size outline
+    STATUS DEFAULT
+    TYPE POINT
+    FEATURE
+      POINTS
+        60 30
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        SYMBOL "v-poly"
+        COLOR 0 0 0
+        SIZE 30
+        OUTLINECOLOR 0 255 0
+      END # STYLE
+      STYLE
+        SYMBOL "circlef"
+        COLOR 255 0 0
+        SIZE 4
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+  LAYER  # Vector v - polygon, size, outline, width
+    STATUS DEFAULT
+    TYPE POINT
+    FEATURE
+      POINTS
+        70 30
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        SYMBOL "v-poly"
+        COLOR 0 0 0
+        SIZE 30
+        OUTLINECOLOR 0 255 0
+        WIDTH 4
+      END # STYLE
+      STYLE
+        SYMBOL "circlef"
+        COLOR 255 0 0
+        SIZE 4
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+  LAYER  # Vector v - polygon, size, outline, no color
+    STATUS DEFAULT
+    TYPE POINT
+    FEATURE
+      POINTS
+        80 30
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        SYMBOL "v-poly"
+        SIZE 30
+        OUTLINECOLOR 0 255 0
+      END # STYLE
+      STYLE
+        SYMBOL "circlef"
+        COLOR 255 0 0
+        SIZE 4
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+Combining symbols
+-----------------
+
+The following figure shows how to combine several basic symbols to
+create a complex point symbol. The combination is achieved by adding
+several STYLEs within one layer. Each STYLE element references one
+SYMBOL element.  All the basic symbols are centered and overlayed when
+rendered.
+
+Notice that the SIZE parameter in the STYLE element refers to the
+height of the symbol (extent in the Y direction). A standing rectangle
+will thus display with a smaller area than a lying rectangle, although
+both have the same SIZE parameter and the same maximum Y value in the
+SYMBOL element.  When combining several basic point symbols on top of
+each other, they will not always be centered correctly due to the
+integer mathematics required when rendering raster images.  It is
+recommended not to combine elements with even and odd numbered SIZE
+parameters, as this tends to produce larger irregularities.
+
+.. figure:: ../../images/point-symbols.png
    :height: 400
    :width: 600
+   :align: center
 
-When using the point character for rendering all line features with have rounded
-ends. This can be a desired effect or not, it gets more obvious the larger the
-width of line is set. Alternatively a rectangle can be used to generate a line.
-It can be enhanced with a STYLE-parameter to create line patterns (see below).  
+   Construction of Point Symbols
 
-**Table 1. Creating a Symbol to Display Railways**
 
-+----------------------------------+---------------------------------+
-| CLASS-section from the Mapfile   | Character from the Symbolfile   |
-+==================================+=================================+
-|.. code-block:: mapfile           |.. code-block:: mapfile          |
-|                                  |                                 | 
-|  CLASS                           |  SYMBOL                         |
-|    STYLE                         |    NAME 'point'                 |
-|      COLOR 102 102 102           |    TYPE ELLIPSE                 |
-|      SYMBOL 'point'              |    POINTS                       |
-|      SIZE 4                      |      1 1                        |
-|    END                           |    END                          |
-|    STYLE                         |    FILLED TRUE                  |
-|      COLOR 255 255 255           |  END                            |
-|      SYMBOL 'rectangle-train'    |                                 |
-|      SIZE 2                      |  SYMBOL                         |
-|    END                           |    NAME 'rectangle-train'       |
-|  END                             |    TYPE VECTOR                  |
-|                                  |    POINTS                       |
-|                                  |      0 0                        |
-|                                  |      0 0.6                      |
-|                                  |      1 0.6                      |
-|                                  |      1 0                        |
-|                                  |      0 0                        |
-|                                  |    END                          |
-|                                  |    FILLED TRUE                  |
-|                                  |    STYLE                        |
-|                                  |      8 12 8 12                  |
-|                                  |    END                          |
-|                                  |  END                            |
-+----------------------------------+---------------------------------+
+Construction of Line Symbols
+============================
 
-.. image:: ../../images/railway.png                               
+For displaying line geometries you specify the width of the lines
+using the WIDTH parameter and the colour using the COLOR parameter.  If no
+colour is specified, the line will not be rendered.  If no width is
+specified, a thin line (one unit (pixel) wide) will result.
 
-The STYLE parameter can be used for elements of the SYMBOL file with the
-TYPE VECTOR, ELLIPSE, CARTOLINE and PIXMAP. It will define the number of
-intervals in which the symbol is rendered. This can be done using the GAP
-parameter with TRUETYPE symbols (see below). 
+Overlaying lines
+----------------
 
-When combining of several symbols on a line, they will be positioned on the
-baseline which is defined by the geometry of the object in pixel coordinates.
-Again we face the problem of centering. In most cases MapServer corectly centers
-symbols. The combination of a line displayed in 6 pixel width and overlayed with
-4 pixel width results in a line symbol with a 1 pixel border. If the cartographic
-symbol is to contain a centered line with a width of 1 pixel, then the SIZE
-parameters have to be reconfiguredfor example to 7 and a 5 pixel. As a rule
-of thumb only combine even numbered or odd numbered SIZE parameters (see above). 
+When combining several styles / symbols on a line, they will be
+positioned on the baseline which is defined by the geometry of the
+object.  In most cases MapServer correctly centers symbols.  The
+combination of a line displayed in 16 units width and overlayed with a
+10 unit width line results in a line symbol with a 3 unit border.  If
+the cartographical symbol is to contain a centered line with a width
+of 1 pixel, then the widths should be reconfigured, for example to 11
+and 17 units. As a rule of thumb don't combine even numbered and odd
+numbered widths.
 
-In the STYLE section of the MAP file an OFFSET parameter can be set to shift
-symbols or characters in the x and y direction. Unfortunately the displacement
-is set relative to the map border, not the inclination of the line gemoetry
-(with the exception: OFFSET n -99). Therefore the iterated characters are all
-shifted in the same direction, independent of which direction the line takes
-(see Example 2). To generate asymmetrical line symbols apply -99 for the y
-value of the OFFSET. Then the x-value defines the distance from a parallel
-to the original geometry, for which the selected symbol is used (what a pity
-this wasn't documented anywhere!).
 
-**Table 2: Use of the OFFSET parameter with line signatures**
+Use of the PATTERN and GAP parameters
+-------------------------------------
 
-+--------------------------------+-------------------------------+--------------------------------+-------------------------------+
-| CLASS-section from the Mapfile | Character from the Symbolfile | CLASS-Section from the Mapfile | Character from the Symbolfile |
-+================================+===============================+================================+===============================+
-|.. code-block:: mapfile         |.. code-block:: mapfile        |.. code-block:: mapfile         |.. code-block:: mapfile        |
-|                                |                               |                                |                               |
-|  CLASS                         |  SYMBOL                       |  CLASS                         |  SYMBOL                       |
-|    STYLE                       |    NAME "circle"              |    STYLE                       |    NAME "circle"              |
-|      SIZE 1                    |    TYPE ELLIPSE               |      SIZE 1                    |    TYPE ELLIPSE               |
-|      COLOR 0 0 0               |    POINTS                     |      COLOR 0 0 0               |    POINTS                     |
-|    END                         |      1 1                      |      ANTIALIAS                 |      1 1                      |
-|    STYLE                       |    END                        |    END                         |    END                        |
-|      SYMBOL "circle"           |    STYLE                      |    STYLE                       |    STYLE                      |
-|      SIZE 7                    |      1 10 1 10                |      SYMBOL "circle"           |      1 10 1 10                |
-|      COLOR 0 0 255             |    END                        |      SIZE 12                   |    END                        |
-|      OFFSET 8 -8               |  END                          |      COLOR 0 0 255             |  END                          |
-|    END                         |                               |      OFFSET -8 -99             |                               |
-|  END                           |                               |      ANTIALIAS TRUE            |                               |
-|                                |                               |    END                         |                               |
-|                                |                               |  END                           |                               |
-+--------------------------------+-------------------------------+--------------------------------+-------------------------------+
+The PATTERN and GAP parameters can be used to produce styled lines in
+MapServer.
 
-.. image:: ../../images/symbol-offset-1.png
+To create line patterns, use the PATTERN parameter of the STYLE.  Here
+you define dashes by specifying the length of the first dash, followed
+by the length of the first gap, then the length of the second dash,
+followed by the second gap, and so on.  This pattern will be repeated
+as many times as that pattern will fit into the line.  LINECAP can be
+used to control how the ends of the dashes are rendered.  LINEJOIN can
+be used to control how sharp bends are rendered.  In the left column
+of the figure, you will find three examples where PATTERN has been
+used.  Number 2 from below uses LINECAP `butt`, number 3 from below
+uses LINECAP `round` (and LINEJOIN `miter`) and number 4 from below
+uses LINECAP `butt` (and is overlayed over a wider, dark grey line).
+To produce dots, use 0 for dash length with LINECAP 'round'.
 
-.. image:: ../../images/symbol-offset-1.png
-        
+Styled lines can be specified using `GAP` and a symbol for styling.
+In the figure, you will find four examples where `GAP` has been used
+(in the right column).  At the bottom a `SYMBOL` of `TYPE` `ellipse`
+has been used, then a `SYMBOL` of `TYPE` `vector`, then a `SYMBOL` of
+`TYPE` `font` and at the top a `SYMBOL` of `TYPE` `pixmap`.
+
+.. note::
+
+  It is currently not possible to specify an offset (start gap) when
+  creating asymmetrical patterns.
+
+The following figure shows how to use styles to define different kinds
+of line symbols.
+
+.. figure:: ../../images/symcon-lines.png
+   :align: center
+
+   Construction of Line Symbols
+
+.. note::
+
+  For the line at the bottom of the right column, the red dots should
+  have coincided with the black dots, but the GAP length does not work
+  as expected.
+
+Below you will find the SYMBOLs and STYLEs that were used to produce
+the line symbols in "Construction of Line Symbols".  The LAYERs are
+ordered from bottom to top of the figure.
+
+**Styles and symbols for lines**
+
+.. code-block:: mapfile
+
+  SYMBOL
+    NAME "circlef"
+    TYPE ellipse
+    FILLED true
+    POINTS
+      1 1
+    END # POINTS
+  END # SYMBOL
+
+  SYMBOL
+    NAME "P"
+    TYPE truetype
+    FONT "arial"
+    CHARACTER "P"
+  END # SYMBOL
+
+  SYMBOL
+    NAME "vertline"
+    TYPE vector
+    FILLED true
+    POINTS
+      0 5
+      0 10
+      1.4 10
+      1.4 5
+      0 5
+    END # POINTS
+  END # SYMBOL
+
+  SYMBOL
+    NAME "o-flag-trans"
+    TYPE pixmap
+    IMAGE "o-flag-trans.png"
+  END # SYMBOL
+
+  ######## Left column ###############
+
+  LAYER  # Simple line
+    STATUS DEFAULT
+    TYPE LINE
+    FEATURE
+      POINTS
+        5 5
+        25 10
+        45 10
+        35 5
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        COLOR 0 0 0
+        WIDTH 6.5
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+  LAYER  # Dashed line
+    STATUS DEFAULT
+    TYPE LINE
+    FEATURE
+      POINTS
+        5 15
+        25 20
+        45 20
+        35 15
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        COLOR 0 0 0
+        WIDTH 5.0
+        LINECAP butt
+        PATTERN 40 5 END
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+  LAYER  # Dashed line, varying
+    STATUS DEFAULT
+    TYPE LINE
+    FEATURE
+      POINTS
+        5 25
+        25 30
+        45 30
+        35 25
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        COLOR 0 0 0
+        WIDTH 5.0
+        LINECAP round #[butt|round|square|triangle]
+        LINEJOIN miter #[round|miter|bevel]
+        LINEJOINMAXSIZE 3
+        PATTERN 40 17 0 17 0 17 0 17 END
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+  LAYER  # Line dash overlay
+    STATUS DEFAULT
+    TYPE LINE
+    FEATURE
+      POINTS
+        5 35
+        25 40
+        45 40
+        35 35
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        COLOR 102 102 102
+        WIDTH 4.0
+      END # STYLE
+      STYLE
+        COLOR 255 255 255
+        WIDTH 2.0
+        LINECAP BUTT
+        PATTERN 8 12 END
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+  LAYER  # Line overlay - 2
+    STATUS DEFAULT
+    TYPE LINE
+    FEATURE
+      POINTS
+        5 45
+        25 50
+        45 50
+        35 45
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        COLOR 0 0 0
+        WIDTH 16.0
+      END # STYLE
+      STYLE
+        COLOR 209 66 0
+        WIDTH 10.0
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+  LAYER  # Line overlay - 3
+    STATUS DEFAULT
+    TYPE LINE
+    FEATURE
+      POINTS
+        5 55
+        25 60
+        45 60
+        35 55
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        COLOR 0 0 0
+        WIDTH 17.0
+      END # STYLE
+      STYLE
+        COLOR 209 66 0
+        WIDTH 11.0
+      END # STYLE
+      STYLE
+        COLOR 0 0 0
+        WIDTH 1.0
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+  ######## right column ############
+
+  LAYER  # Line - ellipse overlay
+    STATUS DEFAULT
+    TYPE LINE
+    FEATURE
+      POINTS
+        50 5
+        70 10
+        90 10
+        80 5
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        COLOR 0 0 0
+        WIDTH 3.6
+      END # STYLE
+      STYLE
+        COLOR 0 0 0
+        SYMBOL "circlef"
+        SIZE 10
+        GAP 42
+      END # STYLE
+      STYLE
+        COLOR 255 0 0
+        SYMBOL "circlef"
+        SIZE 3
+        GAP 42
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+  LAYER  # Line - symbol overlay
+    STATUS DEFAULT
+    TYPE LINE
+    FEATURE
+      POINTS
+        50 15
+        70 20
+        90 20
+        80 15
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        COLOR 0 0 0
+        WIDTH 2.8
+      END # STYLE
+      STYLE
+        COLOR 0 0 0
+        SYMBOL "vertline"
+        SIZE 20.0
+        ANGLE 30
+        GAP -50
+        #OFFSET -5 -99
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+  LAYER  # Line - font overlay
+    STATUS DEFAULT
+    TYPE LINE
+    FEATURE
+      POINTS
+        50 25
+        70 30
+        90 30
+        80 25
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        COLOR 0 0 0
+        WIDTH 6
+      END # STYLE
+      STYLE
+        COLOR 102 0 0
+        SYMBOL "P"
+        SIZE 20
+        #SIZE 70
+        GAP -30
+        #OUTLINECOLOR 0 255 0
+        #WIDTH 4
+        #OFFSET -10 -99
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+  LAYER  # Line - pixmap overlay
+    STATUS DEFAULT
+    TYPE LINE
+    FEATURE
+      POINTS
+        50 35
+        70 40
+        90 40
+        80 35
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        COLOR 0 0 0
+        WIDTH 6
+      END # STYLE
+      STYLE
+        COLOR 102 0 0
+        SYMBOL "o-flag-trans"
+        SIZE 20
+        #SIZE 70
+        GAP -30
+        #OUTLINECOLOR 0 255 0
+        #WIDTH 4
+        #OFFSET -10 -99
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+  LAYER  # Line - pixmap overlay
+    STATUS DEFAULT
+    TYPE LINE
+    FEATURE
+      POINTS
+        50 45
+        70 50
+        90 50
+        80 45
+      END # Points
+    END # Feature
+    CLASS
+      STYLE
+        COLOR 0 0 0
+        WIDTH 6
+      END # STYLE
+      STYLE
+        COLOR 102 0 0
+        SYMBOL "o-flag-trans"
+        SIZE 20
+        GAP -30
+        OFFSET -10 -99
+      END # STYLE
+    END # CLASS
+  END # LAYER
+
+By default, all lines (and patterns) will be drawn with rounded ends
+(extending the lines slightly beyond their ends).  This effect gets
+more obvious the larger the width of line is.  It is possible to alter
+this behaviour using the LINECAP parameter of the STYLE.  LINECAP `butt`
+will give butt ends (stops the line exactly at the end), with no
+extension of the line.  LINECAP `square` will give square ends, with
+an extension of the line.  LINECAP `round` is the default.
+
+
+LINEJOIN
+........
+
+The different values for the parameter LINEJOIN have the following
+visual effects.  Default is `round`.  `miter` will follow line borders
+until they intersect and fill the resulting area. `none` will render
+each segment using linecap `butt`.  The figure below illustrates the
+different linejoins.
+
+.. figure:: ../../images/linejoin.jpg
+   :align: center
+
+   Different kinds of linejoins
+
+LINEJOINMAXSIZE
+...............................................................................
+
+Specify the maximum length of m (only relevant for LINEJOIN type MITER).
+The value is a multiplication factor (default 3). The actual max length is
+calculated as follows:
+
+::
+
+   m - calculated join size
+   d - line width
+   m_max = d * LINEJOINMAXSIZE
+   
+If *m* > *m_max*, then the connection length will be set to m_max.
+
+.. figure:: ../../images/miter-linejoin.jpg
+   :align: center
+
+   Miter linejoin
+
+
+Use of the OFFSET parameter
+---------------------------
+
+In STYLE, an OFFSET parameter can be set to shift symbols in the X and
+Y direction.  The displacement is not influenced by the direction of
+the line geometry.  Therefore the point symbols used for styling are
+all shifted in the same direction, independent of the direction of the
+line (as defined in style number 2 in the map file example below - red
+line in the map image).  A positive X value shifts to the right.  A
+positive Y value shifts downwards.
+
+To generate lines that are shifted relative to the original lines, -99
+has to be used for the Y value of the OFFSET.  Then the X value
+defines the distance to the line from the original geometry
+(perpendicular to the line).  A positive X value will shift to the
+right (when viewed in the direction of the line), a negative X value
+will shift to the left.
+
+The example below shows how OFFSET works with the use of -99 (blue and
+green lines) and without the use of -99 (red line).  The thin black
+line shows the location of the line geometry.
+
+.. table:: Use of the `OFFSET` parameter with lines
+
+  +-----------------------------------------------------+-------------------------------------------+
+  |*Map file excerpt*                                   |*Resulting map image*                      | 
+  +=====================================================+===========================================+
+  |                                                     |                                           | 
+  |.. code-block:: mapfile                              |                                           |
+  |                                                     |                                           | 
+  |  LAYER  #                                           |                                           |
+  |    STATUS DEFAULT                                   |                                           |
+  |    TYPE LINE                                        |                                           |
+  |    FEATURE                                          |.. figure:: ../../images/symcon-offset.png |
+  |      POINTS                                         |   :align: center                          |
+  |        20 20                                        |                                           |
+  |        280 160                                      |   Line offset                             |
+  |        280 20                                       |                                           |
+  |        160 20                                       |                                           |
+  |        160 60                                       |                                           |
+  |      END # Points                                   |                                           |
+  |    END # Feature                                    |                                           |
+  |    CLASS                                            |                                           |
+  |      STYLE  # no offset                             |                                           |
+  |        COLOR 0 0 0    # black                       |                                           |
+  |        WIDTH 1                                      |                                           |
+  |      END # STYLE                                    |                                           |
+  |      STYLE  # simple offset left and down           |                                           |
+  |        COLOR 255 0 0  # red                         |                                           |
+  |        WIDTH 2                                      |                                           |
+  |        OFFSET -8 12                                 |                                           |
+  |      END # STYLE                                    |                                           |
+  |      STYLE   # left offset rel. to line direction   |                                           |
+  |        COLOR 0 0 255  # blue                        |                                           |
+  |        WIDTH 5                                      |                                           |
+  |        OFFSET -16 -99                               |                                           |
+  |      END # STYLE                                    |                                           |
+  |      STYLE   # right offset rel. to line direction  |                                           |
+  |        COLOR 0 255 0  # green                       |                                           |
+  |        WIDTH 5                                      |                                           |
+  |        OFFSET 16 -99                                |                                           |
+  |      END # STYLE                                    |                                           |
+  |    END # CLASS                                      |                                           |
+  |  END # LAYER                                        |                                           |
+  +-----------------------------------------------------+-------------------------------------------+
+
+Asymmetrical line styling with point symbols
+--------------------------------------------
+
+Line number 2 and 5 from below in the right column of the
+"Construction of Line Symbols" figure is an example of asymmetrical
+line styling using a point symbol.  This can be achieved either by
+using an OFFSET (with a Y value of -99), or by using an asymmetrical
+point symbol of `TYPE` `vector`, as described in the tricks section
+below.  Line number 2 from below is produced using an asymmetrical
+point symbol - this is best method for placing symbols on lines.  Line
+number 5 from below is produced using `STYLE` `OFFSET`.  As can be
+seen, the symbols are here the rendered on the offset line, meaning
+that at sharp bends, some symbols will be placed away from the line.
+
+
 Area Symbols
-------------
+============
 
-Areas (polygons) can be filled with elements of the SYMBOL file to create e.g.
-hatches and graticules. These are by default rendered without spacing one after
-the other in x and y direction and fill out the whole polygon. Simple line
-hatches (e.g. horizontal, vertical and diagonal) can be created by filling the
-polygon with a line symbol from the SYMBOL file (see example 5). 
+Areas (polygons) can be filled with symbols to create for instance
+hatches and graticules.
 
-The SIZE parameter in the STYLE section for line hatches only specifies the
-distance between the lines and not their width. Thus in these hatches all lines
-will always have a width of 1 pixel. Unfortunately there is no additional
-parameter to define the line width (Anybody need this feature?). Notice that
-the SIZE parameter is interpreted by MapServer differently for horizontal and
-vertical lines. Vertical lines with a SIZE parameter of 8 pixel result in a
-distance of 8 pixel between the lines. Horizontal lines with the same SIZE
-parameter are instead renderes with a much smaller gap (see example 5). For
-creating cross hatches composed of vertical and horizontal lines the best
-method is to use a simple cross from the SYMBOL file. Polygons can also be
-filled with other POINT elements to obtain special patterns (e.g. with circles
-or triangles). 
+The symbols are by default used as tiles, and rendered (without
+spacing) one after the other in the x and y direction, filling the
+whole polygon.
 
-**Table 3: Construction of a cross hatch with different line distances**
+If the `SIZE` parameter is used in the `STYLE`, the symbols will be
+scaled to the specified height.
+
+The `GAP` parameter of the `STYLE` can be used to increase the spacing
+of the symbols.
+
+The AGG renderer uses anti-aliasing by default, so edge effects around
+the symbols can occure.
+
+Hatch fill
+----------
+
+Simple line hatches (e.g. horizontal, vertical and diagonal) can be
+created by filling the polygon with a hatch symbol.
+
+The `SIZE` parameter in the `STYLE` that uses a `SYMBOL` of type
+`hatch` specifies the distance from center to center between the lines
+(the default is 1).  The `WIDTH` parameter specifies the width of the
+lines in the hatch pattern (default is 1).  The `ANGLE` parameter
+specifies the direction of the lines (default is 0 - horizontal
+lines).
+
+The figure demonstrates the use of `SIZE` (bottom left), `WIDTH`
+(bottom left), `ANGLE` (top right) and overlay (top right) of hatches.
+
+.. figure:: ../../images/symcon-hatch.png
+   :align: center
+
+   Hatch examples
+
+The table shows excerpts of the map file that was used to produce the
+figure.
+
+.. table:: Hatches
 
 +--------------------------------+-------------------------------+
-| CLASS-Section from the Mapfile | Character from the Symbolfile |
+| `CLASS` section                | `SYMBOL` definition           |
 +================================+===============================+
 |.. code-block:: mapfile         |.. code-block:: mapfile        |
 |                                |                               |
-|  CLASS                         |  SYMBOL                       |
-|    STYLE                       |    NAME "line-vertical"       |
-|      SYMBOL "line-vertical"    |    TYPE vector                |
-|      SIZE 8                    |    POINTS                     |
-|      COLOR 255 102 51          |      0.5 0                    |
-|      OUTLINECOLOR 0 0 0        |      0.5 1                    |
-|    END                         |    END                        |
-|    STYLE                       |  END                          |            
-|      SYMBOL "line-horizontal"  |  SYMBOL                       |
-|      SIZE 8                    |    NAME "line-horizontal"     |
-|      COLOR 204 102 51          |    TYPE vector                |
-|      OUTLINECOLOR 0 0 0        |    POINTS                     |
-|    END                         |      0 0.5                    |
-|  END                           |      1 0.5                    |
-|                                |    END                        |
-|                                |  END                          |
+|  LAYER # hatch                 |                               |
+|   ...                          |                               |
+|   CLASS                        |  SYMBOL                       |
+|    STYLE                       |    NAME "hatchsymbol"         |
+|      SYMBOL "hatchsymbol"      |    TYPE hatch                 |
+|      COLOR 0 0 0               |  END                          |
+|      SIZE 10                   |                               |
+|    END # STYLE                 |                               |
+|   END # CLASS                  |                               |
+|  END # LAYER                   |                               |
+|                                |                               |
+|  LAYER # hatch with angle      |                               |
+|   ...                          |                               |
+|   CLASS                        |                               |
+|    STYLE                       |                               |            
+|      SYMBOL "hatchsymbol"      |                               |
+|      COLOR 0 0 0               |                               |
+|      SIZE 10                   |                               |
+|      ANGLE 45                  |                               |
+|    END # STYLE                 |                               |
+|   END # CLASS                  |                               |
+|  END # LAYER                   |                               |
+|                                |                               |
+|  LAYER # hatch with wide lines |                               |
+|   ...                          |                               |
+|   CLASS                        |                               |
+|    STYLE                       |                               |            
+|      SYMBOL "hatchsymbol"      |                               |
+|      COLOR 0 0 0               |                               |
+|      SIZE 10                   |                               |
+|      WIDTH 5                   |                               |
+|    END # STYLE                 |                               |
+|   END # CLASS                  |                               |
+|  END # LAYER                   |                               |
+|                                |                               |
+|  LAYER # cross hatch           |                               |
+|   ...                          |                               |
+|   CLASS                        |                               |
+|    STYLE                       |                               |            
+|      SYMBOL "hatchsymbol"      |                               |
+|      COLOR 255 153 0           |                               |
+|      SIZE 10                   |                               |
+|      WIDTH 4                   |                               |
+|    END # STYLE                 |                               |
+|    STYLE                       |                               |            
+|      SYMBOL "hatchsymbol"      |                               |
+|      COLOR 0 0 255             |                               |
+|      SIZE 20                   |                               |
+|      ANGLE 90                  |                               |
+|    END # STYLE                 |                               |
+|   END # CLASS                  |                               |
+|  END # LAYER                   |                               |
+|                                |                               |
 +--------------------------------+-------------------------------+
 
-.. image:: ../../images/crosshatch.png                                                   
 
-Signatures of TYPE PIXMAP
--------------------------
+Polygon fills with symbols of `TYPE` `pixmap`
+---------------------------------------------
 
-Symbols of the TYPE PIXMAP are simply small raster images. The name of the
-raster images are specified in the SYMBOL file with the parameter IMAGE.
-MapServer supports the raster formats GIF and PNG. Observe the color depth
-of the images and avoid using 24 bit PNG symbols displayed in 8 bit mode as
-this may cause unexpected color leaps. When using raster images the color
-cannot be modified in the SMBOL file subsequently. But you can specify a
-color with the TRANPARENT parameter which will not be displayed - i.e. it
-will be transparent. As a result all underlying objects and colors are visible. 
+Polygons can be filled with pixmaps.
 
-The SIZE parameter defines the size of PIXMAP symbols when used as point symbols.
-Observe that the pixel structure will show when the SIZE grows too large. Prevent
-this from happening by setting a MAXSIZE parameter. When using PIXMAPS as line
-symbols or as fill symbols for polygons they will not be resized but are displayed
-in the original size. So the use of PIXMAP STYLE objects for signatures with
-a high need of scaling is rather limited.   
+.. note::
 
-PIXMAP symbols are always rendered respective to the map border and will not
-follow the inclination of a line or polygon outline. Only truetype font symbols
-can follow an inclined line geometry, although with some defects (see below).   
+  If the `STYLE` `SIZE` parameter is different from the image height
+  of the pixmap, there will be rendering artefacts around the pixmaps
+  (visible as a grid with the "background" colour).  This is due to
+  the anti-aliasing done by the AGG renderer.
 
-To create more complex area symbols, e.g. with defined distances between single
-characters or hatches with broad lines, raster images are probably the most
-suitable objects. Depending on the desired pattern you have to generate the
-raster image with high precision using a graphic editor. To obtain a regular
-allocation of symbols with defined spacing you could use the raster image as
-shown in Figure1.   
+`Pixmap` symbols can be rotated using the `ANGLE` parameter, but for
+polygon fills, this produces strange effects, and is not recommended.
 
-**Figure5: Raster image for a regular polygon symbol fill**
+To create complex area symbols, e.g. with defined distances between
+single characters or hatches with broad lines, pixmap fill is probably
+the best option.  Depending on the desired pattern you have to
+generate the raster image with high precision using a graphical
+editor. The figure below is an example of how to obtain a regular
+allocation of symbols with defined spacing.
 
-.. image:: ../../images/polygon-symbol-fill.png
-   :height: 400
-   :width: 600
+.. figure:: ../../images/polygon-symbol-fill.png
+   :height: 321
+   :width: 357
+   :align: center
    
-**Figure6: Raster image for a hatched fill**
+   Raster image for a regular symbol fill**
 
-.. image:: ../../images/hatch-symbol-fill.png
-   :height: 400
-   :width: 600
+You can use other shapes than circles. B defines the width and H the
+height of the raster image. For a regular arrangment of symbols in a
+45 degree angle B = H. For symbols, which are regularly arranged in
+parallel and without offset between each other one centered symbol
+with same x and y distances to the imageborder is enough.
 
-Instead of using circles you can use different characters. B defines the width
-and H the height of the raster image. For a regular arrangment of symbols in
-a 45 degree angle B = H. For symbols, which are regularly arranged in parallel
-and without offset between each other one centered symbol with same x and y
-distances to the imageborder is enough. A regular hatch with wider lines can
-be created by using the raster image in fig. 2. To create a 45 degree hatch
-use:  
+The following figure shows an example of how you can design a pixmap
+to produce a hatch with wide lines.
+
+.. figure:: ../../images/hatch-symbol-fill.png
+   :height: 321
+   :width: 321
+   :align: center
+
+   Raster image for a hatched fill
+
+To create a 45 degree hatch use:
 
 ::
 
    B = H and x = y
    
-When using the MapServer legend observe that each raster PIXMAP is displayed
-only once in the original size in the middle of the legend box.  
+.. note::
 
-See the example below of some PIXMAP symbols, which can be used as area symbols with
-transparency. The raster images were created using FreeHand, finished with
-Photoshop and exported to PNG with special attention regarding the color palette.
-Observe that you *have* to specify a COLOR in the STYLE section of the
-CLASS to display raster PIXMAPS although it has no influence on the output
-and color of the image.
+  When using the MapServer legend observe that each raster `pixmap` is
+  displayed only once in the original size in the middle of the legend
+  box.
 
-**Table 4: Construction of a horizontally arranged area symbol**
+The example below shows some `pixmap` symbols which can be used as
+area symbols with transparency. The raster images were created using
+FreeHand, finished with Photoshop and exported to PNG with special
+attention regarding the colour palette.  Observe that you *have* to
+specify a `COLOR` in the `STYLE` section of the `CLASS` to display
+raster `pixmap`\s although it has no influence on the output and
+colour of the image.
+
+**Construction of a horizontally arranged area symbol**
 
 +--------------------------------+-------------------------------------------------+
-| CLASS-Section from the Mapfile | Character from the Symbolfile                   |
+| `CLASS` section                | `SYMBOL` definition                             |
 +================================+=================================================+
 |.. code-block:: mapfile         |.. code-block:: mapfile                          |
 |                                |                                                 |
@@ -480,12 +1356,15 @@ and color of the image.
 |  END                           |                                                 |
 +--------------------------------+-------------------------------------------------+
 
-.. image:: ../../images/horizontal-area-symbol.png                               
+.. figure:: ../../images/horizontal-area-symbol.png
+   :align: center
 
-**Table 5: Construction of a diagonally arranged area symbol**
+   Polygon fill - regular grid pattern
+
+**Construction of a diagonally arranged area symbol**
 
 +--------------------------------+-------------------------------------------------+
-| CLASS-Section from the Mapfile | Character from the Symbolfile                   |
+| `CLASS` section                | `SYMBOL` definition                             |
 +================================+=================================================+
 |.. code-block:: mapfile         |.. code-block:: mapfile                          |
 |                                |                                                 |
@@ -500,12 +1379,15 @@ and color of the image.
 |                                |   :align: left                                  |
 +--------------------------------+-------------------------------------------------+
 
-.. image:: ../../images/diagonal-area-symbol.png                            
+.. figure:: ../../images/diagonal-area-symbol.png
+   :align: center
 
-**Table 6: Construction of a face hatch**
+   Polygon fill - diagonal pattern
+
+**Construction of a hatch**
 
 +--------------------------------+-------------------------------------------------+
-| CLASS-Section from the Mapfile | Character from the Symbolfile                   |
+| `CLASS` section                | `SYMBOL` definition                             |
 +================================+=================================================+
 |.. code-block:: mapfile         |.. code-block:: mapfile                          |
 |                                |                                                 |
@@ -521,153 +1403,67 @@ and color of the image.
 |  END                           |                                                 |
 +--------------------------------+-------------------------------------------------+
 
-.. image:: ../../images/hatch-symbol.png                                          
+.. figure:: ../../images/hatch-symbol.png
+   :align: center
 
-Signatures of TYPE CARTOLINE
-----------------------------
+   Polygon fill - hatch
 
-The TYPE Cartoline is not really an independent SYMBOL type or basic element
-but it is useful for creating line signatures. The advantage over the above
-types is the antialising of lines with any width.
-Conventional lines can only use antialising with a width of 1 pixel. This line
-type supports the ANTIALIAS parameter in the STYLE block of the CLASS definition
-just like the truetype fonts and symbols. Here you can also define line patterns
-and offsets. The design of the line ends can be controled with the
-LINECAP parameter. The LINECAP value BUTT stopps the signature exactly at the
-end of the top line.
-Author of this features is Tomas Krecmer (`tokr(a)tmapy.cz`_).
-If you have questions concerning this type of signature or suggestions for
-improvement please contact the author.  
+Polygon fills with symbols of `TYPE` `vector`
+---------------------------------------------
 
-.. _`tokr(a)tmapy.cz`: mailto:tokr@tmapy.cz
+Polygons can be filled with symbols of `TYPE` `vector`.  As for the
+other symbol fills, the pattern will be generated by using the
+specified symbol for the tiles.  The bounding box of the symbol is
+used when tiling.
 
-Dashed line of TYPE CARTOLINE
-...............................................................................
+The upper right corner of the bounding box of a symbols of `TYPE`
+`vector` is always (0, 0).  The lower left corner of the bounding is
+determined by the maximum x and y values of the symbol definition.
 
-.. code-block:: mapfile
+Creating vector symbols for polygon fills is done in much the same
+way as for pixmap symbols.  Precision is necessary to get nice
+symmetrical symbols.
 
-   SYMBOL
-     NAME "cartoline"
-     TYPE cartoline
-     LINECAP round #[butt|round|square|triangle]
-     LINEJOIN miter #[round|miter|bevel]
-     LINEJOINMAXSIZE 3
-     STYLE
-       40 17 1 17 1 17 1 17
-     END
-   END 
-   
-LINEJOIN
-...............................................................................
+Both polygon (`FILL` on) and line (`FILL` off) vector symbols can be
+used.  For line symbols, the `WIDTH` parameter of the `STYLE`will
+give the line width and the `SIZE` parameter will specify the height
+of the symbol.  
 
-The different values for the parameter LINEJOIN have the following visual effects
-(see the following figure).  Default is 'not set' but do not specify the string 
-'not set', just omit the parameter LINEJOIN.
+STYLE ANGLE can be used for polygon fills, but will only rotate
+each individual symbol, not the pattern as a whole.  To generate
+rotated patterns is therefore quite demanding.
 
-.. image:: ../../images/linejoin.jpg
+Below you will find some examples of vector symbols used for polygon
+fills.  The polygon fill is accompanied by the vector symbol used
+for the fill.  The centre of the vector symbol is indicated with a
+red dot.
 
-Miter
-  follow line borders until they intersect, fill the resulting area.
+.. figure:: ../../images/symcon-polygonvector.png
+   :align: center
+   :width: 600
+   :height: 420
 
-Round
-  see above
-  
-Bevel
-  see above
-
-None
-  Lines will not be connected but drawn with LINECAPP 'butt' at the respective ends. 
-           
-.. image:: ../../images/miter-linejoin.jpg
-
-LINEJOINMAXSIZE
-...............................................................................
+   Polygon fills - vector
 
 
-Specify the maximum length of m (only relevant for LINEJOIN type MITER).
-The value is a multiplication factor (default 3). The actual max length is
-calculated as follows:
-
-::
-
-   m - current join size
-   d - symbol size
-   m_max = d * LINEJOINMAXSIZE
-   
-If current *m > m_max* then the connection length will be set to m_max.
-
-Signatures of TYPE TRUETYPE
----------------------------
-
-Finally you can use symbols from truetype fonts. The symbol settings are also
-defined in the SYMBOL file. Specify the ASCII number of the symbol to be used
-in the CHARACTER parameter. Add the ALIAS name of the font file to the parameter
-FONT as defined in the file fonts.list. Remember to set the FONTSET parameter
-in the MAP file to link the correct fonts.list file. With the parameter ANTIALIAS
-you define whether to apply antialiasing to the symbols or characters. It is
-recommended to do this especially with more complex symbols and and whenever
-they don't fit well into the raster matrix or show a visible pixel structure.
-Set a POSITION [ul|uc|ur|cl|cc|cr|ll|lc|lr] relative to the geometric origin of
-the geometry. In the STYLE section of the LAYER object it is possible to define
-colors for true type symbols (as with signatures of the TYPE VECTOR).
-
-When using truetype chracters to render complex line symbols, you can define the
-distance in pixel until the symbol is repeated by setting the GAP parmeter in
-the SYMBOL file. A more complicated pattern like the STYLE parameters for VECTOR,
-ELLIPSE or PIXMAP type symbols cannot be used not (Anybody need this feature?).
-The OFFSET parameter is currently not implemented yet. Truetype symbols follow
-the inclination of the accompanying line.
-
-When using asymmetrical symbols they unfortunately do not always follow the
-outside or the inside, left or right of a line but change. If possible symbols
-will always be displayed upside (which makes a lot of sense for string characters,
-what true type fonts basically are). On vertical lines symbols are rendered
-to the right or left side depending on the drawing direction of the line. If
-the line is drawn from bottom to top, the truetype symbol is displayed to the
-left, if the line is drawn from top to bottom, the symbol is displayed to the
-right (see table below). In left picture in the table the line is drawn
-clockwise and in the right picture drawn counterclockwise.
-
-**Table 7: TrueType-character used on lines**
-
-+--------------------------------+-------------------------------------------------+
-| CLASS-Section from the Mapfile | Character from the Symbolfile                   |
-+================================+=================================================+
-|.. code-block:: mapfile         |.. code-block:: mapfile                          |
-|                                |                                                 |
-|  CLASS                         |  SYMBOL                                         |
-|    STYLE                       |    NAME "T"                                     |
-|      SYMBOL "T"                |    TYPE TRUETYPE                                |
-|       SIZE 12                  |    FONT "arial"                                 |
-|       COLOR 0 0 255            |    CHARACTER "&#84"                             |
-|     END                        |    ANTIALIAS TRUE                               |
-|  END                           |    GAP 10                                       |
-|                                |  END                                            |
-|                                |                                                 |
-+--------------------------------+-------------------------------------------------+
-
-.. image:: ../../images/truetype-character-clockwise.png                         
 
 
-.. image:: ../../images/truetype-character-cc.png                                
 
-To find out the character number of a symbol use one of the following options:
+Examples (Mapserver 4)
+======================
 
-- Use the software FontMap (Shareware, with free trial version for download, thanks Till!)
+The examples in this section were made for MapServer 4.  Some of them
+may not work with later versions, but they contain a lot of useful
+symbol definitions and are therefore provided as reference.
 
-- Use the MS Windows truetype map
- 
-- Trial and Error :-) 
+The symbols were created with MAP files and SYMBOL files, which can be
+`download_old_symbols`_. If you want to use these MAP files please
+note, that your MapServer must at least be able to handle 50
+symbols. Otherwise you will get an error while loading the SYMBOL
+files.
 
-Please note that the numbering of the so-called "symbol fonts" starts at 61440! 
-So if you want to use character &#84, you have to use 61440 + 84 = &#61524. 
-(ain't that a pain!!) 
+.. _`download_old_symbols`: http://www.mapmedia.de/fileadmin/user_upload/dokumente/umn_signaturen_howto/vortrag_demo.zip
 
-Examples
-========
-
-Find some examples to show different possibilities of the UMN MapServer for
-cartographical symbols of the vector based mapobjects (this is just a selection!):
 
 Basic Symbols
 -------------
@@ -687,84 +1483,217 @@ Complex Symbols
 
 .. image:: ../../images/pattern-symbol-complex.png
 
+
+
+
+Mapfile Changes	- line styling
+------------------------------
+
+All line styling must be specified in layer STYLE.
+The following keywords have been removed from SYMBOL:
+
+STYLE PATTERN GAP LINECAP LINEJOIN LINEJOINSIZE
+
+The following keywords have been added to STYLE:
+
+PATTERN GAP LINECAP LINEJOIN LINEJOINSIZE
+
+The SYMBOL STYLE keyword has been renamed to PATTERN.
+The cartoline SYMBOL TYPE has been removed.
+
+
+Tricks
+======
+
+Changing the center of a point symbol
+-------------------------------------
+
+Mapserver does all transformations (offset, rotation) with respect to
+the symbol center point.  The center point is calculated from the
+symbol's bounding box.
+In some cases it can be useful to change the center point of a symbol.
+
+Currently there is no way of explicitly specifying the center point
+of a `SYMBOL`.  A mechanism for this (a new keyword in SYMBOL that
+specifies the symbol center point) has been suggested in RFC45, but
+has not been implemented so far.
+
+When determining the position of the symbol center point, the lower
+x and y values of the bounding box is always set to 0.
+
+Here are some examples of what can be achieved by taking advantage of
+this for point symbols and decorated lines.  There are three examples
+in the illustration, and each example shows the result with and without
+the offset trick.  At the top arrows are added to lines using
+GEOMTRANSFORM start / end.  In the middle, tags are added to lines 
+using GAP and ANGLE.  At the bottom, a point symbol is shifted and
+rotated.  The red dots represent the center points, and the blue
+dots the offsets.
+
+.. figure:: ../../images/symcon-shifttrick.png
+   :align: center
+
+   Shifting trick
+
+Below you will find three tables that contain the SYMBOLS and the
+STYLE mechanisms that were used to genereate shifted symbols in the
+illustration.
+
+.. table:: Symbol tricks - shift - arrows
+
+  +--------------------------------+-------------------------------------------------+
+  | SYMBOLs                        | LAYER STYLEs                                    |
+  +================================+=================================================+
+  |.. code-block:: mapfile         |.. code-block:: mapfile                          |
+  |                                |                                                 |
+  |  SYMBOL                        |  LAYER  # Line                                  |
+  |    NAME "arrow-offset-end"     |    STATUS DEFAULT                               |
+  |    TYPE vector                 |    TYPE LINE                                    |
+  |    FILLED true                 |    FEATURE                                      |
+  |    POINTS                      |      POINTS                                     |
+  |      -5 0.4                    |        20 65                                    |
+  |      -2 0.4                    |        40 70                                    |
+  |      -2 0                      |        60 70                                    |
+  |      0 0.8                     |        70 65                                    |
+  |      -2 1.6                    |      END # Points                               |
+  |      -2 1.2                    |    END # Feature                                |
+  |      -5 1.2                    |    CLASS                                        |
+  |      -5 0.4                    |      STYLE                                      |
+  |    END # POINTS                |        COLOR 0 0 0                              |
+  |  END # SYMBOL                  |        WIDTH 15                                 |
+  |  SYMBOL                        |        LINECAP butt                             |
+  |    NAME "arrow-offset-start"   |      END # STYLE                                |
+  |    TYPE vector                 |      STYLE                                      |
+  |    FILLED true                 |        GEOMTRANSFORM "start"                    |
+  |    POINTS                      |        COLOR 0 255 0                            |
+  |      5 0.4                     |        SYMBOL "arrow-offset-start"              |
+  |      8 0.4                     |        SIZE 15.0                                |
+  |      8 0                       |        ANGLE AUTO                               |
+  |      10 0.8                    |      END # STYLE                                |
+  |      8 1.6                     |      STYLE                                      |
+  |      8 1.2                     |        GEOMTRANSFORM "start"                    |
+  |      5 1.2                     |        COLOR 255 0 0                            |
+  |      5 0.4                     |        SYMBOL "circlef"                         |
+  |    END # POINTS                |        SIZE 3                                   |
+  |  END # SYMBOL                  |      END # STYLE                                |
+  |                                |      STYLE                                      |
+  |                                |        GEOMTRANSFORM "end"                      |
+  |                                |       COLOR 0 255 0                             |
+  |                                |        SYMBOL "arrow-offset-end"                |
+  |                                |        SIZE 15.0                                |
+  |                                |        ANGLE AUTO                               |
+  |                                |      END # STYLE                                |
+  |                                |      STYLE                                      |
+  |                                |        GEOMTRANSFORM "end"                      |
+  |                                |        COLOR 255 0 0                            |
+  |                                |        SYMBOL "circlef"                         |
+  |                                |        SIZE 3                                   |
+  |                                |      END # STYLE                                |
+  |                                |    END # CLASS                                  |
+  |                                |  END # LAYER                                    |
+  +--------------------------------+-------------------------------------------------+
+
+.. table:: Symbol tricks - shift - asymmetrical tags
+
+  +--------------------------------+-------------------------------------------------+
+  | SYMBOLs                        | LAYER STYLEs                                    |
+  +================================+=================================================+
+  |.. code-block:: mapfile         |.. code-block:: mapfile                          |
+  |                                |                                                 |
+  |  SYMBOL                        |  LAYER  # Line - symbol overlay                 |
+  |    NAME "fence-tag"            |    STATUS DEFAULT                               |
+  |    TYPE vector                 |    TYPE LINE                                    |
+  |    POINTS                      |    FEATURE                                      |
+  |      0 5                       |      POINTS                                     |
+  |      0 10                      |        20 50                                    |
+  |    END # POINTS                |        40 55                                    |
+  |  END # SYMBOL                  |        60 55                                    |
+  |                                |        70 50                                    |
+  |  SYMBOL                        |      END # Points                               |
+  |    NAME "vert-line"            |    END # Feature                                |
+  |    TYPE vector                 |    CLASS                                        |
+  |    POINTS                      |      STYLE                                      |
+  |      0 0                       |        COLOR 0 0 0                              |
+  |      0 10                      |        WIDTH 4                                  |
+  |    END # POINTS                |      END # STYLE                                |
+  |  END # SYMBOL                  |      STYLE                                      |
+  |                                |        COLOR 0 0 0                              |
+  |                                |        SYMBOL "fence-tag"                       |
+  |                                |        SIZE 40.0                                |
+  |                                |        WIDTH 3                                  |
+  |                                |        ANGLE 30                                 |
+  |                                |        GAP -50                                  |
+  |                                |      END # STYLE                                |
+  |                                |      STYLE                                      |
+  |                                |        COLOR 255 0 0                            |
+  |                                |        SYMBOL "circlef"                         |
+  |                                |        SIZE 1                                   |
+  |                                |        GAP -50                                  |
+  |                                |      END # STYLE                                |
+  |                                |    END # CLASS                                  |
+  |                                |  END # LAYER                                    |
+  +--------------------------------+-------------------------------------------------+
+
+.. table:: Symbol tricks - shift - asymmetrical symbols.  Unshifted symbol v-line, shifted symbol v-line-offs
+
+  +--------------------------------+
+  | SYMBOLs                        |
+  +================================+
+  |.. code-block:: mapfile         |
+  |                                |
+  |  SYMBOL                        |
+  |    NAME "v-line"               |
+  |    TYPE vector                 |
+  |    POINTS                      |
+  |      0  0                      |
+  |      5  10                     |
+  |      10 0                      |
+  |    END # POINTS                |
+  |  END # SYMBOL                  |
+  |                                |
+  |  SYMBOL                        |
+  |    NAME "v-line-offs"          |
+  |    TYPE vector                 |
+  |    POINTS                      |
+  |      0 10                      |
+  |      5 20                      |
+  |      10 10                     |
+  |    END # POINTS                |
+  |  END # SYMBOL                  |
+  +--------------------------------+
+
+
 Current Problems / Open Issues
 ==============================
 
-The current version of MapServer renders open symbols (e.g. a cross) and empty
-symbols of the TYPE VECTOR incorrectly by filling them. This bug has been removed
-during our code examination and should be eliminated with a future release.
-Additionaly the OUTLINECOLOR-parameter can not be used to create a 1 pixel
-outline for symbols and characters on a line. This can be achieved in a more
-flexible way as mentioned above. Another problem concerns the use of line patterns
-(e.g. dashed line) on features with many points and nooks. The line pattern
-will then often be displayed irregularly (see Table9).
+`GAP` - `PATTERN` incompatibility
+-----------------------------------
 
-**Table 8: Use of a simple cross on a line**
+Creating advanced line symbols involving dashed lines are difficult
+due to the incompatibility of the dashed line mechanisms (`PATTERN`)
+and the symbol on line placement mechanisms (`GAP`).  A solution could
+be to allow `GAP` be a list instead of a single number (perhaps
+renaming to `GAP`\s or `DISTANCES`), but it would also be necessary to
+introduce a new parameter to specify the distance to the first symbol
+on the line ('STARTGAP`\?).
 
-+--------------------------------+-------------------------------------------------+
-| CLASS-Section from the Mapfile | Character from the Symbolfile                   |
-+================================+=================================================+
-|.. code-block:: mapfile         |.. code-block:: mapfile                          |
-|                                |                                                 |
-|  CLASS                         |  SYMBOL                                         |
-|    STYLE                       |    NAME "cross2"                                |
-|      SIZE 1                    |    TYPE VECTOR                                  |
-|      COLOR 0 0 0               |    POINTS                                       |
-|    END                         |      0   0                                      |
-|    STYLE                       |      1   1                                      |
-|      SYMBOL "cross2"           |      -99 -99                                    |
-|      SIZE 8                    |      0   1                                      |
-|      COLOR 204 153 0           |      1   0                                      |
-|      OFFSET 1 -7               |    END                                          |
-|    END                         |    STYLE                                        |
-|  END                           |      1 15 1 15                                  |
-|                                |    END                                          |
-|                                |  END                                            |
-+--------------------------------+-------------------------------------------------+
+GAP does not support two dimensions, so the same gap will have to be
+used for for the x and the y directions.  The introduction of new
+parameters - GAPX and GAPY could be a solution to this.
 
-.. image:: ../../images/cross-fill-example.png
+Summing up
+==========
 
+We hope that this document will help you to present your data in a
+cartographically nice manner with MapServer and explains some basics
+and possibilities of the concept of MapServer as well as some
+weaknesses. It would be great to put together a cartographical symbols
+library for the profit of everyone.  This especially concerns truetype
+fonts, which have been developed for some projects and contain some
+typical signatures for cartographical needs.
 
-**Table9: Irregularities with line patterns**
-
-+--------------------------------+-------------------------------------------------+
-| CLASS-Section from the Mapfile | Character from the Symbolfile                   |
-+================================+=================================================+
-|.. code-block:: mapfile         |.. code-block:: mapfile                          |
-|                                |                                                 |
-|  CLASS                         |  SYMBOL                                         |
-|    STYLE                       |    NAME "border2"                               |
-|      SYMBOL "border2"          |    TYPE VECTOR                                  |
-|      SIZE 2                    |    POINTS                                       |
-|      COLOR 255 0 0             |      0 0                                        |
-|    END                         |      1 0                                        |
-|  END                           |      1 0.8                                      |
-|                                |      0 0.8                                      |
-|                                |      0 0                                        |
-|                                |    END                                          |
-|                                |    STYLE                                        |
-|                                |      10 6 1 6                                   |
-|                                |    END                                          |
-|                                |    FILLED TRUE                                  |
-|                                |  END                                            |
-+--------------------------------+-------------------------------------------------+
-
-.. image:: ../../images/irregular-line-pattern.png                               
-
-All symbols in this document were created with MAP files and SYMBOL files, which
-can be `downloaded`_. If you want to use this MAP
-file please note, that your MapServer must at least be able to handle with 50
-symbols. Otherwise you get an error while loading the SYMBOL files.
-
-.. _`downloaded`: http://www.mapmedia.de/fileadmin/user_upload/dokumente/umn_signaturen_howto/vortrag_demo.zip
-
-I hope that this document will help you to present your data in a cartographically
-nice manner with the UMN MapServer and explains some basics and possibilities
-of the concept of the UMN MapServer as well as some weakness. It would be great
-to put together a cartographic symbols library for the profit of everyone.
-This especially concerns truetype-fonts, which were developed for some projects
-and contain some typical signatures for cartographic needs.
-
-You can also view the `discussion paper for the improvement of the MapServer Graphic-Kernel`_ (sorry as yet German only).
+You can also view the
+`discussion paper for the improvement of the MapServer Graphic-Kernel`_
+(German only).
 
 .. _`Discussion paper for the improvement of the MapServer Graphic-Kernel`: http://www.mapmedia.de/fileadmin/user_upload/dokumente/umn_signaturen_howto/DiskussionsPaper-UMNGraphikKernel.pdf
