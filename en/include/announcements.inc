@@ -1,6 +1,6 @@
 **2012-05-12 - MapServer 6.0.0 is released**
 
-MapServer 6.0.0 has been released. See :ref:`the release announcement <6-0>`
+MapServer 6.0.0 has been released. See :ref:`the release announcement <announce-6-0>`
 for more details and head to :ref:`download` to obtain a copy.
 
 **2011-04-13 - MapServer 6.0.0-beta6 is released**
