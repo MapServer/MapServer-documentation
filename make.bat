@@ -5,7 +5,7 @@ REM using delayed expansion of variables...
 setlocal enableextensions enabledelayedexpansion
 
 REM ...build a list of directories to be processed (language directories)
-SET TRANSLATIONS=de es fr
+SET TRANSLATIONS=de es fr cn
 SET LANGUAGES=en %TRANSLATIONS%
 
 set SPHINXBUILD=sphinx-build
