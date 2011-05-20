@@ -1,0 +1,199 @@
+.. _rfc71:
+
+=========================================================================
+MS RFC 71: Integration of Mod-Geocache in the MapServer project
+=========================================================================
+
+:Date:  2011/05/20
+:Author: Thomas Bonfort
+:Contact: tbonfort at terriscope dot fr
+:Last Edited: $Date$
+:Status: Draft
+:Version: MapServer 7.0
+:Id: $Id$
+
+Description: This RFC proposes the integration of mod-geocache in the MapServer project.
+
+1. Overview
+-----------
+Mod-Geocache is a recent tile caching solution that runs in front of a WMS server
+either as an apache module or as a fastCGI executable. It can connect to any WMS compliant
+server, but given its source code language and the roots of its core developpers, it would
+make sense to integrate it tightly with the mapserver project, to ease configuration for
+end-users, and provide higher QA through a larger development team.
+
+1.1 The need for a tile caching solution
+----------------------------------------
+The usage patterns of web mapping have evolved in the past years and is more and more based around
+the pre-generation of image tiles rather than the direct creation of images from the source data.
+
+Current solutions for serving map tiles include TileCache, MapProxy, and GeoWebCache, all of which
+accomplish the task successfully but in a manner that does not integrate ideally with the MapServer
+project:
+ - They do not run native code, which incurs a minor performance overhead, and can be an inconvenience
+   in the context of high performance data dissemination
+ - They do not share their configuration with the server they are proxying, as such requiring users
+   to duplicate configuration variables and metadata.
+ - In the case of the python servers, they require an additional component to function (mod-python,
+   mod-wsgi, or fastcgi wrapper) that is cumbersome to configure on non-mainstream platforms. The GIL
+   is also a bottleneck for multi-threaded servers for the requests that require an access to native
+   code (notably related to image format encoding and decoding).
+ - NIH ;) and as it can be written in C, why not use that directly?
+
+1.2 The mod-geocache project
+----------------------------
+Mod-geocache is a recent project (oct 2010), distributed under an apache license. It is written in 
+plain C using a semi object-oriented architecture (heavy use of structure inheritance and function
+pointers). Being primarily aimed at being run as an apache module, it is very fast as it runs as native
+code inside the process treating the http requests (there is no overhead in cgi process creation or 
+fastcgi ipc).
+
+Its list of features include:
+
+ * services WMS, WMTS, TMS, VirtualEarth/Bing and GoogleMaps requests
+ * ability to respond to untiled WMS requests by merging tiles from the cache or forwarding
+   them to the wms source
+ * responds to WMS/WMTS GetFeatureInfo requests (forwarded to source service)
+ * KML superoverlay generation
+ * data provided by WMS backends (GDAL supported sources planned)
+ * experimental memcached cache
+ * configurable metatiling, with inter-process/inter-thread locking and synchronization 
+   to avoid overloading the source wms when the tiles are not seeded yet.
+ * on-the-fly tile merging for combining multiple tiles into a single image
+ * image post-processing (recompression and quantization) when arriving from a backend
+ * interprets and produces cache control headers: Last-Modified, If-Modified-Since, Expires
+ * multithreaded seeding utility
+ * ability to add a custom watermark on stored tiles
+ * can produce a fastCGI executable for using with other webservers than apache
+ * configurable symbolic linking of blank tiles to gain disk storage
+ * configurable error reporting: plain http error code, textual message, or empty (blank) image
+ * ability to specify vendor params or dimensions to be forwarded to the WMS backend
+   (and build a cache that takes these parameters into account)
+ * rule-based proxying of non-tile requests to (an)other server(s), e.g. for WFS, WFS-T, etc...
+
+
+1.3 Integration Overview
+------------------------
+Mod-geocache will be modified to read its configuration from a supplied mapfile rather than its own
+xml file as is now. When used in conjunction with mapserver and tinyOWS, it will act as a proxy to
+these servers: if an incoming request corresponds to soemthing that can be served from cache it will
+act as a classic tile server, if not it will proxy the request to mapserver or tinyows (or any other
+OGC compliant server).
+
+2. Governance
+-------------
+
+2.1 Finding a Name
+------------------
+"Mod-Geocache" as a name is a poor choice, and should be changed during the integration with MapServer.
+The author has no predefined idea as to what the solution should be named, ideas will be greatly
+appreciated.
+
+2.2 Release Cycles
+------------------
+Mod-geocache being a recent project, it is undergoing development at a pace that is incompatible
+with the MapServer release cycle. As such, the release cycle of mod-geocache will be at first
+decoupled from the mapserver one: mod-geocache releases will be produced any time there is a mapserver
+release, but also at a faster rate if needed.
+
+2.3 Source Code Location
+------------------------
+The mod-geocache code will be located in a subdirectory of the mapserver repository, e.g.
+trunk/mapserver/mod-geocache
+
+2.4 RFCs and Decision Process
+-----------------------------
+In the early steps of the integration, development surrounding the core of mod-geocache unrelated to
+the MapServer project will be undertaken in a relaxed manner compared to the RFC based decision taking
+that prevails for MapServer.
+
+All non trivial changes to the mod-geocache core will be announced for discussion on the mapserver-dev
+mailing list, but will not undergo the rfc voting process unless there is a direct interaction with the
+actual mapserver functionality.
+
+Once the transitionning phase of the integration has been completed, the development on mod-geocache
+will follow the traditional RFC based decision taking.
+
+2.5 Licence
+-----------
+The apache licence of mod-geocache will be switched to the same licence as MapServer.
+
+2.6 Tickets
+-----------
+Mod-geocache is hosted on google-code and uses its integrated  issue tracking system. The MapServer
+trac instance will be used, once a dedicated component for mod-geocache has been created.
+
+There are currently no open bugs to transition to the MapServer trac. The open feature enhancements
+will be manually migrated to the MapServer trac instance.
+
+2.7 SVN Import
+--------------
+Mod-geocache trunk will be imported in MapServer SVN.
+
+Previous commit history will be kept on the old google-code SVN, for a while.
+
+
+3 A common MapFile as config file 
+-----------------------------------
+
+3.1 LibMapfile API
+------------------
+A LibMapFile API will be created out of the mapserver source tree, and will require some refactoring
+of header and source files. The MapServer API itself should not be changed as the refactoring will mostly
+concern moving some functions and declarations out into separate files.
+
+3.2 Configuration Directives
+----------------------------
+New keywords and/or metadata will have to be added to the mapserver parser. The exact syntax and the
+extent of the configuration keywords must be discussed as part of the commenting period of this RFC.
+
+The configuration directives being rather extensive, a tradeoff will have to be found between ease of
+syntax and similarity to actual mapserver keywords.
+
+3.3 Documentation
+-----------------
+The mod-geocache documentation is rather sparse, and consists essentially of a commented configuration
+file. There will have to be an effort to add documentation to the main mapserver doc site, and to
+migrate the few wiki pages from the google-code hosting.
+
+4.  Code Review 
+---------------------
+
+4.1 Code Origin
+---------------
+All C code was written from scratch by myself and Steve Woodbridge, so should not be a
+real problem. Image io functions based on libpng/libjpeg have been vastly inspired by
+the same functions in mapserver, and could be merged together in a second phase.
+
+4.2 Code Quality
+----------------
+Similar to MapServer.
+
+4.3 Security Audit 
+------------------
+No external security audit has been performed on the code.
+Being run as an apache module that potentially receives untrusted data, security has always been a 
+concern when writing the code, but I'm no security expert.
+
+4.4 External Dependancies
+-------------------------
+ - libcurl (required)
+ - apr(required) / apr-util(optional)
+ - libpng (required)
+ - libjpeg (required)
+ - pcre (optional)
+ - OGR (for the seeder, optional)
+ - libcairo (optional, required for servicing GetMap requests built from cached tiles)
+ - FastCGI (optional)
+
+4.5 Build system
+----------------
+mod-geocache like MapServer uses autoconf (without automake) and Makefiles to build stuff.
+
+4.6 IP and Patent overview
+--------------------------
+Patent review is left as an exercise for users coming from countries with a broken patent system ;)
+
+5. Voting history
+-----------------
+None
