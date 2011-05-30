@@ -1,0 +1,436 @@
+.. _expressions:
+
+*****************************************************************************
+ Expressions
+*****************************************************************************
+
+:Author:       Dirk Tilger
+:Contact:      dirk at MIRIUP.DE
+:Author:       Umberto Nicoletti
+:Contact:      umberto.nicoletti at gmail.com
+:Revision: $Revision: 8295 $
+:Date: $Date: 2008-12-27 06:08:04 +0100 (sam., 27 déc. 2008) $
+:Last Updated: 2007/07/09
+
+.. contents::
+    :depth: 2
+    :backlinks: top
+
+Introduction
+-------------------------------------------------------------------------------
+
+Depuis la version 4.6.1, les expressions sont utilisées en deux endroits. Ils 
+sont utilisés pour filtrer les couches pour des enregistrements spécifiques dans 
+le jeu de données ainsi que dans :ref:`CLASS` :ref:`EXPRESSIONs <expressions>` 
+pour définir à quels items la :ref:`CLASS` données s'applique.
+
+Types d'expression
+-------------------------------------------------------------------------------
+
+Les expressions sont utilisées pour faire correspondre des valeurs d'attributs 
+avec des vérifications logiques. Il y a trois types différents d'expressions que 
+vous pouvez utiliser avec MapServer :
+
+ * Comparaison de chaîne de caractères : un seul attribut est comparé avec une 
+    valeur de chaîne de caractères.
+ * Expressions régulières : à une expression régulière correspond un seul 
+    attribut.
+ * "Expression logique de MapServer" : un ou plusieurs attributs sont comparés 
+    en utilisant des expressions logiques.
+
+Comparaison de chaîne de caractères
+...............................................................................
+
+Comparaison de chaîne de caractères signifie comme le terme le suggère que les 
+valeurs de l'attribut sont vérifiés pour qu'ils correspondent à une valeur. Les 
+comparaisons de chaîne de caractères sont la forme la plus simple des expressions 
+de MapServer et l'option la plus rapide.
+
+.. index::
+    pair: EXPRESSION; CLASSITEM
+    
+Pour utiliser une comparaison de chaîne pour filtrer une :ref:`LAYER`, les deux 
+paramètres FILTERITEM et FILTER doivent être définie. FILTERITEM est définie au 
+nom de l'attribut. FILTER est définie à la valeur pour la comparaison. La même 
+règle s'applique aux paramètres :ref:`CLASSITEM <classitem>` et EXPRESSION dans 
+l'objet :ref:`CLASS`.
+
+Exemple pour un simple filtre de comparaison de chaîne :
+
+::
+
+    FILTER "2005"
+    FILTERITEM "year"
+
+récupèrera tous les enregistrements qui ont l'attribut "year" définie à "2005". 
+La carte renvoyée apparaitra comme si le jeu de données ne contiendrait que les 
+features qui ont le champ "year" définie à "2005".
+
+De même, une classification pour les features correspondant au filtre au-dessus 
+peut être réalisée en définissant le paramètre CLASSITEM dans l'objet LAYER et le 
+paramètre EXPRESSION dans l'objet CLASS.
+
+::
+
+    LAYER
+        NAME "example"
+        CLASSITEM "year"
+        ...
+        CLASS
+            NAME "year-2005"
+            EXPRESSION "2005"
+            ...
+        END
+    END
+
+Pour une raison expliquée plus tard sur les valeurs les deux paramètres CLASSITEM 
+et FILTERITEM ne doivent pas débuter par un caractère '/' ou '('.
+
+.. index:: Regular expressions
+
+Comparaison d'expression régulière
+...............................................................................
+
+Les expressions régulières sont un mécanisme de correspondance de motif textuel 
+standard qui vient du monde UNIX. La fonctionnalité de correspondance des 
+expressions régulières provient du système d'exploitation sur les systèmes UNIX 
+et dépend donc sensiblement du système d'exploitation. Cependant leur ensemble 
+minimal est définir par le standard POSIX. La documentation de la bibliothèque 
+des expressions régulières est habituellement la page manuel "regex" ("man regex").
+
+Les expressions régulières avec MapServer fonctionne de la même manière au 
+comparaison de chaîne, mais permet plus d'opération complexe. Elles sont plus 
+lentes que les pures comparaisons de chaînes, mais peut être encore plus rapide 
+les expressions logiques. Comme dans la comparaison de chaînes l'utilisation 
+d'expressions régulières, un paramètre FILTERITEM ou CLASSITEM doit être 
+définie, respectivement.
+
+Une expression régulière typiquement consiste à utiliser des caractères avec des 
+significations spéciales et d'autres qui sont interprétés tels quels. Les 
+caractères alphanumériques sont pris tels quels. Les caractères avec une 
+signification spéciale sont :
+
+ * **.** correspondra à un seul caractère
+ * **[** et **]** sont utilisé pour le regroupement. Par exemple *[A-Z]* 
+    correspondra aux caractères A,B,C,...,X,Y,Z.
+ * **{**, **}**, et **\*** sont utilisé pour définir combien de fois un motif doit 
+    se répéter.
+ * **^** correspond au début, **$** correspond à la fin de la valeur.
+ * Le backslash **\\** est utilisé pour protéger les caractères spéciaux.
+   Par exemple *\$* correspondra au caractère dollar.
+
+La configuration :ref:`LAYER` suivante présentera sur la carte toutes les 
+features dont l'attribut "nomlocalisation" aura une valeur "hotel" :
+
+::
+
+    LAYER
+        NAME "exemple-regexp"
+        FILTERITEM "nomlocalisation"
+        FILTER /hotel/
+        ...
+    END
+
+.. note:: 
+
+    Les expressions régulières sont sensible à la casse, donc les features ayant 
+    "Hotel" dans leur attribut ne sortiront pas.
+
+Exemple : récupère les enregistrements qui ont une valeur égale au siècle en 
+cours (comme 2005 ;) dans l'attribut "annee"
+
+::
+
+    FILTERITEM "annee"
+    FILTER /^20[0-9][0-9]/
+
+Exemple : récupère tous les enregistrements qui sont purement nuémrique ou vide
+
+::
+
+    FILTER /^[0-9]*$/
+
+.. note:: 
+    
+    Si vous avez fréquemment des erreurs de *segmentation faults* lorsque vous 
+    travaillez avec MapServer et les expressions régulières, il se peut que votre 
+    environnement de travail actuel est relié avec plus d'une bibliothèque 
+    d'expressions régulière. Cela peut arriver lorsque MapServer est lié avec 
+    des composants qui apportent leur propre copie, comme httpd d'Apache ou PHP. 
+    Dans ce cas l'auteur a obtenu les meilleurs expériences en utilisant pour 
+    tous ces composants la bibliothèque d'expression régulière du système ((i.e. 
+    celui dans libc). Cependant cela implique d'éditer les fichiers de 
+    compilation de certains composants.
+
+"Expressions de MapServer"
+-------------------------------------------------------------------------------
+Les expressions de MapServer sont les plus complexes et selon comment ils sont 
+écrit ils peuvent devenir particulièrement lent. Ils peuvent correspondre à 
+n'importe quel attribut et donc permettent des filtres et des classifications en 
+fonction d'un ou plusieurs attributs. Au delà des opérations de pure logique il 
+y a également des expressions qui permettent certaines opérations arithmétiques, 
+de chaînes et de temps.
+ 
+Pour être capable d'utiliser une expression de MapServer pour une valeur de FILTER 
+ou de EXPRESSION,  l'expression doit être de valeur logique.
+
+Expressions logiques
+...............................................................................
+
+Syntaxiquement, une expression logique est complètement encapsulée entre 
+parenthèse. Les expressions logiques prent des valeurs logiques en entrée et 
+retournent des valeurs logiques. Une expression logique est soit 'true' soit 
+'false'.
+
+ * ( ( ... ) AND ( ... ) )
+   ( ( ... ) && ( ... ) )
+   ... deviendra true quand les deux sous-expressions logiques sont true.
+
+ * ( ( ... ) OR ( ... ) )
+   ( ( ... ) || ( ... ) )
+   ... deviendra true quand au moins une des deux sous-expressions logiques est 
+    true.
+
+ * NOT ( ... )
+   ! ( ... )
+   ... deviendra true quand l'expression logique dans les parenthèses deviendra
+   false.
+   
+Opération de chaînes de caractères qui résulte d'une valeur logique
+...............................................................................
+
+Syntaxiquement, une chaîne de caractères est encapsulé entre guillemets doubles.
+
+ *  ( "String1" eq "String2" )
+    ( "String1" == "String2" )
+    ( "String1" = "String2" )
+    ... deviendra true lorsque les deux chaînes sont égales. Cette opération est 
+    identique à la comparaison de chaîne de MapServer décrite plus tôt.
+
+ *  ( "String1" != "String2" )
+    ( "String1" ne "String2" )
+    ... deviendra true lorsque les deux chaînes ne sont pas égales.
+
+ *  ( "String1" < "String2" )
+    ( "String1" lt "String2" )
+    ... deviendra true lorsque "String1" est plus petite que "String2"
+
+ *  ( "String1" > "String2" )
+    ( "String1" gt "String2" )
+    ... deviendra true lorsque "String1" est plus grande que "String2"
+
+ *  ( "String1" <= "String2" )
+    ( "String1" le "String2" )
+    ... deviendra true lorsque "String1" n'est pas plus grande que "String2"
+
+ *  ( "String1" >= "String2" )
+    ( "String1" ge "String2" )
+    ... deviendra true lorsque "String1" n'est pas plus petite que "String2"
+
+ *  ( "String1" IN "token1,token2,...,tokenN" )
+    ... deviendra true lorsque "String1" est égale à l'une des valeurs données.
+
+.. note:: 
+
+    Le séparateur pour ces expressions est la virgule. Cela signifie que vous ne 
+    devez pas ajouter des espaces vides inutiles à la liste et que vous ne 
+    pouvez pas comparer des expressions qui possèdent des virgules.
+
+ *  ( "String1" =~ /regexp/ )
+    ... deviendra true lorsque "String1" correspond à l'expression régulière
+    "regexp". Cette opération est identique à la correspondance d'expression 
+    régulière décrite plus tôt.
+
+Opérations de chaîne qui retournent des valeurs de chaînes
+...............................................................................
+
+Il n'y a qu'une opération pour les chaînes qui retourne une valeur de chaîne :
+
+ *  "String1" + "String2
+    ... renverra "String1String2", les deux seront donc concaténé ensemble.
+
+Expressions arithmétiques retournant des valeurs logiques
+...............................................................................
+L'élément de base pour l'opération arithmétique est le nombre. Il y a des 
+opérations purement arithmétique qui renvoient des nombres comme leur valeur. 
+Ils seront couvert dans la section suivante.
+
+ *  ( n1 eq n2 )
+    ( n1 == n2 )
+    ( n1 = n2 )
+    ... deviendra true quand les deux nombres sont égaux.
+
+ *  ( n1 != n2 )
+    ( n1 ne n2 )
+    ... deviendra true quand les deux nombres ne sont pas égaux.
+
+ *  ( n1 < n2 )
+    ( n1 lt n2 )
+    ... deviendra true quand n1 est plus petit que n2
+
+ *  ( n1 > n2 )
+    ( n1 gt n2 )
+    ... deviendra true quand n1 est plus grand que n2.
+
+ *  ( n1 <= n2 )
+    ( n1 le n2 )
+    ... deviendra true quand n1 est plus petit ou égal à n2
+
+ *  ( n1 >= n2 )
+    ( n1 ge n2 )
+    ... deviendra true quand n1 est lpus grand ou égal à n2.
+
+ *  ( n1 IN "number1,number2,...,numberN" )
+    ... deviendra true quand n1 est égal à l'un des nombres donnés.
+
+
+Expression arithmétique retournant un nombre
+...............................................................................
+Comme établi précédemment, MapServer peut réaliser des opérations purement numérique avec les nombres.
+
+ *  n1 + n2
+    ... donne la somme de n1 et de n2
+
+ *  n1 - n2
+    ... donnera la soustraction de n2 à n1
+ 
+ *  n1 \* n2
+    ... donnera n1 multiplié par n2
+
+ *  n1 / n2>
+    ... donnera n1 divisé par n2
+ 
+ *  -n1
+    ... donnera la valeur négative de n1
+
+ *  n1 ^ n2
+    ... donnera n1 à la puissance n2
+
+ *  length ( "String1" )
+    ... donnera le nombre de caractère de "String1"
+
+.. note::
+    Quand les opérations numériques ci-dessus sont utilisé comme opérations
+    logiques, les règle suivantes s'appliquent : les valeurs égalent à zéro
+    seront équivalentes à 'false' et tout le reste à 'true'. Ce qui signifie 
+    que l'expression 
+
+::
+    ( 6 + 5 )
+    ... 
+
+sera évalué comme true, mais 
+
+::
+
+    ( 5 - 5 )
+    ...
+
+sera évalué comme false.
+
+Expressions temporelles
+...............................................................................
+
+MapServer utilise un type horaire interne pour faire la comparaison. Pour 
+convertir une valeur de clé dans ce type horaire il vérifiera la liste 
+ci-dessous du haut vers le bas si l'horaire définie correspond et dans ce cas 
+réalisera la conversion.
+
+ * YYYY-MM-DDTHH:MM:SSZ ('Z' et 'T' étant le caractère)</i>
+ * YYYY-MM-DDTHH:MM:SS ('T' étant le caractère)</i>
+ * YYYY-MM-DD HH:MM:SS
+ * YYYY-MM-DDTHH:MM ('T' étant le caractère)</i>
+ * YYYY-MM-DD HH:MM
+ * YYYY-MM-DDTHH ('T' étant le caractère)</i>
+ * YYYY-MM-DD HH
+ * YYYY-MM-DD
+ * YYYY-MM
+ * YYYY
+ * THH:MM:SSZ ('Z' et 'T' étant le caractère)</i>
+ * THH:MM:SS
+
+Pour les valeurs horaires obtenues de cette manière, les opérations suivantes 
+sont gérées :
+
+ *  ( n1 eq n2 )
+    ( n1 == n2 )
+    ( n1 = n2 )
+    ... deviendra true quand les deux horaires sont égaux.
+
+ *  ( t1 != t2 )
+    ( t1 ne t2 )
+    ... deviendra true quand les deux horaires ne sont pas égaux.
+
+ *  ( t1 < t2 )
+    ( t1 lt t2 )
+    ... deviendra true quand t1 est plus tôt que t2
+
+ *  ( t1 > t2 )
+    ( t1 gt t2 )
+    ... deviendra true quand t1 est plus tard que t2.
+
+ *  ( t1 <= t2 )
+    ( t1 le t2 )
+    ... deviendra true quand t1 est plus tôt ou égal à t2
+
+ *  ( n1 >= n2 )
+    ( n1 ge n2 )
+    ... deviendra true quand t1 est plus tard ou égal t2.
+
+Comment les attributs sont référencés
+...............................................................................
+
+Pour être utile, nous devons utiliser les valeurs des attributs dans les 
+expressions ce qui est réalisé en englobant le nom de l'attribut entre crochet, 
+comme ceci [KEY]. Avant que l'expression soit évaluée, chaque occurence de 
+"[KEY]" sera remplacé par la valeur de l'attribut "KEY".
+
+Exemple : comment une comparaison simple de chaîne de caractères serait évaluée. 
+Le filtre est définir par :
+
+::
+
+    FILTER ( "[BUILDING_NAME]" == "National Museum" )
+
+Il y a un attribut "BUILDING_NAME" et sa valeur est "National Government 
+Building". L'expression réellement évaluée est ...
+
+::
+
+    "National Government Building" == "National Museum" )
+
+... et devrait être donc false.
+
+Certaines couches n'ont pas d'attributs. Pour les couches raster par exemple 
+des attributs spéciaux ont été définie pour être utilisé pour la classification :
+
+ *  [PIXEL]
+    ... deviendra la valeur du pixel sous forme de nombre
+ *  [RED], [GREEN], [BLUE]
+    ... deviendra la valeur de la couleur pour la composante rouge, vert et bleu 
+    de la valeur du pixel, respectivement.
+
+Protection des guillemets dans les chaînes de caractères
+...............................................................................
+
+.. note::
+
+    L'échappement des apostrophes ne sont pas géré dans les versions de MapServer 
+    inférieure à 5.0.
+
+À partir de MapServer 5.0, si votre jeu de données contient des apostrophes 
+doubles vous pouvez utiliser une séquence utilisée en C dans la chaîne 
+d'expression. Par exemple si votre attribut *"NAME"* a une valeur *'National "hero" statue'* 
+vous pouvez écrire l'expression FILTER comme suit :
+
+::
+
+    FILTER ( "[NAME]" == "National \"hero\" statue" )
+    ...
+
+pour échapper une simple quote utilisez la séquence suivante à la place :
+
+::
+
+    FILTER ( "[NAME]" == "National \'hero\' statue" )
+
