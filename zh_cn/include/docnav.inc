@@ -1,6 +1,6 @@
 
 
-..   csv-table:: Quick Links
+..   csv-table:: 快速通道
 
     :ref:`introduction`,:ref:`installation`,:ref:`mapfile`
     :ref:`mapscript`,:ref:`input`,:ref:`output`
