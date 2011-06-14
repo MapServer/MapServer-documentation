@@ -3,7 +3,7 @@
 	============================   =============================================================================================
 	Label                          Title
 	============================   =============================================================================================
-	about                          :ref:`About <about>`
+        about                          :ref:`About <about>`
 	agg                            :ref:`AGG Rendering Specifics <agg>`
 	antialias                      :ref:`AntiAliasing with MapServer <antialias>`
 	arcinfo                        :ref:`ArcInfo <arcinfo>`
