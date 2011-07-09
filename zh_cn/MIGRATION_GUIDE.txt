@@ -40,7 +40,7 @@ the area value for annotion.
 详情请参见 http://mapserver.org/development/rfc/ms-rfc-64.html 和 http://trac.osgeo.org/mapserver/ticket/3736 。
 
 ------------------------------
-Mapfile的改变 - 标注样式
+Mapfile的变化 - 标注样式
 ------------------------------
 
 随着控制标注绘制风格需求的增加，很明显单纯无止境地扩展labelObj已经很不现实了。在6.0版本中，我们引进了标注样式的概念，即一个labelObj对象中的labelObj对象。样式可以用来给标注添加标志或者边框元素，形成一种类似于kinda的注记图层。这样做的一个好处是一步即好。也就是说你可以绘制复杂的路径并同时遮蔽起来。是不是很酷？并且，你可以绑定支持的属性值到styleObj对象的属性
@@ -66,204 +66,168 @@ Mapfile的改变 - 标注样式
 从长远来看，这变得更加灵活了，尽管有一点繁琐。
 
 ---------------------------------------
-Mapfile的改变 - 标注的MAXOVERLAPANGLE
+Mapfile的变化 - 标注的MAXOVERLAPANGLE
 ---------------------------------------
 
-:ref:`RFC60` introduced a new MAXOVERLAPANGLE keyword to filter out ANGLE 
-FOLLOW labels in which characters overlap. This new option is enabled by 
-default in 6.0 with a default value for MAXOVERLAPANGLE of 22.5 degrees. 
+:ref:`RFC60` 引进了一个新的关键字MAXOVERLAPANGLE在重叠的字符标注上过滤出ANGLE
+FOLLOW。该选项在6.0版本中默认启用，MAXOVERLAPANGLE的默认值为22.5度。
 
-As per :ref:`RFC60`, it is possible to set MAXOVERLAPANGLE to 0 to fall back 
-on pre-6.0 behavior which was to use hardcoded maxoverlapangle = 0.4*MS_PI 
-(40% of 180 degrees = 72 degrees).
+正如 :ref:`RFC60` 中显示的，可以通过设置MAXOVERLAPANGLE为0来回归到6.0以前版本的风格，从而使用maxoverlapangle = 0.4*MS_PI（180度的40%即为72度）。
 
 ---------------------------------
-Core Changes - Rendering Overhaul
+核心改变 - 渲染引擎升级
 ---------------------------------
 
-The rendering backends for MapServer have been refactored for version 6 to
-allow us to support all features across all rendering drivers (GD,AGG,PDF,SVG, etc...).
+MapServer 6.0的渲染后端已经经过了重构，使得用户可以使用所有渲染驱动（GD、AGG、PDF、SVG等）的特性。
 
-* PDF support is output through the cairo library. The dependency on the non-free
-  pdflib library has been removed. 
-* SVG support is output through the cairo library. The native mapserver SVG driver
-  has been removed.
-* AGG support is compiled in by default (no external dependency) and is the
-  default renderer for png and jpeg outputs.
-* GD support is limited to PC256 imagemodes, i.e. png or gif. It is the default
-  renderer for gif output.
-* SWF (flash) support has been dropped.
-* Header files for libpng, libjpeg and giflib are now required for building MapServer.
-  Install the -devel packages of these libraries.
-* All symbols now rotated anticlockwise following the ANGLE parameter. Previous versions
-  rotated vector symbols clockwise.
-* Polygon fills with vector symbols will not cleanly join at tile boundaries. For hatching
-  type symbology, use the HATCH symbol instead of a diagonal vector symbol.
-* Some inconsistencies between renderers have been ironed out. People relying on precise
-  symbol placement should check those, as there may have been some subtle changes in symbol
-  sizes and widths, or spacing between symbols on lines.
-* Style blocks with no associated symbol on point layers will produce no output, as opposed
-  to a single pixel in previous versions. Use an ellipse symbol instead.
+* PDF的支持已经通过cairo库的支持实现，旧的对非开源的pdflib库的依赖已经被移除。
+* SVG的支持已经通过cairo库的支持实现，MapServer原生的SVG库已经被移除。
+* AGG的支持已经被默认编译进来（没有外部依赖关系），并且作为png和jpeg的默认输出渲染引擎。
+* GD的支持仅限于PC256 imagemodes，亦即png或gif。其作为gif的默认输出渲染引擎。
+* SWF（flash）的支持已经被废弃。
+* 构建MapServer现在需要添加libpng、libjpeg和giflib头文件，可以安装这些库文件的开发包（-devel）。
+* 设置了ANGLE参数之后，所有的符号都会逆时针旋转对应的角度，之前的版本会顺时针旋转。
+* 充填了矢量符号的多边形在边界处可能不会很好地排列。对于填充类型的符号，使HATCH标志代替矢量斜对角标志。
+* 渲染引擎之间的不一致性已经得以消除。对标志的放置位置有很高要求的用户应该对此予以检查，因为标志的大小、宽度或者标志与直线间的空格会出现一些细微的变化。
+* 点图层上的样式段，如果没有设置相关的标志的话，不会产生输出，而在旧版本里会产生单个像素。可以使用一个椭圆标志来代替。
 
 ------------------------------
-Mapfile Changes - line styling
+Mapfile的变化 - 线样式
 ------------------------------
 
-All line styling must now be specified in layer STYLEs.
+所有的线样式现在必须在图层的STYLE中指定。
 
-The following parameters/keywords have been moved from SYMBOL
-to STYLE:
+以下的参数或关键字从SYMBOL移到了STYLE：
 
 PATTERN POSITION GAP LINECAP LINEJOIN LINEJOINMAXSIZE
 
-The SYMBOL STYLE parameter/keyword was renamed to PATTERN in
-version 5.
+SYMBOL和STYLE参数或关键字在5.0版本中被重命名为PATTERN。
 
-The SYMBOL TYPE cartoline has been removed.
+SYMBOL和TYPE型的绘图线已经被移除。
 
-LINECAP triangle is not supported by AGG or Cairo, and is no longer
-available.  The triangle line end effect can be achieved using
-GEOMTRANSFORM start and end with a (filled) vector triangle symbol and
-ANGLE AUTO.  This will only work for the line ends, and not for
-dashes.
+由于LINECAP三角形不AGG或Cairo所支持，因此不再可用。对直线使用填充的矢量三角形标志并设置开始和结束为GEOTRANSFORM型，然后设置ANGLE为AUTO，可以获得与之类似的三角形端点效果。这种方法只对直线起作用，对破折号不起作用。
 
 -----------
-CGI Changes
+CGI的变化
 -----------
 
-Runtime subsitution now *requires* a validation pattern be present before the
-substitution will take place (this had been optional). This can be done via
-a layer metadata tag as before or within layer or web VALIDATION blocks. See
-ticket #3522 for more information.
+运行时替代如今 *必须* 在替代之前进行有效性验证（过去的版本中为可选）。这可以在图层中或网络VALIDATION块中通过图层的元数据标记来设置。详情参见#3522号票（ticket）。
 
-All of the query map related modes (e.g. NQUERYMAP, ITEMQUERYMAP, etc...) have 
-been removed in favor of using the "qformat" parameter. That parameter takes 
-an output format name or mime/type as a value and uses that to process a set
-of query results. For example:
+所有的地图查询相关模式（例如NQUERYNMAP、ITENQUERYNMAP等）已经被废弃，代之的是使用“qformat”参数。该参数使用输出格式名称或者mime/type作为值，并且可以来处理一系列的查询结果。例如：
 
   ...&mode=nquerymap&... would become ...&mode=nquery&qformat=png24&...
 
 -----------------
-OGC Web Services
+OGC网络服务
 -----------------
 
-All OGC Web Services are now disabled by default. If you want to enable them as 
-they were in MapServer 5.6 and older releases, add the following metadata in the 
-MAP::WEB section::
+OGC网络服务现在默认被关闭。若你想要像在MapServer的5.6及之前版本中的那样启动它们，可以在
+::WEB块中添加以下的元数据::
 
  "ows_enable_request"   "*"
 
-See also: http://mapserver.org/development/rfc/ms-rfc-67.html
+令见： http://mapserver.org/development/rfc/ms-rfc-67.html
 
 ------------------------------
-Mapfile Changes - WCS Metadata
+Mapfile的变化 - WCS元数据
 ------------------------------
 
-To avoid confusion only "wcs_*" and "ows_*" prefixed metadata entries
-are evaluated in OGC WCS services. Previous versions used "wms_*"
-prefixed entries as fallback which is dropped in version 6.0 in favor of
-forcing explicit decisions.
+记住只有“wcs_*”和“ows_*”前缀的元数据块才作用在OGC的WCS服务中，这样可以避免困扰。在之前的版本中使用“wms_*”前缀的元数据入口来表达，而在新版本中已经被废弃。
 
 --------------------------------------------------------
-Mapfile Changes - Ability to escape single/double quotes
+Mapfile的变化 - Ability to escape single/double quotes
 --------------------------------------------------------
 
-We can now escape single and double quotes in strings and logical
-expressions. Examples:
+现在可以在字符串和逻辑表达式中对单引号和双引号进行转义，例如：
 
 :: 
 
-  NAME "RO\"AD" # double quote inside a a double quote delimited string
-  NAME 'RO\'AD' # single quote inside a a single quote delimited string
-  FILTER ('[CTY_NAME]' = 'Ita\'sca') # logical expression that contains a single quote
+  NAME "RO\"AD" # 在限定字符串双引号中的双引号
+  NAME 'RO\'AD' # 在限定字符串单引号中的单引号
+  FILTER ('[CTY_NAME]' = 'Ita\'sca') # 包含单引号的逻辑表达式
 
-NOTE: The escape character (backslash) will only work if the
-following character is ", ' or \.
+注意：转义符号（反斜杠符）只在后面紧跟着 "，' 和 \ 的时候才起作用。
 
-For Windows users: if you have a path string delimited by single/double
-quotes that ends with \, you will have to escape the last backslash. 
+Windows的用户们请注意：如果你们的由双引号或单引号限定的路径字符串以反斜杠 \ 结尾，你需要对最后一个反斜杠转义。
 
 ::
   
   SHAPEPATH "C:\ms4w\shapefiles\"
-  # should be modified to...
+  # 应该改为 。。。
   SHAPEPATH "C:\ms4w\shapefiles\\"
 
 ---------------------
-PHP MapScript Changes
+PHP地图脚本的变化
 ---------------------
 
-* PHP 5.2.0 or more recent is required.
-* PHP/MapScript now uses exceptions for error report. All errors are catchable.
-* Object properties can be set like all other php object. ie. myObj->myProperty = 10;
+* 要求PHP 5.2.0或以上版本。
+* PHP地图脚本现在使用异常机制来报告错误，所有的错误都可以被捕捉到。
+* 可以像其它php对象一样设置地图对象的属性，亦即如 myObj->myProperty = 10。
   
-  NOTE: The set/setProperty methods are still available. 
+  注意：set/setProperty方法依然可用。
 
-* All object constructors throw an exception on failure
-* Objects can be created with the php "new" operator. ie.
+* 所有的对象构造方法会在构建失败时抛出异常。
+* 对象可以使用php的“new”操作符创建，亦即如：
   $myShape = ms_newShapeObj(MS_SHAPE_LINE); // or
   $myShape = new shapeObj(MS_SHAPE_LINE);
 
-  NOTE: "ms_newSymbolObj()" and "new symbolObj" are different:
-        - ms_newSymbolObj() returns the id of the new/existing symbol.
-        - new symbolObj() returns the symbolObj. You don't need to 
-                          get it with getSymbolObjectById().
+  注意："ms_newSymbolObj()"和"new symbolObj"是不同的：
+        - ms_newSymbolObj()返回一个新建或已存在的标志的id。
+        - new symbolObj()返回一个symbolObj。你不必使用getSymbolObjectById()来获得该对象。
 
-* Cloneable objects should be cloned with the PHP clone keyword. There is no more clone methods.
+* 可复制的对象在复制时需要使用PHP的clone关键字，没有其他的复制方法。
 
-* Class properties that have been removed
+* 已经被移除的类的属性包括：
 
-  - mapObj: imagetype, imagequality, interlace, scale, transparent
-  - classObj: maxscale, minscale
-  - layerObj: labelsizeitem, labelangleitem, labelmaxscale, labelminscale, 
-              maxscale, minscale, symbolscale, transparency
-  - legendObj: interlace, transparent
-  - scalebarObj: interlace, transparent
-  - symbolObj: gap, stylelength
-  - webObj: minscale, maxscale
+  - mapObj：imagetype，imagequality，interlace，scale，transparent
+  - classObj：maxscale，minscale
+  - layerObj：labelsizeitem，labelangleitem，labelmaxscale，labelminscale，maxscale，minscale，symbolscale，transparency
+  - legendObj：interlace，transparent
+  - scalebarObj：interlace，transparent
+  - symbolObj：gap，stylelength
+  - webObj：minscale，maxscale
   
-* Class methods that have been removed
+* 已经被移除的类的方法包括：
 
-  - projectionObj: free
-  - lineObj: free
-  - pointObj: free
-  - rectObj: free
-  - shapeObj: free, union_geos
-  - symbolObj: free, getstylearray
-  - imageObj: free
-  - outputFormatObj: getformatoption, setformatoption
-  - shapefileObj: free
-  - layerObj: getFilter, getShape
+  - projectionObj：free
+  - lineObj：free
+  - pointObj：free
+  - rectObj：free
+  - shapeObj：free，union_geos
+  - symbolObj：free，getstylearray
+  - imageObj：free
+  - outputFormatObj：getformatoption，setformatoption
+  - shapefileObj：free
+  - layerObj：getFilter，getShape
 
-* referenceMapObj has new properties: marker, markername, markersize, maxboxsize, minboxsize
-* shapeFileObj is automatically closed/writed on destroy. (At the end of the script or with an explicit unset())
-* layerObj->clearProcessing() method now returns void.
-* mapObj->queryByIndex(): default behavior for the addToQuery parameter was not ok, now it is.
+* referenceMapObj添加了新的属性：marker，markername，markersize，maxboxsize，minboxsize
+* shapeFileObj在被销毁时可以自动关闭或写入保存。（在脚本的最后或者显式地使用一个unset()方法）
+* layerObj->clearProcessing()方法现在返回一个空值（void）。
+* mapObj->queryByIndex()：addToQuery参数的默认行为，之前不能正常使用，现在可以了。
 
-* Methods that now return MS_SUCCESS/MS_FAILURE:
+* 返回值为MS_SUCCESS/MS_FAILURE的方法有：
   
-  - symbolObj: setPoints, setPattern
-  - scalebarObj: setImageColor
-  - outputFormatObj: validate
-  - layerObj: setProcessing, addFeature, draw
-  - mapObj: moveLayerUp, moveLayerDown, zoomRectangle, zoomScale, setProjection,
-            setWKTProjection, setLayersDrawingOrder
+  - symbolObj：setPoints，setPattern
+  - scalebarObj：setImageColor
+  - outputFormatObj：validate
+  - layerObj：setProcessing，addFeature，draw
+  - mapObj：moveLayerUp，moveLayerDown，zoomRectangle，zoomScale，setProjection，      setWKTProjection，setLayersDrawingOrder
 
-* Methods that now return NULL on failure:
+* 失败时返回空值（NULL）的方法：
 
-  - classObj: clone
-  - styleObj: clone  
-  - layerObj: nextShape, getExtent
-  - mapObj: clone, draw, drawQuery getLayerByName, getProjection, 
+  - classObj：clone
+  - styleObj：clone
+  - layerObj：nextShape，getExtent
+  - mapObj：clone，draw，drawQuery getLayerByName，getProjection
 
-* Methods that now return an empty array 
+* 返回一个空数组的方法：
 
-  - symbolObj: getPatternArray
-  - layerObj: getItems, getProcessing, getGridIntersectionCoordinates
-  - mapObj: getLayersIndexByGroup, getAllGroupNames, getLayersDrawingOrder, getAllLayerNames
+  - symbolObj：getPatternArray
+  - layerObj：getItems，getProcessing，getGridIntersectionCoordinates
+  - mapObj：getLayersIndexByGroup，getAllGroupNames，getLayersDrawingOrder，getAllLayerNames
 
 -----------------------
-MapScript (All Flavors)
+MapScript所有特性
 -----------------------
 
 The layer query result handing has been re-worked (again) to address some issues introduced in
