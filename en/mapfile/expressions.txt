@@ -19,10 +19,17 @@
 Introduction
 -------------------------------------------------------------------------------
 
-As of version 4.6.1, expressions are used in two places. They're used
-to filter layers for specific records in the dataset and they're used
-in :ref:`CLASS` :ref:`EXPRESSIONs <expressions>` to specify to which
-items this :ref:`CLASS` applies to.
+As of version 6.0, expressions are used in four places:
+
+* In :ref:`LAYER` `FILTER` to specify the features of the dataset that
+  are to be included in the layer.
+
+* In :ref:`CLASS` `EXPRESSION` to specify to which features of the
+  dataset the `CLASS` applies to.
+
+* In :ref:`CLASS` `TEXT` to specify text for labeling features.
+
+* In :ref:`STYLE` `GEOMTRANSFORM`.
 
 String quotation
 ...............................................................................
@@ -75,10 +82,19 @@ Using attributes
 ...............................................................................
 
 Attribute values can be referenced in the Map file and used in
-expressions.  Referencing an attribute is done by enclosing the
-attribute name in square brackets, like this: [ATTRIBUTENAME].  Then
-every occurrence of "[ATTRIBUTENAME]" will be replaced by the actual
-value of the attribute "ATTRIBUTENAME".
+expressions. Attribute references are case sensitive and can
+be used in the following types of expressions:
+
+* In :ref:`LAYER` `FILTER`
+
+* In :ref:`CLASS` `EXPRESSION`
+
+* In :ref:`CLASS` `TEXT`
+
+Referencing an attribute is done by enclosing the attribute name in
+square brackets, like this: [ATTRIBUTENAME].  Then, every occurrence
+of "[ATTRIBUTENAME]" will be replaced by the actual value of the
+attribute "ATTRIBUTENAME".
 
 Example: The data set of our layer has the attribute "BUILDING_NAME".
 We want the value of this attribute to appear inside a string.  This
@@ -122,7 +138,7 @@ with MapServer:
 * Logical "MapServer expressions": One or more attributes are compared
   using logical expressions.
 
-String comparison
+String comparison (equality)
 ...............................................................................
 
 String comparison means, as the name suggests, that attribute values
@@ -133,10 +149,10 @@ the simplest form of MapServer expressions and the fastest option.
     pair: EXPRESSION; CLASSITEM
     
 To use a string comparison for filtering a :ref:`LAYER`, both
-FILTERITEM and FILTER must be set. FILTERITEM is set to the attribute
-name. FILTER is set to the value for comparison. The same rule applies
-to :ref:`CLASSITEM <classitem>` and EXPRESSION in the :ref:`CLASS`
-object.
+`FILTERITEM` and `FILTER` must be set.  `FILTERITEM` is set to the
+attribute name.  `FILTER` is set to the value for comparison. The same
+rule applies to :ref:`CLASSITEM <classitem>` in the :ref:`LAYER`
+object and `EXPRESSION` in the :ref:`CLASS` object.
 
 Example for a simple string comparison filter
 
@@ -150,7 +166,8 @@ The rendered map would appear as if the dataset would only contain
 those items that have the "year" set to "2005".
 
 Similarly, a classification for the items matched above would be done
-by setting the CLASSITEM in the layer and the EXPRESSION in the class
+by setting the `CLASSITEM` in the :ref:`LAYER` and the `EXPRESSION` in
+the :ref:`CLASS`:
 
 ::
 
@@ -165,8 +182,8 @@ by setting the CLASSITEM in the layer and the EXPRESSION in the class
         END
     END
 
-For a reason explained later on the values for both CLASSITEM and
-FILTERITEM should start neither with an '/' nor with a '(' character.
+For reasons explained later, the values for both `CLASSITEM` and
+`FILTERITEM` should start with neither a '/' nor a '(' character.
 
 .. index:: Regular expressions
 
@@ -174,25 +191,27 @@ Regular expression comparison
 ...............................................................................
 
 Regular expressions are a standard text pattern matching mechanism
-from the UNIX world. The functionality of regular expression matching
+from the Unix world.  The functionality of regular expression matching
 is provided by the operating system on UNIX systems and therefore
-slightly operating system dependent. However their minimum set of
-features are those defined by the POSIX standard. The documentation of
-the particular regular expression library is usually in the "regex"
-manual page ("man regex").
+slightly operating system dependent.  However, their minimum set of
+features are those defined by the POSIX standard.  The documentation
+of the particular regular expression library is usually in the "regex"
+manual page ("man regex") on Unix systems.
 
 Regular expression with MapServer work similarly to string comparison,
-but allow more complex operation. They are slower than pure string
-comparisons, but might be still faster than logical expression. As for
-string comparison, when using a regular expressions, FILTERITEM
-(`LAYER` FILTER) or CLASSITEM (`CLASS` EXPRESSION) has to be defined.
+but allow more complex operation.  They are slower than pure string
+comparisons, but might be still faster than logical expression.  As
+for string comparison, when using a regular expressions, `FILTERITEM`
+(:ref:`LAYER` `FILTER`) or `CLASSITEM` (:ref:`CLASS` `EXPRESSION`) has
+to be defined if the items are not included in the :ref:`LAYER`
+`FILTER` or :ref:`CLASS` `EXPRESSION`.
 
 A regular expression typically consists of characters with special
 meanings and characters that are interpreted as they are.
 Alphanumeric characters (A-Z, a-z and 0-9) are taken as they are.
 Characters with special meanings are:
 
-* **.** will match a single character
+* **.** will match a single character.
 
 * **[** and **]** are used for grouping. For example *[A-Z]* would
   match the characters A,B,C,...,X,Y,Z.
@@ -205,6 +224,12 @@ Characters with special meanings are:
 * The backslash **\\** is used to take away the special meaning.  For
   example *\\$* would match the dollar sign.
 
+Mapserver supports two regex operators:
+
+* **~** case insensitive regular expression
+
+* **~\*** case sensitive regular expression
+
 The following :ref:`LAYER` configuration would have all records
 rendered on the map that have "hotel" in the attribute named
 "placename"
@@ -212,31 +237,38 @@ rendered on the map that have "hotel" in the attribute named
 ::
 
     LAYER
-        NAME "regexp-example"
-        FILTERITEM "placename"
-        FILTER /hotel/
+        NAME 'regexp-example'
+        FILTERITEM 'placename'
+        FILTER 'hotel'
         ...
     END
 
 .. note:: 
 
-    The regular expression is case-sensitive, thus records having
-    "Hotel" in them would not have matched.
+    For `FILTER`, the regular expression is case-sensitive, thus
+    records having "Hotel" in them would not have matched.
 
-Example: Match records that have a value for the current century (as
-of 2005 ;) in the attribute "year"
+Example: Match records that have a value from 2000 to 2010 in the
+attribute "year":
 
 ::
 
     FILTERITEM "year"
-    FILTER /^20[0-9][0-9]/
+    FILTER '^20[0-9][0-9]'
 
 Example: Match all the records that are either purely numerical or
 empty
 
 ::
 
-    FILTER /^[0-9]*$/
+    FILTER '^[0-9]*$'
+
+Example: Match all the features where the *name* attribute ends with
+"by", "BY", "By" or "bY" (case insensitive matching):
+
+::
+
+    EXPRESSION ([name] ~* 'by$')
 
 .. note:: 
     
@@ -257,280 +289,282 @@ empty
 MapServer expressions are the most complex and depending how they are
 written can become quite slow. They can match any of the attributes
 and thus allow filtering and classification depending on more than one
-attribute. Besides pure logical operations there are also expressions
+attribute.  Besides pure logical operations there are also expressions
 that allow certain arithmetic, string and time operations.
- 
+
 To be able to use a MapServer expression for a FILTER or EXPRESSION
-value, the expression has to be finally of a logical value.
+value, the expression has to finally become a logical value.
 
 Logical expressions
 ...............................................................................
 
 Syntactically, a logical expression is everything encapsulated in
-round brackets. Logical expressions take logical values as their input
-and return logical values. A logical expression is either 'true' or
-'false'.
+round brackets.  Logical expressions take logical values as their
+input and return logical values. A logical expression is either 'true'
+or 'false'.
 
-* ( ( ... ) AND ( ... ) )
+* ( ( Expression1 ) AND ( Expression2 ) )
 
-  ( ( ... ) && ( ... ) )
+  ( ( Expression1 ) && ( Expression2 ) )
 
-  ... will become true when both of the two logical expressions in
-  the innermost brackets are true.
+  ... true when both of the logical expressions (Expression1 and
+  Expression2) are true.
 
 
-* ( ( ... ) OR ( ... ) )
+* ( ( Expression1 ) OR ( Expression2 ) )
 
-  ( ( ... ) || ( ... ) )
+  ( ( Expression1 ) || ( Expression2 ) )
 
-  ... will become true when at least one of the two logical
-  expressions in the innermost brackets is true.
+  ... true when at least one of the logical expressions (Expression1
+  or Expression2) is true.
 
-* NOT ( ... )
+* NOT ( Expression1 )
 
-  ! ( ... )
+  ! ( Expression1 )
 
-  ... will become true, when the logical expression in the brackets
-  becomes false.
+  ... true when Expression1 is false.
    
-String operations that result in a logical value
+String operations that return a logical value
 ...............................................................................
 
-Syntactically, a sting is something encapsulated in double-quotes.
+Syntactically, a sting is something encapsulated in single or double
+quotes.
 
 *  ( "String1" eq "String2" )
 
-   ( "String1" == "String2" )
+   ( "String1" == "String2" ) - deprecated since 6.0
 
    ( "String1" = "String2" )
 
-   ... will become true when both strings are equal. This operation
-   is identical to the MapServer string comparison described earlier.
+   ... true when the strings are equal.  Case sensitive.
+
+*  ( "String1" =\* "String2" )
+
+   ... true when the strings are equal.  Case insensitive.
 
 *  ( "String1" != "String2" )
 
    ( "String1" ne "String2" )
 
-   ... will become true when both strings are not equal.
+   ... true when the strings are not equal.
 
 *  ( "String1" < "String2" )
 
    ( "String1" lt "String2" )
 
-   ... will become true when "String1" is lexicographically smaller
-   than "String2"
+   ... true when "String1" is lexicographically smaller than "String2"
 
 *  ( "String1" > "String2" )
 
    ( "String1" gt "String2" )
 
-   ... will become true when "String1" is lexicographically larger
-   than "String2".
+   ... true when "String1" is lexicographically larger than "String2".
 
 *  ( "String1" <= "String2" )
 
    ( "String1" le "String2" )
 
-   ... will become true when "String1" is not lexicographically
-   larger than "String2"
+   ... true when "String1" is lexicographically smaller than or equal
+   to "String2"
 
 *  ( "String1" >= "String2" )
 
    ( "String1" ge "String2" )
 
-   ... will become true when "String1" is not lexicographically
-   smaller than "String2".
+   ... true when "String1" is lexicographically larger than or equal
+   to "String2".
 
 *  ( "String1" IN "token1,token2,...,tokenN" )
 
-   ... will become true when "String1" is in equal one of the given
-   tokens.
+   ... true when "String1" is equal to one of the given tokens.
 
    .. note:: 
 
-      The separator for those tokens is the comma. That means that you
-      must not add unnecessary white space to the list and that you
-      cannot compare to tokens that have a comma in it.
+      The separator for the tokens is the comma. That means that there
+      can not be unnecessary white space in the list and that tokens
+      that have commas in them cannot be compared.
 
-*  ( "String1" =~ /regexp/ )
+*  ( "String1" =~ "regexp" )
 
-   ... will become true, when "String1" matches the regular
-   expression "regexp". This operation is identical to the regular
-   expression matching described earlier.
+   ... true, when "String1" matches the regular expression
+   "regexp". This operation is identical to the regular expression
+   matching described earlier.
 
 String operations that return string values
 ...............................................................................
 
-There is only one operation for strings that returns a string value:
-
 *  "String1" + "String2'
 
-   'String1' + 'String2'
-
-   ... will return "String1String2", thus the two string concatenated
+   ... returns "String1String2", that is, the two strings concatenated
    to each other.
 
-Arithmetic expressions returning logical values
+String operations that return a number
 ...............................................................................
 
-The basic element for the arithmetic operation is the number. There are 
-some purely arithmetic operations that are returning numbers as their value. 
-They will be covered in the next section.
+*  length ( "String1" )
+
+   ... returns the number of characters of "String1"
+
+
+Arithmetic expressions that return a logical value
+...............................................................................
+
+The basic element for arithmetic operations is the number.  Arithmetic
+operations that return numbers will be covered in the next section.
 
 *  ( n1 eq n2 )
 
-   ( n1 == n2 )
+   ( n1 == n2 ) - deprecated since 6.0
 
    ( n1 = n2 )
 
-   ... will become true when both numbers are equal.
+   ... true when the numbers are equal.
 
 *  ( n1 != n2 )
 
    ( n1 ne n2 )
 
-   ... will become true when both numbers are not equal.
+   ... true when the numbers are not equal.
 
 *  ( n1 < n2 )
 
    ( n1 lt n2 )
 
-   ... will become true when n1 is smaller than n2
+   ... true when n1 is smaller than n2.
 
 *  ( n1 > n2 )
 
    ( n1 gt n2 )
 
-   ... will become true when n1 is larger than n2.
+   ... true when n1 is larger than n2.
 
 *  ( n1 <= n2 )
 
    ( n1 le n2 )
 
-   ... will become true when n1 is smaller or equal n2
+   ... true when n1 is smaller than or equal to n2.
 
 *  ( n1 >= n2 )
 
    ( n1 ge n2 )
 
-   ... will become true when n1 is larger or equal n2.
+   ... true when n1 is larger than or equal to n2.
 
 *  ( n1 IN "number1,number2,...,numberN" )
 
-   ... will become true when n1 is equal to one of the given numbers.
+   ... true when n1 is equal to one of the given numbers.
 
 
-Arithmetic expression returning a number
+Arithmetic expressions that return a number
 ...............................................................................
-
-As stated in the previous section, MapServer can do purely numerical
-operations with numbers.
 
 *  n1 + n2
 
-   ... will become the sum of n1 and n2
+   ... returns the sum of n1 and n2
 
 *  n1 - n2
 
-   ... will become n2 subtracted from n1
+   ... returns n2 subtracted from n1
 
 *  n1 \* n2
 
-   ... will become n1 multiplicated with n2
+   ... returns n1 multiplicated with n2
 
 *  n1 / n2>
 
-   ... will become n1 divided by n2
+   ... returns n1 divided by n2
 
 *  -n1
 
-   ... will become n1 with negated sign
+   ... returns n1 negated
 
 *  n1 ^ n2
 
-   ... will become n1 by a power of n2
-
-*  length ( "String1" )
-
-   ... will become the number of characters of "String1"
+   ... returns n1 to the power of n2
 
 .. note::
 
     When the numerical operations above are used like logical
     operations, the following rule applies: values equal to zero will
-    be taken as 'false' and everything else will be 'true'. That means
-    the expression
+    be taken as 'false' and everything else will be 'true'.  That
+    means the expression
 
-::
+    ::
 
-    ( 6 + 5 )
+      ( 6 + 5 )
 
-... would evaluate as true, but 
+    would return true, but 
 
-::
+    ::
 
-    ( 5 - 5 )
+      ( 5 - 5 )
 
-... would evaluate as false.
+    would return false.
 
 Temporal expressions
 ...............................................................................
 
 MapServer uses an internal time type to do comparison. To convert a
-keys value into this time type it will check the list below from the
-top down if the specified time matches and if so, it will do the
-conversion.
+string into this time type it will check the list below from the top
+and down to check if the specified time matches, and if so, it will do
+the conversion.  The following are integer values: **YYYY** - year,
+**MM** - month, **DD** - date, **hh** - hours, **mm** - minutes,
+**ss** - seconds.  The following are character elements of the format:
+**-** (dash) - date separator, **:** (colon) - time separator, **T** -
+marks the start of the time component (ISO 8601), space - marks the
+end of the date and start of the time component, **Z** - zulu time (0
+UTC offset).
 
-* YYYY-MM-DDTHH:MM:SSZ ('Z' and 'T' being the characters itself)</i>
-* YYYY-MM-DDTHH:MM:SS ('T' being the character itself)</i>
-* YYYY-MM-DD HH:MM:SS
-* YYYY-MM-DDTHH:MM ('T' being the character itself)</i>
-* YYYY-MM-DD HH:MM
-* YYYY-MM-DDTHH ('T' being the character itself)</i>
-* YYYY-MM-DD HH
+* YYYY-MM-DDThh:mm:ssZ
+* YYYY-MM-DDThh:mm:ss
+* YYYY-MM-DD hh:mm:ss
+* YYYY-MM-DDThh:mm
+* YYYY-MM-DD hh:mm
+* YYYY-MM-DDThh
+* YYYY-MM-DD hh
 * YYYY-MM-DD
 * YYYY-MM
 * YYYY
-* THH:MM:SSZ ('Z' and 'T' being the characters itself)</i>
-* THH:MM:SS
+* Thh:mm:ssZ
+* Thh:mm:ss
 
 For temporal values obtained this way, the following operations are supported:
 
-*  ( n1 eq n2 )
+*  ( t1 eq t2 )
 
-   ( n1 == n2 )
+   ( t1 == t2 ) - deprecated since 6.0
 
-   ( n1 = n2 )
+   ( t1 = t2 )
 
-   ... will become true when both times are equal.
+   ... true when the times are equal.
 
 *  ( t1 != t2 )
 
    ( t1 ne t2 )
 
-   ... will become true when both times are not equal.
+   ... true when the times are not equal.
 
 *  ( t1 < t2 )
 
    ( t1 lt t2 )
 
-   ... will become true when t1 is earlier than t2
+   ... true when t1 is earlier than t2
 
 *  ( t1 > t2 )
 
    ( t1 gt t2 )
 
-   ... will become true when t1 is later than t2.
+   ... true when t1 is later than t2.
 
 *  ( t1 <= t2 )
 
    ( t1 le t2 )
 
-   ... will become true when t1 is earlier or same t2
+   ... true when t1 is earlier than or equal to t2
 
-*  ( n1 >= n2 )
+*  ( t1 >= t2 )
 
-   ( n1 ge n2 )
+   ( t1 ge t2 )
 
-   ... will become true when t1 is later or same t2.
+   ... true when t1 is later than or equal to t2.
 
