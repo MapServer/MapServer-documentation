@@ -1,0 +1,120 @@
+.. _filegdb:
+
+*****************************************************************************
+ ESRI File Geodatabase
+*****************************************************************************
+
+ESRI File Geodatabases exist in a file folder and offer improved performance and size limitations.  For more information see the ESRI `description page`_.
+
+.. _`description page`: http://resources.arcgis.com/content/geodatabases/10.0/types-of-geodatabases 
+
+.. note::
+   Only file geodatabases created by AcrGIS 10.0 and above can be read by GDAL/MapServer.
+
+File listing
+------------
+
+File geodatabases are made up of a set of files within a folder. The files are made up of geographic data, attribute data,
+index files, and lock files.  A better description of the file contents can be found `here <http://webhelp.esri.com/arcgisserver/9.3/java/index.htm#geodatabases/file_ge-516860750.htm>`__.
+
+Data Access / Connection Method
+---------------------------------
+
+File geodatabase access is available through OGR. See the OGR `driver page <http://www.gdal.org/ogr/drv_filegdb.html>`__
+for specific driver information.  The driver is available for GDAL >= 1.9.0.
+
+The CONNECTION parameter must be used to point to the name of the file folder, and the DATA parameter
+should be the name of the spatial table (or OGR layer).
+
+::
+
+  CONNECTIONTYPE ogr
+  CONNECTION "filegdb.gdb"
+  DATA "layername" 
+  
+.. note::
+   During testing on Windows, a full path was required for the CONNECTION parameter.
+
+OGRINFO Examples
+----------------
+
+First you should make sure that your GDAL/OGR build contains the file
+geodatabase "FileGDB" driver, by using the '--formats' command:
+
+::
+
+  >ogrinfo --formats
+     Supported Formats:
+     ...
+     "FileGDB" (read/write)
+     "ESRI Shapefile" (read/write)
+     "MapInfo File" (read/write)
+     "UK .NTF" (readonly)
+     "SDTS" (readonly)
+     "TIGER" (read/write)
+     ...
+
+If you don't have the driver, see GDAL's `BuildHints <http://trac.osgeo.org/gdal/wiki/FileGDB>`__ page for 
+compiling the driver.
+
+Once you have the FileGDB driver you are ready to try an ogrinfo command on your
+database to get a list of spatial tables.  In the example below our folder is named `us_states.gdb`:
+
+::
+
+  ogrinfo us_states.gdb
+    INFO: Open of `us_states.gdb'
+    using driver `FileGDB' successful.
+    1: statesp020 (Multi Polygon)
+
+Now use ogrinfo to get information on the structure of the `statesp020` table:
+
+::
+
+  ogrinfo us_states.gdb statesp020 -summary
+    INFO: Open of `us_states.gdb'
+      using driver `FileGDB' successful.
+
+    Layer name: statesp020
+    Geometry: Multi Polygon
+    Feature Count: 2895
+    Extent: (-179.000000, 17.000000) - (179.000000, 71.000000)
+    Layer SRS WKT:
+    GEOGCS["GCS_North_American_1983",
+       DATUM["North_American_Datum_1983",
+           SPHEROID["GRS_1980",6378137.0,298.257222101]],
+       PRIMEM["Greenwich",0.0],
+       UNIT["Degree",0.017453292519943295]]
+    FID Column = OBJECTID
+    Geometry Column = SHAPE
+    AREA: Real (0.0)
+    PERIMETER: Real (0.0)
+    STATESP020: Real (0.0)
+    STATE: String (0.0)
+    STATE_FIPS: String (0.0)
+
+Mapfile Example
+---------------
+
+.. code-block:: mapfile
+
+    LAYER
+      NAME "fgdb_poly"
+      TYPE POLYGON
+      STATUS ON
+      CONNECTIONTYPE OGR
+      CONNECTION "C:/ms4w/apps/ms101/data/filegdb/us_states.gdb"
+      DATA "statesp020"
+      LABELITEM "STATE"
+      CLASS
+        NAME "US States"
+        STYLE
+          COLOR 120 120 120
+          OUTLINECOLOR 0 0 0
+        END
+        LABEL
+          COLOR 255 255 255
+          OUTLINECOLOR 0 0 0
+        END      
+      END
+    END 
