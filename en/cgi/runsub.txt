@@ -67,7 +67,7 @@ allow run-time substitution (todo- add MapServer version):
 * LAYER: TILEINDEX 
 * LAYER: CONNECTION
 * LAYER: FILTER
-* CLASS EXPRESSION
+* CLASS: EXPRESSION
 
 FILTERs
 ..............................................................................
@@ -124,5 +124,47 @@ In this example, the mapfile will be created as if the url contained
 This behavior is also accessible in the shp2img utility, allowing you to test 
 runtime substitution mapfiles without using a webserver.
 
+.. index::
+   single: VALIDATION
 
+VALIDATION
+-----------------------------------------------------------------------------
 
+Because runtime substitution affects potentially sensitive areas of
+your mapfile such as database columns and filenames, it is *STRONGLY*
+recommended that you use pattern validation.
+
+Pattern validation uses regular expressions, which are strings that
+describe how to compare strings to patterns. The exact functionality
+of your systems' regular expressions may vary, but you can find a lot
+of general information by a Google search for "regular expression
+tutorial".
+
+As of MapServer 5.4.0 the preferred mechanism is a `VALIDATION` block in
+the `LAYER` definition. This is only slightly different than the older
+`METADATA` mechanism.  `VALIDATION` blocks can be with :ref:`CLASS`,
+:ref:`LAYER` and :ref:`WEB`.
+
+.. code-block:: mapfile
+
+    VALIDATION
+      # %firstname% substitutions can only have letters and hyphens
+      firstname     '^[a-zA-Z\-]+$'
+
+      # %parcelid% must be numeric and between 5 and 8 characters
+      parcelid      '^[0-9]{5,8)$'
+
+      # %taxid% must be two capital letters and six digits
+      taxid         '^[A-Z]{2}[0-9]{6}$'
+    END
+
+Magic values
+-----------------------------------------------------------------------------
+
+Some runtime substitutions have special caveats.
+
+* ID
+
+  In addition to any defined `METADATA` or `VALIDATION`, the 'id'
+  parameter will be subjected to a special check. It must be
+  alphanumeric and cannot be longer than 63 characters.
