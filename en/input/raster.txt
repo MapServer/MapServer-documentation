@@ -401,16 +401,6 @@ the :ref:`mapfile`. It is primarily used to pass specialized raster processing
 options to the GDAL based raster renderer. The following processing options
 are supported in MapServer 4.0 and newer.
 
-**DITHER=YES**
-    This turns on error diffusion mode, used to convert 24bit images to 8bit
-    with error diffusion to get better color results.
-
-    Example:
-  
-    ::
-
-       PROCESSING "DITHER=YES"
-      
 **BANDS=red_or_grey[,green,blue[,alpha]]**
     This directive allows a specific band or bands to be selected from a
     raster file. If one band is selected, it is treated as greyscale. If 3 are
@@ -423,27 +413,52 @@ are supported in MapServer 4.0 and newer.
   
        PROCESSING "BANDS=4,2,1"
       
-**SCALE[_n]=AUTO or min,max**
-    This directive instructs the GDAL reader to pre-scale the incoming raster
-    data. It is primarily used to scale 16bit or floating point data to the
-    range 0-255, but can also be used to constrast stretch 8bit data. If an
-    explicit min/max are provided then the input data is stretch (or squished)
-    such that the minimum value maps to zero, and the maximum to 255. If AUTO
-    is used instead, a min/max is automatically computed. To control the
-    scaling of individual input bands, use the SCALE_1, SCALE_2 and SCALE_3
-    keywords (for red, green and blue) instead of SCALE which applies to all
-    bands.
+**COLOR_MATCH_THRESHOLD=n**
+    Alter the precision with which colors need to match an entry in the color
+    table to use it when producing 8bit colormapped output (IMAGEMODE PC256).
+    Normally colors from a raster colormap (or greyscale values) need to match
+    exactly. This relaxes the requirement to being within the specified color
+    distance. So a COLOR_MATCH_THRESHOLD of 3 would mean that an existing
+    color entry within 3 (sum of difference in red, green and blue) would be
+    used instead of creating a new colormap entry. Especially with greyscale
+    raster layers, which would normally use all 256 color entries if
+    available, this can be a good way to avoid "stealing" your whole colormap
+    for a raster layer. Normally values in the range 2-6 will give good
+    results. 
+    
+    Example:
+    
+    ::
   
+       PROCESSING "COLOR_MATCH_THRESHOLD=3"
+  
+**DITHER=YES**
+    This turns on error diffusion mode, used to convert 24bit images to 8bit
+    with error diffusion to get better color results.
+
     Example:
   
     ::
-  
-       PROCESSING "SCALE=AUTO"
-        or
-       PROCESSING "SCALE_1=409,1203"
-       PROCESSING "SCALE_2=203,296"
-       PROCESSING "SCALE_3=339,1004"
+
+       PROCESSING "DITHER=YES"
       
+**LOAD_FULL_RES_IMAGE=YES/NO**
+    This option affects how image data is loaded for the resampler when
+    reprojecting or otherwise going through complex resampling (as opposed 
+    to the fast default image decimation code path).  This forces the source
+    image to be loaded at full resolution if turned on (default is NO).  This
+    helps work around problems with default image resolution selection in 
+    when radical warping is being done.  It can result in very slow processing
+    if the source image is large.
+
+**LOAD_WHOLE_IMAGE=YES/NO**
+   This option affects how image data is loaded for the resampler (as above).
+   This option, if turned on, will cause the whole source image to be loaded
+   and helps make up for problem identifying the area required, usually due
+   to radical image reprojection near a dateline or projection "horizon". 
+   The default is NO.  Turning this on can dramatically affect rendering 
+   performance and memory requirements.
+
 **LUT[_n]=<lut_spec>**
     This directive (MapServer 4.9+) instructs the GDAL reader to apply a
     custom LUT (lookup table) to one or all color bands as a form of on the
@@ -491,26 +506,16 @@ are supported in MapServer 4.0 and newer.
   
        PROCESSING "LUT=munich.crv"
       
+**OVERSAMPLE_RATIO=double**
+    Default is 2.5.  Rendering time will increase with increasing
+    OVERSAMPLE_RATIO.
 
-**COLOR_MATCH_THRESHOLD=n**
-    Alter the precision with which colors need to match an entry in the color
-    table to use it when producing 8bit colormapped output (IMAGEMODE PC256).
-    Normally colors from a raster colormap (or greyscale values) need to match
-    exactly. This relaxes the requirement to being within the specified color
-    distance. So a COLOR_MATCH_THRESHOLD of 3 would mean that an existing
-    color entry within 3 (sum of difference in red, green and blue) would be
-    used instead of creating a new colormap entry. Especially with greyscale
-    raster layers, which would normally use all 256 color entries if
-    available, this can be a good way to avoid "stealing" your whole colormap
-    for a raster layer. Normally values in the range 2-6 will give good
-    results. 
-    
     Example:
-    
+  
     ::
   
-       PROCESSING "COLOR_MATCH_THRESHOLD=3"
-  
+        PROCESSING "OVERSAMPLE_RATIO=1.0"
+      
 **RESAMPLE=NEAREST/AVERAGE/BILINEAR**
     This option can be used to control the resampling kernel used sampling
     raster images. The default (and fastest) is NEAREST. AVERAGE will perform
@@ -535,24 +540,27 @@ are supported in MapServer 4.0 and newer.
        PROCESSING "RESAMPLE=AVERAGE"
        PROCESSING "RESAMPLE=BILINEAR"
 
-**LOAD_FULL_RES_IMAGE=YES/NO**
-    This option affects how image data is loaded for the resampler when
-    reprojecting or otherwise going through complex resampling (as opposed 
-    to the fast default image decimation code path).  This forces the source
-    image to be loaded at full resolution if turned on (default is NO).  This
-    helps work around problems with default image resolution selection in 
-    when radical warping is being done.  It can result in very slow processing
-    if the source image is large.
-
-**LOAD_WHOLE_IMAGE=YES/NO**
-   This option affects how image data is loaded for the resampler (as above).
-   This option, if turned on, will cause the whole source image to be loaded
-   and helps make up for problem identifying the area required, usually due
-   to radical image reprojection near a dateline or projection "horizon". 
-   The default is NO.  Turning this on can dramatically affect rendering 
-   performance and memory requirements.
-
-    
+**SCALE[_n]=AUTO or min,max**
+    This directive instructs the GDAL reader to pre-scale the incoming raster
+    data. It is primarily used to scale 16bit or floating point data to the
+    range 0-255, but can also be used to constrast stretch 8bit data. If an
+    explicit min/max are provided then the input data is stretch (or squished)
+    such that the minimum value maps to zero, and the maximum to 255. If AUTO
+    is used instead, a min/max is automatically computed. To control the
+    scaling of individual input bands, use the SCALE_1, SCALE_2 and SCALE_3
+    keywords (for red, green and blue) instead of SCALE which applies to all
+    bands.
+  
+    Example:
+  
+    ::
+  
+       PROCESSING "SCALE=AUTO"
+        or
+       PROCESSING "SCALE_1=409,1203"
+       PROCESSING "SCALE_2=203,296"
+       PROCESSING "SCALE_3=339,1004"
+      
 Raster Query
 ============
 
