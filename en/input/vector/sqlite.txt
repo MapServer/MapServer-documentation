@@ -1,0 +1,225 @@
+.. _sqlite:
+
+.. index::
+   single: SpatialLite
+
+*****************************************************************************
+ SpatiaLite
+*****************************************************************************
+
+SpatiaLite spatially enables the file-based SQLite database.  For more
+information see the SpatiaLite `description page`_.
+
+.. _`description page`: http://www.gaia-gis.it/spatialite/index.html
+
+File listing
+--------------
+
+Similar to other database formats, the .sqlite file consists of
+several tables.  The geometry is held in a BLOB table column.
+
+Data Access / Connection Method
+---------------------------------
+
+Spatialite access is available through OGR. See the OGR `driver page`_
+for specific driver information.  The driver is available in GDAL/OGR
+version 1.7.0 or later.
+
+.. _`driver page`: http://www.gdal.org/ogr/drv_sqlite.html
+
+OGR uses the names of spatial tables within the SpatiaLite database
+(tables with a geometry column that are registered in the
+geometry_columns table) as layers.
+
+The CONNECTION parameter must include the sqlite extension, and the
+DATA parameter should be the name of the spatial table (or OGR layer).
+
+::
+
+  CONNECTIONTYPE OGR
+  CONNECTION "spatialite_db.sqlite"
+  DATA "layername"
+
+OGRINFO Examples
+----------------
+
+First you should make sure that your GDAL/OGR build contains the
+spatialite "SQLite" driver, by using the '--formats' command:
+
+::
+
+  >ogrinfo --formats
+     Loaded OGR Format Drivers:
+     ...
+     -> "GMT" (read/write)
+     -> "SQLite" (read/write)
+     -> "ODBC" (read/write)
+     ...
+
+If you don't have the driver, you might want to try the `MS4W`_ or
+`OSGeo4W`_ packages, which include the driver.
+
+.. _`MS4W`: http://www.maptools.org/ms4w/
+.. _`OSGeo4W`: http://trac.osgeo.org/osgeo4w//
+
+Once you have confirmed that you have the SQLite driver you are ready
+to try an ogrinfo command on your database to get a list of spatial
+tables:
+
+::
+
+  >ogrinfo counties.sqlite
+     INFO: Open of `counties.sqlite'
+     using driver `SQLite' successful.
+     1: mn_counties (Polygon)
+
+Now use ogrinfo to get information on the structure of the spatial
+table:
+
+::
+
+  >ogrinfo counties.sqlite county -summary
+     INFO: Open of `counties.sqlite'
+     using driver `SQLite' successful.
+
+     Layer name: mn_counties
+     Geometry: Polygon
+     Feature Count: 87
+     Extent: (189783.560000, 4816309.330000) - (761653.524114, 5472346.500000)
+     Layer SRS WKT:
+     PROJCS["NAD83 / UTM zone 15N",
+         GEOGCS["NAD83",
+             DATUM["North_American_Datum_1983",
+                 SPHEROID["GRS 1980",6378137,298.257222101,
+                 AUTHORITY["EPSG","7019"]],
+                 TOWGS84[0,0,0,0,0,0,0],
+                 AUTHORITY["EPSG","6269"]],
+             PRIMEM["Greenwich",0,
+                AUTHORITY["EPSG","8901"]],
+             UNIT["degree",0.0174532925199433,
+                AUTHORITY["EPSG","9122"]],
+             AUTHORITY["EPSG","4269"]],
+        UNIT["metre",1,
+            AUTHORITY["EPSG","9001"]],
+        PROJECTION["Transverse_Mercator"],
+        PARAMETER["latitude_of_origin",0],
+        PARAMETER["central_meridian",-93],
+        PARAMETER["scale_factor",0.9996],
+        PARAMETER["false_easting",500000],
+        PARAMETER["false_northing",0],
+        AUTHORITY["EPSG","26915"],
+        AXIS["Easting",EAST],
+        AXIS["Northing",NORTH]]
+    FID Column = PK_UID
+    Geometry Column = Geometry
+    AREA: Real (0.0)
+    PERIMETER: Real (0.0)
+    COUNTY_ID: Integer (0.0)
+    FIPS: String (0.0)
+     ...
+
+
+Mapfile Example
+---------------
+
+Standard connection
+********************
+
+::
+
+     LAYER
+        NAME my_counties_layer
+        TYPE POLYGON
+        CONNECTIONTYPE ogr
+        CONNECTION "counties.sqlite"
+        DATA "mn_counties"
+        STATUS ON
+        CLASS
+          NAME "mncounties"
+          STYLE
+            COLOR 255 255 120
+          END
+        END
+     END
+     
+Connection utilizing SQL syntax
+**************************
+
+::
+
+     LAYER
+        NAME my_counties_layer
+        TYPE POLYGON
+        CONNECTIONTYPE OGR
+        CONNECTION "counties.sqlite"
+        DATA "select geometry from mn_counties"
+        STATUS ON
+        CLASS
+          NAME "mncounties"
+          STYLE
+            COLOR 255 255 120
+          END
+        END
+     END     
+     
+Connection utilizing joined table for additional attributes
+**************************
+
+::
+
+     LAYER
+        NAME my_counties_layer
+        TYPE POLYGON
+        CONNECTIONTYPE OGR
+        CONNECTION "counties.sqlite"
+        DATA "SELECT mn.geometry, c.fips FROM mn_counties mn inner
+              join county_data c on mn.county_id = c.county_id'
+        STATUS ON
+        CLASS
+          NAME "mncounties"
+          STYLE
+            COLOR 255 255 120
+          END
+        END
+     END
+     
+Standard Connection with a filter
+**************************
+
+::
+
+     LAYER
+        NAME my_counties_layer
+        TYPE POLYGON
+        CONNECTIONTYPE OGR
+        CONNECTION "counties.sqlite"
+        DATA "mn_counties"
+        FILTER ('[fips]' = '27031')
+        STATUS ON
+        CLASS
+          NAME "mncounties"
+          STYLE
+            COLOR 255 255 120
+          END
+        END
+     END
+     
+Filter utilizing SQL syntax
+**************************
+
+::
+
+     LAYER
+        NAME my_counties_layer
+        TYPE POLYGON
+        CONNECTIONTYPE OGR
+        CONNECTION "counties.sqlite"
+        DATA "select geometry from mn_counties where fips = '27031"
+        STATUS ON
+        CLASS
+          NAME "mncounties"
+          STYLE
+            COLOR 255 255 120
+          END
+        END
+     END
