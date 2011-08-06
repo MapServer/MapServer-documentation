@@ -579,19 +579,23 @@ processed as a result of a query.
      - cs=
              Coordinate separator.  Default is ",". 
     
-     - irh=, irf=
-             Characters to be put before (`irh`) and after (`irf`) an
-             inner ring (polygons).
+     - irh=, irf=, orh=, orf=
 
-     - orh=, orf=
-             Characters to be put before (`orh`) and after (`orf`) the
-             outer ring (polygons).  Defaults are "".
+             Characters to be put before (`irh`) and after (`irf`)
+             inner rings, and before (`orh`) and after (`orf`) outer
+             rings of polygons with holes.  Defaults are "".
+
+             .. note::
+                Within each polygon, the outer ring is always output
+                first, followed by the inner rings.
+
+             If neither `irh` nor `orh` are set, rings are output as
+             "parts" using `ph`/`pf`/`ps`.
 
      - ph=, pf=, ps=
              Characters to put before (`ph`) and after (`pf`) and
-             separators between (`ps`) feature parts (e.g. holes,
-             defaults are no characters).   Defaults are ph="", pf=""
-             and ps=" ".
+             separators between (`ps`) feature parts (e.g. rings of
+             multigeometries).  Defaults are ph="", pf="" and ps=" ".
      
      - precision=
              The number of decimal places to output for coordinates.
@@ -623,6 +627,24 @@ processed as a result of a query.
      ::
      
         [shpxy xh="(" yf=")"] will result in: (x1 y1),(x2 y2),(x3 y3)
+
+     And a more complicated example of outputting KML for
+     multipolygons which may potentially have holes (note that the
+     parameters must all be on one line):
+
+     :: 
+ 
+       <MultiGeometry> 
+           <Point> 
+             <coordinates>[shplabel proj=epsg:4326 precision=10],0</coordinates> 
+           </Point> 
+           [shpxy ph="<Polygon><tessellate>1</tessellate>" pf="</Polygon>" xf=","
+            xh=" " yh=" " yf=",0 " orh="<outerBoundaryIs><LinearRing><coordinates>"
+            orf="</coordinates></LinearRing></outerBoundaryIs>"
+            irh="<innerBoundaryIs><LinearRing><coordinates>"
+            irf="</coordinates></LinearRing></innerBoundaryIs>" proj=epsg:4326
+            precision=10] 
+       </MultiGeometry> 
         
 [tileindex]
      Index value of the current tile. If no tiles used for the current
