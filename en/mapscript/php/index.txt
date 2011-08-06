@@ -1,4 +1,4 @@
-.. _php:
+ .. _php:
 
 *****************************************************************************
  PHP MapScript
@@ -14,35 +14,37 @@
 :Date: $Date$
 
  .. note::
-     If you are using MapServer 5.6 and older, please refer to the 
-     :ref:`PHP MapScript 5.6 documentation <php5.6>` instead.
+   If you are using MapServer 5.6 and older, please refer to the 
+   :ref:`PHP MapScript 5.6 documentation <php5.6>` instead.
  
- .. note::
-     If you are migrating your existing application that is based on MapServer 5.6 
-     or older, to MapServer 6.0 or beyond, please read the 
-     :ref:`PHP MapScript Migration Guide <php_migration_guide>` for important changes.
+ .. note:: If you are migrating your existing application that is
+   based on MapServer 5.6 or older, to MapServer 6.0 or beyond,
+   please read the :ref:`PHP MapScript Migration Guide
+   <php_migration_guide>` for important changes.
 
 .. contents::
-    :depth: 3
-    :backlinks: top
+   :depth: 3
+   :backlinks: top
 
 .. index::
-    pair: MapScript; php
+   pair: MapScript; php
      
 Introduction
 ------------
 
-This is a `PHP <http://www.php.net/>`_ module that makes MapServer's MapScript 
-functionalities available in a PHP Dynamically Loadable Library. In simple terms, 
-this module will allow you to use the powerful PHP scripting language to 
-dynamically create and modify map images in MapServer.
+This is a `PHP <http://www.php.net/>`_ module that makes MapServer's
+MapScript functionalities available in a PHP Dynamically Loadable
+Library. In simple terms, this module will allow you to use the
+powerful PHP scripting language to dynamically create and modify map
+images in MapServer.
 
 Versions Supported
 ------------------
 
-PHP 5.2.0 or more recent is required; since MapServer 6.0, support for PHP 4, PHP 5.0 
-and PHP 5.1 have been dropped. PHP MapScript was originally developed for PHP 3.0.14, 
-and after MapServer 3.5 support for PHP 3 was dropped.   
+PHP 5.2.0 or more recent is required; since MapServer 6.0, support for
+PHP 4, PHP 5.0 and PHP 5.1 have been dropped. PHP MapScript was
+originally developed for PHP 3.0.14, and after MapServer 3.5 support
+for PHP 3 was dropped.
 
 The module has been tested and used on Linux, Solaris, \*BSD, and Windows.
 
@@ -51,10 +53,12 @@ How to Get More Information on PHP MapScript
 
 - For installation questions regarding the PHP MapScript module, see  
   :ref:`php_install`.
-- The `MapServer Wiki`_ has information on this module, that was contributed by users.
+- The `MapServer Wiki`_ has information on this module, that was
+  contributed by users.
 - New PHP MapScript users should read the :ref:`php_example` document.
 - The project's home is the `PHP/MapScript page`_ on MapTools.org.  
-- Also, see the :ref:`mapscript`, and the :ref:`mapfile` sections of this site.
+- Also, see the :ref:`mapscript`, and the :ref:`mapfile` sections of
+  this site.
 - Refer to the main `PHP site`_ for their official documentation.
 
 .. _`MapServer Wiki`: http://trac.osgeo.org/mapserver/wiki/PHPMapScript
@@ -64,7 +68,8 @@ How to Get More Information on PHP MapScript
 Important Note
 --------------
 
-- Constant names and class member variable names are case-sensitive in PHP.
+- Constant names and class member variable names are case-sensitive in
+  PHP.
 
 .. index::
     single: php; constants
@@ -139,14 +144,16 @@ Image Mode types (:ref:`outputFormatObj <outputformat>`)
     MS_IMAGEMODE_FEATURE, MS_IMAGEMODE_NULL
 
 Style/Attribue binding
-    MS_STYLE_BINDING_SIZE,  MS_STYLE_BINDING_ANGLE, MS_STYLE_BINDING_COLOR,
-    MS_STYLE_BINDING_OUTLINECOLOR, MS_STYLE_BINDING_SYMBOL
+    MS_STYLE_BINDING_SIZE, MS_STYLE_BINDING_ANGLE,
+    MS_STYLE_BINDING_COLOR, MS_STYLE_BINDING_OUTLINECOLOR,
+    MS_STYLE_BINDING_SYMBOL
 
 Label/Attribute binding
-    MS_LABEL_BINDING_SIZE, MS_LABEL_BINDING_ANGLE, MS_LABEL_BINDING_COLOR,
-    MS_LABEL_BINDING_OUTLINECOLOR, MS_LABEL_BINDING_FONT, 
-    MS_LABEL_BINDING_PRIORITY, MS_LABEL_BINDING_POSITION, 
-    MS_LABEL_BINDING_SHADOWSIZEX, MS_LABEL_BINDING_SHADOWSIZEY 
+    MS_LABEL_BINDING_SIZE, MS_LABEL_BINDING_ANGLE,
+    MS_LABEL_BINDING_COLOR, MS_LABEL_BINDING_OUTLINECOLOR,
+    MS_LABEL_BINDING_FONT, MS_LABEL_BINDING_PRIORITY,
+    MS_LABEL_BINDING_POSITION, MS_LABEL_BINDING_SHADOWSIZEX,
+    MS_LABEL_BINDING_SHADOWSIZEY
 
 Alignment
     MS_ALIGN_LEFT, MS_ALIGN_CENTER, MS_ALIGN_RIGHT
@@ -158,44 +165,47 @@ Functions
 ----------
 
 string ms_GetVersion()
-    Returns the MapServer version and options in a string.  This string
-    can be parsed to find out which modules were compiled in, etc.
+    Returns the MapServer version and options in a string.  This
+    string can be parsed to find out which modules were compiled in,
+    etc.
 
 int ms_GetVersionInt()
-    Returns the MapServer version number (x.y.z) as an integer 
-    (x*10000 + y*100 + z). (New in v5.0) e.g. V5.4.3 would return 50403.
+    Returns the MapServer version number (x.y.z) as an integer
+    (x*10000 + y*100 + z). (New in v5.0) e.g. V5.4.3 would return
+    50403.
+
+int ms_iogetStdoutBufferBytes() 
+    Writes the current buffer to stdout.  The PHP header() function
+    should be used to set the documents's content-type prior to
+    calling the function.  Returns the number of bytes written if
+    output is sent to stdout.  See :ref:`mapscript_ows` for more info.
+
+void ms_iogetstdoutbufferstring()
+    Fetch the current stdout buffer contents as a string.  This method 
+    does not clear the buffer.
+
+void ms_ioinstallstdinfrombuffer()
+    Installs a mapserver IO handler directing future stdin reading 
+    (ie. post request capture) to come from a buffer. 
+
+void ms_ioinstallstdouttobuffer()
+    Installs a mapserver IO handler directing future stdout output 
+    to a memory buffer. 
+
+void ms_ioresethandlers()   
+    Resets the default stdin and stdout handlers in place of "buffer"
+    based handlers.
+ 
+void ms_iostripstdoutbuffercontenttype()
+    Strip the Content-type header off the stdout buffer if it has one,
+    and if a content type is found it is return. Otherwise return
+    false.
 
 array ms_TokenizeMap(string map_file_name)
     Preparses a mapfile through the MapServer parser and return an 
     array with one item for each token from the mapfile.  Strings, 
     logical expressions, regex expressions and comments are returned
     as individual tokens.
-
-void ms_ioinstallstdouttobuffer()
-    Installs a mapserver IO handler directing future stdout output 
-    to a memory buffer. 
-
-void ms_ioinstallstdinfrombuffer()
-    Installs a mapserver IO handler directing future stdin reading 
-    (ie. post request capture) to come from a buffer. 
-
-void ms_iogetstdoutbufferstring()
-    Fetch the current stdout buffer contents as a string.  This method 
-    does not clear the buffer.
-
-int ms_iogetStdoutBufferBytes() 
-    Writes the current buffer to stdout.  The PHP header() function should be 
-    used to set the documents's content-type prior to calling the function.
-    Returns the number of bytes written if output is sent to stdout.  
-    See :ref:`mapscript_ows` for more info.
-
-void ms_ioresethandlers()   
-    Resets the default stdin and stdout handlers in place of "buffer" based
-    handlers. 
- 
-void ms_iostripstdoutbuffercontenttype()
-    Strip the Content-type header off the stdout buffer if it has one, and
-    if a content type is found it is return. Otherwise return false.
 
 Classes
 -------
@@ -208,7 +218,8 @@ classObj
 Constructor
 ...............................................................................
 
-Class Objects can be returned by the `layerObj`_ class, or can be created using:
+Class Objects can be returned by the `layerObj`_ class, or can be
+created using:
 
 .. code-block:: php
 
@@ -226,58 +237,83 @@ created will be a copy of this class.
 Members
 ...............................................................................
 
-=============== ====================================================================
-Type                Name
-=============== ====================================================================
+=============== ================ ===============================================
+Type                Name         Note
+=============== ================ ===============================================
+string          group
+string          keyimage   
+labelObj        label
+double          maxscaledenom
+hashTableObj    metadata
+double          minscaledenom
 string          name
+int             numstyles        read-only
+int             status           MS_ON, MS_OFF or MS_DELETE
+string          template
 string          title
 int             type
-int             status      (MS_ON, MS_OFF or MS_DELETE)
-double          minscaledenom
-double          maxscaledenom
-string          template
-labelObj        label
-int             numstyles (read-only)
-string          keyimage   
-string          group
-hashTableObj    metadata
-=============== ====================================================================
+=============== ================ ===============================================
 
 Methods
 ...............................................................................
 
-int updateFromString(string snippet)
-    Update a class from a string snippet. Returns MS_SUCCESS/MS_FAILURE.
+imageObj createLegendIcon(int width, int height)
+    Draw the legend icon and return a new imageObj.
+ 
+int deletestyle(int index)
+   Delete the style specified by the style index. If there are any
+   style that follow the deleted style, their index will decrease by 1.
 
-.. code-block:: php
+   .. note::
+      if you are using the numstyles parameter while using the 
+      deletestyle function on the class object you need to refetch 
+      a new class object. 
+    
+      Example :
+    
+      .. code-block:: php
+          
+         //class has 2 styles
+         $class = $oLayer->getclass(0);
+         $class->deletestyle(1);
+         echo $class->numstyles; : will echo 2
 
-    $oClass->updateFromString('CLASS STYLE COLOR 255 0 255 END END'); /*set the color */
+         $class = $oLayer->getclass(0);
+         echo $class->numstyles; : will echo 1 
 
-int set(string property_name, new_value)
-    Set object property to a new value.
-
-int setExpression(string expression)
-    Set the :ref:`expression <expressions>` string for the class object.
-
-string getExpressionString()
-    Returns the :ref:`expression <expressions>` string for the class object.
-        
-int settext(string text)
-    Set the text string for the class object.
-
-string getTextString()
-    Returns the text string for the class object.
-        
 int drawLegendIcon(int width, int height, imageObj im, int dstX, int dstY)
     Draw the legend icon on im object at dstX, dstY.
     Returns MS_SUCCESS/MS_FAILURE.
 
-imageObj createLegendIcon(int width, int height)
-    Draw the legend icon and return a new imageObj.
- 
+void free()
+    Free the object properties and break the internal references.
+    Note that you have to unset the php variable to free totally the
+    resources.
+
+string getExpressionString()
+    Returns the :ref:`expression <expressions>` string for the class
+    object.
+        
+int getMetaData(string name)
+    Fetch class metadata entry by name.  Returns "" if no entry 
+    matches the name.  Note that the search is case sensitive.
+
+    .. note::
+       getMetaData's query is case sensitive.
+    
 styleObj getStyle(int index)
     Return the style object using an index. index >= 0 &&
     index < class->numstyles.
+
+string getTextString()
+    Returns the text string for the class object.
+        
+int movestyledown(int index)
+    The style specified by the style index will be moved down into
+    the array of classes. Returns MS_SUCCESS or MS_FAILURE.
+    ex class->movestyledown(0) will have the effect of moving style 0
+    up to position 1, and the style at position 1 will be moved
+    to position 0.
 
 int movestyleup(int index)
     The style specified by the style index will be moved up into
@@ -286,51 +322,65 @@ int movestyleup(int index)
     up to position 0, and the style at position 0 will be moved
     to position 1.
 
-int movestyledown(int index)
-    The style specified by the style index will be moved down into
-    the array of classes. Returns MS_SUCCESS or MS_FAILURE.
-    ex class->movestyledown(0) will have the effect of moving style 0
-    up to position 1, and the style at position 1 will be moved
-    to position 0.
-
-int deletestyle(int index)
-   Delete the style specified by the style index. If there are any
-   style that follow the deleted style, their index will decrease by 1.
-
-.. note::
-    if you are using the numstyles parameter while using the 
-    deletestyle function on the class object you need to refetch 
-    a new class object. 
-    
-    Example :
-    
-    .. code-block:: php
-          
-             //class has 2 styles
-            $class = $oLayer->getclass(0);
-            $class->deletestyle(1);
-            echo $class->numstyles; : will echo 2
-
-            $class = $oLayer->getclass(0);
-            echo $class->numstyles; : will echo 1 
-
-
-int getMetaData(string name)
-    Fetch class metadata entry by name.  Returns "" if no entry 
-    matches the name.  Note that the search is case sensitive.
-
-.. note::
-    getMetaData's query is case sensitive.
-    
-int setMetaData(string name, string value)
-    Set a metadata entry for the class.  Returns MS_SUCCESS/MS_FAILURE.
-
 int removeMetaData(string name)
     Remove a metadata entry for the class.  Returns MS_SUCCESS/MS_FAILURE.
 
-void free()
-    Free the object properties and break the internal references. 
-    Note that you have to unset the php variable to free totally the resources.
+int set(string property_name, new_value)
+    Set object property to a new value.
+
+int setExpression(string expression)
+    Set the :ref:`expression <expressions>` string for the class
+    object.
+
+int setMetaData(string name, string value)
+    Set a metadata entry for the class.  Returns MS_SUCCESS/MS_FAILURE.
+
+int settext(string text)
+    Set the text string for the class object.
+
+int updateFromString(string snippet)
+    Update a class from a string snippet. Returns MS_SUCCESS/MS_FAILURE.
+
+    .. code-block:: php
+
+      /*set the color */
+      $oClass->updateFromString('CLASS STYLE COLOR 255 0 255 END END');
+
+clusterObj
+^^^^^^^^^^^^
+
+Constructor
+...............................................................................
+
+Instance of clusterObj is always embedded inside the `layerObj`_.
+
+Members
+...............................................................................
+
+=============== ================================================================
+Type                Name
+=============== ================================================================
+double          buffer
+double          maxdistance
+string          region
+=============== ================================================================
+
+Methods
+...............................................................................
+
+string getFilterString()
+    Returns the :ref:`expression <expressions>` for this cluster
+    filter or NULL on error.
+
+string getGroupString()
+    Returns the :ref:`expression <expressions>` for this cluster group
+    or NULL on error.
+
+int setFilter(string expression)
+    Set layer filter :ref:`expression <expressions>`.
+
+int setGroup(string expression)
+    Set layer group :ref:`expression <expressions>`.
 
 colorObj
 ^^^^^^^^
@@ -343,13 +393,13 @@ Instances of colorObj are always embedded inside other classes.
 Members
 ...............................................................................
 
-=============== ====================================================================
+=============== ================================================================
 Type                Name
-=============== ====================================================================
+=============== ================================================================
 int             red
 int             green
 int             blue
-=============== ====================================================================
+=============== ================================================================
 
 Methods
 ...............................................................................
@@ -379,13 +429,13 @@ void ms_ResetErrorList()
 Members
 ...............................................................................
 
-=============== ====================================================================
+=============== ================================================================
 Type                Name
-=============== ====================================================================
+=============== ================================================================
 int             code      //See error code constants above
-string          routine
 string          message
-=============== ====================================================================
+string          routine
+=============== ================================================================
 
 Method
 ...............................................................................
@@ -394,20 +444,22 @@ errorObj next()
     Returns the next errorObj in the list, or NULL if we reached the end
     of the list.
 
-Example:
+Example
+.......
+
 This example draws a map and reports all errors generated during
 the draw() call, errors can potentially come from multiple layers.
 
 .. code-block:: php
 
-    ms_ResetErrorList();
-    $img = $map->draw();
-    $error = ms_GetErrorObj();
-    while($error && $error->code != MS_NOERR)
-    {
-        printf("Error in %s: %s<br>\n", $error->routine, $error->message);
-        $error = $error->next();
-    }
+   ms_ResetErrorList();
+   $img = $map->draw();
+   $error = ms_GetErrorObj();
+   while($error && $error->code != MS_NOERR)
+   {
+     printf("Error in %s: %s<br>\n", $error->routine, $error->message);
+     $error = $error->next();
+   }
 
 gridObj
 ^^^^^^^
@@ -424,26 +476,26 @@ ms_newGridObj(layerObj layer)
 
 .. code-block:: php
     
-    $oLayer = ms_newlayerobj($oMap);
-    $oLayer->set("name", "GRID");
-    ms_newgridobj($oLayer);
-    $oLayer->grid->set("labelformat", "DDMMSS");
+   $oLayer = ms_newlayerobj($oMap);
+   $oLayer->set("name", "GRID");
+   ms_newgridobj($oLayer);
+   $oLayer->grid->set("labelformat", "DDMMSS");
 
 
 Members
 ...............................................................................
 
-=============== ====================================================================
+=============== ================================================================
 Type                Name
-=============== ====================================================================
-double          minsubdivide
+=============== ================================================================
+string          labelformat
+double          maxacrs
+double          maxinterval
 double          maxsubdivide
 double          minarcs
-double          maxacrs
 double          mininterval
-double          maxinterval
-string          labelformat
-=============== ====================================================================
+double          minsubdivide
+=============== ================================================================
 
 
 Methods
@@ -458,36 +510,37 @@ hashTableObj
 Constructor
 ...............................................................................
 
-Instance of hashTableObj is always embedded inside the `classObj`_, `layerObj`_,
-`mapObj`_ and `webObj`_. It is uses a read only.
+Instance of hashTableObj is always embedded inside the `classObj`_,
+`layerObj`_, `mapObj`_ and `webObj`_. It is uses a read only.
 
 .. code-block:: php 
 
-    $hashTable = $oLayer->metadata;
-    $key = null;
-    while ($key = $hashTable->nextkey($key))
-        echo "Key: ".$key." value: ".$hashTable->get($key)."<br/>";
+   $hashTable = $oLayer->metadata;
+   $key = null;
+   while ($key = $hashTable->nextkey($key))
+     echo "Key: ".$key." value: ".$hashTable->get($key)."<br/>";
 
 Methods
 ...............................................................................
+
+void clear()
+    Clear all items in the hashTable (To NULL).
 
 string get(string key)
     Fetch class metadata entry by name.  Returns "" if no entry 
     matches the name.  Note that the search is case sensitive.
 
+string nextkey(string previousKey)
+    Return the next key or first key if previousKey = NULL.
+    Return NULL if no item is in the hashTable or end of hashTable is
+    reached
+
+int remove(string key)
+    Remove a metadata entry in the hashTable.  Returns MS_SUCCESS/MS_FAILURE.
+
 int set(string key, string value)
     Set a metadata entry in the hashTable. Returns MS_SUCCESS/MS_FAILURE.
      
-int  remove(string key)
-    Remove a metadata entry in the hashTable.  Returns MS_SUCCESS/MS_FAILURE.
-
-void clear()
-    Clear all items in the hashTable (To NULL).
-
-string  nextkey(string previousKey)
-    Return the next key or first key if previousKey = NULL.
-    Return NULL if no item is in the hashTable or end of hashTable is reached
-
 imageObj
 ^^^^^^^^
 
@@ -499,19 +552,33 @@ Instances of imageObj are always created by the `mapObj`_ class methods.
 Members
 ...............................................................................
 
-=============== ====================================================================
-Type                Name
-=============== ====================================================================
-int             width     (read-only)
-int             height    (read-only)
-int             resolution    (read-only)
-int             resolutionfactor    (read-only)
+=============== =================== ============================================
+Type                Name            Note
+=============== =================== ============================================
+int             width               read-only
+int             height              read-only
+int             resolution          read-only
+int             resolutionfactor    read-only
 string          imagepath
 string          imageurl
-=============== ====================================================================
+=============== =================== ============================================
 
 Methods
 ...............................................................................
+
+void pasteImage(imageObj srcImg, int transparentColorHex [[, int dstX, int dstY], int angle])
+    Copy srcImg on top of the current imageObj.
+    transparentColorHex is the color (in 0xrrggbb format) from srcImg 
+    that should be considered transparent (i.e. those pixels won't 
+    be copied).  Pass -1 if you don't want any transparent color.
+    If optional dstx,dsty are provided then it defines the position 
+    where the image should be copied (dstx,dsty = top-left corner 
+    position).
+    The optional angle is a value between 0 and 360 degrees to rotate
+    the source image counterclockwise.  Note that if an angle is specified
+    (even if its value is zero) then the dstx and dsty coordinates 
+    specify the CENTER of the destination area.
+    Note: this function works only with 8 bits GD images (PNG or GIF).
 
 int saveImage([string filename, MapObj oMap])
     Writes image object to specified filename. 
@@ -531,20 +598,6 @@ string saveWebImage()
     map file.
    
 
-void pasteImage(imageObj srcImg, int transparentColorHex [[, int dstX, int dstY], int angle])
-    Copy srcImg on top of the current imageObj.
-    transparentColorHex is the color (in 0xrrggbb format) from srcImg 
-    that should be considered transparent (i.e. those pixels won't 
-    be copied).  Pass -1 if you don't want any transparent color.
-    If optional dstx,dsty are provided then it defines the position 
-    where the image should be copied (dstx,dsty = top-left corner 
-    position).
-    The optional angle is a value between 0 and 360 degrees to rotate
-    the source image counterclockwise.  Note that if an angle is specified
-    (even if its value is zero) then the dstx and dsty coordinates 
-    specify the CENTER of the destination area.
-    Note: this function works only with 8 bits GD images (PNG or GIF).
-
 labelcacheMemberObj
 ^^^^^^^^^^^^^^^^^^^
 
@@ -553,19 +606,19 @@ Accessible only through the `mapObj`_ (map->getLabel()).
 Members
 ...............................................................................
 
-=============== ====================================================================
-Type                Name
-=============== ====================================================================
-int             classindex (Read-Only)
-int             featuresize (Read-Only)
-int             layerindex (Read-Only)
-int             numstyles (Read-Only)
-int             shapeindex (Read-Only)
-int             status (Read-Only)
-int             markerid (Read-Only)
-string          text (Read-Only)
-int             tileindex (Read-Only)
-=============== ====================================================================
+=============== ============== =================================================
+Type                Name       Note
+=============== ============== =================================================
+int             classindex     read-only
+int             featuresize    read-only
+int             layerindex     read-only
+int             markerid       read-only
+int             numstyles      read-only
+int             shapeindex     read-only
+int             status         read-only
+string          text           read-only
+int             tileindex      read-only
+=============== ============== =================================================
 
 Method
 ...............................................................................
@@ -585,7 +638,7 @@ Method
 
 boolean freeCache()
     Free the label cache. Always returns MS_SUCCESS.
-    Ex : (map->labelcache->freeCache();
+    Ex : map->labelcache->freeCache();
 
 labelObj
 ^^^^^^^^
@@ -598,50 +651,72 @@ labelObj are always embedded inside other classes.
 Members
 ...............................................................................
 
-=============== ============================================================
+=============== ================================================================
 Type                Name
-=============== ============================================================
-string          font
-int             type
-colorObj        color
-colorObj        outlinecolor
-int             outlinewidth
-colorObj        shadowcolor
-int             shadowsizex
-int             shadowsizey
+=============== ================================================================
+int             align
+double          angle
+int             anglemode
+int             antialias
+int             autominfeaturesize
 colorObj        backgroundcolor
 colorObj        backgroundshadowcolor
 int             backgroundshadowsizex
 int             backgroundshadowsizey
-int             size
-int             minsize
+int             buffer
+colorObj        color
+string          encoding
+string          font
+int             force
+int             maxlength
 int             maxsize
-int             position
+int             mindistance
+int             minfeaturesize
+int             minlength
+int             minsize
 int             offsetx
 int             offsety
-double          angle
-int             anglemode
-int             buffer
-int             antialias
-int             wrap
-int             minfeaturesize
-int             autominfeaturesize
-int             mindistance
-int             repeatdistance
+colorObj        outlinecolor
+int             outlinewidth
 int             partials
-int             force
-string          encoding
-int             align
-int             maxlength
-int             minlength
+int             position
 int             priority
-=============== ============================================================
+int             repeatdistance
+colorObj        shadowcolor
+int             shadowsizex
+int             shadowsizey
+int             size
+int             type
+int             wrap
+=============== ================================================================
 
 Methods
 ...............................................................................
 
-int updateFromString(string snippet)
-    Update a label from a string snippet. Returns MS_SUCCESS/MS_FAILURE.
+string getBinding(const labelbinding)
+    Get the attribute binding for a specified label property. Returns
+    NULL if there is no binding for this property.
+
+    Example:
+    
+    .. code-block:: php
+    
+        $oLabel->setbinding(MS_LABEL_BINDING_COLOR, "FIELD_NAME_COLOR");
+        echo $oLabel->getbinding(MS_LABEL_BINDING_COLOR); // FIELD_NAME_COLOR
+
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the
+    resources.
+
+int removeBinding(const labelbinding)
+    Remove the attribute binding for a specfiled style property.  
+    
+    Example:
+    
+    .. code-block:: php
+    
+        $oStyle->removebinding(MS_LABEL_BINDING_COLOR);
 
 int set(string property_name, new_value)
     Set object property to a new value.
@@ -658,29 +733,8 @@ int setBinding(const labelbinding, string value)
     This would bind the color parameter with the data (ie will extract
     the value of the color from the field called "FIELD_NAME_COLOR"
 
-string getBinding(const labelbinding)
-    Get the attribute binding for a specified label property. Returns NULL if there
-    is no binding for this property.
-
-    Example:
-    
-    .. code-block:: php
-    
-        $oLabel->setbinding(MS_LABEL_BINDING_COLOR, "FIELD_NAME_COLOR");
-        echo $oLabel->getbinding(MS_LABEL_BINDING_COLOR); // FIELD_NAME_COLOR
-
-int removeBinding(const labelbinding)
-    Remove the attribute binding for a specfiled style property.  
-    
-    Example:
-    
-    .. code-block:: php
-    
-        $oStyle->removebinding(MS_LABEL_BINDING_COLOR);
-
-void free()
-    Free the object properties and break the internal references. 
-    Note that you have to unset the php variable to free totally the resources.
+int updateFromString(string snippet)
+    Update a label from a string snippet. Returns MS_SUCCESS/MS_FAILURE.
 
 layerObj
 ^^^^^^^^
@@ -688,7 +742,8 @@ layerObj
 Constructor
 ...............................................................................
 
-Layer Objects can be returned by the `mapObj`_ class, or can be created using:
+Layer Objects can be returned by the `mapObj`_ class, or can be
+created using:
 
 .. code-block:: php
 
@@ -702,55 +757,55 @@ layer created.
 Members
 ...............................................................................
 
-=============== ====================================================================
-Type                Name
-=============== ====================================================================
-int             numclasses  (read-only)
-int             index       (read-only)
-int             status      (MS_ON, MS_OFF, MS_DEFAULT or MS_DELETE)
-int             debug
-string          classitem
+=============== =================== ============================================
+Type                Name            Note
+=============== =================== ============================================
+int             annotate
+hashTableObj    bindvals
 string          classgroup
-string          name
-string          group
+string          classitem
+clusterObj      cluster
+string          connection
+int             connectiontype      read-only, use setConnectionType() to set it
 string          data
-int             type
+int             debug
 int             dump
+string          filteritem
+string          footer
+gridObj         grid                only available on a layer defined as grid (MS_GRATICULE)
+string          group
+string          header
+int             index               read-only
+int             labelcache
+string          labelitem
+double          labelmaxscaledenom
+double          labelminscaledenom
+string          labelrequires
+int             maxfeatures
+double          maxscaledenom
+hashTableObj    metadata
+double          minscaledenom
+string          name
+int             num_processing
+int             numclasses          read-only
+colorObj        offsite
+int             opacity
+projectionObj   projection
+int             postlabelcache
+string          requires
+int             sizeunits
+int             startindex
+int             status              MS_ON, MS_OFF, MS_DEFAULT or MS_DELETE
+string          styleitem
+double          symbolscaledenom
+string          template
+string          tileindex
+string          tileitem
 double          tolerance
 int             toleranceunits
-int             sizeunits
-double          symbolscaledenom
-double          minscaledenom
-double          maxscaledenom
-double          labelminscaledenom
-double          labelmaxscaledenom
-int             maxfeatures
-int             startindex
-colorObj        offsite
-int             annotate
 int             transform
-int             labelcache
-int             postlabelcache
-string          labelitem
-string          tileitem
-string          tileindex
-string          header
-string          footer
-string          connection
-int             connectiontype  (read-only, use setConnectionType() to set it)
-string          filteritem
-string          template
-int             opacity
-string          styleitem
-gridObj         grid //only available on a layer defined as grid (MS_GRATICULE)
-int             num_processing
-string          requires
-string          labelrequires
-hashTableObj    metadata
-hashTableObj    bindvals
-projectionObj   projection
-clusterObj      cluster
-=============== ====================================================================
+int             type
+=============== =================== ============================================
 
 
 Methods
@@ -759,10 +814,12 @@ Methods
 int updateFromString(string snippet)
     Update a layer from a string snippet. Returns MS_SUCCESS/MS_FAILURE.
 
-.. code-block:: php
+    .. code-block:: php
 
-    $oLayer->updateFromString('LAYER NAME land_fn2 END'); /*modify the name */
-    $oLayer->updateFromString('LAYER CLASS STYLE COLOR  255 255 0  END END END'); /*add a new class*/       
+      /*modify the name */
+      $oLayer->updateFromString('LAYER NAME land_fn2 END');
+      /*add a new class*/
+      $oLayer->updateFromString('LAYER CLASS STYLE COLOR 255 255 0 END END END');
 
 int set(string property_name, new_value)
     Set object property to a new value.
@@ -828,41 +885,41 @@ int queryByFeatures(int slayer)
     the '@' control operator).
 
 int queryByAttributes(string qitem, string qstring, int mode)
-    Query layer for shapes that intersect current map extents.
-    qitem is the item (attribute) on which the query is performed, 
-    and qstring is the expression to match.
-    The query is performed on all the shapes that are part of a :ref:`CLASS` 
-    that contains a :ref:`TEMPLATE <template>` value or that match any class in a
-    layer that contains a :ref:`LAYER` :ref:`TEMPLATE <template>` value.  
-    Note that the layer's FILTER/FILTERITEM are ignored by this function.
-    Mode is MS_SINGLE or MS_MULTIPLE depending on number of results
-    you want. 
-    Returns MS_SUCCESS if shapes were found or MS_FAILURE if nothing
-    was found or if some other error happened (note that the error 
-    message in case nothing was found can be avoided in PHP using 
-    the '@' control operator).
+    Query layer for shapes that intersect current map extents.  qitem
+    is the item (attribute) on which the query is performed, and
+    qstring is the expression to match.  The query is performed on all
+    the shapes that are part of a :ref:`CLASS` that contains a
+    :ref:`TEMPLATE <template>` value or that match any class in a
+    layer that contains a :ref:`LAYER` :ref:`TEMPLATE <template>`
+    value.  Note that the layer's FILTER/FILTERITEM are ignored by
+    this function.  Mode is MS_SINGLE or MS_MULTIPLE depending on
+    number of results you want.  Returns MS_SUCCESS if shapes were
+    found or MS_FAILURE if nothing was found or if some other error
+    happened (note that the error message in case nothing was found
+    can be avoided in PHP using the '@' control operator).
 
 int setFilter(string expression)
     Set layer filter :ref:`expression <expressions>`.
 
 string getFilterString()
-    Returns the :ref:`expression <expressions>` for this layer or NULL on error.
+    Returns the :ref:`expression <expressions>` for this layer or NULL
+    on error.
 
 string getProjection()
     Returns a string representation of the :ref:`projection <projection>`. 
     Returns NULL on error or if no projection is set.
 
 int setProjection(string proj_params)
-    Set layer :ref:`projection <projection>` and coordinate system.  Parameters are given as 
-    a single string of comma-delimited PROJ.4 parameters. Returns MS_SUCCESS or
-    MS_FAILURE on error.  
+    Set layer :ref:`projection <projection>` and coordinate system.
+    Parameters are given as a single string of comma-delimited PROJ.4
+    parameters. Returns MS_SUCCESS or MS_FAILURE on error.
 
 int setWKTProjection(string proj_params)
     Same as setProjection(), but takes an OGC WKT projection 
     definition string as input. 
 
-.. note::
-    setWKTProjection requires GDAL support
+    .. note::
+      setWKTProjection requires GDAL support
 
 int getNumResults()
     Returns the number of results from this layer in the last query.
@@ -877,27 +934,27 @@ int open()
     Returns MS_SUCCESS/MS_FAILURE.
 
 int whichshapes(rectobj)
-    Performs a spatial, and optionally an attribute based feature search. 
-    The function basically prepares things so that candidate features can be 
-    accessed by query or drawing functions (eg using nextshape function).
-    Returns MS_SUCCESS or MS_FAILURE.
+    Performs a spatial, and optionally an attribute based feature
+    search.  The function basically prepares things so that candidate
+    features can be accessed by query or drawing functions (eg using
+    nextshape function).  Returns MS_SUCCESS or MS_FAILURE.
 
 shapeobj nextShape()
-   Called after msWhichShapes has been called to actually retrieve shapes 
-   within a given area. Returns a shape object or NULL on error.
+    Called after msWhichShapes has been called to actually retrieve
+    shapes within a given area. Returns a shape object or NULL on
+    error.
 
-.. code-block:: php
+    .. code-block:: php
 
-    $map = ms_newmapobj("d:/msapps/gmap-ms40/htdocs/gmap75.map");
-    $layer = $map->getLayerByName('road');
-    $status = $layer->open();
-    $status = $layer->whichShapes($map->extent);
-    while ($shape = $layer->nextShape()) 
-    {
-       echo $shape->index ."<br>\n";
-    }
-    $layer->close();
-
+      $map = ms_newmapobj("d:/msapps/gmap-ms40/htdocs/gmap75.map");
+      $layer = $map->getLayerByName('road');
+      $status = $layer->open();
+      $status = $layer->whichShapes($map->extent);
+      while ($shape = $layer->nextShape()) 
+      {
+        echo $shape->index ."<br>\n";
+      }
+      $layer->close();
 
 void close()
     Close layer previously opened with open().
@@ -912,14 +969,15 @@ rectObj getExtent()
     is not necessary to call open()/close() before/after calling it.
 
 int addFeature(shapeObj shape)
-    Add a new feature in a layer. Returns MS_SUCCESS or MS_FAILURE on error.
+    Add a new feature in a layer. Returns MS_SUCCESS or MS_FAILURE on
+    error.
 
 int getMetaData(string name)
     Fetch layer metadata entry by name.  Returns "" if no entry 
     matches the name.  Note that the search is case sensitive.
 
-.. note::
-    getMetaData's query is case sensitive.
+    .. note::
+      getMetaData's query is case sensitive.
     
 int setMetaData(string name, string value)
     Set a metadata entry for the layer.  Returns MS_SUCCESS/MS_FAILURE.
@@ -947,10 +1005,10 @@ int setProcessing(string)
     The layer->num_processing is incremented by 1.
     Returns MS_SUCCESS or MS_FAILURE on error.
 
-.. code-block:: php
+    .. code-block:: php
 
-    $oLayer->setprocessing("SCALE_1=AUTO");
-    $oLayer->setprocessing("SCALE_2=AUTO");       
+      $oLayer->setprocessing("SCALE_1=AUTO");
+      $oLayer->setprocessing("SCALE_2=AUTO");       
 
 array getProcessing()
     Returns an array containing the processing strings.
@@ -960,9 +1018,9 @@ void clearProcessing()
     Clears all the processing strings.
 
 string   executeWFSGetfeature()
-   Executes a GetFeature request on a WFS layer and returns the
-   name of the temporary GML file created. Returns an empty
-   string on error.
+    Executes a GetFeature request on a WFS layer and returns the
+    name of the temporary GML file created. Returns an empty
+    string on error.
 
 int applySLD(string sldxml, string namedlayer)
     Apply the :ref:`SLD <sld>` document to the layer object. 
@@ -974,16 +1032,16 @@ int applySLD(string sldxml, string namedlayer)
     See :ref:`SLD HowTo <sld>` for more information on the SLD support.
 
 int applySLDURL(string sldurl, string namedlayer)
-    Apply the :ref:`SLD <sld>` document pointed by the URL to the layer object. The 
-    matching between the sld document and the layer will be done using 
-    the layer's name.
-    If a namedlayer argument is passed (argument is optional), 
-    the NamedLayer in the sld that matchs it will be used to style 
-    the layer.
-    See :ref:`SLD HowTo <sld>` for more information on the SLD support.
+    Apply the :ref:`SLD <sld>` document pointed by the URL to the
+    layer object. The matching between the sld document and the layer
+    will be done using the layer's name.  If a namedlayer argument is
+    passed (argument is optional), the NamedLayer in the sld that
+    matchs it will be used to style the layer.  See :ref:`SLD HowTo
+    <sld>` for more information on the SLD support.
 
 string generateSLD()
-    Returns an SLD XML string based on all the classes found in the layers.
+    Returns an SLD XML string based on all the classes found in the
+    layers.
 
 int moveclassup(int index)
     The class specified by the class index will be moved up into
@@ -1024,24 +1082,25 @@ shapeObj getShape(resultObj result])
     getResult() for instance). Otherwise, it will do a single query on
     the layer to fetch the shapeindex
 
-.. code-block:: php
+    .. code-block:: php
 
-   $map = new mapObj("gmap75.map");
-   $l = $map->getLayerByName("popplace");
-   $l->queryByRect($map->extent);
-   for ($i=0; $i<$l->getNumResults();$i++){
-       $s = $l->getShape($l->getResult($i));
-       echo $s->getValue($l,"Name");
-       echo "\n";
-   }
+      $map = new mapObj("gmap75.map");
+      $l = $map->getLayerByName("popplace");
+      $l->queryByRect($map->extent);
+      for ($i=0; $i<$l->getNumResults();$i++){
+        $s = $l->getShape($l->getResult($i));
+        echo $s->getValue($l,"Name");
+        echo "\n";
+      }
 
 array getGridIntersectionCoordinates()
-    Returns an array containing the grid intersection coordinates. If there
-    are no coordinates, it returns an empty array.
+    Returns an array containing the grid intersection coordinates. If
+    there are no coordinates, it returns an empty array.
 
 void free()
     Free the object properties and break the internal references. 
-    Note that you have to unset the php variable to free totally the resources.
+    Note that you have to unset the php variable to free totally the
+    resources.
 
 legendObj
 ^^^^^^^^^
@@ -1054,36 +1113,37 @@ Instances of legendObj are always are always embedded inside the `mapObj`_.
 Members
 ...............................................................................
 
-=============== ====================================================================
-Type                Name
-=============== ====================================================================
+=============== =============== ================================================
+Type                Name        Note
+=============== =============== ================================================
 int             height
-int             width
+colorObj        imagecolor
 int             keysizex   
 int             keysizey
 int             keyspacingx
 int             keyspacingy
-colorObj        outlinecolor //Color of outline of box, -1 for no outline
-int             status //MS_ON, MS_OFF, MS_EMBED
-int             position //for embeded legends, MS_UL, MS_UC, ...
-int             postlabelcache //MS_TRUE, MS_FALSE
 labelObj        label
-colorObj        imagecolor
+colorObj        outlinecolor    Color of outline of box, -1 for no outline
+int             position        for embeded legends, MS_UL, MS_UC, ...
+int             postlabelcache  MS_TRUE, MS_FALSE
+int             status          MS_ON, MS_OFF, MS_EMBED
 string          template
-=============== ====================================================================
+int             width
+=============== =============== ================================================
 
 Methods
 ...............................................................................
 
-int updateFromString(string snippet)
-    Update a legend from a string snippet. Returns MS_SUCCESS/MS_FAILURE.
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the
+    resources.
 
 int set(string property_name, new_value)
     Set object property to a new value.
 
-void free()
-    Free the object properties and break the internal references. 
-    Note that you have to unset the php variable to free totally the resources.
+int updateFromString(string snippet)
+    Update a legend from a string snippet. Returns MS_SUCCESS/MS_FAILURE.
 
 lineObj
 ^^^^^^^
@@ -1104,11 +1164,11 @@ or using the old constructor
 Members
 ...............................................................................
 
-=============== ====================================================================
-Type                Name
-=============== ====================================================================
-int             numpoints  (read-only)
-=============== ====================================================================
+=============== ============ ===================================================
+Type                Name     Note
+=============== ============ ===================================================
+int             numpoints    read-only
+=============== ============ ===================================================
 
 Methods
 ...............................................................................
@@ -1119,16 +1179,16 @@ int add(pointObj point)
 int addXY(double x, double y [, double m])
     Add a point to the end of line. Returns MS_SUCCESS/MS_FAILURE.
 
-.. note::    
-    the 3rd parameter m is used for measured shape files only.
-    It is not mandatory.
+    .. note::    
+      the 3rd parameter m is used for measured shape files only.
+      It is not mandatory.
 
 int addXYZ(double x, double y, double z [, double m])
     Add a point to the end of line. Returns MS_SUCCESS/MS_FAILURE.
 
-.. note:: 
-    the 4th parameter m is used for measured shape files only. 
-    It is not mandatory.
+    .. note:: 
+      the 4th parameter m is used for measured shape files only. 
+      It is not mandatory.
 
 PointObj point(int i)
     Returns a reference to point number i.
@@ -1166,42 +1226,42 @@ mapObj ms_newMapObjFromString(string map_file_string [, string new_map_path])
 Members
 ...............................................................................
 
-=============== ===============================================================
-Type                Name
-=============== ===============================================================
-int             numlayers  (read-only)
-string          name
-string          mappath
-int             status
-int             debug
-int             width           (see setSize())
-int             height          (see setSize())
-int             maxsize
-outputformatObj outputformat
-double          resolution      (pixels per inch, defaults to 72)
-double          defresolution   (pixels per inch, defaults to 72)
-rectObj         extent; 
+=============== ================== =============================================
+Type                Name           Note
+=============== ================== =============================================
 double          cellsize
-int             units (map units type)
-double          scaledenom (read-only, set by drawMap())
-string          shapepath
+int             debug
+double          defresolution      pixels per inch, defaults to 72
+rectObj         extent; 
+string          fontsetfilename    read-only, set by setFontSet()
+int             height             see setSize()
+colorObj        imagecolor
 int             keysizex
 int             keysizey
 int             keyspacingx
 int             keyspacingy
-webObj          web
-referenceMapObj reference
-colorObj        imagecolor
-scalebarObj     scalebar
+labelcacheObj   labelcache         no members. Used only to free the
+                                   label cache (map->labelcache->free()
 legendObj       legend                  
-querymapObj     querymap                  
-string          symbolsetfilename (read-only, set by setSymbolSet())
-string          fontsetfilename (read-only, set by setFontSet())
-labelcacheObj   labelcache (no members. Used only to be able to free the
-                the label cache (ex : map->labelcache->free())
-projectionObj   projection
+string          mappath
+int             maxsize
 hashTableObj    metadata
-=============== ===============================================================
+string          name
+int             numlayers          read-only
+outputformatObj outputformat
+projectionObj   projection
+querymapObj     querymap                  
+referenceMapObj reference
+double          resolution         pixels per inch, defaults to 72
+scalebarObj     scalebar
+double          scaledenom         read-only, set by drawMap()
+string          shapepath
+int             status
+string          symbolsetfilename  read-only, set by setSymbolSet()
+int             units              map units type
+webObj          web
+int             width              see setSize()
+=============== ================== =============================================
      
 Methods
 ...............................................................................
@@ -1253,15 +1313,15 @@ int drawLabelCache(imageObj image)
     Renders the labels for a map. Returns MS_SUCCESS or MS_FAILURE on error.
 
 labelcacheMemberObj getLabel(int index)
-    Returns a labelcacheMemberObj from the map given an index value (0=first label)
-    Labelcache has to be enabled.
+    Returns a labelcacheMemberObj from the map given an index value
+    (0=first label).  Labelcache has to be enabled.
 
-.. code-block:: php
+    .. code-block:: php
 
-    while ($oLabelCacheMember = $oMap->getLabel($i)) {
-    /* do something with the labelcachemember */
-    ++$i;
-    }
+      while ($oLabelCacheMember = $oMap->getLabel($i)) {
+        /* do something with the labelcachemember */
+        ++$i;
+      }
 
 layerObj getLayer(int index)
     Returns a layerObj from the map given an index value (0=first layer)
@@ -1271,7 +1331,8 @@ layerObj getLayerByName(string layer_name)
     Returns NULL if layer doesn't exist.
 
 colorObj getcolorbyindex(int iCloIndex)
-Returns a colorObj corresponding to the color index in the palette
+    Returns a colorObj corresponding to the color index in the
+    palette.
 
 void setExtent(double minx, double miny, double maxx, double maxy)
     Set the map extents using the georef extents passed in argument.
@@ -1286,9 +1347,10 @@ int offsetExtent(double x, double y)
     Returns MS_SUCCESS or MS_FAILURE. 
 
 int scaleExtent(double zoomfactor, double minscaledenom, double maxscaledenom)
-    Scale the map extent using the zoomfactor and ensure the extent within the minscaledenom and maxscaledenom domain. 
-    If minscaledenom and/or maxscaledenom is 0 then the parameter is not taken into account. 
-    Returns MS_SUCCESS or MS_FAILURE.
+    Scale the map extent using the zoomfactor and ensure the extent
+    within the minscaledenom and maxscaledenom domain.  If
+    minscaledenom and/or maxscaledenom is 0 then the parameter is not
+    taken into account.  Returns MS_SUCCESS or MS_FAILURE.
 
 int setRotation(double rotation_angle)
     Set map rotation angle. The map view rectangle (specified in 
@@ -1320,7 +1382,8 @@ int zoompoint(int nZoomFactor, pointObj oPixelPos, int nImageWidth, int nImageHe
          those extents.
 
 int zoomrectangle(rectObj oPixelExt, int nImageWidth, int nImageHeight, rectObj oGeorefExt)
-    Set the map extents to a given extents. Returns MS_SUCCESS or MS_FAILURE on error.
+    Set the map extents to a given extents. Returns MS_SUCCESS or
+    MS_FAILURE on error.
 
     Parameters are :
         - oPixelExt (rect object) : Pixel Extents     
@@ -1328,7 +1391,8 @@ int zoomrectangle(rectObj oPixelExt, int nImageWidth, int nImageHeight, rectObj 
         - Height : Height in pixel of the current image. 
         - Georef extent (rectObj) : current georef extents.
 
-int zoomscale(double nScaleDenom, pointObj oPixelPos, int nImageWidth, int nImageHeight, rectObj oGeorefExt [, rectObj oMaxGeorefExt])
+int zoomscale(double nScaleDenom, pointObj oPixelPos, int nImageWidth,
+int nImageHeight, rectObj oGeorefExt [, rectObj oMaxGeorefExt])
     Zoom in or out to a given XY position so that the map is 
     displayed at specified scale. Returns MS_SUCCESS or MS_FAILURE on error.
 
@@ -1361,15 +1425,15 @@ int queryByPoint(pointObj point, int mode, double buffer)
     the '@' control operator).
 
 int queryByRect(rectObj rect)
-    Query all selected layers in map using a rectangle specified in 
-    georeferenced map coordinates (i.e. not pixels).
-    The query is performed on all the shapes that are part of a :ref:`CLASS` 
-    that contains a :ref:`TEMPLATE` value or that match any class in a
-    layer that contains a :ref:`LAYER` :ref:`TEMPLATE <template>` value.
-    Returns MS_SUCCESS if shapes were found or MS_FAILURE if nothing
-    was found or if some other error happened (note that the error 
-    message in case nothing was found can be avoided in PHP using 
-    the '@' control operator).
+    Query all selected layers in map using a rectangle specified in
+    georeferenced map coordinates (i.e. not pixels).  The query is
+    performed on all the shapes that are part of a :ref:`CLASS` that
+    contains a :ref:`TEMPLATE` value or that match any class in a
+    layer that contains a :ref:`LAYER` :ref:`TEMPLATE <template>`
+    value.  Returns MS_SUCCESS if shapes were found or MS_FAILURE if
+    nothing was found or if some other error happened (note that the
+    error message in case nothing was found can be avoided in PHP
+    using the '@' control operator).
 
 int queryByShape(shapeObj shape)
     Query all selected layers in map based on a single shape, the 
@@ -1428,15 +1492,15 @@ int setWKTProjection(string proj_params, boolean bSetUnitsAndExtents)
     Same as setProjection(), but takes an OGC WKT projection 
     definition string as input. Returns MS_SUCCESS or MS_FAILURE on error.
 
-.. note::
-    setWKTProjection requires GDAL support
+    .. note::
+      setWKTProjection requires GDAL support
 
 int getMetaData(string name)
-    Fetch metadata entry by name (stored in the :ref:`WEB` object in the map
-    file).  Returns "" if no entry matches the name.  
+    Fetch metadata entry by name (stored in the :ref:`WEB` object in
+    the map file).  Returns "" if no entry matches the name.
 
-.. note::
-    getMetaData's query is case sensitive.
+    .. note::
+      getMetaData's query is case sensitive.
 
 int setMetaData(string name, string value)
     Set a metadata entry for the map (stored in the WEB object in the map
@@ -1493,64 +1557,63 @@ string processTemplate(array params, boolean generateimages)
       [my_tag] and would like it to be replaced by "value_of_my_tag"
       he would do 
 
-.. code-block:: php
+    .. code-block:: php
 
-    $tmparray["my_tag"] = "value_of_my_tag";
-    $map->processtemplate($tmparray, MS_FALSE);
+      $tmparray["my_tag"] = "value_of_my_tag";
+      $map->processtemplate($tmparray, MS_FALSE);
      
 string processquerytemplate(array params, boolean generateimages)     
-   Process query template files and return the result in a buffer.
-   Second argument generateimages is not mandatory. If not given
-   it will be set to TRUE.
+    Process query template files and return the result in a buffer.
+    Second argument generateimages is not mandatory. If not given
+    it will be set to TRUE.
 
-.. seealso::
+    .. seealso::
 
-   :ref:`processtemplate <processtemplate>`
+      :ref:`processtemplate <processtemplate>`
 
 string processlegendtemplate(array params)     
-   Process legend template files and return the result in a buffer.
+    Process legend template files and return the result in a buffer.
 
-.. seealso::
+    .. seealso::
 
-   :ref:`processtemplate <processtemplate>`
+      :ref:`processtemplate <processtemplate>`
    
 int setSymbolSet(string fileName)
-   Load and set a symbol file dynamically.
+    Load and set a symbol file dynamically.
    
 int getNumSymbols()
-   Return the number of symbols in map.
+    Return the number of symbols in map.
    
 int setFontSet(string fileName)
-   Load and set a new :ref:`fontset`.
+    Load and set a new :ref:`fontset`.
    
 
 int selectOutputFormat(string type)
     Selects the output format to be used in the map. 
     Returns MS_SUCCESS/MS_FAILURE.
 
-.. note::   
-    the type used should correspond to one of the output formats 
-    declared in the map file.  The type argument passed is compared 
-    with the mimetype parameter in the output format structure and 
-    then to the name parameter in the structure. 
+    .. note::   
+      the type used should correspond to one of the output formats
+      declared in the map file.  The type argument passed is compared
+      with the mimetype parameter in the output format structure and
+      then to the name parameter in the structure.
 
 int saveMapContext(string filename)
-    Available only if WMS support is enabled.
-    Save current map object state in :ref:`WMS Map Context <map_context>` format. 
-    Only WMS layers are saved in the WMS Map Context XML file.
-    Returns MS_SUCCESS/MS_FAILURE.
+    Available only if WMS support is enabled.  Save current map object
+    state in :ref:`WMS Map Context <map_context>` format.  Only WMS
+    layers are saved in the WMS Map Context XML file.  Returns
+    MS_SUCCESS/MS_FAILURE.
 
 int loadMapContext(string filename [, boolean unique_layer_name])
-    Available only if WMS support is enabled.
-    Load a :ref:`WMS Map Context <map_context>` XML file into the current mapObj.
-    If the map already contains some layers then the layers defined
-    in the WMS Map context document are added to the current map.
-    The 2nd argument unique_layer_name is optional and if set to 
-    MS_TRUE layers created will have a unique name (unique prefix
-    added to the name). If set to MS_FALSE the layer name will be the 
-    the same name as in the context. The default value is MS_FALSE.
-    Returns MS_SUCCESS/MS_FAILURE.
-
+    Available only if WMS support is enabled.  Load a :ref:`WMS Map
+    Context <map_context>` XML file into the current mapObj.  If the
+    map already contains some layers then the layers defined in the
+    WMS Map context document are added to the current map.  The 2nd
+    argument unique_layer_name is optional and if set to MS_TRUE
+    layers created will have a unique name (unique prefix added to the
+    name). If set to MS_FALSE the layer name will be the the same name
+    as in the context. The default value is MS_FALSE.  Returns
+    MS_SUCCESS/MS_FAILURE.
 
 int applySLD(string sldxml)
     Apply the :ref:`SLD` document to the map file. The matching between the
@@ -1587,28 +1650,32 @@ int loadowsparameters(owsrequest request, string version)
     If not given, the version will be set to 1.1.1
 
 int owsdispatch(owsrequest request)
-    Processes and executes the passed OpenGIS Web Services request on the 
-    map.  Returns MS_DONE (2) if there is no valid OWS request in the req 
-    object, MS_SUCCESS (0) if an OWS request was successfully processed and 
-    MS_FAILURE (1) if an OWS request was not successfully processed.  OWS 
-    requests include :ref:`WMS <wms_server>`, :ref:`WFS <wfs_server>`, 
-    :ref:`WCS <wcs_server>` and :ref:`SOS <sos_server>` requests supported by MapServer. 
-    Results of a dispatched request are written to stdout and can be captured 
-    using the msIO services (ie. ms_ioinstallstdouttobuffer() and 
-    ms_iogetstdoutbufferstring())
+    Processes and executes the passed OpenGIS Web Services request on
+    the map.  Returns MS_DONE (2) if there is no valid OWS request in
+    the req object, MS_SUCCESS (0) if an OWS request was successfully
+    processed and MS_FAILURE (1) if an OWS request was not
+    successfully processed.  OWS requests include :ref:`WMS
+    <wms_server>`, :ref:`WFS <wfs_server>`, :ref:`WCS <wcs_server>`
+    and :ref:`SOS <sos_server>` requests supported by MapServer.
+    Results of a dispatched request are written to stdout and can be
+    captured using the msIO services (ie. ms_ioinstallstdouttobuffer()
+    and ms_iogetstdoutbufferstring())
 
 int insertLayer( layerObj layer [, int nIndex=-1 ] )
-    Insert a copy of *layer* into the Map at index *nIndex*.  The default
-    value of *nIndex* is -1, which means the last possible index.  Returns
-    the index of the new Layer, or -1 in the case of a failure.
+    Insert a copy of *layer* into the Map at index *nIndex*.  The
+    default value of *nIndex* is -1, which means the last possible
+    index.  Returns the index of the new Layer, or -1 in the case of a
+    failure.
 
 layerObj removeLayer( int nIndex )
-    Remove a layer from the mapObj. The argument is the index of the layer 
-    to be removed. Returns the removed layerObj on success, else null.
+    Remove a layer from the mapObj. The argument is the index of the
+    layer to be removed. Returns the removed layerObj on success, else
+    null.
 
 void free()
-    Free the object properties and break the internal references. 
-    Note that you have to unset the php variable to free totally the resources.
+    Free the object properties and break the internal references.
+    Note that you have to unset the php variable to free totally the
+    resources.
  
 outputformatObj
 ^^^^^^^^^^^^^^^
@@ -1624,21 +1691,24 @@ No constructor available (coming soon, see ticket 979)
 Members
 ...............................................................................
 
-=============== ====================================================================
-Type                Name
-=============== ====================================================================
-string          name
-string          mimetype
+=============== =============== ================================================
+Type                Name        Note
+=============== =============== ================================================
 string          driver
 string          extension
+int             imagemode       MS_IMAGEMODE_* value.
+string          mimetype
+string          name
 int             renderer
-int             imagemode     // MS_IMAGEMODE_* value.
 int             transparent
-=============== ====================================================================
+=============== =============== ================================================
     
 Methods
 ...............................................................................
 
+string getOption(string property_name)
+    Returns the associated value for the format option property passed
+    as argument. Returns an empty string if property not found.
 
 int set(string property_name, new_value)
     Set object property to a new value.
@@ -1648,12 +1718,8 @@ void setOption(string property_name, string new_value)
 
     .. code-block:: php
         
-        $oMap->outputformat->setOption("OUTPUT_TYPE", "RASTER");
+       $oMap->outputformat->setOption("OUTPUT_TYPE", "RASTER");
  
-string getOption(string property_name)
-    Returns the associated value for the format option property passed
-    as argument. Returns an empty string if property not found.
-
 int validate()
    Checks some internal consistency issues, Returns MS_SUCCESS or
    MS_FAILURE. Some problems are fixed up internally. May produce debug
@@ -1680,27 +1746,15 @@ Create a new ows request object.
 Members
 ...............................................................................
 
-=============== ====================================================================
+=============== ================================================================
 Type                Name
-=============== ====================================================================
+=============== ================================================================
 int             numparams (read-only)  
 int             type (read-only): MS_GET_REQUEST or MS_POST_REQUEST
-=============== ====================================================================
+=============== ================================================================
 
 Methods
 ...............................................................................
-
-int loadparams()
-    Initializes the OWSRequest object from the cgi environment variables
-    REQUEST_METHOD, QUERY_STRING and HTTP_COOKIE.  Returns the number of 
-    name/value pairs collected.
-
-int setparameter(string name, string value)
-    Set a request parameter.  For example :
-    
-    .. code-block:: php
-
-        $request->setparameter('REQUEST', 'GetMap');
 
 string getname(int index)
     Return the name of the parameter at *index* in the request's array
@@ -1713,6 +1767,18 @@ string getvalue(int index)
 string getvaluebyname(string name)
     Return the value associated with the parameter *name*.
 
+int loadparams()
+    Initializes the OWSRequest object from the cgi environment variables
+    REQUEST_METHOD, QUERY_STRING and HTTP_COOKIE.  Returns the number of 
+    name/value pairs collected.
+
+int setparameter(string name, string value)
+    Set a request parameter.  For example :
+    
+    .. code-block:: php
+
+       $request->setparameter('REQUEST', 'GetMap');
+
 pointObj
 ^^^^^^^^
 
@@ -1721,42 +1787,38 @@ Constructor
 
 .. code-block:: php
 
-    new pointObj()
+   new pointObj()
 
 or using the old constructor
 
 .. code-block:: php
     
-    PointObj ms_newPointObj()
+   PointObj ms_newPointObj()
 
 Members
 ...............................................................................
 
-=============== ====================================================================
-Type                Name
-=============== ====================================================================
+=============== ========= ======================================================
+Type             Name     Note
+=============== ========= ======================================================
 double          x
 double          y
-double          z (used for 3d shape files. set to 0 for other types)
-double          m  (used only for measured shape files. set to 0 for other types.)
-=============== ====================================================================
+double          z         used for 3d shape files. set to 0 for other types
+double          m         used only for measured shape files - set to 0 for other types
+=============== ========= ======================================================
 
 Methods
 ...............................................................................
 
-int setXY(double x, double y [, double m])
-    Set X,Y coordinate values.
+double distanceToLine(pointObject p1, pointObject p2)
+    Calculates distance between a point ad a lined defined by the
+    two points passed in argument. 
 
-.. note::
-    the 3rd parameter m is used for measured shape files only.
-    It is not mandatory.
+double distanceToPoint(pointObj poPoint)
+   Calculates distance between two points.  
 
-int setXYZ(double x, double y , double z, [, double m])
-    Set X,Y,Z coordinate values.
-    
-.. note:: 
-    the 4th parameter m is used for measured shape files only.
-    It is not mandatory.
+double distanceToShape(shapeObj shape)
+    Calculates the minimum distance between a point and a shape.
 
 int draw(mapObj map, layerObj layer, imageObj img, int class_index, string text)
     Draws the individual point using layer.  The class_index is used
@@ -1764,20 +1826,24 @@ int draw(mapObj map, layerObj layer, imageObj img, int class_index, string text)
     The text string is used to annotate the point.
     Returns MS_SUCCESS/MS_FAILURE.
 
-double distanceToPoint(pointObj poPoint)
-   Calculates distance between two points.  
-
-double distanceToLine(pointObject p1, pointObject p2)
-    Calculates distance between a point ad a lined defined by the
-    two points passed in argument. 
-
-double distanceToShape(shapeObj shape)
-    Calculates the minimum distance between a point and a shape.
-
 int project(projectionObj in, projectionObj out)
     Project the point from "in" projection (1st argument) to "out" 
     projection (2nd argument).  Returns MS_SUCCESS/MS_FAILURE.
   
+int setXY(double x, double y [, double m])
+    Set X,Y coordinate values.
+
+    .. note::
+      the 3rd parameter m is used for measured shape files only.
+      It is not mandatory.
+
+int setXYZ(double x, double y , double z, [, double m])
+    Set X,Y,Z coordinate values.
+    
+    .. note:: 
+      the 4th parameter m is used for measured shape files only.
+      It is not mandatory.
+
 projectionObj
 ^^^^^^^^^^^^^
 
@@ -1786,20 +1852,20 @@ Constructor
 
 .. code-block:: php
 
-    new projectionObj(string projectionString)
+   new projectionObj(string projectionString)
 
 or using the old constructor
 
 .. code-block:: php
     
-    ProjectionObj ms_newProjectionObj(string projectionString)
+   ProjectionObj ms_newProjectionObj(string projectionString)
     
 Creates a projection object based on the projection string passed
 as argument.
 
 .. code-block:: php
     
-    $projInObj = ms_newprojectionobj("proj=latlong") 
+   $projInObj = ms_newprojectionobj("proj=latlong") 
 
 will create a geographic projection class.
 
@@ -1808,12 +1874,12 @@ projection:
 
 .. code-block:: php
 
-    $projInObj = ms_newprojectionobj("proj=latlong");
-    $projOutObj = ms_newprojectionobj("proj=lcc,ellps=GRS80,lat_0=49,".
-                                      "lon_0=-95,lat_1=49,lat_2=77");
-    $poPoint = ms_newpointobj();
-    $poPoint->setXY(-92.0, 62.0);         
-    $poPoint->project($projInObj, $projOutObj);
+   $projInObj = ms_newprojectionobj("proj=latlong");
+   $projOutObj = ms_newprojectionobj("proj=lcc,ellps=GRS80,lat_0=49,".
+                                     "lon_0=-95,lat_1=49,lat_2=77");
+   $poPoint = ms_newpointobj();
+   $poPoint->setXY(-92.0, 62.0);         
+   $poPoint->project($projInObj, $projOutObj);
 
 Methods
 ...............................................................................
@@ -1827,32 +1893,34 @@ querymapObj
 Constructor
 ...............................................................................
 
-Instances of querymapObj are always are always embedded inside the `mapObj`_.
+Instances of querymapObj are always are always embedded inside the
+`mapObj`_.
 
 Members
 ...............................................................................
 
-=============== ====================================================================
-Type                Name
-=============== ====================================================================
-int             width
-int             height
-int             style   (MS_NORMAL, MS_HILITE, MS_SELECTED)
+=============== =========== ====================================================
+Type                Name    Note
+=============== =========== ====================================================
 colorObj        color
-=============== ====================================================================
+int             height
+int             width
+int             style       MS_NORMAL, MS_HILITE, MS_SELECTED
+=============== =========== ====================================================
  
 Methods
 ...............................................................................
 
-int updateFromString(string snippet)
-    Update a queryMap object from a string snippet. Returns MS_SUCCESS/MS_FAILURE.
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the resources.
 
 int set(string property_name, new_value)
     Set object property to a new value.
 
-void free()
-    Free the object properties and break the internal references. 
-    Note that you have to unset the php variable to free totally the resources.
+int updateFromString(string snippet)
+    Update a queryMap object from a string snippet. Returns
+    MS_SUCCESS/MS_FAILURE.
 
 rectObj
 ^^^^^^^
@@ -1865,36 +1933,30 @@ also be created with:
 
 .. code-block:: php
 
-    new rectObj()
+   new rectObj()
 
 or using the old constructor
 
 .. code-block:: php
     
-    RectObj ms_newRectObj() 
+   RectObj ms_newRectObj() 
 
-.. note:: the members (minx, miny,maxx,maxy) are initialized to -1; 
+.. note:: the members (minx, miny, maxx ,maxy) are initialized to -1; 
 
 Members:
 ...............................................................................
 
-=============== ====================================================================
+=============== ================================================================
 Type                Name
-=============== ====================================================================
+=============== ================================================================
 double          minx
 double          miny
 double          maxx
 double          maxy
-=============== ====================================================================
+=============== ================================================================
 
 Methods
 ...............................................................................
-
-int set(string property_name, new_value)
-    Set object property to a new value.
-
-void setextent(double minx, double miny, double maxx, double maxy)
-    Set the rectangle extents.
 
 int draw(mapObj map, layerObj layer, imageObj img, int class_index, string text)
     Draws the individual rectangle using layer.  The class_index is used
@@ -1909,6 +1971,12 @@ int project(projectionObj in, projectionObj out)
     Project the rectangle from "in" projection (1st argument) to "out" 
     projection (2nd argument).  Returns MS_SUCCESS/MS_FAILURE.
 
+int set(string property_name, new_value)
+    Set object property to a new value.
+
+void setextent(double minx, double miny, double maxx, double maxy)
+    Set the rectangle extents.
+
 referenceMapObj
 ^^^^^^^^^^^^^^^
 
@@ -1920,36 +1988,37 @@ Instances of referenceMapObj are always embedded inside the `mapObj`_.
 Members
 ...............................................................................
 
-=============== ====================================================================
+=============== ================================================================
 Type                Name
-=============== ====================================================================
-string          image
-int             width
+=============== ================================================================
+ColorObj        color
 int             height
-int             status
+rectObj         extent
+string          image
 int             marker
 string          markername
 int             markersize
 int             maxboxsize
 int             minboxsize
-rectObj         extent
-ColorObj        color
 ColorObj        outlinecolor
-=============== ====================================================================
+int             status
+int             width
+=============== ================================================================
 
 Methods
 ...............................................................................
 
-int updateFromString(string snippet)
-    Update a referenceMap object from a string snippet. 
-    Returns MS_SUCCESS/MS_FAILURE.
+void free()
+    Free the object properties and break the internal references.
+    Note that you have to unset the php variable to free totally the
+    resources.
 
 int set(string property_name, new_value)
     Set object property to a new value.
 
-void free()
-    Free the object properties and break the internal references. 
-    Note that you have to unset the php variable to free totally the resources.
+int updateFromString(string snippet)
+    Update a referenceMap object from a string snippet. 
+    Returns MS_SUCCESS/MS_FAILURE.
 
 resultObj
 ^^^^^^^^^^^^^^^^^^^^
@@ -1959,21 +2028,21 @@ Constructor
 
 .. code-block:: php
 
-    new resultObj(int shapeindex)
+   new resultObj(int shapeindex)
 
 or using the `layerObj`_'s getResult() method.
 
 Members
 ...............................................................................
 
-=============== ====================================================================
-Type                Name
-=============== ====================================================================
-int             shapeindex    (read-only)
-int             tileindex     (read-only)
-int             classindex    (read-only)
-int             resultindex   (read-only)
-=============== ====================================================================
+=============== ============= ==================================================
+Type                Name      Note
+=============== ============= ==================================================
+int             classindex    read-only
+int             resultindex   read-only
+int             shapeindex    read-only
+int             tileindex     read-only
+=============== ============= ==================================================
 
 Method
 ...............................................................................
@@ -1986,35 +2055,37 @@ scalebarObj
 Constructor
 ...............................................................................
 
-Instances of scalebarObj are always are always embedded inside the `mapObj`_.
+Instances of scalebarObj are always embedded inside the `mapObj`_.
 
 Members
 ...............................................................................
 
-=============== ====================================================================
-Type                Name
-=============== ====================================================================
-int             height
-int             width
-int             style      
-int             intervals
-colorObj        color
-colorObj        backgroundcolor            
-colorObj        outlinecolor
-int             units
-int             status //MS_ON, MS_OFF, MS_EMBED
-int             position //for embeded scalebars, MS_UL, MS_UC, ...
-int             postlabelcache
-labelObj        label
-colorObj        imagecolor
+=============== ================= ==============================================
+Type                Name          Note
+=============== ================= ==============================================
 int             align
-=============== ====================================================================
+colorObj        backgroundcolor            
+colorObj        color
+int             height
+colorObj        imagecolor
+int             intervals
+labelObj        label
+colorObj        outlinecolor
+int             position          for embeded scalebars, MS_UL, MS_UC, ...
+int             postlabelcache
+int             status            MS_ON, MS_OFF, MS_EMBED
+int             style      
+int             units
+int             width
+=============== ================= ==============================================
 
 Methods
 ...............................................................................
 
-int updateFromString(string snippet)
-    Update a scalebar from a string snippet. Returns MS_SUCCESS/MS_FAILURE.
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the
+    resources.
 
 int set(string property_name, new_value)
     Set object property to a new value.
@@ -2023,9 +2094,8 @@ int setimagecolor(int red, int green, int blue)
     Sets the imagecolor propery (baclground) of the object.
     Returns MS_SUCCESS or MS_FAILURE on error.  
 
-void free()
-    Free the object properties and break the internal references. 
-    Note that you have to unset the php variable to free totally the resources.
+int updateFromString(string snippet)
+    Update a scalebar from a string snippet. Returns MS_SUCCESS/MS_FAILURE.
 
 shapefileObj
 ^^^^^^^^^^^^
@@ -2035,60 +2105,64 @@ Constructor
 
 .. code-block:: php
 
-    new shapeFileObj(string filename, int type)
+   new shapeFileObj(string filename, int type)
 
 or using the old constructor
 
 .. code-block:: php
     
-    shapefileObj ms_newShapefileObj(string filename, int type)
+   shapefileObj ms_newShapefileObj(string filename, int type)
 
-Opens a shapefile and returns a new object to deal with it. Filename should be 
-passed with no extension.  To create a new file (or overwrite an existing 
-one), type should be one of MS_SHP_POINT, MS_SHP_ARC, MS_SHP_POLYGON or 
-MS_SHP_MULTIPOINT. Pass type as -1 to open an existing file for read-only access,
-and type=-2 to open an existing file for update (append).
+Opens a shapefile and returns a new object to deal with it. Filename
+should be passed with no extension.  To create a new file (or
+overwrite an existing one), type should be one of MS_SHP_POINT,
+MS_SHP_ARC, MS_SHP_POLYGON or MS_SHP_MULTIPOINT. Pass type as -1 to
+open an existing file for read-only access, and type=-2 to open an
+existing file for update (append).
 
 Members
 ...............................................................................
 
-=============== ====================================================================
-Type                Name
-=============== ====================================================================
-int             numshapes  (read-only)
-int             type       (read-only)
-string          source     (read-only)
-rectObj         bounds     (read-only)
-=============== ====================================================================
+=============== ========== =====================================================
+Type                Name   Note
+=============== ========== =====================================================
+rectObj         bounds     read-only
+int             numshapes  read-only
+string          source     read-only
+int             type       read-only
+=============== ========== =====================================================
 
 Methods
 ...............................................................................
 
-shapeObj getShape(int i)
-    Retrieve shape by index.
-
-shapeObj getPoint(int i)
-    Retrieve point by index.
-  
-shapeObj getTransformed(mapObj map, int i)
-    Retrieve shape by index.
-
-rectObj getExtent(int i)
-    Retrieve a shape's bounding box by index.
+int addPoint(pointObj point)
+    Appends a point to an open shapefile.
 
 int addShape(shapeObj shape)
     Appends a shape to an open shapefile.
     
-int addPoint(pointObj point)
-    Appends a point to an open shapefile.
-
 void free()
     Free the object properties and break the internal references. 
-    Note that you have to unset the php variable to free totally the resources.
+    Note that you have to unset the php variable to free totally the
+    resources.
 
-**NOTE**: The shape file is closed (and changes committed) when the object
-          is destroyed. You can explicitly close and save the changes by calling
-          $shapefile->free(); unset($shapefile), which will also free the php object.
+    .. note::
+      The shape file is closed (and changes committed) when
+      the object is destroyed. You can explicitly close and save
+      the changes by calling $shapefile->free();
+      unset($shapefile), which will also free the php object.
+
+rectObj getExtent(int i)
+    Retrieve a shape's bounding box by index.
+
+shapeObj getPoint(int i)
+    Retrieve point by index.
+  
+shapeObj getShape(int i)
+    Retrieve shape by index.
+
+shapeObj getTransformed(mapObj map, int i)
+    Retrieve shape by index.
 
 shapeObj
 ^^^^^^^^
@@ -2098,38 +2172,39 @@ Constructor
 
 .. code-block:: php
 
-    new shapeObj(int type)
+   new shapeObj(int type)
 
 or using the old constructor
 
 .. code-block:: php
     
-    ShapeObj ms_newShapeObj(int type)
+   ShapeObj ms_newShapeObj(int type)
 
-'type' is one of MS_SHAPE_POINT, MS_SHAPE_LINE, MS_SHAPE_POLYGON or MS_SHAPE_NULL
+'type' is one of MS_SHAPE_POINT, MS_SHAPE_LINE, MS_SHAPE_POLYGON or
+MS_SHAPE_NULL
 
 .. code-block:: php
     
-    ShapeObj ms_shapeObjFromWkt(string wkt)
+   ShapeObj ms_shapeObjFromWkt(string wkt)
 
 Creates new shape object from WKT string.
 
 Members
 ...............................................................................
 
-=============== ====================================================================
-Type                Name
-=============== ====================================================================
-string          text
+=============== =========== ====================================================
+Type                Name    Note
+=============== =========== ====================================================
+rectObj         bounds      read-only
 int             classindex
-int             type      (read-only)
-int             numlines  (read-only)
 int             index     
-int             tileindex (read-only)
-rectObj         bounds    (read-only)
-int             numvalues (read-only)
-array           values    (read-only)
-=============== ====================================================================
+int             numlines    read-only
+int             numvalues   read-only
+int             tileindex   read-only
+string          text
+int             type        read-only
+array           values      read-only
+=============== =========== ====================================================
 
 The values array is an associative array with the attribute values for
 this shape.  It is set only on shapes obtained from layer->getShape().
@@ -2137,7 +2212,7 @@ The key to the values in the array is the attribute name, e.g.
 
 .. code-block:: php
     
-    $population = $shape->values["Population"];
+   $population = $shape->values["Population"];
 
 Methods
 ...............................................................................
@@ -2214,8 +2289,8 @@ shapeobj difference(shapeobj shape)
     Only available if php/mapscript is built with GEOS library.
 
 shapeobj symdifference(shapeobj shape)
-    Returns the computed symmetric difference of the supplied and existing
-    shape.
+    Returns the computed symmetric difference of the supplied and
+    existing shape.
     Only available if php/mapscript is built with GEOS library.
 
 int overlaps(shapeobj shape)  
@@ -2224,7 +2299,8 @@ int overlaps(shapeobj shape)
     Only available if php/mapscript is built with GEOS library.
 
 int within(shapeobj shape2) 
-    Returns true if the shape is entirely within the shape2 passed as argument. 
+    Returns true if the shape is entirely within the shape2 passed as
+    argument.
     Else returns false. 
     Only available if php/mapscript is built with GEOS library.
 
@@ -2294,13 +2370,13 @@ Instances of styleObj are always embedded inside the `classObj`_.
 
 .. code-block:: php
 
-    new styleObj(classObj class [, styleObj style])
+   new styleObj(classObj class [, styleObj style])
 
 or using the old constructor
 
 .. code-block:: php
     
-    styleObj ms_newStyleObj(classObj class [, styleObj style])
+   styleObj ms_newStyleObj(classObj class [, styleObj style])
 
 The second argument 'style' is optional. If given, the new style
 created will be a copy of the style passed as argument.
@@ -2308,9 +2384,9 @@ created will be a copy of the style passed as argument.
 Members
 ...............................................................................
 
-=============== ==================== ==================================================
-Type                Name
-=============== ==================== ==================================================
+=============== ==================== ===========================================
+Type                Name             Note
+=============== ==================== ===========================================
 double          angle
 int             antialias
 colorObj        backgroundcolor
@@ -2323,17 +2399,15 @@ double          minvalue
 double          minwidth
 int             offsetx
 int             offsety
-int             opacity              (only supported for the AGG driver)
+int             opacity              only supported for the AGG driver
 colorObj        outlinecolor
 string          rangeitem
 double          size
 int             symbol
 string          symbolname
 double          width
-=============== ==================== ==================================================
+=============== ==================== ===========================================
 
-    
-    
 Methods
 ...............................................................................
 
@@ -2348,8 +2422,8 @@ string getBinding(const stylebinding)
 
     .. code-block:: php
     
-        $oStyle->setbinding(MS_STYLE_BINDING_COLOR, "FIELD_NAME_COLOR");
-        echo $oStyle->getbinding(MS_STYLE_BINDING_COLOR); // FIELD_NAME_COLOR
+       $oStyle->setbinding(MS_STYLE_BINDING_COLOR, "FIELD_NAME_COLOR");
+       echo $oStyle->getbinding(MS_STYLE_BINDING_COLOR); // FIELD_NAME_COLOR
 
 string getGeomTransform()
 
@@ -2359,7 +2433,7 @@ int removeBinding(const stylebinding)
     
     .. code-block:: php
         
-        $oStyle->removebinding(MS_STYLE_BINDING_COLOR);
+       $oStyle->removebinding(MS_STYLE_BINDING_COLOR);
 
 int set(string property_name, new_value)
     Set object property to a new value.
@@ -2370,7 +2444,7 @@ int setBinding(const stylebinding, string value)
    
     .. code-block:: php
 
-        $oStyle->setbinding(MS_STYLE_BINDING_COLOR, "FIELD_NAME_COLOR");
+       $oStyle->setbinding(MS_STYLE_BINDING_COLOR, "FIELD_NAME_COLOR");
 
     This would bind the color parameter with the data (ie will extract
     the value of the color from the field called "FIELD_NAME_COLOR"
@@ -2388,89 +2462,98 @@ Constructor
 
 .. code-block:: php
 
-    new symbolObj(mapObj map, string symbolname)
+   new symbolObj(mapObj map, string symbolname)
 
 or using the old constructor
   
 .. code-block:: php
 
-    int ms_newSymbolObj(mapObj map, string symbolname)
+   int ms_newSymbolObj(mapObj map, string symbolname)
     
 Creates a new symbol with default values in the symbolist. 
 
 .. note::
-    Using the new constructor, the symbol is automatically returned. The
-    old constructor returns the id of the new symbol.
+   Using the new constructor, the symbol is automatically returned. The
+   old constructor returns the id of the new symbol.
 
 If a symbol with the same name exists, it (or its id) will be returned.
 To get a symbol object using the old constructor, you need to use a method on the map object:
 
 .. code-block:: php
 
-    $nId = ms_newSymbolObj($map, "symbol-test");
-    $oSymbol = $map->getSymbolObjectById($nId);
+   $nId = ms_newSymbolObj($map, "symbol-test");
+   $oSymbol = $map->getSymbolObjectById($nId);
 
 Members
 ...............................................................................
 
-=============== ====================================================================
-Type                Name
-=============== ====================================================================
+=============== ================= ==============================================
+Type                Name          Note
+=============== ================= ==============================================
+int             antialias 
+string          character 
+int             filled
+string          font 
+string          imagepath         read-only
+int             inmapfile         If set to TRUE, the symbol will be saved
+                                  inside the mapfile.
+int             patternlength     read-only
+int             position
 string          name
-type            name  //Please refer to symbol type constants
-int             inmapfile If set to TRUE, the symbol will be saved inside
-                the mapfile.
+int             numpoints         read-only
 double          sizex
 double          sizey
-int             numpoints (Read-Only)
-int             filled
-int             patternlength (Read-Only)
-string          imagepath (Read-Only))
 int             transparent 
 int             transparentcolor 
-string          character 
-int             antialias 
-string          font 
-int             position
-=============== ====================================================================
+=============== ================= ==============================================
 
 Methods
 ...............................................................................
 
-int set(string property_name, new_value)
-    Set object property to a new value.
-
-int setpoints(array double)
-    Set the points of the symbol. Note that the values passed if an
-    array containing the x and y values of the points. Returns MS_SUCCESS/MS_FAILURE.
-    Example:
-    array[0] = 1  : x value of the first point
-    array[1] = 0 : y values of the first point
-    array[2] = 1 : x value of the 2nd point
-    ....
-
-int setpattern(array int)
-    Set the pattern of the symbol (used for dash patterns). 
-    Returns MS_SUCCESS/MS_FAILURE.
-
-array getpointsarray()
-    Returns an array containing the points of the symbol. Refer to
-    setpoints to see how the array should be interpreted. If there are no
-    points, it returns an empty array.
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the
+    resources.
 
 array getpatternarray()  
     Returns an array containing the pattern. If there is no pattern, it
     returns an empty array.
         
+array getpointsarray()
+    Returns an array containing the points of the symbol. Refer to
+    setpoints to see how the array should be interpreted. If there are no
+    points, it returns an empty array.
+
+int set(string property_name, new_value)
+    Set object property to a new value.
+
 int setimagepath(char filename)
     Loads a pixmap symbol specified by the filename. 
     The file should be of either  Gif or Png format.
 
-Example of usage:  
+int setpattern(array int)
+    Set the pattern of the symbol (used for dash patterns). 
+    Returns MS_SUCCESS/MS_FAILURE.
+
+int setpoints(array double)
+    Set the points of the symbol. Note that the values passed is an
+    array containing the x and y values of the points. Returns
+    MS_SUCCESS/MS_FAILURE.
+    Example:
+
+    .. code-block:: php
+
+      $array[0] = 1 # x value of the first point
+      $array[1] = 0 # y values of the first point
+      $array[2] = 1 # x value of the 2nd point
+      ....
+
+Example of usage
+..................
 
 1) create a symbol to be used as a dash line
 
-.. code-block:: php
+  .. code-block:: php
 
     $nId = ms_newsymbolobj($gpoMap, "mydash");
     $oSymbol = $gpoMap->getsymbolobjectbyid($nId);
@@ -2493,7 +2576,7 @@ Example of usage:
 
 2) Create a TrueType symbol 
 
-.. code-block:: php
+  .. code-block:: php
     
     $nId = ms_newSymbolObj($gpoMap, "ttfSymbol"); 
 	$oSymbol = $gpoMap->getSymbolObjectById($nId); 
@@ -2501,10 +2584,6 @@ Example of usage:
 	$oSymbol->set("filled", true); 
 	$oSymbol->set("character", "&#68;"); 
     $oSymbol->set("font", "ttfFontName"); 
-
-void free()
-    Free the object properties and break the internal references. 
-    Note that you have to unset the php variable to free totally the resources.
 
 webObj
 ^^^^^^
@@ -2517,100 +2596,71 @@ Instances of webObj are always are always embedded inside the `mapObj`_.
 Members
 ...............................................................................
 
-=============== ====================================================================
-Type                Name
-=============== ====================================================================
-string          log
-string          imagepath
-string          temppath
-string          template      
-string          imageurl
-string          header
-string          footer
-string          empty     (read-only)
-string          error     (read-only)
-string          mintemplate
-string          maxtemplate
-double          minscaledenom
-double          maxscaledenom
-rectObj         extent   (read-only)
-string          queryformat
-string          legendformat
+=============== =============== ================================================
+Type                Name        Note
+=============== =============== ================================================
 string          browseformat
+string          empty           read-only
+string          error           read-only
+rectObj         extent          read-only
+string          footer
+string          header
+string          imagepath
+string          imageurl
+string          legendformat
+string          log
+double          maxscaledenom
+string          maxtemplate
 hashTableObj    metadata
-=============== ====================================================================
+double          minscaledenom
+string          mintemplate
+string          queryformat
+string          template      
+string          temppath
+=============== =============== ================================================
 
 Methods
 ...............................................................................
 
-int updateFromString(string snippet)
-    Update a web object from a string snippet. Returns MS_SUCCESS/MS_FAILURE.
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the
+    resources.
 
 int set(string property_name, new_value)
     Set object property to a new value.
 
-void free()
-    Free the object properties and break the internal references. 
-    Note that you have to unset the php variable to free totally the resources.
+int updateFromString(string snippet)
+    Update a web object from a string snippet. Returns
+    MS_SUCCESS/MS_FAILURE.
 
 .. _phpclusterobj:
 
-clusterObj
-^^^^^^^^^^^^
+Memory Management
+------------------
 
-Constructor
-...............................................................................
+Normally, you should not have to worry about the memory management
+because php has a garbage collector and will free resources for
+you. If you write only small scripts that don't do a lot of
+processing, it's not worth to care about that. Everything will be
+freed at the end of the script.
 
-Instance of clusterObj is always embedded inside the `layerObj`_.
+However, it may be useful to free resources during the execution if
+the script executes many tasks. To do so, you'll have to call the
+**free()** method of the mapscript objects and unset the php
+variables. The purpose of the free methods is to break the circular
+references between an object and its properties to allow the zend
+engine to free the resources.
 
-Members
-...............................................................................
-
-=============== ====================================================================
-Type                Name
-=============== ====================================================================
-double          maxdistance
-double          buffer
-string          region
-=============== ====================================================================
-
-Methods
-...............................................................................
-
-int setGroup(string expression)
-    Set layer group :ref:`expression <expressions>`.
-
-string getGroupString()
-    Returns the :ref:`expression <expressions>` for this cluster group or NULL on error.
-
-int setFilter(string expression)
-    Set layer filter :ref:`expression <expressions>`.
-
-string getFilterString()
-    Returns the :ref:`expression <expressions>` for this cluster filter or NULL on error.
-
-*****************************************************************************
- Memory Management
-*****************************************************************************
-
-Normally, you should not have to worry about the memory management because
-php has a garbage collector and will free resources for you. If you write
-only small scripts that don't do a lot of processing, it's not worth to
-care about that. Everything will be freed at the end of the script.
-
-However, it may be useful to free resources during the execution if the
-script executes many tasks. To do so, you'll have to call the **free()**
-method of the mapscript objects and unset the php variables. The purpose of
-the free methods is to break the circular references between an object and
-its properties to allow the zend engine to free the resources.
-
-Here's an example of a script that doesn't free things during the execution:
+Here's an example of a script that doesn't free things during the
+execution:
 
 .. code-block:: php
 
     $map = new mapObj("mapfile.map");
     $of = $map->outputformat;
-    echo $map->extent->minx." - ".$map->extent->miny." - ".$map->extent->maxx." - ".$map->extent->maxy."\n";
+    echo $map->extent->minx." - ".$map->extent->miny." - ".$map->extent->maxx.
+                                                  " - ".$map->extent->maxy."\n";
     echo "Outputformat name: $of->name\n";
     unset($of);
     unset($map); // Even if we unset the php variables, resources wont be freed
