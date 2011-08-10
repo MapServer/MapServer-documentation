@@ -199,42 +199,50 @@ the comments for the required parameters.
 Rules for Handling SRS in MapServer WFS
 ---------------------------------------
 
-Contrary to WMS, the OGC WFS specification doesn't allow a layer
-(feature type) to be advertised in more than one SRS. Also, there is
-no default SRS that applies to all layers by default in the OGC WFS
-spec. However, it is possible to have every layer in a WFS server
-advertised in a different SRS.
+The OGC WFS 1.0 specification doesn't allow a layer (feature type)
+to be advertised in more than one SRS.  Also, there is no default SRS
+that applies to all layers by default.  However, it is possible to
+have every layer in a WFS server advertised in a different SRS.
+
+The OGC WFS 1.1 specification allows more than one SRS to be
+advertised, and one of the SRSs will be advertised as the default SRS
+(the default SRS will be the first in the list specified in the
+`METADATA` `wfs_srs` / `ows_srs`).
 
 Here is how MapServer decides the SRS to advertise and use for each
 layer in your WFS:
 
-- If a top-level map SRS is defined* then this SRS is used and applies
+- If a top-level map SRS is defined then this SRS is used and applies
   to all layers (feature types) in this WFS. In this case the SRS of
-  individual layers is simply ignored even if it's set.
+  individual layers is simply ignored even if it is set.
 
-- If there is no top-level map SRS defined* then each layer is
+- If no top-level map SRS is defined, then each layer is
   advertised in its own SRS in the capabilities.
 
-- By "SRS is defined", we mean either the presence of a PROJECTION
-  object defined using an EPSG code, or of a "wfs_srs" metadata at
-  this level.
+.. note::
+  By "SRS is defined", we mean either the presence of a PROJECTION
+  object defined using an EPSG code, or of a `wfs_srs` / `ows_srs`
+  metadata at this level.
 
-Note that at the map top-level the "wfs_srs" metadata value takes
-precedence over the contents of the :ref:`PROJECTION` block.
+Note that at the map top-level the `wfs_srs` / `ows_srs` metadata
+value takes precedence over the contents of the :ref:`PROJECTION`
+block.
 
-At the layer level, if both the wfs_srs metadata and the PROJECTION
-object are set to different values, then the wfs_srs metadata defines
-the projection to use in advertising this layer (assuming there is no
-top-level map SRS), and the PROJECTION value is assumed to be the
-projection of the data. So this means that the data would be
-reprojected from the PROJECTION SRS to the one defined in the wfs_srs
-metadata before being served to WFS clients.
+At the layer level, if both the `wfs_srs` / `ows_srs` metadata and the
+PROJECTION object are set to different values, then the `wfs_srs` /
+`ows_srs` metadata defines the projection to use in advertising this
+layer (assuming there is no top-level map SRS), and the PROJECTION
+value is assumed to be the projection of the data. So this means that
+the data would be reprojected from the PROJECTION SRS to the one
+defined in the `wfs_srs` / `ows_srs` metadata before being served to
+WFS clients.
 
-Confusing? As a rule of thumb, simply set the wfs_srs at the map level
-(in web metadata) and never set the wfs_srs metadata at the layer
-level and things will work fine for most cases.
+Confusing? As a rule of thumb, simply set the `wfs_srs` / `ows_srs` at
+the map level (in web metadata) and never set the `wfs_srs` /
+`ows_srs` metadata at the layer level and things will work fine for
+most cases.
 
-Axis Orientation in WFS 1.1  
+Axis Orientation in WFS 1.1
 ---------------------------
 
 The axis order in previous versions of the WFS specifications was to
@@ -459,8 +467,8 @@ Web Object Metadata
 **wfs_srs**
 
 - *Description:* (Recommended) The SRS to use for all layers in this
-  server.  (e.g. EPSG:4326) See the notes below about the SRS rules in
-  the WFS.
+  server.  (e.g. EPSG:4326) See the note about the SRS rules in
+  WFS.
 
 **wfs_feature_collection**
 
@@ -659,7 +667,7 @@ Layer Object
 
 - *Description:* If there is no SRS defined at the top-level in the mapfile 
   then this SRS will be used to advertize this feature type (layer) in the 
-  capabilities. See the note below about the SRS rules in the WFS. 
+  capabilities. See the note about the SRS rules in WFS. 
 
 **wfs_title**
 
