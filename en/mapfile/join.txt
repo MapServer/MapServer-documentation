@@ -19,8 +19,7 @@ Supported Formats
  
 - DBF/XBase files
 - CSV (comma delimited text file)
-- PostgreSQL and PostGIS tables
-- MySQL tables
+- PostgreSQL tables
 
 Mapfile Parameters:
 ===================
@@ -33,18 +32,11 @@ CONNECTION [string]
     .. code-block:: mapfile
 
       CONNECTION "host=127.0.0.1 port=5432 user=postgres password=postgres dbname=somename"
-      CONNECTIONTYPE OGR
+      CONNECTIONTYPE POSTGRESQL
     
-    The following is an example connection for MySQL:
-    
-    .. code-block:: mapfile
-      
-      CONNECTION "MYSQL:mydbname,user=root,password=mysql,port=3306"
-      CONNECTIONTYPE OGR
-
-CONNECTIONTYPE [string]
-    Type of connection (not required for DBF or CSV joins). For PostgreSQL and
-    MySQL connections use 'OGR'.
+CONNECTIONTYPE [csv|postgresql]
+    Type of connection (not required for DBF joins). For PostgreSQL
+    use `postgresql`, for CSV use `csv`.
     
 FOOTER [filename]
     Template to use *after* a layer's set of results have been sent. In other
@@ -64,8 +56,8 @@ NAME [string]
 
 TABLE [filename|tablename]
     For file-based joins this is the name of XBase or comma delimited file
-    (relative to the location of the mapfile) to join TO. For PostgreSQL and
-    MySQL support this is the name of the PostgreSQL/MySQL table to join TO.
+    (relative to the location of the mapfile) to join TO. For PostgreSQL
+    support this is the name of the PostgreSQL table to join TO.
 
 TEMPLATE [filename]
     Template to use with one-to-many joins. The template is processed once 
@@ -149,7 +141,10 @@ Template
 
 ::
 
-  <tr bgcolor="#EFEFEF"><td align="left">[NAME]</td><td align="left">[test_VAL]</td></tr> 
+  <tr bgcolor="#EFEFEF">
+    <td align="left">[NAME]</td>
+    <td align="left">[test_VAL]</td>
+  </tr> 
 
 
 Example 2: Join from SHP file to PostgreSQL table
@@ -211,13 +206,11 @@ Template
 
 ::
 
-  <tr bgcolor="#EFEFEF"><td align="left">[NAME]</td><td align="left">[test_val]</td></tr>
+  <tr bgcolor="#EFEFEF">
+    <td align="left">[NAME]</td>
+    <td align="left">[test_val]</td>
+  </tr>
 
-.. note::
-
-    When testing with MapServer 4.10.0 on Windows this postgresql join caused a
-    mapserv.exe crash. However when testing this with a MapServer build > 4.10.0
-    the crash did not occur.
 
 Example 3: Join from SHP file to CSV file
 =========================================
@@ -271,6 +264,14 @@ CSV File Structure
   11,2
   12,1
 
+.. note::
+   The CSV driver currently doesn't read column names from the first
+   row. It just uses indexes (1, 2, ... n) to reference the
+   columns. It's ok to leave column names as the first row since they
+   likely won't match anything but they aren't used. Typically you'd
+   see something like "TO '1'" in the JOIN block. Then in the template
+   you'd use [name_1], [name_2], etc...
+
 Ogrinfo
 -------
 
@@ -293,68 +294,7 @@ Template
 
 ::
 
-  <tr bgcolor="#EFEFEF"><td align="left">[NAME]</td><td align="left">[test_VAL]</td></tr>
-  
-Example 4: Join from SHP file to MySQL table
-============================================
-
-Mapfile Layer
--------------
-
-.. code-block:: mapfile
-
-      LAYER
-        NAME "prov_bound"
-        TYPE POLYGON
-        STATUS DEFAULT
-        DATA "prov.shp"
-        CLASS
-          NAME "Province"
-          STYLE
-            OUTLINECOLOR 120 120 120
-            COLOR 255 255 0
-          END
-        END
-        TOLERANCE 20
-        TEMPLATE "../htdocs/cgi-query-templates/prov.html"
-        HEADER "../htdocs/cgi-query-templates/prov-header.html"
-        FOOTER "../htdocs/cgi-query-templates/footer.html"  
-        JOIN
-          NAME "test"
-          CONNECTION "MYSQL:test,user=root,password=mysql,port=3306"
-          CONNECTIONTYPE ogr
-          TABLE "lookup"
-          FROM "ID"
-          TO "ident"
-          TYPE ONE-TO-ONE
-        END
-      END # layer
-
-Ogrinfo
--------
-
-::
-
-  >ogrinfo MYSQL:test,user=root,password=mysql,port=3306 lookup -summary
-      INFO: Open of `MYSQL:test,user=root,password=mysql,port=3306'
-      using driver `MySQL' successful.
-
-     Layer name: lookup
-     Geometry: None
-     Feature Count: 48
-     Layer SRS WKT:
-     (unknown)
-     FID Column = ident
-     val: Integer (0.0)
-
-Template
---------
-
-::
-
-  <tr bgcolor="#EFEFEF"><td align="left">[NAME]</td><td align="left">[test_val]</td></tr>
-
-.. note::
-
-    When testing with MapServer 5.6.5 and MySQL 5.1.49 on Windows this MySQL join caused a
-    mapserv.exe crash.
+  <tr bgcolor="#EFEFEF">
+    <td align="left">[NAME]</td>
+    <td align="left">[test_VAL]</td>
+  </tr>
