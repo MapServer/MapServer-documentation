@@ -57,7 +57,7 @@ MapServer distributions contain most all of its features.
 .. note::
 
     :term:`MapScript` provides a scripting interface for MapServer for the
-    construction of Web and stand-alone applications. MapScript can used
+    construction of Web and stand-alone applications. MapScript can be used
     independently of CGI MapServer, and it is a loadable module that adds
     MapServer capability to your favorite scripting language. MapScript
     currently exists in :ref:`PHP <php>`, Perl, :ref:`Python <python>`, Ruby,
@@ -86,7 +86,7 @@ A simple MapServer application consists of:
     :ref:`MapServer Mapfile Reference <mapfile>`
  
 * **Geographic Data** - MapServer can utilize many geographic data source types. 
-  The default format is the ESRI shapefile.  Many other data formats can be 
+  The default format is the ESRI Shape format.  Many other data formats can be 
   supported, this is discussed further below in `Adding data to your site`_.
   
   .. seealso::
@@ -95,8 +95,8 @@ A simple MapServer application consists of:
  
 * **HTML Pages** - the interface between the user and MapServer .  
   They normally sit in Web root.  In it's simplest form, MapServer can
-  be called to place a static map image on a html page.  To make the
-  map interactive, the image is placed in an html form on a page.
+  be called to place a static map image on a HTML page.  To make the
+  map interactive, the image is placed in an HTML form on a page.
  
   :term:`CGI` programs are 'stateless', every request they get is new
   and they don't remember anything about the last time that they were
@@ -105,19 +105,19 @@ A simple MapServer application consists of:
   information (what layers are on, where you are on the map,
   application mode, etc.) in hidden form variables or URL variables.
 
-  A simple MapServer :ref:`cgi` application may include two html pages:
+  A simple MapServer :ref:`cgi` application may include two HTML pages:
 
   * **Initialization File** - uses a form with hidden variables to send an 
-    initial query to the http server and MapServer.  This form could be placed 
+    initial query to the web server and MapServer.  This form could be placed 
     on another page or be replaced by passing the initialization information 
     as variables in a URL.
 
   * **Template File** - controls how the maps and legends output by
     MapServer will appear in the browser.  By referencing MapServer
-    CGI variables in the template html, you allow MapServer to
+    CGI variables in the template HTML, you allow MapServer to
     populate them with values related to the current state of your
     application (e.g. map image name, reference image name, map
-    extent, etc.)  as it creates the html page for the browser to
+    extent, etc.)  as it creates the HTML page for the browser to
     read.  The template also determines how the user can interact with
     the MapServer application (browse, zoom, pan, query).
     
@@ -126,14 +126,15 @@ A simple MapServer application consists of:
 
 * **MapServer CGI** - The binary or executable file that receives requests and 
   returns images, data, etc.  It sits in the cgi-bin or scripts directory of 
-  the http server.  The Web server user must have execute rights for the 
+  the web server.  The Web server user must have execute rights for the 
   directory that it sits in, and for security reasons, it should not be in 
   the web root.  By default, this program is called :ref:`mapserv`
  
-* **HTTP Server** - serves up the html pages when hit by the user's browser.  
-  You need a working HTTP (Web) server, such as 
-  `Apache <http://httpd.apache.org>`__ or Microsoft Internet Information 
-  Server, on the machine on which you are installing MapServer.      
+* **Web/HTTP Server** - serves up the HTML pages when hit by the
+  user's browser.  You need a working Web (HTTP) server, such as
+  `Apache <http://httpd.apache.org>`__ or Microsoft Internet
+  Information Server, on the machine on which you are installing
+  MapServer.
 
 Installation and Requirements
 -------------------------------------------------------------------------------
@@ -181,7 +182,7 @@ following steps illustrate how to use OSGeo4W:
         available as a shortcut on your desktop
     
     .. note::
-        A apache-uninstall.bat script is also available to remove the 
+        An apache-uninstall.bat script is also available to remove the 
         Apache service installation.
         
 7)  Start Apache from the OSGeo4W shell and navigate to http://127.0.0.1
@@ -211,16 +212,16 @@ data to server configuration.
 Software Requirements
 ...............................................................................
 
-You need a working and properly configured HTTP (Web) server, such as `Apache
+You need a working and properly configured Web (HTTP) server, such as `Apache
 <http://httpd.apache.org/>`__ or Microsoft Internet Information Server, on the
 machine on which you are installing MapServer. OSGeo4W contains Apache
 already, but you can reconfigure things to use IIS if you need to.
 Alternatively, `MS4W <http://www.maptools.org/ms4w/index.phtml>`__ can be 
 used to install MapServer on Windows.
 
-If you are on a Windows machine, and you don't have a HTTP server installed,
+If you are on a Windows machine, and you don't have a web server installed,
 you may want to check out `MS4W <http://www.maptools.org/ms4w/index.phtml>`__,
-which will install a pre-configured HTTP server, MapServer, and more. The `FGS
+which will install a pre-configured web server, MapServer, and more. The `FGS
 Linux Installer <http://www.maptools.org/fgs/>`__ provides similar
 functionality for several Linux distributions.
 
@@ -230,7 +231,7 @@ binaries to follow along. Obtaining MapServer or :ref:`Linux <linux>` or
 installing pre-compiled MapServer builds on Mac OS X and Linux.
 
 You will also need a Web browser, and a text editor (vi, emacs, notepad,
-homesite) to modify your html and :ref:`mapfiles <mapfile>`.
+homesite) to modify your HTML and :ref:`mapfiles <mapfile>`.
 
 Skills
 ...............................................................................
@@ -278,7 +279,7 @@ as the map image output:
         WEB
             IMAGEPATH "/ms4w/tmp/ms_tmp/" 
             IMAGEURL "/ms_tmp/"
-        END
+        END # WEB
 
         #
         # Start of layer definitions
@@ -288,8 +289,8 @@ as the map image output:
             TYPE RASTER
             STATUS DEFAULT
             DATA bluemarble.gif
-        END
-    END
+        END # LAYER
+    END # MAP
 
 .. figure:: ./images/bluemarble-rendered.jpg
     :alt: Rendered Bluemarble Image
@@ -336,24 +337,29 @@ as the map image output:
 .. code-block:: mapfile
 
     MAP
-        NAME                 "sample"
-        EXTENT        -180 -90 180 90 # Geographic
-        SIZE                  800 400
-        IMAGECOLOR        128 128 255
-    END
+      NAME "sample"
+      EXTENT -180 -90 180 90 # Geographic
+      SIZE 800 400
+      IMAGECOLOR 128 128 255
+    END # MAP
 
 * EXTENT is the output extent in the units of the output map
 * SIZE is the width and height of the map image in pixels
 * IMAGECOLOR is the default image background color
+
+.. note::
+  MapServer currently uses a pixel-center based extent model which is
+  a bit different from what GDAL or WMS use.
 
 :ref:`LAYER` Object
 ...............................................................................
 
 * starting with MapServer 5.0, there is no limit to the number of layers in a
   mapfile
-* DATA parameter is relative to the SHAPEPATH parameter the :ref:`MAP` object 
-* if no DATA extension is provided in the filename, MapServer will assume it is
-  an ESRI shapefile (.shp)
+* the `DATA` parameter is relative to the `SHAPEPATH` parameter of the
+  :ref:`MAP` object
+* if no `DATA` extension is provided in the filename, MapServer will
+  assume it is ESRI Shape format (.shp)
 
 Raster Layers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -365,7 +371,7 @@ Raster Layers
         TYPE RASTER
         STATUS DEFAULT
         DATA "bath_mapserver.tif"
-    END
+    END # LAYER
 
 .. seealso::
     
@@ -373,25 +379,25 @@ Raster Layers
 
 Vector Layers
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
-  
-Vector layers of TYPE point, line, or polygon can be displayed. The following
-example shows how to display only lines from a TYPE polygon layer, using the
-OUTLINECOLOR parameter:
+
+Vector layers of `TYPE` `point`, `line`, or `polygon` can be
+displayed. The following example shows how to display only lines from
+a `TYPE` polygon layer, using the `OUTLINECOLOR` parameter:
 
 .. code-block:: mapfile
 
     LAYER
-        NAME   "world_poly"
-        DATA         'shapefile/countries_area.shp'
-        STATUS       ON
-        TYPE         POLYGON
-        CLASS
-            NAME       'The World'
-            STYLE
-                OUTLINECOLOR    0 0 0
-            END
-        END
-    END # layer
+      NAME "world_poly"
+      DATA 'shapefile/countries_area.shp'
+      STATUS ON
+      TYPE POLYGON
+      CLASS
+        NAME 'The World'
+        STYLE
+          OUTLINECOLOR 0 0 0
+        END # STYLE
+      END # CLASS
+    END # LAYER
    
 .. seealso::
     :ref:`vector`
@@ -410,23 +416,23 @@ OUTLINECOLOR parameter:
 * starting with MapServer 5.0, there is no limit to the number of classes or
   styles in a mapfile
 * the following example shows how to display a road line with two colors by
-  using overlayed STYLE objects
+  using overlayed `STYLE` objects
 
 .. code-block:: mapfile
 
     CLASS
-    NAME "Primary Roads"
-    STYLE
+      NAME "Primary Roads"
+      STYLE
         SYMBOL "circle"
         COLOR 178 114 1
         SIZE 15
-    END #style1
-    STYLE
+      END # STYLE
+      STYLE
         SYMBOL "circle"
         COLOR 254 161 0
         SIZE 7
-    END #style2
-    END
+      END # STYLE
+    END # CLASS
 
 .. figure:: ./images/bluemarble-style.jpg
     :alt:   Rendered Bluemarble Image
@@ -438,44 +444,42 @@ OUTLINECOLOR parameter:
 ...............................................................................
 
 * can be defined directly in the mapfile, or in a separate file
-* the separate file method must use the SYMBOLSET parameter in the MAP object:
+* the separate file method must use the `SYMBOLSET` parameter in the
+  `MAP` object:
 
 .. code-block:: mapfile
 
     MAP
-        NAME           "sample"
-        EXTENT        -180 -90 180 90 # Geographic
-        SIZE           800 400
-        IMAGECOLOR     128 128 255
-        SYMBOLSET      "../etc/symbols.txt"
-    END
-
-
+      NAME "sample"
+      EXTENT -180 -90 180 90 # Geographic
+      SIZE 800 400
+      IMAGECOLOR 128 128 255
+      SYMBOLSET "../etc/symbols.txt"
+    END # MAP
 
 where symbols.txt might contain:
 
 .. code-block:: mapfile
 
     SYMBOL
-        NAME "ski"
-        TYPE PIXMAP
-        IMAGE "ski.gif"
-    END
+      NAME "ski"
+      TYPE PIXMAP
+      IMAGE "ski.png"
+    END # SYMBOL
 
 and the mapfile would contain:
 
 .. code-block:: mapfile
 
     LAYER
-        ...
-        CLASS
-            NAME "Ski Area"
-            STYLE
-                SYMBOL "ski"
-            END
-        END
-    END # layer
-
+      ...
+      CLASS
+        NAME "Ski Area"
+        STYLE
+          SYMBOL "ski"
+        END # STYLE
+      END # CLASS
+    END # LAYER
 
 .. figure:: ./images/bluemarble-ski.jpg
     :alt: Rendered Bluemarble Image Skier
@@ -504,15 +508,15 @@ look like:
 .. code-block:: mapfile
 
     LABEL
-        FONT "sans-bold"
-        TYPE truetype
-        ENCODING "UTF-8"
-        SIZE 10
-        POSITION LC
-        PARTIALS FALSE
-        COLOR  100 100 100
-        OUTLINECOLOR 242 236 230
-    END # label
+      FONT "sans-bold"
+      TYPE truetype
+      ENCODING "UTF-8"
+      SIZE 10
+      POSITION LC
+      PARTIALS FALSE
+      COLOR  100 100 100
+      OUTLINECOLOR 242 236 230
+    END # LABEL
 
 .. figure:: ./images/bluemarble-ski-label.jpg
     :alt: Rendered Bluemarble Image Skier
@@ -527,7 +531,7 @@ look like:
 
 MapServer supports three types of :ref:`CLASS` :ref:`expressions` in a
 :ref:`LAYER` (`CLASSITEM` in `LAYER` determines the attribute to be
-used):
+used for the two first types of expressions):
 
 1) String comparisons
 
@@ -563,9 +567,9 @@ parameter. The filename to be included can have any extension, and it is
 always relative to the main .map file.
 Here are some potential uses:
 
-* :ref:`LAYER` s can be stored in files and included to any number of
+* :ref:`LAYER`\s can be stored in files and included to any number of
   applications
-* :ref:`STYLE` s can also be stored and included in multiple applications
+* :ref:`STYLE`\s can also be stored and included in multiple applications
 
 The following is an example of using mapfile :ref:`includes
 <include>` to include a layer definition in a separate file:
@@ -575,21 +579,21 @@ If 'shadedrelief.lay' contains:
 .. code-block:: mapfile
 
     LAYER
-        NAME         'shadedrelief'
-        STATUS       ON
-        TYPE         RASTER
-        DATA         'GLOBALeb3colshade.jpg'
-    END 
+      NAME 'shadedrelief'
+      STATUS ON
+      TYPE RASTER
+      DATA 'GLOBALeb3colshade.jpg'
+    END # LAYER
 
 therefore the main mapfile would contain:
 
 .. code-block:: mapfile
 
     MAP
-        ...
-        INCLUDE "shadedrelief.lay"
-        ...
-    END
+      ...
+      INCLUDE "shadedrelief.lay"
+      ...
+    END # MAP
 
 The following is an example of a mapfile where all :ref:`LAYER` s are in
 separate .lay files, and all other objects (:ref:`WEB`, :ref:`REFERENCE`,
@@ -597,23 +601,24 @@ separate .lay files, and all other objects (:ref:`WEB`, :ref:`REFERENCE`,
 
 .. code-block:: mapfile
 
-    NAME "base"
-    #
-    # include reference objects
-    #
-    INCLUDE "../templates/template.ref"
-    #
-    # Start of layer definitions
-    #
-    INCLUDE "../layers/usa/usa_outline.lay"
-    INCLUDE "../layers/canada/base/1m/provinces.lay"
-    INCLUDE "../layers/canada/base/1m/roads_atlas_of_canada_1m.lay"
-    INCLUDE "../layers/canada/base/1m/roads_atlas_of_canada_1m_shields.lay"
-    INCLUDE "../layers/canada/base/1m/populated_places.lay"
-    END # Map File
+    MAP
+      NAME "base"
+      #
+      # include reference objects
+      #
+      INCLUDE "../templates/template.ref"
+      #
+      # Start of layer definitions
+      #
+      INCLUDE "../layers/usa/usa_outline.lay"
+      INCLUDE "../layers/canada/base/1m/provinces.lay"
+      INCLUDE "../layers/canada/base/1m/roads_atlas_of_canada_1m.lay"
+      INCLUDE "../layers/canada/base/1m/roads_atlas_of_canada_1m_shields.lay"
+      INCLUDE "../layers/canada/base/1m/populated_places.lay"
+    END # MAP
 
 .. warning::
-    :ref:`Mapfiles <mapfile>` must end with the ``.map`` extension or 
+    :ref:`Mapfiles <mapfile>` must have the ``.map`` extension or 
     MapServer will not recognize them.  Include files can have any extension
     you want, however.
 
@@ -623,17 +628,22 @@ separate .lay files, and all other objects (:ref:`WEB`, :ref:`REFERENCE`,
 Get MapServer Running
 ...............................................................................
 
+You can test if MapServer is working by running the Mapserver
+executable (``mapserv``) with the -v parameter on the command line
+(./mapserv -v).  Depending on your configuration, the output could be
+something like this:
 
 ::
 
-   MapServer version 5.2 OUTPUT=GIF OUTPUT=PNG
-   OUTPUT=JPEG OUTPUT=WBMP SUPPORTS=PROJ SUPPORTS=FREETYPE
-   SUPPORTS=WMS_SERVER INPUT=SHAPEFILE 
+   MapServer version 6.0.1 OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG
+   SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=ICONV
+   SUPPORTS=WMS_SERVER INPUT=SHAPEFILE
+
 
 You can also send a HTTP request directly to the MapServer CGI program without
 passing any configuration variables (e.g.
 http://your.domain.name/cgi-bin/ms4/mapserv.exe). If you receive the message,
-'No query information to decode. QUERY_STRING not set.', your installation is
+'No query information to decode. `QUERY_STRING` not set.', your installation is
 working.
 
 Get Demo Running
@@ -642,8 +652,8 @@ Get Demo Running
 Download the `MapServer Demo
 <http://maps.dnr.state.mn.us/mapserver_demos/workshop-5.0.zip>`__.
 UnZip it and follow the directions in ReadMe.txt.  You will need to
-move the demo files to their appropriate locations on your HTTP
-server, and modify the Map File and html pages to reflect the paths
+move the demo files to their appropriate locations on your web
+server, and modify the Map File and HTML pages to reflect the paths
 and URLs of your server.  Next, point your browser to init.html and
 hit the 'initialize button'.  If you get errors, verify that you have
 correctly modified the demo files.
@@ -652,20 +662,23 @@ Making the Site Your Own
 -------------------------------------------------------------------------------
 
 Now that you have a working MapServer demo, you can use the demo to display 
-your own data.  Add new LAYERs to your Map file that refer to your own 
-geographic data layers.  (You will probably want to delete the existing layers 
-or set their status to OFF.)
+your own data.  Add new `LAYER`\s to your Map file that refer to your own 
+geographic data layers (you will probably want to delete the existing layers 
+or set their status to `OFF`).
 
 Unless you are adding layers that fall within the same geographic area
-as the demo, modify :ref:`MAP` EXTENT to match the extent of your
+as the demo, modify :ref:`MAP` `EXTENT` to match the extent of your
 data.  To determine the extent of your data, you can use `ogrinfo
 <http://www.gdal.org/ogrinfo.html>`__.  If you have access to a GIS,
-you could use that as well.  The :ref:`MAP` EXTENT needs to be in the
+you could use that as well.  The :ref:`MAP` `EXTENT` needs to be in the
 units of your output projection.
 	
-If you add geographic data layers of different projections, you will need to 
-modify your Map File to add a :ref:`PROJECTION` block to the :ref:`map`
-(output projection ) and each of the :ref:`layer` (existing layer projection).
+If you add geographic data layers with different geographical
+reference systems, you will need to modify your Map File to add a
+:ref:`PROJECTION` block to the :ref:`map` (defines the output
+projection / geograpical reference system) and each of the
+:ref:`layer`\s (defines the geographical reference system of the layer
+dataset).
 
 Adding Data to Your Site
 ...............................................................................
@@ -677,7 +690,7 @@ Vector Data
 ...............................................................................
 
 Vector data includes features made up of points, lines, and polygons.  
-MapServer supports ESRI shapefiles by default, but it can be compiled to 
+MapServer support the ESRI Shape format by default, but it can be compiled to 
 support spatially enabled databases such as 
 `PostgreSQL-PostGIS <http://postgis.refractions.net/>`__,
 and file formats such as
@@ -706,15 +719,15 @@ Because the earth is round and your monitor (or paper map) is flat, distortions
 will occur when you display geographic data in a two-dimensional image.  
 Projections allow you to represent geographic data on a flat surface.   In 
 doing so, some of the original properties (e.g. area, direction, distance, 
-scale or conformity)of the data will be distorted.  Different projections 
+scale or conformity) of the data will be distorted.  Different projections 
 excel at accurately portraying different properties.  A good 
 `primer <http://www.colorado.edu/geography/gcraft/notes/mapproj/mapproj_f.html>`__ 
 on map projections  can be found at the University of Colorado.
 
-With MapServer, if you keep all of your spatial data sets in the same projection 
-(or unprojected Latitude and Longitude), you do not need to include any 
-projection info in your Map File.  In building your first MapServer 
-application, this simplification is recommended.  
+With MapServer, if you keep all of your spatial data sets in the same
+projection (or unprojected Latitude and Longitude), you do not need to
+include any projection info in your Map File.  In building your first
+MapServer application, this simplification is recommended.
 
 On-the-fly projection can be accomplished when MapServer is compiled with
 :term:`Proj.4` support. Instructions on how to enable Proj.4 support on
@@ -741,7 +754,7 @@ Attribute queries
 
 The user selects features based on data associated with that feature.  
 'Show me all of the lakes where depth is greater than 100 feet', with 
-'depth' being a field in the shapefile .dbf or the spatial database.  
+'depth' being a field in the Shape dataset or the spatial database.  
 Attribute queries are accomplished by passing query definition information 
 to MapServer in the URL (or form post).  Mode=itemquery returns a single 
 result, and mode=itemnquery returns multiple result sets.  
@@ -749,7 +762,7 @@ result, and mode=itemnquery returns multiple result sets.
 The request must also include a QLAYER, which identifies the layer to be
 queried, and a QSTRING which contains the query string. Optionally, QITEM, can
 be used in conjunction with QSTRING to define the field to be queried.
-Attribute queries only apply within the EXTENT set in the map file.
+Attribute queries only apply within the `EXTENT` set in the map file.
 
 Spatial queries
 ...............................................................................
@@ -758,7 +771,8 @@ The user selects features based on a click on the map or a user-defined
 selection box.  Again the request is passed through a URL or form post.  
 By setting mode=QUERY, a user click will return the one closest feature. 
 In mode=NQUERY, all features found by a map click or user-defined selection 
-box are returned.  Additional query options can be found in the :ref:`cgi`.
+box are returned.  Additional query options can be found in the :ref:`cgi`
+documentation.
 
 Interfaces
 ...............................................................................
@@ -774,36 +788,38 @@ efficient at what it does, but by reducing the amount of processing that
 it needs to do at the time of a user request, you can greatly increase 
 performance.  Here are a few rules:
 
-* **Index Your data** - By creating spatial indexes for your shapefiles using
-  :ref:`shptree`. Spatial indexes should also be created for spatially aware
-  databases such as PostGIS and Oracle Spatial.
+* **Index Your data** - By creating spatial indexes for your Shape
+  datasets using :ref:`shptree`. Spatial indexes should also be
+  created for spatially aware databases such as PostGIS and Oracle
+  Spatial.
 
-* **Tile Your Data** - Ideally, your data will be 'sliced up' into pieces 
-  about the size in which it will be displayed.  There is unnecessary overhead 
-  to searching through a large shapefile or image of which you are only going 
-  to display a small area.  By breaking the data up into tiles and creating a 
-  tile index, MapServer only needs to open up and search the data files of 
-  interest.  Shapefile data can be broken into smaller tiles and then a 
-  tileindex shapefile can be created using the 
-  :ref:`tile4ms <tile4ms>` utility.  A :ref:`tileindex <tileindex>` 
-  shapefile for raster files can also be created.
+* **Tile Your Data** - Ideally, your data will be 'sliced up' into
+  pieces about the size in which it will be displayed.  There is
+  unnecessary overhead when searching through a large Shape dataset or
+  image of which you are only going to display a small area.  By
+  breaking the data up into tiles and creating a tile index, MapServer
+  only needs to open up and search the data files of interest.  Shape
+  datasets can be broken into smaller tiles and then a tileindex Shape
+  dataset can be created using the :ref:`tile4ms <tile4ms>` utility.
+  A :ref:`tileindex <tileindex>` Shape dataset for raster files can
+  also be created.
           
-* **Pre-Classify Your Data** - MapServer allows for the use of quite 
-  complex :ref:`EXPRESSIONs <expressions>` 
-  to classify data. However, using logical and regular expressions is more 
-  resource intensive than string comparisons.  To increase efficiency, you 
-  can divide your data into classes ahead of time, create a field to use as 
-  the CLASSITEM and populate it with a simple value that identifies the class, 
-  such as 1,2,3, or 4 for a four class data set.  You can then do a simple 
-  string comparison for the class EXPRESSION.
+* **Pre-Classify Your Data** - MapServer allows for the use of quite
+  complex :ref:`EXPRESSIONs <expressions>` to classify data. However,
+  using logical and regular expressions is more resource intensive
+  than string comparisons.  To increase efficiency, you can divide
+  your data into classes ahead of time, create a field to use as the
+  `CLASSITEM` and populate it with a simple value that identifies the
+  class, such as 1,2,3, or 4 for a four class data set.  You can then
+  do a simple string comparison for the class `EXPRESSION`.
 
 * **Pre-Process Your Images** - Do resource intensive processing up front.  
   See the :ref:`Raster Data reference <raster>` for more info.
 
 * **Generalize for Overview** - create a more simple, generalized data layer 
   to display at small scales, and then use scale-dependent layers utilizing 
-  :ref:`LAYER` MINSCALE and 
-  LAYER MAXSCALE to show more detailed data layers as the user zooms in.  
+  :ref:`LAYER` `MINSCALE` and 
+  `LAYER` `MAXSCALE` to show more detailed data layers as the user zooms in.  
   This same concept applies to images.  
   
 .. seealso::
@@ -844,6 +860,11 @@ IRC
 MapServer users and developers can be found on Internet Relay Chat.  The
 channel is #mapserver on irc.freenode.net.  
 
+Reporting bugs
+...............................................................................
+
+Bugs (software and documentation) are reported on the `Mapserver issue
+tracker <http://trac.osgeo.org/mapserver>`__.
 
 Gallery
 ...............................................................................
@@ -883,8 +904,7 @@ inspiration.
 
 `Beginning MapServer: Opensource GIS Development
 <http://www.apress.com/book/bookDisplay.html?bID=443>`__\, by Bill
-Kropla, is a new book focusing on MapServer.  So new, I haven't seen
-it yet.  According to the publisher, it covers installation and
+Kropla.  According to the publisher, it covers installation and
 configuration, basic MapServer topics and features, incorporation of
 dynamic data, advanced topics, MapScript, and the creation of an
 actual application.
