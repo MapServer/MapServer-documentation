@@ -145,6 +145,7 @@ but are **required (or strongly recommended) for a WMS configuration:**
   - wms_title
   - wms_onlineresource
   - wms_srs (unless PROJECTION object is defined using "init=epsg:...") 
+  - wms_enable_request
 
 **And for each LAYER:**
 
@@ -162,7 +163,7 @@ but are **required (or strongly recommended) for a WMS configuration:**
 - Layer TEMPLATE (required for GetFeatureInfo requests)
 - Layer DUMP TRUE (only required for GetFeatureInfo GML requests)
 
-Let's go through each of these paramters in more detail:
+Let's go through each of these parameters in more detail:
 
 - **Map Name and wms_title:**
 
@@ -289,6 +290,12 @@ Let's go through each of these paramters in more detail:
   This is covered in more detail in the section "More About the Online Resource 
   URL" below. 
   
+- **"wms_enable_request" metadata:**
+
+  Specify which requests to enable.  If not specified, no requests
+  will be enabled!  See the explanation below.
+
+
 - **Configuring for GetFeatureInfo Requests:**
 
   You must set the layer TEMPLATE parameter for the layer to be queryable by 
@@ -787,6 +794,29 @@ Web Object Metadata
 - *Description:* Optional XML capabilities encoding type. The default is
   ISO-8859-1.
 
+**wms_enable_request** (or **ows_enable_request**)
+
+- *Description:* Space separated list of requests to enable.
+  The default is none.
+  The following requests can be enabled:
+  `GetCapabilities`, `GetMap`, `GetFeatureInfo` and
+  `GetLegendGraphic`.  A "!" in front of a request will disable the
+  request. "*" enables all requests.
+
+- *Examples:*
+
+  To enable only `GetMap` and `GetFeatureInfo`:
+
+  ::
+
+    "wms_enable_request" "GetMap GetFeatureInfo"
+
+  To enable all requests except `GetFeatureInfo`
+
+  ::
+
+    "wms_enable_request" "* !GetFeatureInfo"
+
 **wms_feature_info_mime_type**
 
 - *WMS TAG Name:* Feature_info_mime_type
@@ -1065,6 +1095,29 @@ Layer Object Metadata
   wms_dataurl_format must also be specified.
 - refer to section 7.1.4.5.14 of the WMS 1.1.1 spec. 
 
+**wms_enable_request** (or **ows_enable_request**)
+
+- *Description:* Space separated list of requests to enable.
+  The default is none.
+  The following requests can be enabled:
+  `GetCapabilities`, `GetMap`, `GetFeatureInfo` and
+  `GetLegendGraphic`.  A "!" in front of a request will disable the
+  request. "*" enables all requests.
+
+- *Examples:*
+
+  To enable only `GetMap` and `GetFeatureInfo`:
+
+  ::
+
+    "wms_enable_request" "GetMap GetFeatureInfo"
+
+  To enable all requests except `GetFeatureInfo`
+
+  ::
+
+    "wms_enable_request" "* !GetFeatureInfo"
+
 **wms_extent**
 
 - *WMS TAG Name:* BoundingBox (WMS1.1.1, sect. 6.5.6)
@@ -1275,6 +1328,7 @@ The following is a very basic WMS Server mapfile:
           "wms_title"     "WMS Demo Server"  ##required
           "wms_onlineresource" "http://yourpath/cgi-bin/mapserv.exe?"   ##required
           "wms_srs"       "EPSG:42304 EPSG:42101 EPSG:4269 EPSG:4326"  ##recommended
+          "wms_enable_request" "*"   ##necessary
         END
       END
     
@@ -1377,17 +1431,18 @@ FAQ / Common Problems
 
     .. code-block:: mapfile
  
-          NAME "DEMO" 
-          ... 
+         NAME "DEMO" 
+         ... 
 
-          WEB 
-          ... 
-          METADATA 
+         WEB 
+           ... 
+           METADATA 
              "wms_title"            "WMS Demo Server" 
              "wms_onlineresource"   "http://my.host.com/cgi-bin/mapserv?map=wms.map&" 
              "wms_srs"              "AUTO:42001 AUTO:42002" 
-          END 
-          END    
+             "wms_enable_request" "*"   ##necessary
+           END # METADATA
+         END # WEB
               
 
     The above server advertises the first two auto projections. 
