@@ -57,8 +57,10 @@ function restrictExtent() {
 function olmapinit(){
      
         map = new OpenLayers.Map( 'map' );
+        
+        var wms = new OpenLayers.Layer.WMS( "WMS","http://demo.mapserver.org:8081/geocache?",
 
-        var wms = new OpenLayers.Layer.WMS( "WMS","http://demo.mapserver.org/cgi-bin/foss4g?",
+        //var wms = new OpenLayers.Layer.WMS( "WMS","http://demo.mapserver.org/cgi-bin/foss4g?",
         {
         /*
         var wms = new OpenLayers.Layer.WMS( "WMS",
@@ -67,8 +69,8 @@ function olmapinit(){
                 {map: 'D:/ms4w/apps/osm/map/osm.map',*/
 
 
-        layers: 'default',
-        format: 'aggpng24',
+        layers: 'osm-denver',
+        format: 'png',
         transparent: 'off'},
         {maxExtent: new OpenLayers.Bounds(-105.208290,39.542378,-104.769779,39.980889),
         scales: [5000,10000,25000,50000,100000,250000,500000,
@@ -78,7 +80,6 @@ function olmapinit(){
         ratio:1,
         wrapDateLine: true,
         isBaselayer:true,
-        singleTile:true,
         transitionEffect:'resize'} );     
 
         map.addLayers([wms]);
