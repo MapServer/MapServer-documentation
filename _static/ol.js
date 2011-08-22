@@ -28,37 +28,10 @@ OpenLayers.Control.PanZoom.prototype.draw = function(px) {
     return this.div;
 };
 
-/*
-function restrictExtent() {
-        var re;
-        return;
-        if(map.zoom >= 9) {
-                re = new OpenLayers.Bounds(232128.90549511,5061987.4207997,251589.88109746,5081199.6882021);
-                map.restrictedExtent = re;
-            
-        } else if (map.zoom >= 7) {
-                re = new OpenLayers.Bounds(185699.84723398,4927656.4983161,366154.16113992,5191548.6526213);
-                map.restrictedExtent = re;
-        } else if (map.zoom >= 6) {
-                re = new OpenLayers.Bounds(-13249.073112705,4734973.415064,649796.40217677,5391405.8401392);
-                map.restrictedExtent = re;
-        } else if (map.zoom >= 5) {
-                re = new OpenLayers.Bounds(-350504.44654968,4397719.5711671,964297.62123439,5717725.108365);
-                map.restrictedExtent = re;
-        } else {
-                re = new OpenLayers.Bounds(-1096452.6548487,4297707.1251797,935546.2478719,6675428.0634347);
-                map.restrictedExtent = re;
-        }
-            if(!re.containsBounds(map.getExtent())) {
-                map.panTo(new OpenLayers.LonLat(lon,lat));
-            }
-        }*/
-
 function olmapinit(){
      
         map = new OpenLayers.Map( 'map' );
 
-        //use mod_geocache
         var wms = new OpenLayers.Layer.WMS( "WMS","http://demo.mapserver.org:8081/geocache?",
         
         //var wms = new OpenLayers.Layer.WMS( "WMS","http://demo.mapserver.org/cgi-bin/foss4g?",
@@ -83,7 +56,20 @@ function olmapinit(){
         isBaselayer:true,
         transitionEffect:'resize'} );     
 
-        map.addLayers([wms]);
+        var osm_denver_osmgrid_tms_layer = new OpenLayers.Layer.TMS( "osm-denver-osmgrid-TMS",
+        "http://demo.mapserver.org:8081/geocache/tms",
+        { layername: 'osm-denver@osmgrid', type: "png", serviceVersion:"1.0.0",
+        gutter:0,buffer:0,isBaseLayer:true,transitionEffect:'resize',
+        tileOrigin: new OpenLayers.LonLat(-109.060090,36.991292),
+        resolutions:[0.31747799999999997134,0.15873899999999999011,0.07936999999999999389,0.03174799999999999844,0.01587399999999999878,0.00793699999999999939,0.00317499999999999982,0.00158800000000000008,0.00079699999999999989,0.00031699999999999999,0.00015899999999999999,0.00007899999999999999,0.00003200000000000000,0.00001600000000000000],
+        units:"m",
+        maxExtent: new OpenLayers.Bounds(-109.060090,36.991292,-102.043907,41.013656),
+        projection: new OpenLayers.Projection("epsg:4326".toUpperCase()),
+        sphericalMercator: false
+     }
+  );
+
+        map.addLayers([osm_denver_osmgrid_tms_layer]);
         OpenLayers.IMAGE_RELOAD_ATTEMPTS = 3;
         if(!map.getCenter())
           map.setCenter(new OpenLayers.LonLat(lon, lat), zoom);
