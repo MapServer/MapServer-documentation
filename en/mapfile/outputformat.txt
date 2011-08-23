@@ -1,5 +1,8 @@
 .. _outputformat:
 
+.. index::
+   single: OUTPUTFORMAT
+    
 *****************************************************************************
  OUTPUTFORMAT
 *****************************************************************************
@@ -91,13 +94,9 @@ with GDAL support, and the PDF and SVG depend on building with cairo support.
       EXTENSION "png"
     END
 
-
-NAME [name]
-    The name to use in the IMAGETYPE keyword of the map file to 
-    select this output format.  This name is also used in metadata describing
-    wxs formats allowed, and can be used (sometimes along with mimetype) to 
-    select the output format via keywords in OGC requests. (optional)
-
+.. index::
+   pair: OUTPUTFORMAT; DRIVER
+    
 DRIVER [name]
     The name of the driver to use to generate this output format. Some driver 
     names include the definition of the format if the driver supports multiple 
@@ -109,6 +108,136 @@ DRIVER [name]
     output can be generated with either GDAL or GD (GD is generally more 
     efficient).  TEMPLATE should be used for template based output. (mandatory)
 
+.. index::
+   pair: OUTPUTFORMAT; EXTENSION
+    
+EXTENSION [type]
+    Provide the extension to use when creating files of this type. (optional)
+
+
+.. index::
+   pair: OUTPUTFORMAT; FORMATOPTION
+    
+.. _FORMATOPTION:
+
+FORMATOPTION [option]
+    Provides a driver or format specific option. Zero or more FORMATOPTION 
+    statement may be present within a OUTPUTFORMAT declaration. (optional)
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; QUALITY
+
+    - AGG/JPEG: The "QUALITY=n" option may be used to set the quality of 
+      jpeg produced (value from 0-100).
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; INTERLACE
+
+    - GD/PNG: The "INTERLACE=[ON/OFF]" option may be used to turn 
+      interlacing on or off.
+
+    - GD/GIF: The "INTERLACE=[ON/OFF]" option may be used to turn 
+      interlacing on or off.
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; TILED
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; BLOCKXSIZE
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; BLOCKYSIZE
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; INTERLEAVE
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; COMPRESS
+
+    - GDAL/GTiff: Supports the TILED=YES, BLOCKXSIZE=n, BLOCKYSIZE=n, 
+      INTERLEAVE=[PIXEL/BAND] and COMPRESS=[NONE,PACKBITS,JPEG,LZW,DEFLATE] 
+      format specific options.
+
+    - GDAL/\*: All FORMATOPTIONs are passed onto the GDAL create function. 
+      Options supported by GDAL are described in the detailed documentation 
+      for each GDAL format
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; NULLVALUE
+
+    - GDAL/\*: NULLVALUE=n is used in raw image modes (IMAGEMODE 
+      BYTE/INT16/FLOAT) to pre-initialize the raster and an attempt is made
+      to record this in the resulting file as the nodata value. This is
+      automatically set in WCS mode if rangeset_nullvalue is set. 
+
+    - OGR/\*: See OGR Output document for details of OGR format options.
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; GAMMA
+
+    - AGG/\*: GAMMA=n is used to specify the gamma correction to apply to polygon
+      rendering. Allowed values are ]0.0,1.0] , default is 0.75. This value is
+      used to prevent artifacts from appearing on the border of contiguous
+      polygons. Set to 1.0 to disable gamma correction.
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; COMPRESSION
+
+    - AGG/PNG: COMPRESSION=n is used to determine the ZLIB compression applied to
+      the png creation. n is expected to be an integer value from 0 to 9, with 0
+      meaning *no* compression (not recommended), 1 meaning fastest compression,
+      and 9 meaning best compression. The compression levels come at a cost (be it
+      in terms of cpu processing or file size, chose the setting that suits you
+      most). The default is COMPRESSION=6.
+
+    - AGG/PNG supports quantizing from 24/32 bits to 8bits,
+      in order to reduce the final image size (and therefore save bandwidth) (see
+      also http://trac.osgeo.org/mapserver/ticket/2436#comment:4 for strategies
+      when applying these options):
+
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; QUANTIZE_FORCE
+
+      - "QUANTIZE_FORCE=on" used to reduce an RGB or RGBA image into an 8bit 
+          (or less) paletted images. The colors used in the palette are selected
+          to best fit the actual colors in the RGB or RGBA image.
+ 
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; QUANTIZE_COLORS
+
+      - "QUANTIZE_COLORS=256" used to specify the number of colors to be used
+        when applying quantization. Maximum value is 256. Specifying anything
+        between 17 and 255 is probably a waste of quality as each pixel is still
+        encoded with a full byte. Specifying a value under 16 will produce tiny
+        images, but severly degraded.
+
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; PALETTE
+
+      - "PALETTE=/path/to/palette.txt" is used to define the absolute path where 
+        palette colors can be found. This file must contain 256 entries of r,g,b
+        triplets for RGB imagemodes, or r,g,b,a quadruplets for
+        RGBA imagemodes. The expected format is one triplet (or quadruplet) per
+        line, each value separated by commas, and each triplet/quadruplet on a
+        single line. If you want to use transparency with a palette, it is
+        important to have these two colors in the palette file:
+        0,0,0,0 and 255,255,255,255.
+
+        .. NOTE::
+	   0,0,0,0 is important if you have fully transparent areas.
+	   255,255,255,255 is opaque white.
+           The important colors to have in your palette really depend on your
+	   actual map, although 0,0,0,0 , 0,0,0,255 , and 255,255,255,255 are
+	   very likely to show up most of the time.
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; PALETTE_FORCE
+
+      - "PALETTE_FORCE=on" is used to reduce image depth with a predefined palette.
+        This option is incompatible with the previous quantization options.
+
+.. index::
+   pair: OUTPUTFORMAT; IMAGEMODE
+    
 IMAGEMODE [PC256/RGB/RGBA/INT16/FLOAT32/FEATURE]
     Selects the imaging mode in which the output is generated. Does matter 
     for non-raster formats like Flash. Not all formats support all 
@@ -132,13 +261,25 @@ IMAGEMODE [PC256/RGB/RGBA/INT16/FLOAT32/FEATURE]
     - FEATURE: Output is a non-image result, such as features written 
       via templates or OGR.  
 
+.. index::
+   pair: OUTPUTFORMAT; MIMETYPE
+    
 MIMETYPE [type]
     Provide the mime type to be used when returning results over the web. 
     (optional)
 
-EXTENSION [type]
-    Provide the extension to use when creating files of this type. (optional)
+.. index::
+   pair: OUTPUTFORMAT; NAME
+    
+NAME [name]
+    The name to use in the IMAGETYPE keyword of the map file to 
+    select this output format.  This name is also used in metadata describing
+    wxs formats allowed, and can be used (sometimes along with mimetype) to 
+    select the output format via keywords in OGC requests. (optional)
 
+.. index::
+   pair: OUTPUTFORMAT; TRANSPARENT
+    
 TRANSPARENT [ON/OFF]
     Indicates whether transparency should be enabled for this format. Note 
     that transparency does not work for IMAGEMODE RGB output. Not all formats 
@@ -148,69 +289,3 @@ TRANSPARENT [ON/OFF]
     components drawn in this color will also be transparent, so for map 
     generation with transparency it is best to use an otherwise unused color 
     as the background color.
-
-.. _FORMATOPTION:
-
-FORMATOPTION [option]
-    Provides a driver or format specific option. Zero or more FORMATOPTION 
-    statement may be present within a OUTPUTFORMAT declaration. (optional)
-
-    - AGG/JPEG: The "QUALITY=n" option may be used to set the quality of 
-      jpeg produced (value from 0-100).
-    - GD/PNG: The "INTERLACE=[ON/OFF]" option may be used to turn 
-      interlacing on or off.
-    - GD/GIF: The "INTERLACE=[ON/OFF]" option may be used to turn 
-      interlacing on or off.
-    - GDAL/GTiff: Supports the TILED=YES, BLOCKXSIZE=n, BLOCKYSIZE=n, 
-      INTERLEAVE=[PIXEL/BAND] and COMPRESS=[NONE,PACKBITS,JPEG,LZW,DEFLATE] 
-      format specific options.
-    - GDAL/\*: All FORMATOPTIONs are passed onto the GDAL create function. 
-      Options supported by GDAL are described in the detailed documentation 
-      for each GDAL format
-    - GDAL/\*: NULLVALUE=n is used in raw image modes (IMAGEMODE 
-      BYTE/INT16/FLOAT) to pre-initialize the raster and an attempt is made
-      to record this in the resulting file as the nodata value. This is
-      automatically set in WCS mode if rangeset_nullvalue is set. 
-    - OGR/\*: See OGR Output document for details of OGR format options.
-    - AGG/\*: GAMMA=n is used to specify the gamma correction to apply to polygon
-      rendering. Allowed values are ]0.0,1.0] , default is 0.75. This value is
-      used to prevent artifacts from appearing on the border of contiguous
-      polygons. Set to 1.0 to disable gamma correction.
-    - AGG/PNG: COMPRESSION=n is used to determine the ZLIB compression applied to
-      the png creation. n is expected to be an integer value from 0 to 9, with 0
-      meaning *no* compression (not recommended), 1 meaning fastest compression,
-      and 9 meaning best compression. The compression levels come at a cost (be it
-      in terms of cpu processing or file size, chose the setting that suits you
-      most). The default is COMPRESSION=6.
-    - AGG/PNG supports quantizing from 24/32 bits to 8bits,
-      in order to reduce the final image size (and therefore save bandwidth) (see
-      also http://trac.osgeo.org/mapserver/ticket/2436#comment:4 for strategies
-      when applying these options):
-
-        - "QUANTIZE_FORCE=on" used to reduce an RGB or RGBA image into an 8bit 
-          (or less) paletted images. The colors used in the palette are selected
-          to best fit the actual colors in the RGB or RGBA image.
-        - "QUANTIZE_COLORS=256" used to specify the number of colors to be used
-          when applying quantization. Maximum value is 256. Specifying anything
-          between 17 and 255 is probably a waste of quality as each pixel is still
-          encoded with a full byte. Specifying a value under 16 will produce tiny
-          images, but severly degraded.
-        - "PALETTE_FORCE=on" is used to reduce image depth with a predefined palette.
-          This option is incompatible with the previous quantization options.
-        - "PALETTE=/path/to/palette.txt" is used to define the absolute path where 
-          palette colors can be found. This file must contain 256 entries of r,g,b
-          triplets for RGB imagemodes, or r,g,b,a quadruplets for
-          RGBA imagemodes. The expected format is one triplet (or quadruplet) per
-          line, each value separated by commas, and each triplet/quadruplet on a
-          single line. If you want to use transparency with a palette, it is
-          important to have these two colors in the palette file:
-          0,0,0,0 and 255,255,255,255.
-
-          .. NOTE::
-	     0,0,0,0 is important if you have fully transparent areas.
-	     255,255,255,255 is opaque white.
-	     The important colors to have in your palette really depend on your
-	     actual map, although 0,0,0,0 , 0,0,0,255 , and 255,255,255,255 are
-	     very likely to show up most of the time.
-
-
