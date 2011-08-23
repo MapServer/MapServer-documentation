@@ -13,9 +13,11 @@
 Description
 ===========
 
-Since version 6.0, MapServer has the ability to combine multiple features from a
-point layer into single (aggregated) features based on their relative positions. 
-Only *POINT* layers are supported.  This feature was added through :ref:`rfc69`.
+Since version 6.0, MapServer has the ability to combine multiple
+features from a point layer into single (aggregated) features based on
+their relative positions.
+Only *POINT* layers are supported.
+This feature was added through :ref:`rfc69`.
 
 Supported Layer Types
 =====================
@@ -25,25 +27,42 @@ POINT
 Mapfile Parameters
 ==================
 
+.. index::
+   pair: CLUSTER; MAXDISTANCE
+    
 MAXDISTANCE [double]
-    Specifies the distance of the search region (rectangle or ellipse) in pixel positions.
+    Specifies the distance of the search region (rectangle or ellipse)
+    in pixel positions.
   
+.. index::
+   pair: CLUSTER; REGION
+    
 REGION [string]
-    Defines the search region around a feature in which the neighbouring features are negotiated.
+    Defines the search region around a feature in which the
+    neighbouring features are negotiated.
     Can be 'rectangle' or 'ellipse'.
     
+.. index::
+   pair: CLUSTER; GROUP
+    
 :ref:`GROUP <expressions>` [string]
-    This expression evaluates to a string and only the features that have the
-    same group value are negotiated. This parameter can be omitted. The evaluated group value is 
-    available in the 'Cluster:Group' feature attribute.
+    This expression evaluates to a string and only the features that
+    have the same group value are negotiated. This parameter can be
+    omitted. The evaluated group value is available in the
+    'Cluster:Group' feature attribute.
+    
+.. index::
+   pair: CLUSTER; FILTER
     
 :ref:`FILTER <expressions>` [string]
-    We can define the FILTER expression filter some of the features from the final output.
-    This expression evaluates to a boolean value and if this value is false 
-    the corresponding shape is filtered out. 
-    This expression is evaluated after the the feature negotiation is completed, therefore
-    the 'Cluster:FeatureCount' parameter can also be used, which provides the option
-    to filter the shapes having too many or to few neighbors within the search region.
+    We can define the FILTER expression filter some of the features
+    from the final output.  This expression evaluates to a boolean
+    value and if this value is false the corresponding shape is
+    filtered out.  This expression is evaluated after the the feature
+    negotiation is completed, therefore the 'Cluster:FeatureCount'
+    parameter can also be used, which provides the option to filter
+    the shapes having too many or to few neighbors within the search
+    region.
     
 Mapfile Snippet
 ===============
@@ -70,29 +89,50 @@ Mapfile Snippet
     ...
   END
   
+
+.. index::
+   pair: CLUSTER; feature attributes
+
 Feature attributes
 ==================
 
 The clustered layer itself provides the following aggregated attributes: 
 
+.. index::
+   pair: CLUSTER; FeatureCount
+
+.. index::
+   pair: CLUSTER; Group
+
 1. Cluster:FeatureCount - count of the features in the clustered shape 
-2. Cluster:Group - The group value of the cluster (to which the group expression is evaluated)
+2. Cluster:Group - The group value of the cluster (to which the group
+   expression is evaluated)
 
-These attributes (in addition to the attributes provided by the original data source) can be used to configure 
-the labels of the features and can also be used in expressions. 
-The ITEMS processing option can be used to specify a subset of the attributes from the original 
-layer in the query operations according to the user's preference.
+These attributes (in addition to the attributes provided by the
+original data source) can be used to configure the labels of the
+features and can also be used in expressions.  The ITEMS processing
+option can be used to specify a subset of the attributes from the
+original layer in the query operations according to the user's
+preference.
 
-We can use simple aggregate functions (Min, Max, Sum, Count) to specify how the clustered attribute should be
-calculated from the original attributes. The aggregate function should be specified as a prefix separated by ':' in
-the attibute definition, like: [Max:itemname]. If we don't specify aggregate functions for the source
-layer attributes, then the actual value of the cluster attribute will be non-deterministic if the cluster contains
-multiple shapes with different values. The Count aggregate function in fact provides the same value as Cluster:FeatureCount.
+.. index::
+   pair: CLUSTER; Aggregate functions
+
+We can use simple aggregate functions (Min, Max, Sum, Count) to
+specify how the clustered attribute should be calculated from the
+original attributes. The aggregate function should be specified as a
+prefix separated by ':' in the attibute definition, like:
+[Max:itemname]. If we don't specify aggregate functions for the source
+layer attributes, then the actual value of the cluster attribute will
+be non-deterministic if the cluster contains multiple shapes with
+different values. The Count aggregate function in fact provides the
+same value as Cluster:FeatureCount.
 
 PHP MapScript Usage
 ===================
 
-The :ref:`CLUSTER object <phpclusterobj>`  is exposed through PHP MapScript.  An example follows:
+The :ref:`CLUSTER object <phpclusterobj>` is exposed through PHP
+MapScript.  An example follows:
 
 .. code-block:: php
 
@@ -103,13 +143,14 @@ The :ref:`CLUSTER object <phpclusterobj>`  is exposed through PHP MapScript.  An
 Example: Clustering Railway Stations
 ====================================
 
-The following example uses a point datasource, in this case in KML format, to display clusters of railway
-stations.  Two classes are used: one to style and label the cluster, and one to style and label the single
-railway station.
+The following example uses a point datasource, in this case in KML
+format, to display clusters of railway stations.  Two classes are
+used: one to style and label the cluster, and one to style and label
+the single railway station.
 
 .. note::
-    Since we can't declare 2 labelitems, for the single railway class we use the *TEXT* parameter to label
-    the station.
+    Since we can't declare 2 labelitems, for the single railway class
+    we use the *TEXT* parameter to label the station.
 
 Mapfile Layer
 -------------
