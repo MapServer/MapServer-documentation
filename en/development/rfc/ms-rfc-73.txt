@@ -1,0 +1,84 @@
+.. _rfc73:
+
+==============================================================================
+MS RFC 73: Improved SVG symbols support
+==============================================================================
+
+:Date: 2011/05/19
+:Authors: Zak James (zjames at dmsolutions.ca)
+:Authors: Yewondwossen Assefa (yassefa at dmsolutions.ca)
+:Last Edited: 2011/05/19
+:Status:  Proposed
+:Version: MapServer 6.2
+:Id: $Id:$
+
+Overview
+------------------------------------------------------------------------------
+
+The SVG format offers several advantages over existing mapserver symbol types
+but existing support is limited. We propose the implementation of complete
+support using the libsvg-cairo library, part of the cairo project.
+
+
+Technical Solution
+------------------------------------------------------------------------------
+
+All renderers will be extended with an added supports_svg flag, set to 0 for
+all but the cairo renderer. When an SVG symbol is requested, other renderers
+will trigger a call to msRenderSVGToPixmap which will parse the referenced svg
+file (using libsvg-cairo) and render the svg into the symbol's pixmapbuffer
+using cairo. After this operation, normal pixmap symbol handling will be used.
+
+For the cairo renderer, the renderSVGSymbolCairo function will use libsvg-cairo
+to parse the symbol, but will then use the cairo api to render the symbol
+directly.
+
+Configure.in will be modified to detect the --with-libsvg-cairo configure
+option and define USE_LIBSVG_CAIRO.
+
+Usage example
+------------------------------------------------------------------------------
+
+::
+
+  SYMBOL
+    NAME "svgsymbol"
+    TYPE SVG
+    IMAGE "/path/to/symbol.svg"
+  END
+
+
+
+... once defined, the symbol is used within the mapfile like any other.
+
+Backwards Compatibility Issues
+------------------------------------------------------------------------------
+
+There are no compatibility issues with existing mapfiles. The SVG symbol type
+is already allowed within a SYMBOLSET. SVG Symbol support will be disabled by
+default. Enabling it will require installation of the libsvg-cairo library
+available from 
+* http://cairographics.org/snapshots/libsvg-cairo-0.1.6.tar.gz
+
+Affected Files
+------------------------------------------------------------------------------
+
+* mapserver.h
+* mapdraw.c
+* mapdummyrenderer.c
+* maprendering.c
+* mapsymbol.c
+* mapsymbol.h
+* mapcairo.c
+* mapagg.cpp
+* configure.in
+
+Ticket Id
+------------------------------------------------------------------------------
+
+* http://trac.osgeo.org/mapserver/ticket/3671
+
+
+
+Voting History
+------------------------------------------------------------------------------
