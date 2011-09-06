@@ -1,0 +1,149 @@
+.. index::
+   single: https connections
+
+.. _wxs_secure
+
+*********************************************************************
+How to set up MapServer as a client to access a service over https
+*********************************************************************
+
+:Revision: $Revision: 12521 $
+:Date: $Date: 2011-09-06 19:48:20 +0200 (Tue, 06 Sep 2011) $
+
+.. contents:: Table of Contents
+    :depth: 2
+    :backlinks: top
+
+Introduction
+============
+
+The following documentation explains how to set up MapServer as a
+client to access a WMS/WFS server through a secure SSL connection
+using the HTTPS protocol.  It describes the common problems a user
+could encounter and how to solve them.
+
+Requirements
+============
+
+MapServer 5.4.1 and up, compiled with Curl.  Curl must be built with
+SSL support.
+
+Default Installation (with apt-get install, rpm, manual, etc)
+=============================================================
+
+The Curl CA bundle file should be located in the default directory.
+
+Verify your connection with the Curl command line:
+
+::
+
+   curl https://targethostname:port/gmap-demo/gmap75.phtml
+
+Edit your map file to add the WMS connection URL.  For example:
+
+.. code-block:: mapfile
+
+   CONNECTION "https://domainname:port/cgi-bin/mapserv?map=/path/to/wms.map"
+   CONNECTIONTYPE WMS
+
+If the layer is displayed correctly you do not need to read on.
+
+Non-Standard Installation (common with ms4w and fgs)
+=============================================================
+
+If you get the following error, it means that your CA bundle is not
+found.
+
+::
+
+   curl https://localhost:port/gmap-demo/gmap75.phtml
+   curl: (77) error setting certificate verify locations:
+     CAfile: /home/nsavard/fgsfull/share/curl/cacert.pem
+     CApath: none
+
+It may be caused by the CURL_CA_BUNDLE environment variable pointing
+to the wrong location or the CA bundle file not beeing present.
+Follow the steps below to correct either case.
+
+Set the CURL_CA_BUNDLE environment variable to point to the bundle
+file (e.g. export CURL_CA_BUNDLE=/path/to/my-ca-bundle.ext where
+my-ca-bundle.ext could be cacert.pem or ca-bundle.crt).
+
+Download the CA bundle file "cacert.pem" found at
+http://curl.haxx.se/docs/caextract.html or if you have the Curl source
+you could create the CA bundle by executing "make ca-bundle" or "make
+ca-firefox" (if you have Firefox and the certutil tool installed).  If
+you used the second choice, the bundle file will be named
+ca-bundle.crt and will be found in the lib directory under the Curl
+root directory.  See http://curl.haxx.se/docs/caextract.html for more
+details.  Store this file in the location pointed to by the
+URL_CA_BUNDLE environment variable.
+
+Verify your connection using the Curl command line:
+
+::
+
+    curl https://targethostname:port/gmap-demo/gmap75.phtml
+
+.. note::
+   If you use ms4w, osgeo4w or fgs installation, these installers
+   should take care of this problem for you.
+
+Remote Server with a Self-Signed SSL Certificate
+=============================================================
+
+If you get the following error, it means that your remote server
+probably use a self-signed SSL certificate and the server certificate
+is not included in your CA bundle file.
+
+::
+
+    curl: (60) SSL certificate problem, verify that the CA cert is OK. Details:
+    error:14090086:SSL routines:SSL3_GET_SERVER_CERTIFICATE:certificate verify failed
+    More details here: http://curl.haxx.se/docs/sslcerts.html
+
+    curl performs SSL certificate verification by default, using a "bundle"
+    of Certificate Authority (CA) public keys (CA certs). If the default
+    bundle file isn't adequate, you can specify an alternate file
+    using the --cacert option.
+    If this HTTPS server uses a certificate signed by a CA represented in
+    the bundle, the certificate verification probably failed due to a
+    problem with the certificate (it might be expired, or the name might
+    not match the domain name in the URL).
+    If you'd like to turn off curl's verification of the certificate, use
+    the -k (or --insecure) option.
+
+To get the remote server certificate you have to execute this command:
+
+::
+
+    openssl s_client -connect domainname:port
+
+Copy everything from the "-----BEGIN CERTIFICATE-----" tag to
+"-----END CERTIFICATE-----" tag.  Paste it at the end of the
+my-ca-bundle.ext file.
+
+Verify your connection with the Curl command line:
+
+::
+
+   curl https://targethostname:port/gmap-demo/gmap75.phtml
+
+.. note::
+   If you get the following error, it means that the domain name in
+   the URL request is not corresponding to the one that was declared
+   when creating the remote server certificate.
+
+   ::
+
+      curl: (51) SSL: certificate subject name 'domainname' does not match target host name 'domainname'
+
+You have to use the exact same domain name as the one appearing in the
+"Common Name" prompt used when generating the remote server
+certificate. You cannot use the remote server ip for instance. It
+means that the following URL is not acceptable.
+
+.. code-block:: mapfile
+
+   CONNECTION "https://xxx.xxx.xxx.xxx:port/cgi-bin/mapserv?map=/path/to/wms.map"
+   CONNECTIONTYPE WMS
