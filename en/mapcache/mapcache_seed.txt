@@ -1,0 +1,121 @@
+.. _mapcache_seed:
+
+*****************************************************************************
+ MapCache Seeder
+*****************************************************************************
+
+:Author: Thomas Bonfort
+:Contact: tbonfort at terriscope.fr
+
+Mod-mapcache ships whith an advanced seeding tool, whose main features are:
+ * configurable number of seeding threads, to speed up the rendering.
+ * ability to reseed tiles older than a certain timestamp
+ * ability to seed tiles given a shapefile/ogr datasource
+
+Usage
+-----------------------------------------------------------------------------
+
+The seeding utility is named mapcache_seed, and is located in the mapcache/src/
+directory of the project
+
+
+Commandline options
+================================================================================
+
+::
+
+   -c [file] : path to the mapcache.xml configuration file that contains the
+               tilesets that need to be seeded.
+   -t [tileset]: name of the tileset that must be seeded
+   -g [grid]: name of the grid that must be seeded (the selected
+              tileset must reference the given grid)
+   -z minzoom,maxzoom: (optional) start and end zoom levels that must be seeded.
+   -e minx,miny,maxx,maxy: (optional) bounding box of the area to seed
+   -o (timestamp|now): (optional) only seed tiles that are older than the given value.
+                       The value can either be the string "now", or a date formatted
+                       like year/month/day hour:minute, eg: "2011/01/31 20:45".
+                       (note that a full timestamp should be quoted).
+   -n nthreads: number of parallel threads that should be used to request
+                tiles from the wms source. The default is 1, but can be set higher
+                if the WMS server can withstand parallel requests (as a rule of thumb,
+                the value chosen here should never be much higher than the number
+                of cpus on the wms server)
+   -q: don't print progress messages to the standard output
+   -D "DIMENSION=VALUE": used to specify which dimension to use if the tileset supports
+                         dimensions. Can be used multiple times to set multiple 
+                         dimensions, e.g. -D "DIM1=VAL1" -D "DIM2=VAL2"
+
+Optional Commandline options when using OGR/GEOS
+================================================================================
+
+At compile time, if ogr and geos where found on the system, the seeder tool
+supports additional options to seed only the tiles that cover an arbitrary
+geographical area. *Important:* Note that for the time being, the OGR
+datasource should be in the same projection as the grid you are seeding, as
+there is no automatic reprojection from the datasource projection to the grid
+projection.
+
+::
+
+   -d [ogr_datasource]: ogr connection to the spatial source. Consult the OGR
+                          documentation for all that is supported. In the simplest case (e.g. a
+                           Shapefile), this is just the full filename of the shapefile
+   -l [ogr_layer]: (optional) for datasources that contain multiple layers (e.g. postgis, with
+                   multiple tables), determines which layer will be used
+   -s [ogr_sql]: OGR sql expression that can be applied (see http://www.gdal.org/ogr/ogr_sql.html )
+   -w [ogr_where]: sql "where" expression to filter out returned values. This would
+                   typically be used to select only the geometry of a given country if the
+                   datasource contains all the world contours
+
+Important Note
+================================================================================
+
+The seeding utility must be run under the same user account as the
+user running the webserver. This is required so the permissions on the tiles
+created by the seeder are accessible by the webserver, and conversely so the
+seeder has the rights to write files to directories created by the webserver.
+
+
+A sample seeding session goes like this:
+
+::
+
+  [user@host]$ sudo www-data
+  [www-data@host]$ /path/to/mapcache/src/mapcache_seed -c /path/to/www/conf/mapcache.xml [[options]]
+  [www-data@host]$ logout
+  [user@host]$
+
+
+Examples
+================================================================================
+
+Seed the "osm" tileset with the "g" (google/web-mercator) grid:
+::
+   
+   ./src/mapcache_seed -c mapcache.xml -t osm -g g
+
+Seed levels 0 through 12:
+::
+   
+   ./src/mapcache_seed -c mapcache.xml -t osm -g g -z 0,12
+
+Given a shapefile that contains the world country countours, seed only the
+areas that are covered by land (i.e. skip the oceans). Also use 4 request
+threads in parallel:
+::
+   
+   ./src/mapcache_seed -c mapcache.xml -t osm -g g -z 0,12 -n 4 -d /path/to/seed.shp
+
+Same as beforehand, but only seed the USA (notice the quote usage, required to
+create valid sql with a single-quoted 'US':
+::
+   
+   ./src/mapcache_seed -c mapcache.xml -t osm -g g -z 0,12 -n 4 -d /path/to/seed.shp -w "FIPS_A2='US'"
+
+Reseed levels 0 to 12 (this could also be done by deleting the cache for levels
+0 to 12 and doing a classic seed, but doing so this way does not slow down the
+access from web clients):
+::
+   
+   ./src/mapcache_seed -c mapcache.xml -t osm -g g -z 0,12 -o now
+
