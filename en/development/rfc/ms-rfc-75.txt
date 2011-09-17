@@ -1,0 +1,372 @@
+.. _rfc75:
+
+=======================================
+MS RFC 75: INSPIRE view service support
+=======================================
+
+:Date:  2011/07/01
+:Author: Stefan Leopold (stefan.leopold at reflex.at)
+:Author: Stephan Meissl (stephan.meissl at eox.at)
+:Last Edited:  2011/09/17
+:Status: Proposed
+:Version: MapServer 6.2
+:Id: $Id$
+
+1. Overview
+-----------
+
+In order to achieve INSPIRE view service compliance, several enhancements need to be implemented in MapServer to support the specification_ :
+
+- Activation of INSPIRE support (two scenarios)
+- Multi-language support for certain capabilities fields
+- Provision of INSPIRE specific metadata
+- Style section for root layer and possibly existing group layers
+
+This RFC aggregates and extends the already provided ideas/solutions regarding INSPIRE view service support.  
+
+2. Activation of INSPIRE support
+--------------------------------
+
+INSPIRE specific metadata can either be referenced in an external INSPIRE service metadata document (scenario 1) or can be directly embedded in the capabilities document (scenario 2). MapServer needs to support both scenarios.
+
+As suggested in Ticket 3608_, activation of the corresponding scenario for INSPIRE support takes place in the WEB.METADATA section of the mapfile through "wms_inspire_capabilities". If activated, the corresponding INSPIRE namespace as well as appropriate validation warnings are generated in the capabilities document.  
+
+Scenario 1 - activate INSPIRE support using a reference to external service metadata
+::
+
+  WEB
+   METADATA
+    "wms_inspire_capabilities" "url"
+    ...
+   END
+  END
+  
+Scenario 2 - activate INSPIRE support using embedded service metadata
+::
+
+  WEB
+   METADATA
+    "wms_inspire_capabilities" "embed"
+    ...
+   END
+  END
+
+
+3. Multi-language support for certain capabilities fields
+---------------------------------------------------------
+
+INSPIRE requires multi-language support and requests a list of all supported languages as well as the default language in the capabilities document. Based on the language parameter in the GetCapabilites request, certain specific metadata values, namely
+  - "wms_title"
+  - "wms_abstract"
+  - "wms_rootlayer_title"
+  - "wms_rootlayer_abstract"
+  - "wms_group_title"
+  - "wms_group_abstract"
+as well as language dependent reference data like
+  - DATA "road_eng"
+  - CONNECTION "db_ger"
+need to be provided in the requested language. If the language is not supported (or no language parameter is present), the default language has to be used.
+
+As suggested in Ticket 3608_, all supported languages are specified as comma separated list (first language is default) through "wms_inspire_languages" in the WEB.METADATA section of the mapfile. This language parameter is also added to the onlineresource in the GetCapabilites output.
+::
+
+  WEB
+   METADATA
+    ...
+    "wms_inspire_languages" "eng,ger"                         #first default, values according ISO 639-2/B
+    ...
+   END
+  END
+
+To address the second issue, different options_ regarding implementation were evaluated.
+
+For language specific metadata values, a key extension method is applied.
+::
+
+  WEB
+   METADATA
+    ...
+    "wms_title_eng" "myservicetitle"
+    "wms_title_ger" "myservicetitleger"
+    "wms_abstract" "mylayerabstract"                          #to test fallback
+    "wms_abstract_ger" "mylayerabstractger"
+    ...
+   END
+  END
+  
+For language dependent reference data, a similar approach like the runtime-substitution_ feature of MapServer has been followed (only DATA and CONNECTION values with %language% are substituted).
+::
+
+  ...
+         LAYER
+          NAME TN.RoadTransportNetwork.RoadLink
+          DATA "road_%language%"
+          ...
+         END
+  ...
+
+If the language is not supported (or no language parameter is present), the default language is substituted.
+
+4. Provision of INSPIRE specific metadata
+-----------------------------------------
+
+Depending on the scenario, additional metadata information is required to support the specification. The INSPIRE related fields are provided below:
+
+Scenario 1 - INSPIRE related fields using referenced external service metadata
+::
+
+  WEB
+   METADATA
+    "wms_inspire_capabilities" "url"
+    "wms_inspire_languages" "eng,ger"                         #first default, values according ISO 639-2/B
+    "wms_metadataurl_href" "http://INSPIRE.service/metadata"
+    "wms_metadataurl_format" "application/vnd.ogc.csw.capabilities.response_xml"
+    "wms_inspire_keyword" "infoMapAccessService"              #value according "classification of spatial data services"
+    "wms_title" "myservicetitle"
+    "wms_abstract" "myabstract"
+    "wms_fees" "conditions unknown"                           #value either "no conditions apply"|default "conditions unknown"|<specific conditions>
+    "wms_accessconstraints" "None"                            #value according ISO 19115 (MD_RestrictionCode codelist) or default "None"
+    "wms_contactorganization" "MapServer"                     #responsible organisation
+    "wms_contactposition" "owner"                             #responsible organisation, value according "INSPIRE Metadata Regulation" (part D6)
+    ...
+   END
+  END
+  
+
+Scenario 2 - INSPIRE related fields using embedded service metadata
+::
+
+  WEB
+   METADATA
+    "wms_inspire_capabilities" "embed"
+    "wms_inspire_languages" "eng,ger"                         #first default, values according ISO 639-2/B
+    "wms_inspire_temporal_reference" "2011-09-19"             #date of last revision, value according YYYY-MM-DD
+    "wms_inspire_mpoc_name" "mympocname"                      #point of contact
+    "wms_inspire_mpoc_email" "mympoc@e.mail"                  #point of contact
+    "wms_inspire_metadatadate" "2011-09-19"                   #value according YYYY-MM-DD
+    "wms_inspire_keyword" "infoMapAccessService"              #value according "classification of spatial data services"
+    "wms_title" "myservicetitle"
+    "wms_abstract" "myabstract"
+    "wms_fees" "conditions unknown"                           #value either "no conditions apply"|default "conditions unknown"|<specific conditions>
+    "wms_accessconstraints" "None"                            #value according ISO 19115 (MD_RestrictionCode codelist) or default "None"
+    "wms_contactorganization" "MapServer"                     #responsible organisation
+    "wms_contactposition" "owner"                             #responsible organisation, value according "INSPIRE Metadata Regulation" (part D6)
+    ...
+   END
+  END
+
+Notes:
+
+- several fields require certain values, these values are not validated by MapServer itself, instead a manual validation against the `INSPIRE schemas`_ or the `WMS INSPIRE tester`_ is recommended
+- only one keyword through "wms_inspire_keyword" is supported, a possibly provided "wms_keywordlist" will be ignored 
+- as suggested in this document_ regarding scenario 2, <inspire_common:ResourceType> is always set to service and <inspire_common:SpatialDataServiceType> is always set to view, both values can't be altered through the mapfile
+- conformity is always set to not evaluated, based on the latest `INSPIRE Metadata Implementing Rules`_ (page 7), a specification document, the specification date and a specification URI or URL need to be provided for degree conformant/not conformant, which is currently not implemented
+
+5. Style section for root layer and possibly existing group layers
+------------------------------------------------------------------
+
+For regular layers, the `concept of GROUP and CLASSGROUP`_ can be used to to set the layer style name to the according value. Additionally - as suggested in Ticket 3850_ - the layer style titles can be overwritten through wms_style_<stylename>_title and the layer style legendURLs through wms_style_<stylename>_legendurl_* (width, height, format and href need to be provided).  
+
+::
+
+  ...
+         LAYER
+          NAME TN.RoadTransportNetwork.RoadLink
+          DATA "road"
+          METADATA
+           "wms_title_eng" "Transport networks: Road Link"
+           "wms_title_ger" "Verkehrsnetze: Strassensegment"
+           ...
+           "wms_style_inspire_common:DEFAULT_title" "mylayerstyletitle"         #style title
+           "wms_style_inspire_common:DEFAULT_legendurl_width" "85"              #override style legendurl (mandatory: width, height, format, href)
+           "wms_style_inspire_common:DEFAULT_legendurl_height" "40"
+           "wms_style_inspire_common:DEFAULT_legendurl_format" "image/png"
+           "wms_style_inspire_common:DEFAULT_legendurl_href" "http://path/to/onlineresource...roadlink"
+          END
+          ...
+         END
+         ...
+         CLASSGROUP "inspire_common:DEFAULT"
+         CLASSITEM "NAME_E"
+
+         CLASS
+          NAME "myclass1"
+          GROUP "inspire_common:DEFAULT"
+          EXPRESSION "Trans-Canada Highway"
+          COLOR 255 0 0
+         END
+
+         CLASS
+          NAME "myclass2"
+          GROUP "inspire_common:DEFAULT"
+          COLOR 0 255 0
+         END
+  ...
+
+The following method is suggested to support (customizable) style sections in the root layer
+
+- use wms_style_name in the WEB.METADATA section to add a style section to the root layer
+- use wms_style_title to override the style title (optional)
+- use wms_style_legendurl_* to override width, heigth, format and href of the legendURL (optional)
+
+and possibly existing group layers
+
+- use wms_group_style_name in the first corresponding LAYER.METADATA section to add a style section to the group layer
+- use wms_group_style_title to override the style title (optional)
+- use wms_group_style_legendurl_* to override width, heigth, format and href of the legendURL (optional)
+
+::
+
+  ...
+         WEB
+          METADATA
+           ...
+           "wms_style_name" "inspire_common:DEFAULT"                            #style name
+           "wms_style_title" "myroadarealayerstyletitle"                        #style title 
+           "wms_style_legendurl_width" "85"                                     #override style legendurl (mandatory: width, height, format, href)
+           "wms_style_legendurl_height" "40"
+           "wms_style_legendurl_format" "image/png"
+           "wms_style_legendurl_href" "http://path/to/onlineresource...roadarea"
+          END
+         END 
+
+         LAYER
+          NAME TN.RailTransportNetwork.RailwayLink
+          GROUP TN.CommonTransportElements.TransportLink
+           DATA "road"
+           METADATA
+            "wms_group_title_eng" "Transport networks: Generic Transport Link"
+            "wms_group_title_ger" "Verkehrsnetze: Generisches Verkehrssegment"
+            "wms_group_abstract" "mygenerictransportlinklayerabstract"          #to test fallback
+            "wms_group_abstract_ger" "mygenerictransportlinklayerabstract"
+            "wms_group_style_name" "inspire_common:DEFAULT"                     #style name
+            "wms_group_style_title" "mygenerictransportlinklayerstyletitle"     #style title
+            "wms_group_style_legendurl_width" "85"                              #override style legendurl (mandatory: width, height, format, href)
+            "wms_group_style_legendurl_height" "40"
+            "wms_group_style_legendurl_format" "image/png"
+            "wms_group_style_legendurl_href" "http://path/to/onlineresource...generictransportlink"
+            "wms_title_eng" "Transport networks: Railway Link"
+            "wms_title_ger" "Verkehrsnetze: Eisenbahnverbindung"
+            "wms_abstract" "myrailwaylinklayerabstract"                         #to test fallback
+            "wms_abstract_ger" "myrailwaylinklayerabstractger"
+            ...
+           END
+          ...
+         END
+  ...
+
+Provided that ability, 3 levels of hierarchy can be achieved as done in the example mapfiles.
+
+::
+
+  TN.RoadTransportNetwork.RoadArea
+  +--- TN.RoadTransportNetwork.RoadLink
+  +--- TN.CommonTransportElements.TransportLink
+       +--- TN.RailTransportNetwork.RailwayLink
+       +--- TN.AirTransportNetwork.AirLink
+
+
+6. Implementation details
+-------------------------
+
+In order to implement this enhancement, the following changes need to be implemented in the MapServer codebase:
+ 
+1) get language from request and validate it
+2) detect if INSPIRE support is activated, if so add corresponding namespace
+3) output extended capabilitities with language list and INSPIRE specific metadata (depending on scenario 1 or 2)
+4) add language parameter to onlineresource in output
+5) consider key extension based on language (e.g. "wms_title_eng") when deriving metadata from the mapobject, use fallback with no extension (e.g. "wms_title")
+6) override style titles and legendURLs if specified in mapfile (e.g. "wms_style_<stylename>_title")
+7) add warnings for missing but mandatory INSPIRE specific metadata
+
+6.1 Files affected
+------------------
+
+The following files will be affected by this RFC:
+
+::
+
+  mapows.c/mapows.h
+  
+  [N] MS_DLL_EXPORT const char *msOWSLookupMetadataWithLanguage(.., const char *validated_language)
+  [N] MS_DLL_EXPORT char *msOWSGetOnlineResource2(.., const char *validated_language)
+  [N] MS_DLL_EXPORT char **msOWSGetInspireLanguageList(..)
+  [N] MS_DLL_EXPORT char *msOWSGetInspireLanguage(.., const char *requested_language)
+  [N] MS_DLL_EXPORT int msOWSPrintInspireCommonExtendedCapabilities(..)
+  [N] int msOWSPrintInspireCommonMetadata(..)
+  [N] int msOWSPrintInspireCommonLanguages(..)
+  [C] int msOWSPrintEncodeMetadata(..)  
+  [N] int msOWSPrintEncodeMetadata2(.., const char *validated_language)
+  [C] int msOWSPrintGroupMetadata(..)
+  [N] int msOWSPrintGroupMetadata2(.., const char *validated_language)
+  [C] int msOWSPrintMetadataList(..)
+  [C] int msOWSPrintEncodeMetadataList(..)  
+
+  mapwms.c
+  
+  [S] int msDumpLayer(.., const char *validated_language)
+  [S] void msWMSPrintNestedGroups(.., const char *validated_language)
+  [S] int msWMSGetCapabilities(.., const char *requested_language)
+  [S] int msWMSGetMap(.., const char *requested_language)
+  [C] int msWMSLoadGetMapParams(..)
+  [C] int msWMSLoadGetMapParams(..)
+  [C] int msWMSDescribeLayer(..)
+  [C] int msWMSGetLegendGraphic(..)
+  [C] int msWMSGetStyles(..)
+  [C] int msWMSDispatch(..)
+
+- [C] function changed
+- [N] new function
+- [S] signature of function also changed
+
+6.2 MapScript issues
+--------------------
+
+This change provides new functionality with no MapScript issues being considered.
+
+6.3 Backwards compatibility issues
+----------------------------------
+
+This change provides new functionality with no backwards compatibility issues being considered.
+
+7. Solution
+-----------
+
+The code for this RFC can be found in the inspire_soc2011_ sandbox.
+
+Incorporated tickets:
+  - Ticket 3608_: INSPIRE related support
+  - Ticket 3850_: allow to define a title for styles and possibility to override autogenerated legendurl href
+  
+Related (but currently not addressed) tickets:
+  - Ticket 1632_: support for named group layers using wms_layer_group
+
+8. Tests
+--------
+
+2 example mapfiles were created for testing purposes:
+  - mapfile INSPIRE scenario1_
+  - mapfile INSPIRE scenario2_
+  
+The GetCapabilites responses with these mapfiles validate against the `INSPIRE schemas`_ as well as the `WMS INSPIRE tester`_ without warnings/errors.
+
+9. Voting history
+-----------------
+
+...
+
+.. _specification: http://INSPIRE.jrc.ec.europa.eu/documents/Network_Services/TechnicalGuidance_ViewServices_v3.0.pdf
+.. _3608: http://trac.osgeo.org/mapserver/ticket/3608
+.. _options: http://trac.osgeo.org/mapserver/wiki/gsoc2011/work#multilanguagesupport
+.. _runtime-substitution: http://mapserver.org/cgi/runsub.html
+.. _inspire_soc2011: https://svn.osgeo.org/mapserver/sandbox/inspire_soc2011
+.. _document: http://www.neogeo-online.net/blog/wp-content/uploads/2011/04/MAPSERVER_INSPIRE.pdf
+.. _`INSPIRE Metadata Implementing Rules`: http://inspire.jrc.ec.europa.eu/documents/Metadata/Changes_to_MD_Guidelines_from_v1-1_to_v1-2_20100616-1.pdf
+.. _`concept of GROUP and CLASSGROUP`: http://lists.osgeo.org/pipermail/mapserver-inspire/2011-April/000027.html
+.. _3608: http://trac.osgeo.org/mapserver/ticket/3608
+.. _3850: http://trac.osgeo.org/mapserver/ticket/3850
+.. _1632: http://trac.osgeo.org/mapserver/ticket/1632
+.. _scenario1: https://svn.osgeo.org/mapserver/sandbox/inspire_soc2011/msautotest/wxs/wms_inspire_scenario1.map
+.. _scenario2: https://svn.osgeo.org/mapserver/sandbox/inspire_soc2011/msautotest/wxs/wms_inspire_scenario2.map
+.. _`INSPIRE schemas`: http://inspire.ec.europa.eu/schemas/inspire_vs/1.0/inspire_vs.xsd
+.. _`WMS INSPIRE tester`: http://inspire_tester.neogeo-online.net/
