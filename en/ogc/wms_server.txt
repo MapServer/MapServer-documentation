@@ -439,100 +439,6 @@ This list is not exhaustive, there are several Open Source or proprietary packag
 that offer WMS support and could be used to interact with your new MapServer WMS 
 server instance. 
 
-.. _online_resource_wms:
-
-More About the Online Resource URL
-----------------------------------
-
-As mentioned in the section "Setup a Mapfile / wms_onlineresource metadata" above, 
-the following Online Resource URL is perfectly valid for a MapServer WMS according 
-to section 6.2.2 or the WMS 1.1.1 specification:
-
-::
-
-  http://my.host.com/cgi-bin/mapserv?map=mywms.map&
-      
-
-However, some people will argue that the above URL contains mandatory vendor-specific 
-parameters and that this is illegal. First we would like to point that "map=..." is 
-not considered a vendor-specific parameter in this case since it is part of the 
-Online Resource URL which is defined as an opaque string terminated by "?" or "&" 
-(See `WMS 1.1.1 section 6.2.2`_).
-
-But anyway, even if it's valid, the above URL is still ugly. And you might want to 
-use a nicer URL for your WMS Online Resource URL. Here are some suggestions:
-
-1. On Unix servers, you can setup a wrapper shell script that sets the MS_MAPFILE 
-   environment variable and then passes control to the mapserv executable... that 
-   results on a cleaner OnlineResource URL:
-
-::   
-   
-     #! /bin/sh
-     MS_MAPFILE=/path/to/demo.map
-     export MS_MAPFILE
-     /path/to/mapserv           
-          
-
-2. Another option is to use the "setenvif" feature of Apache: use symbolic links that 
-   all point to a same mapserv binary, and then for each symbolic link test the url, 
-   and set the MAP environment accordingly.
-
-   For Windows and Apache users the steps are as follows (this requires Apache 1.3 or newer):
-
-   - Copy mapserv.exe to a new name for your WMS, such as "mywms.exe".
-   - In httpd.conf, add:
-
-     ::
-   
-       SetEnvIf Request_URI "/cgi-bin/mywms" MS_MAPFILE=/path/to/mymap.map
-              
-3. On IIS servers (Windows), you can use the following ASP script:
-      
-    .. note:: 
-
-        The script below, while functional, is intended only as an example of
-        using ASP to filter MapServer requests. Using ASP in a production WMS
-        server will likely require additional ASP especially in the area of
-        error handling and setting timeouts.*
-
-   .. code-block:: guess
-   
-      <%
-        Server.ScriptTimeout = 360
-
-        Select Case Request.ServerVariables("REQUEST_METHOD")
-          Case "GET"  strRequest = Request.QueryString
-          Case "POST" strRequest = Request.Form
-        End Select
-
-        strURL = "http://myserver/cgi-bin/mapserv.exe?map=C:\Inetpub\wwwroot\workshop\itasca.map&" & strRequest
-
-        Dim objHTTP
-        Set objHTTP = Server.CreateObject("MSXML2.ServerXMLHTTP")
-        objHTTP.open "GET", strURL, false
-        objHTTP.send ""
-
-        Response.ContentType = objHTTP.getResponseHeader("content-type")
-        Response.BinaryWrite objHTTP.responseBody
-
-        Set objHTTP = Nothing
-      %>
-
-4. Some OGC services (WFS, SOS) support both GET and POST requests.  Here, you
-   can use a minimal MapScript WxS wrapper.  Here's a Python example:
-
-   .. code-block:: python
-
-      #!/usr/bin/python
-
-      import mapscript
-
-      req = mapscript.OWSRequest()
-      req.loadParams()
-      map = mapscript.mapObj('/path/to/config.map')
-      map.OWSDispatch(req)
-
 .. index:: 
    pair: WMS; GetLegendGraphic
 
@@ -605,6 +511,210 @@ An example request might look like:
 
   http://127.0.0.1/cgi-bin/mapserv.exe?SERVICE=WMS&VERSION=1.1.1&layer=park&
   REQUEST=getlegendgraphic&FORMAT=image/png            
+
+.. index::
+   pair: URL; Change
+
+.. _online_resource_wms:
+
+Changing the Online Resource URL
+================================
+
+As mentioned in the section "Setup a Mapfile / wms_onlineresource metadata" above, 
+the following Online Resource URL is perfectly valid for a MapServer WMS according 
+to section 6.2.2 or the WMS 1.1.1 specification:
+
+::
+
+  http://my.host.com/cgi-bin/mapserv?map=mywms.map&
+      
+
+However, some people will argue that the above URL contains mandatory vendor-specific 
+parameters and that this is illegal. First we would like to point that "map=..." is 
+not considered a vendor-specific parameter in this case since it is part of the 
+Online Resource URL which is defined as an opaque string terminated by "?" or "&" 
+(See `WMS 1.1.1 section 6.2.2`_).
+
+But anyway, even if it's valid, the above URL is still ugly. And you might want to 
+use a nicer URL for your WMS Online Resource URL. Here are some suggestions:
+
+
+.. index::
+   pair: Apache; ReWriteRule
+
+Apache ReWrite rules (using Apache mod_rewrite)
+-----------------------------------------------
+
+One can use Apache's mod_rewrite to avoid specifying the map, or any
+other default parameter in the mapserver URL.  This task consist of
+three steps, specifying the mod_rewrite module to be loaded, enabling
+the mod_rewrite module for the selected directories and at last to
+write a .htaccess file to do the rewriting.
+
+In the httpd.conf file, the mod_rewrite module is per default
+disabled.  To enable it, remove the opening # in the line
+
+::
+
+  #LoadModule rewrite_module modules/mod_rewrite.so
+
+To be able to use the module, it must be enabled, using the directive
+AllowOverride. This can be done per server or per directory. If you
+just have one server, add an "AllowOverride All" line in the
+httpd.conf file (see the Apache documentation to be sure about the
+security implications of this).  Per directory is the easiest way to
+make it work on virtual hosts.  Within the <virtualHost> section of
+the httpd.conf insert:
+
+::
+
+  <Directory myhtdocsdir>
+    AllowOverride All
+  </Directory>
+
+Where myhtdocsdir is the directory defined as documentroot for the
+actual virtual server.
+
+When the directives are set to load and enable the mod_rewrite module,
+Apache has to be restarted.
+
+In a web-accessible directory make a .htaccess file like the
+following:
+
+::
+
+  RewriteEngine on
+  RewriteRule wmsmap?(.*) /cgi-bin/mapserv?map=/home/www/mapserverstuff/mymapfile.map&$1
+
+The rewriteRule says: given a webpage starting with wmsmap, pick out
+the query parameters, make a new page request starting with
+/cgi-bin/mapserv?map=(…)? and add on whatever was the query
+parameters in the original page request.
+
+e.g, the URL wmsmap?mode=map will be rewritten as
+/cgi-bin/mapserv?map=/home/www/mapserverstuff/mymapfile.map&mode=map
+
+If just the URL wmsmap is given (without any parameters) a page not
+found error will show up as that does not match the wmsmap?
+expression.
+
+.. index::
+   pair: Apache; MS_MAPFILE
+
+Apache environment variables - MS_MAPFILE
+-----------------------------------------
+
+A default mapfile can be specified using the MS_MAPFILE environment
+variable:
+
+::
+
+   Alias /mywms /usr/lib/cgi-bin/mapserver
+   <Location /mywms>
+      SetHandler cgi-script
+      Options ExecCGI
+      SetEnv MS_MAPFILE /path/to/mymapfile.map
+   </Location>
+
+
+.. index::
+   pair: Apache; SetEnvIf
+
+Apache SetEnvIf
+---------------
+
+Another option is to use the "setenvif" feature of Apache: use
+symbolic links that all point to a same mapserv binary, and then for
+each symbolic link test the URL, and set the MAP environment
+accordingly.
+
+For Windows and Apache users the steps are as follows (this requires
+Apache 1.3 or newer):
+
+- Copy mapserv.exe to a new name for your WMS, such as "mywms.exe".
+- In httpd.conf, add:
+
+::
+   
+   SetEnvIf Request_URI "/cgi-bin/mywms" MS_MAPFILE=/path/to/mymap.map
+              
+.. index::
+   pair: IIS; ASP script
+
+ASP script (IIS - Microsoft Windows)
+------------------------------------
+
+On IIS servers (Windows), you can use the following ASP script:
+      
+.. note:: The script below, while functional, is intended only as an
+   example of using ASP to filter MapServer requests. Using ASP in a
+   production WMS server will likely require additional ASP especially
+   in the area of error handling and setting timeouts.*
+
+.. code-block:: guess
+   
+   <%
+     Server.ScriptTimeout = 360
+
+     Select Case Request.ServerVariables("REQUEST_METHOD")
+       Case "GET"  strRequest = Request.QueryString
+       Case "POST" strRequest = Request.Form
+     End Select
+
+     strURL = "http://myserver/cgi-bin/mapserv.exe?map=C:\Inetpub\wwwroot\workshop\itasca.map&" & strRequest
+
+     Dim objHTTP
+     Set objHTTP = Server.CreateObject("MSXML2.ServerXMLHTTP")
+     objHTTP.open "GET", strURL, false
+     objHTTP.send ""
+
+     Response.ContentType = objHTTP.getResponseHeader("content-type")
+     Response.BinaryWrite objHTTP.responseBody
+
+     Set objHTTP = Nothing
+   %>
+
+.. index::
+   pair: Mapscript; Wrapper
+
+Mapscript wrapper
+-----------------
+
+Some OGC services (WFS, SOS) support both GET and POST requests.
+Here, you can use a minimal MapScript WxS wrapper.  Here's a Python
+example:
+
+.. code-block:: python
+
+   #!/usr/bin/python
+
+   import mapscript
+
+   req = mapscript.OWSRequest()
+   req.loadParams()
+   map = mapscript.mapObj('/path/to/config.map')
+   map.OWSDispatch(req)
+
+.. index::
+   pair: Unix; Wrapper script
+
+Wrapper script (Unix)
+---------------------
+
+On Unix servers, you can setup a wrapper shell script that sets the MS_MAPFILE 
+environment variable and then passes control to the mapserv executable... that 
+results on a cleaner OnlineResource URL:
+
+::   
+   
+   #! /bin/sh
+   MS_MAPFILE=/path/to/demo.map
+   export MS_MAPFILE
+   /path/to/mapserv           
+
+.. note:: Using a /bin/sh wrapper script causes an overhead on system
+   resources as two processes have to be spawned instead of one, and
+   is therefore not recommended.
 
 .. index:: 
    single: WMS 1.3.0
