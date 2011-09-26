@@ -1,0 +1,153 @@
+.. _rfc7X:
+
+=========================================================================
+MS RFC 7X: Adding License Metadata to Output Images
+=========================================================================
+
+:Date:  2011/06/22
+:Author: Paul Ramsey
+:Contact: pramsey at opengeo.org
+:Last Edited: $Date$
+:Status: Draft
+:Version: MapServer 6.2
+:Id: $Id$
+
+Description: This RFC proposes allowing XML metadata information to be embedded in MapServer output images. The use case is for any organization producing maps that wishes to embed licensing and authorship information directly in the output images.
+
+
+1. Overview
+-----------
+XMP is the "extensible metadata platform" [1]_ which allows the embedding of metadata information across a wide range of document and image formats: PNG, GIF, JPEG, PDF, etc. XMP was originally developed by Adobe [2]_ and is supported across their product line. It is now being increasingly included in other standards for metadata embedding and supported by tools for viewing image information (e.g. exiftools). Creative Commons has standards for using XMP to embed commons licensing [3]_ in images and other document, including a specific Creative Commons schema.
+
+One of the challenges of advertising licensing and terms of use in WMS and other web mapping services is that the terms are usually advertised separately from the actual content. So a WMS service might specify terms in the Capabilities document, but the images themselves will be unmarked. Embedding license URLs inside the images themselves using a standard markup allows organizations to be unambiguous about the conditions attached to their content.
+
+The goal of this change is to allow users the option of embedding XMP metadata in their MapServer output using an open source XMP utility library.
+
+
+2. Proposed Technical Change
+----------------------------
+
+2.1. Driver Support
+-------------------
+libexempi [4]_ provides a standard C interface for reading and writing XMP content from multiple image formats. One limitation of libexempi (and all other XMP libraries we investigated) is that it only works on existing files. That means that any image that is going to be tagged with metadata must be written to the disk first. Fortunately the GDAL image driver already writes a temporary file to disk for every request, so we propose that XMP support be available only when using the GDAL output format driver.
+
+For example::
+
+ OUTPUTFORMAT
+   NAME png
+   DRIVER "GDAL/PNG"
+   MIMETYPE "image/png"
+   IMAGEMODE RGB
+   EXTENSION "png"
+ END
+
+The XMP metadata embedding code will be called in msSaveImageGDAL just before the temporary file is streamed back to the client.
+
+2.2. Map File Configuration
+---------------------------
+Metadata information is written per-image, so will be stored in the METADATA block of the WEB object in the MAP file.
+
+The metadata key for each tag will have the form "xmp_<namespace>_<tag>", so for example: "xmp_dc_Title", for the Dublin Core title.
+
+Eight namespaces will be supported by default: 
+
+ - "meta" which is the standard XMP tag set [5]_
+ - "cc" which is the Creative Commons tag set [6]_
+ - "dc" which is the Dublin Core tag set [7]_
+ - "rights" which is the standard XMP Rights tag set [8]_
+ - "exif" which is the EXIF tags set [9]_
+ - "tiff" which is the TIFF tags set [10]_
+ - "crs" which is the Photoshop Camera Raw Schema [11]_
+ - "photoshop" which is the Photoshop tag set [12]_
+ 
+Within those names spaces, users can specify any tag. The MapServer code will not check that the tags are valid for the namespace, that responsibility will fall to the user.
+
+Here are some examples of common tags within the default name spaces:
+
+ - xmp_rights_Marked ('true' or 'false') indicates whether the image is copyright (true) or public domain (false)
+ - xmp_rights_WebStatement (URL) link to a page that explains the terms and conditions under which the image is licensed
+ - xmp_rights_UsageTerms (text) a description of the terms and conditions under which the image is licensed. To save image space and ensure licensing is kept up to date, the web statement is preferred over the usage terms.
+ - xmp_cc_License (URL) link to the creative commons license that applies to this image (e.g. http://creativecommons.org/licenses/by-sa/2.0/)
+ - xmp_cc_MorePermissions (URL) link to a page describing additional terms and conditions beyond the CC terms 
+ - xmp_cc_AttributionURL (URL) link to a page of information about the author or organization that produced the content
+ - xmp_cc_AttributionName (text) name of the person or organization that produced the content
+ - xmp_dc_Title (text) title of the image
+ - xmp_dc_Rights (text) textual description of the license regime of the image
+
+Here is an example of setting tags using the default namespaces::
+
+ WEB
+   METADATA
+     "xmp_rights_Marked" "true"
+     "xmp_cc_License" "http://creativecommons.org/licenses/by-sa/2.0/"
+     "xmp_cc_AttributionURL" "http://www.landgate.wa.gov.au/corporate.nsf/web/About+Us"
+     "xmp_cc_AttributionName" "Landgate (landgate.wa.gov.au)"
+   END
+ END
+
+Users can also set up their own namespace and insert tags into it. The user must include a metadata key of the form "xmp_<name>_namespace" with a namespace URI as the value. Once the namespace is declared, other metadata keys of the usual form can be used to insert tags into the XMP.
+
+Here is an example of setting tags using a custom namespace::
+
+WEB
+  METADATA
+    "xmp_lightroom_namespace" "http://ns.adobe.com/lightroom/1.0/"
+    "xmp_lightroom_PrivateRTKInfo" "My Information Here"
+  END
+END
+
+
+
+2.3. Build Configuration
+---------------------------
+XMP metadata support will require the presence of the libexempi library. The library must be requested or pointed to directly to using the --with-exempi=[yes|no|path] configuration option in the ./configure script.  If --with-exempi is not used, XMP metadata support will not be enabled.
+
+
+3. Implementation Details
+-------------------------
+
+3.1. Files Affected
+-------------------
+
+The following files will be modified for this RFC::
+
+ Makefile.in
+ Makefile.vc
+ mapgdal.c
+ mapxmp.c
+ configure.in
+ configure
+
+3.2. Bug ID
+-----------
+The ticket for RFC 7X (containing proof-of-concept code) can be found here (Bug `3932`_).
+
+3.3. Documentation
+------------------
+Documentation for this feature will be added to the appropriate map file documentation (metadata keywords) and a separate howto document will be created explaining XMP metadata.
+
+
+4. Enhancements
+---------------
+The ability to use the XMP facility across output drivers would be desirable, but that requires intercepting the image before it is streamed to the user and writing it to disk to allow the exempi library to alter the metadata. For GDAL, the write-to-disk step is already part of the output sequence. Other drivers stream their output direct to stdout.
+
+
+5. Voting history
+-----------------
+None
+
+
+.. [1] http://en.wikipedia.org/wiki/Extensible_Metadata_Platform
+.. [2] http://www.adobe.com/products/xmp/overview.html
+.. [3] http://wiki.creativecommons.org/XMP
+.. [4] http://libopenraw.freedesktop.org/wiki/Exempi
+.. [5] http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/XMP.html#xmp
+.. [6] http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/XMP.html#cc
+.. [7] http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/XMP.html#dc
+.. [8] http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/XMP.html#xmpRights
+.. [9] http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/XMP.html#exif
+.. [10] http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/XMP.html#tiff
+.. [11] http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/XMP.html#crs
+.. [12] http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/XMP.html#photoshop
+
+.. _3932: http://trac.osgeo.org/mapserver/ticket/3932 
