@@ -1,9 +1,15 @@
+.. index::
+   single: Errors
+
 .. _errors:
 
 ***************************************************
  Errors
 ***************************************************
 
+
+.. index::
+   pair: Error; drawEPP(): EPPL7 support is not available
 
 drawEPP(): EPPL7 support is not available
 -------------------------------------------------------------------------------
@@ -39,6 +45,32 @@ are a few:
 - WMS servers often advertise multiple image formats but don't respect them in
   the getmap request.
 
+
+.. index::
+   pair: Error; loadLayer(): Unknown identifier. Maximum number of classes reached
+
+loadLayer(): Unknown identifier. Maximum number of classes reached
+-------------------------------------------------------------------------------
+
+Error displayed when attempting to draw a layer with a large number of classes.
+
+This error states that MapServer has reached its limit for the maximum number
+of classes for the layer. This maximum can be modified in the MapServer
+source, and can then be re-compiled. *map.h* contains the default values, and
+below are the defaults for MapServer 4.10 and 4.8:
+
+::
+
+  #define MS_MAXCLASSES 250
+  #define MS_MAXSTYLES 5
+  #define MS_MAXLAYERS 200
+
+.. note::
+    This limitation was corrected in MapServer 5.0 and should no longer be a 
+    problem.
+
+.. index::
+   pair: Error; loadMapInternal(): Given map extent is invalid
 
 loadMapInternal(): Given map extent is invalid
 -------------------------------------------------------------------------------
@@ -115,21 +147,43 @@ therefore the EXTENT in a mapfile would be:
     The EXTENT in a mapfile must be in the same units as the :ref:`MAP` -level
     :ref:`PROJECTION`.
 
-msSaveImageGD(): Unable to access file
+.. index::
+   pair: Error; msGetLabelSize(): Requested font not found
+
+msGetLabelSize(): Requested font not found    
 -------------------------------------------------------------------------------
 
-Error displayed when attempting to display map image.
+Error displayed when attempting to display a specific font.
 
-This error is displayed if MapServer cannot display the map image.  There are
-several things to check:
+This message tells you that MapServer cannot find specified font.
 
-- IMAGEPATH and IMAGEURL parameters in mapfile are valid
+::
 
-- In CGI mode, any IMAGEPATH and IMAGEURL variables set in the init pages
-  are valid
-  
-- Linux/Unix users should verify that the web user has permissions to
-  write to the IMAGEPATH
+   Make sure that the font is properly referenced in the FONTSET lookup file.
+
+.. seealso::
+    :ref:`FONTSET`
+
+.. index::
+   pair: Error; msLoadFontset(): Error opening fontset
+
+msLoadFontset(): Error opening fontset
+-------------------------------------------------------------------------------
+
+Error when attempting to display a label.
+
+This message tells you that MapServer cannot find the :ref:`FONTSET` specified
+in the :ref:`mapfile`.
+
+::
+
+   The FONTSET path is relative to the mapfile location.
+
+.. seealso::
+    :ref:`FONTSET`
+
+.. index::
+   pair: Error; msLoadMap(): Failed to open map file
 
 msLoadMap(): Failed to open map file
 -------------------------------------------------------------------------------
@@ -147,180 +201,8 @@ The error message states where MapServer thinks the mapfile is:
    [MapServer Error]: msLoadMap(): (D:/ms4w/apps/blah/blah.map)
    Failed to open map file D:/ms4w/apps/blah/blah.map
 
-msQueryByPoint: search returned no results 
--------------------------------------------------------------------------------
-
-Error displayed when a feature is known to exist at that location.
-
-The query feature requires a TEMPLATE object in the :ref:`CLASS` object of
-your :ref:`LAYER` definition. The value points to a html fragment using
-MapServer template syntax.
-
-Example MapFile fragment:
-
-::
-
-      LAYER
-        NAME "Parcel9"
-        TYPE POLYGON
-        STATUS OFF
-        DATA "Parcels/area09_parcels"
-        CLASS
-          STYLE
-            OUTLINECOLOR 128 128 128
-            COLOR 153 205 255
-          END
-          TEMPLATE "templates/Parcels/area09_parcels.html"
-        END
-
-        HEADER "templates/Parcels/area09_parcels_header.html"
-        FOOTER "templates/Parcels/area09_parcels_footer.html"
-
-      END
-
-Example Template:
-
-:: 
-
-  <tr>
-    <td>[lrn]</td>
-    <td>[PIN]</td>
-  </tr>
-
-The [lrn] is a special keyword that indicates the resulting line
-number which starts at 1. [PIN] is the name of a feature attribute.
-
-msLoadFontset(): Error opening fontset
--------------------------------------------------------------------------------
-
-Error when attempting to display a label.
-
-This message tells you that MapServer cannot find the :ref:`FONTSET` specified
-in the :ref:`mapfile`.
-
-::
-
-   The FONTSET path is relative to the mapfile location.
-
-.. seealso::
-    :ref:`FONTSET`
-
-msGetLabelSize(): Requested font not found    
--------------------------------------------------------------------------------
-
-Error displayed when attempting to display a specific font.
-
-This message tells you that MapServer cannot find specified font.
-
-::
-
-   Make sure that the font is properly referenced in the FONTSET lookup file.
-
-.. seealso::
-    :ref:`FONTSET`
-
-loadLayer(): Unknown identifier. Maximum number of classes reached
--------------------------------------------------------------------------------
-
-Error displayed when attempting to draw a layer with a large number of classes.
-
-This error states that MapServer has reached its limit for the maximum number
-of classes for the layer. This maximum can be modified in the MapServer
-source, and can then be re-compiled. *map.h* contains the default values, and
-below are the defaults for MapServer 4.10 and 4.8:
-
-::
-
-  #define MS_MAXCLASSES 250
-  #define MS_MAXSTYLES 5
-  #define MS_MAXLAYERS 200
-
-.. note::
-    This limitation was corrected in MapServer 5.0 and should no longer be a 
-    problem.
-
-msReturnPage(): Web application error. Malformed template name
--------------------------------------------------------------------------------
-
-This error may occur when you are attempting to use a URL template for a
-query. The issue is that URL templates are only allowed for query modes that
-return only one result (e.g. query or itemquery)
-
-You can only use a URL template for a query in mode=query or mode=itemquery.
-If you try it with mode=nquery or mode=itemnquery, you will get the error:
-
-::
-    
-    Content-type: text/html msReturnPage(): Web application error. Malformed template name
-
-.. seealso::
-    :ref:`cgi_controls`
-
-Unable to load dll (:ref:`MapScript`)
--------------------------------------------------------------------------------
-
-One of the dll-s could not be loaded that mapscript.dll depends on.
-
-You can get this problem on Windows and in most cases it can be dedicated to a
-missing or an unloadable shared library. The error message talks about
-mapscript.dll but surely one or more of the dll-s are missing that libmap.dll
-depends on. So firstly you might want to check for the dependencies of your
-libmap.dll in your application directory. You can use the Visual Studio
-Dependency Walker to accomplish this task. You can also use a file monitoring
-tool (like SysInternal's filemon) to detect the dll-s that could not be
-loaded. I propose to store all of the dll-s required by your application in
-the application folder. If you can run the mapscript sample applications
-properly your compilation might be correct and all of the dlls are available.
-
-C#-specific information
-..............................................................................
-
-You may find that the mapscript C# interface behaves differently for the
-desktop and the ASP.NET applications. Although you can run the drawmap sample
-correctly you may encounter the dll loading problem with the ASP.NET
-applications. When creating an ASP.NET project your application folder will be
-'\Inetpub\wwwroot\[YourApp]\bin' by default. The host process of the
-application will aspnet_wp.exe or w3wp.exe depending on your system. The
-application will run under a different security context than the interactive
-user (under the context of the ASPNET user by default). When placing the dll-s
-outside of your application directory you should consider that the PATH
-environment variable may differ between the interactive and the ASPNET user
-and/or you may not have enough permission to access a dll outside of your
-application folder.
-
-msProcessProjection(): Projection library error.major axis or radius = 0 not given
------------------------------------------------------------------------------------
-
-Error displayed when attempting to specify projection parameters.
-
-Since MapServer 4.0, you are required to specify the ellipsoid for the
-projection.  Omitting this ellipsoid parameter in later MapServer 
-versions will cause this error.
-
-
-Valid Examples
-..............................................................................
-
-4.0 and newer:
-
-.. code-block:: mapfile
-
-      PROJECTION
-        "proj=latlong"
-        "ellps=WGS84"
-      END
-  
-
-before MapServer 4.0:
-
-.. code-block:: mapfile
-
-      PROJECTION
-        "proj=latlong"
-      END
-
-.. seealso::
-    :ref:`PROJECTION` and http://spatialreference.org
+.. index::
+   pair: Error; msProcessProjection(): no options found in 'init' file
 
 msProcessProjection(): no options found in 'init' file
 -------------------------------------------------------------------------------
@@ -336,6 +218,9 @@ users will find the epsg file in *\\ms4w\\proj\\nad*.
 
 .. seealso::
     :ref:`PROJECTION` and http://spatialreference.org
+
+.. index::
+   pair: Error; msProcessProjection(): No such file or directory
 
 msProcessProjection(): No such file or directory
 -------------------------------------------------------------------------------
@@ -383,6 +268,46 @@ There are a few options available if you need to set the epsg location:
       SetEnv PROJ_LIB C:/somedir/proj/nad/
    
 
+.. index::
+   pair: Error; msProcessProjection(): Projection library error.major axis or radius = 0 not given
+
+msProcessProjection(): Projection library error.major axis or radius = 0 not given
+-----------------------------------------------------------------------------------
+
+Error displayed when attempting to specify projection parameters.
+
+Since MapServer 4.0, you are required to specify the ellipsoid for the
+projection.  Omitting this ellipsoid parameter in later MapServer 
+versions will cause this error.
+
+
+Valid Examples
+..............................................................................
+
+4.0 and newer:
+
+.. code-block:: mapfile
+
+      PROJECTION
+        "proj=latlong"
+        "ellps=WGS84"
+      END
+  
+
+before MapServer 4.0:
+
+.. code-block:: mapfile
+
+      PROJECTION
+        "proj=latlong"
+      END
+
+.. seealso::
+    :ref:`PROJECTION` and http://spatialreference.org
+
+.. index::
+   pair: Error; msQueryByPoint: search returned no results
+
 msQueryByPoint: search returned no results
 -------------------------------------------------------------------------------
 
@@ -429,6 +354,45 @@ The [lrn] is a special keyword that indicates the resulting line
 number which starts at 1. [PIN] is the name of a feature attribute.
 
 .. index::
+   pair: Error; msReturnPage(): Web application error. Malformed template name
+
+msReturnPage(): Web application error. Malformed template name
+-------------------------------------------------------------------------------
+
+This error may occur when you are attempting to use a URL template for a
+query. The issue is that URL templates are only allowed for query modes that
+return only one result (e.g. query or itemquery)
+
+You can only use a URL template for a query in mode=query or mode=itemquery.
+If you try it with mode=nquery or mode=itemnquery, you will get the error:
+
+::
+    
+    Content-type: text/html msReturnPage(): Web application error. Malformed template name
+
+.. seealso::
+    :ref:`cgi_controls`
+
+.. index::
+   pair: Error; msSaveImageGD(): Unable to access file
+
+msSaveImageGD(): Unable to access file
+-------------------------------------------------------------------------------
+
+Error displayed when attempting to display map image.
+
+This error is displayed if MapServer cannot display the map image.  There are
+several things to check:
+
+- IMAGEPATH and IMAGEURL parameters in mapfile are valid
+
+- In CGI mode, any IMAGEPATH and IMAGEURL variables set in the init pages
+  are valid
+  
+- Linux/Unix users should verify that the web user has permissions to
+  write to the IMAGEPATH
+
+.. index::
    pair: Error; msWMSLoadGetMapParams(): WMS server error
 
 msWMSLoadGetMapParams(): WMS server error. Image Size out of range, WIDTH and HEIGHT must be between 1 and 2048 pixels
@@ -441,3 +405,38 @@ service allows.
 To increase the maximum map width and height for the service, use the
 MAXSIZE parameter of the :ref:`MAP` object.  Producing larger map
 images requires more processing power and more memory, so take care.
+
+.. index::
+   pair: Error; Unable to load dll
+
+Unable to load dll (:ref:`MapScript`)
+-------------------------------------------------------------------------------
+
+One of the dll-s could not be loaded that mapscript.dll depends on.
+
+You can get this problem on Windows and in most cases it can be dedicated to a
+missing or an unloadable shared library. The error message talks about
+mapscript.dll but surely one or more of the dll-s are missing that libmap.dll
+depends on. So firstly you might want to check for the dependencies of your
+libmap.dll in your application directory. You can use the Visual Studio
+Dependency Walker to accomplish this task. You can also use a file monitoring
+tool (like SysInternal's filemon) to detect the dll-s that could not be
+loaded. I propose to store all of the dll-s required by your application in
+the application folder. If you can run the mapscript sample applications
+properly your compilation might be correct and all of the dlls are available.
+
+C#-specific information
+..............................................................................
+
+You may find that the mapscript C# interface behaves differently for the
+desktop and the ASP.NET applications. Although you can run the drawmap sample
+correctly you may encounter the dll loading problem with the ASP.NET
+applications. When creating an ASP.NET project your application folder will be
+'\Inetpub\wwwroot\[YourApp]\bin' by default. The host process of the
+application will aspnet_wp.exe or w3wp.exe depending on your system. The
+application will run under a different security context than the interactive
+user (under the context of the ASPNET user by default). When placing the dll-s
+outside of your application directory you should consider that the PATH
+environment variable may differ between the interactive and the ASPNET user
+and/or you may not have enough permission to access a dll outside of your
+application folder.
