@@ -1,0 +1,63 @@
+=========================================================================
+MS RFC 77: Support for Multiple Label Objects Within a Class
+=========================================================================
+
+:Date:  2011/10/01
+:Author: Steve Lime, Thomas Bonfort
+:Contact: sdlime at comcast.net, 
+:Last Edited: $Date$
+:Status: Draft
+:Version: MapServer 6.2
+:Id: $Id$
+
+1. Overview
+-----------
+This RFC proposes allowing for the definition of multiple label objects within a class. There are a number of use cases where this would be valuable. 
+
+ - Adding text below a label with different styling, for example an alternate name shown in italics.
+ - Labeling roads with multiple shields and road numbers.
+ - Supporting complex meteorlogical rendering where many values are placed around a point.
+
+Presently only very limited support for these use cases is available. Basically you have to draw layers multiple times and place each piece of text separately. This is inefficient and does not allow for group label collision avoidance.
+
+2. Proposed Technical Change
+----------------------------
+
+2.1 Core Object Changes
+-----------------------
+Class object would need to support multiple label objects in much the same way as the they support multiple styles. In fact, implementation would follow the styleObj pattern.
+
+A key requirement is that the extra labels be self-contained, that is, they need to allow for the definition of label text and conditional display within the labelObj. To do this we propose adding the following attributes to labels:
+
+ - EXPRESSION
+ - TEXT
+ - STATUS (default ON, holds expression evaluation if necessary)
+
+The expression and text attributes would behave just like their classObj equivalents.
+
+2.2 Label Rendering Changes
+---------------------------
+The bulk of work will be handled in the label drawing code. The label cache itself will need to be extended to hold an array of labels (and count) instead of just a single one. Label priority will be taken from from the first label in the array.
+
+Note, if the cache is not used then the labels will be drawn in turn from msDrawShape() with no collision avoidance applied.
+
+The label cache drawing code will need to be modified to process the cached label array as one group of labels. No labels from the group will be rendered unless all can be rendered. A complex label polygon will be maintained for both within group and all-label collision detection. (the code already supports these complex label polygons).
+
+2.3 MapScript
+-------------
+
+3. Implementation Details
+-------------------------
+
+3.1. Files Affected
+-------------------
+
+3.2 Bug ID
+----------
+None assigned.
+
+4. Enhancements
+---------------
+
+5. Voting history
+-----------------
