@@ -1,10 +1,386 @@
 .. _mapcache_install:
 
 *****************************************************************************
-Compilation/Installation Instructions
+Compilation - Installation
 *****************************************************************************
 
 :Author: Thomas Bonfort
 :Contact: tbonfort at terriscope.fr
 
-TBD
+Linux Instructions
+--------------------------------------------------------------------------------
+
+These instructions target a debian/ubuntu setup, but should apply with few
+modifications to any linux installation.
+
+MapCache requires a number of library headers in order to compile correctly:
+
+- **apache / apr / apr-util**: these are included in the *apache2-prefork-dev* or
+  *apache2-threaded-dev* packages, depending on what apache mpm you are running.
+  This package will pull in the necessary apr headers, that you would have to
+  manually install if you are not buidling an apache module (*libaprutil1-dev*
+  and *libapr1-dev*)
+
+- **png**: *libpng12-dev*
+- **jpeg**: *libjpeg62-dev*
+- **curl**: *libcurl4-gnutls-dev*
+
+The following libraries are not required, but recommended:
+
+- **pcre**: *libpcre3-dev*. This will give you more powerfull regular expression
+  syntax when creating validation expressions for dimensions
+- **pixman**: *libpixman-1-dev*. The pixel manipulation library is used for
+  scaling and alpha-compositing images. MapCache ships with some code to
+  perform these tasks, but pixman is generally faster as it includes
+  code optimized for modern cpus (sse2, mmx, etc...)
+
+The following libraries are not required, but needed to enable additional
+functionalities:
+
+- **fcgi**: *libfcgi-dev*. Needed to build a fastcgi program if you don't want to
+  run mapcache as an apache module.
+- **gdal / geos**: *libgdal1-dev* *libgeos-dev*. Needed to enable advanced seeding
+  options (for only seeding tiles that intersect a given geographical feature)
+- **sqlite**: *libsqlite3-dev*. For enabling the sqlite backend storages
+- **tiff**: *libtiff4-dev*. For enabling the TIFF backend storages
+
+For unix users where all packages are in the default locations, the compilation
+process should resume to:
+
+.. code-block:: console
+
+  $ ./configure
+  $ make
+  $ sudo make install-module
+
+The installation script takes care of putting the built module in the apache
+module directory.  The process for activating a module is usually distro
+specific, but can be resumed by the following snippet that should be present in
+the apache configuration file(s):
+
+.. code-block:: apache
+
+  LoadModule mapcache_module    modules/mod_mapcache.so
+
+Next, a mapcache configuration is mapped to the server url with the following
+snippet
+
+.. code-block:: apache
+   
+   <IfModule mapcache_module>
+      <Directory /path/to/directory>
+         Order Allow,Deny
+         Allow from all
+      </Directory>
+      MapCacheAlias /mapcache "/path/to/directory/mapcache.xml"
+   </IfModule>
+
+Finally, restart apache to take the modified configuration into account
+
+.. code-block:: console
+
+   $ sudo apachectl restart
+
+If you have not disabled the demo service, you should now have access to it on
+http://myserver/mapcache/demo
+
+
+Customizing the build, or if something went wrong
+-------------------------------------------------
+
+The configure script will try to locate dependant libraries in default system
+locations, that can be overriden or specified with switches
+(./configure --help should give you a full list).
+
+Apache apxs
+================================================================================
+
+.. code-block:: console
+
+   --with-apxs=/path/to/apxs
+
+apxs is the apache extension tool that is used for building and installing the
+module to a local apache instance. it should be installed along with a standard
+apache build, or supplied by distros when installing the apache development
+packages.  apxs is sometimes called apxs2 (notably on debian)
+
+
+
+Apr
+================================================================================
+
+.. code-block:: console
+
+   --with-apr-config=/path/to/apr-config
+
+apr-config is sometimes called apr-1-config on some systems. The path to the
+apr libraries is usually determined from the previous apxs utility. you can
+use this switch to override which apr will be used. beware that using a
+different version of apr than the one that is linked to by apache will likely
+cause bugs.
+
+
+
+Apr-Util
+================================================================================
+
+.. code-block:: console
+
+   --with-apu-config=/path/to/apu-config
+
+apu-config is sometimes called apu-1-config. 
+
+
+Libcurl
+================================================================================
+
+.. code-block:: console
+
+   --with-curl-config=/path/to/curl-config
+
+
+
+Libpng
+================================================================================
+
+.. code-block:: console
+
+   --with-png=/path/to/png/prefix
+
+this is the path where the libpng headers and libs can be located.  the
+configure script will be looking for [path]/include/png.h and
+[path]/lib/libpng.so
+
+
+
+Libjpeg
+================================================================================
+
+.. code-block:: console
+
+   --with-jpeg=/path/to/jpeg/prefix
+
+this is the path where the libjpeg headers and libs can be located.  the
+configure script will be looking for [path]/include/jpeg.h and
+[path]/lib/libjpeg.so
+
+
+
+Pixman (recommended)
+================================================================================
+
+.. code-block:: console
+
+   --with-pixman=[yes|no|/path/to/pkgconfig/pixman.pc]
+
+Pixman is a pixel manipulation library used to assemble image tiles when
+responding to non-tiled wms requests. Pixman support is recommended as it is
+highly optimized and will take advantage of recent processor extensions (mms,
+sse, ...) to speed up blending and resampling operations. In case the pixman
+library is not found, mod-mapcache will fall back to internal pixel operations
+that are slower.
+
+
+
+Sqlite (optional)
+================================================================================
+
+.. code-block:: console
+
+   --with-sqlite[=yes|no|/path/to/sqlite-prefix]
+
+Sqlite is used to enable the sqlite and mbtiles cache backend. version 3.5.0 or
+newer is required.
+
+
+
+GDAL/OGR (optional, also requires geos)
+================================================================================
+
+.. code-block:: console
+
+   --with-gdal[=yes|no|/path/to/gdal-config]
+
+Gdal (actually ogr) is used by the seeding utility to allow the seeding of
+tiles only intersecting a given polygon, e.g.  to preseed all the tiles of a
+given country.
+
+
+
+GEOS (optional)
+================================================================================
+
+.. code-block:: console
+
+   --with-geos=/path/to/geos-config
+
+Along with gdal/ogr, geos is needed by the seeder to test for the intersection
+of tiles with geographical features. A sufficiently recent version of geos (with
+support for prepared geometries) is required (but not enforced by the configure
+script, so you'll end up with compilation errors if a too old geos version is
+used)
+
+
+
+PCRE (optional)
+================================================================================
+
+.. code-block:: console
+
+   --with-pcre=/path/to/pcre-prefix
+
+Pcre (perl compatible regular expressions) can be used instead of posix regular
+expressions for validating WMS dimensions.  they are more powerfull than posix
+REs (and might be slower). You don't need this if you aren't planning on using
+WMS dimension support with regex validation, or if your validation needs are
+covered by posix REs.
+
+
+
+FastCGI Support (optional)
+================================================================================
+
+.. code-block:: console
+
+   --with-fastcgi=/path/to/fastcgi-prefix
+
+MapCache can run as a fastcgi executable. Note that the overhead of fastcgi
+is non-negligeable with respect to the throughput you may obtain with a native
+apache module. The fastcgi build is less tested, and may lag behind
+compared to the apache module version on some minor details, YMMV.
+
+
+
+TIFF Readonly Cache Support (optional)
+================================================================================
+
+.. code-block:: console
+
+   --with-tiff=/path/to/libtiff-prefix
+
+
+Debug Mode
+================================================================================
+
+.. code-block:: console
+
+   --enable-debug
+
+enables some extra tests inside the code, and prints out many more debugging
+messages to the server logs. you should probably not enable this unless you
+want to track down a problem happening inside MapCache.
+
+
+
+Memcached Cache Support (optional)
+================================================================================
+
+The memcached cache backend is enabled by default, as it does not depend on
+other external libraries (support is obtained through apr-util). You can
+optionally disable it if you have no need for it.
+
+.. code-block:: console
+
+   --disable-memcache
+
+Apache Module Options
+================================================================================
+
+You can disable the apache module building if you only plan on using the
+fastcgi executable or the seeder.
+
+.. code-block:: console
+
+   --disable-module
+
+MapCache adds itself to the version string reported by the apache server. This
+can be disabled with
+
+.. code-block:: console
+
+   --disable-version-string
+
+Experimental options, use at your own risk
+------------------------------------------
+
+TIFF read/write Cache Support (optional)
+================================================================================
+
+TIFF write support (for creating new TIFF files and adding tiles to existing
+TIFF files) is still experimental and disabled by default. There is a risk in
+ending up with corrupt TIFF files if they are placed on a filesystem that does
+not honour file locking, as in that case multiple processes might end up writing
+to the same file. File locking across concurrent threads is also problematic,
+although MapCache tries to detect this situation and apply sufficient locking
+workarounds. To stay on the safe side, write support should for now only be
+enabled on local filesystems, with a prefork mpm or fastcgi MapCache install.
+
+
+.. code-block:: console
+
+   --enable-tiff-write-support
+
+
+Native MapServer Mode
+================================================================================
+
+MapCache is by default not linked to MapServer in any way, and communicates 
+through the WMS protocol only. For performance reasons, there is a possibility
+to directly use the mapserver C library and avoid an http request and an image
+compression/decompression. This integration is highly experimental and should
+not be enabled for general use.
+
+
+.. code-block:: console
+
+   --enable-mapserver
+
+This will use the libmapserver.a from MapCache's parent directory. MapServer
+itself should be compiled with thread-safety enabled, unless you plan use the
+prefork mpm or fastcgi, **and** you do not plan to use the seeder. For thread
+safety on the mapserver side, you might want to have a look at tickets #4041 and
+#4044.
+
+File Locking
+================================================================================
+
+.. code-block:: console
+
+   --with-lock-mechanism=file|semaphore
+
+mod-mapcache needs to keep a cross-process and cross-thread lock on tiles so
+that requests for tiles of a same metatile don't end up becoming multiple
+requests for the same metatile on the wms server. The default mechanism "file"
+is highly recommended unless you know what you are doing.
+
+This can be configured in two different ways in mod-mapcache, each with their
+advantage and inconvenience:
+
+ * file : mod-mapcache will use a file to signal other rendering threads that
+   the given metatile is being rendered by the wms source. (the location of
+   these files is configurable with the <lock_dir> configuration directive). In
+   the case of threaded mpm, this has the inconvenience that we cannot be
+   signaled by the operating system that this file has been deleted, and thus
+   must resort to sleeping every .5 sec and checking if the file still exists
+   until the file is deleted.  This isn't very efficient, but should not be
+   problematic in practice as this loop only happens if the tile wasn't already
+   in the cache, i.e. at most once per tile for the whole lifetime of the
+   cache.
+
+ * semaphore : mod-mapcache can use posix semaphores for waiting on tile
+   rendering. This method has the inconvenience that if a rendering thread
+   crashes (or more likely is killed by the system administrator while waiting
+   for the wms source to finish rendering), the semaphore lives on in the
+   operating system and will prevent all accesses to the tile until the
+   sempahore is manually deleted. As apache threads are locked while waiting
+   for this semaphore that will never be released, you might end up with loads
+   of idle processes stacking up. (stuck semaphores on linux can be discarded
+   by deleteing the files of the form sem.x-x-x-gridname-tilesetname(...)  that
+   are located in /dev/shm/.  The "file" maechanism does not have this
+   limitation, as stale lockfiles can be deleted upon server restart.
+
+
+Win32 compilation instructions
+--------------------------------------------------------------------------------
+Awaiting your contribution ;)
+
