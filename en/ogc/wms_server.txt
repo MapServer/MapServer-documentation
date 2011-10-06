@@ -1475,6 +1475,44 @@ Vendor specific WMS parameters
    The angle value is in degrees clockwise. 
 
 
+Cascading WMS Requests
+----------------------
+
+Currently, there are 3 requests that support wms cascading:
+
+- GetMap
+
+- GetFeatureInfo
+
+- GetLegendGraphic
+
+  Before MapServer 6.2, a GetLegendGraphic request was not cascaded. A
+  legend was returned using the layer classes. To preserve that behavior, a
+  GetLegendGraphic request will be cascaded only **if**:
+
+  1. The request is enabled via the *_enable_request metadatas.  
+
+  2. The layer does not contain any class with the name property. ie:
+
+  .. code-block:: mapfile
+
+     CLASS
+       NAME "near white"
+       EXPRESSION ([red] > 200 AND [green] > 200 AND [blue] > 200)
+       STYLE
+         COLOR 0 255 0
+       END
+     END
+
+  This layer won't be cascaded because it contains at least a class with the property NAME set.
+
+.. note::
+
+   If you know that the external WMS server *do not* support a wms request,
+   you should disable it manually for your layer using the
+   (ows/wms)_enable_request metadata. Otherwise, you will simply get the
+   XML exception from the cascaded server.
+
 Sample WMS Server Mapfile
 -------------------------
 
