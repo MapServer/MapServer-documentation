@@ -1,0 +1,100 @@
+.. index::
+   single: XMP Metadata Support
+
+.. _xmp_metadata:
+
+XMP Metadata Support
+====================
+
+One of the challenges of advertising licensing and terms of use in a web map service is that the terms are usually advertised separately from the actual content. So an OpenGIS WMS service might specify terms in the Capabilities document, but the map images themselves will be unmarked. Watermarking is one approach to propagating license terms with a map image, but watermarking restricted in the amount of information that can be conveyed without detracting from the map output. Another approach to propagating license information is to embed the license information in the image file using a common metadata standard.
+
+XMP is the "`extensible metadata platform <http://en.wikipedia.org/wiki/Extensible_Metadata_Platform>`_" which allows the embedding of metadata information across a wide range of document and image formats: PNG, GIF, JPEG, PDF, etc. XMP was originally developed by `Adobe <http://www.adobe.com/products/xmp/overview.html>`_ and is supported across their product line. It is now being increasingly included in other standards for metadata embedding and supported by tools for viewing image information (e.g. exiftools).
+
+Because XMP is generic and extensible, any metadata can be embedded in it. Creative Commons has `standards for using XMP <http://wiki.creativecommons.org/XMP>`_ to embed commons licensing in images and other documents, including a specific Creative Commons schema. There is also a standard schema for Dublin Core metadata.
+
+Prerequisites
+-------------
+
+In order to use XMP metadata you will need to
+
+ 1. ensure that XMP support is built into MapServer; and,
+ 2. use the GDAL output driver to produce your images.
+ 
+You can test for XMP support in an existing `mapserv` program by running `mapserver -v` and looking for `SUPPORTS=XMP` in the return line.
+
+To build MapServer with XMP support, you will need to first install the `exempi` library on your system. 
+
+ * Download libexempi from http://libopenraw.freedesktop.org/wiki/Exempi
+ * Configure MapServer using the `--with-exempi` option, and re-build
+
+To use the GDAL output driver, for each format you want to output you will need to set up an :ref:`OUTPUTFORMAT <outputformat>` that uses the GDAL driver. Here is an example of a GDAL output for PNG images::
+
+  OUTPUTFORMAT
+    NAME png
+    DRIVER "GDAL/PNG"
+    MIMETYPE "image/png"
+    IMAGEMODE RGB
+    EXTENSION "png"
+  END
+
+For more examples of GDAL output formats, see the :ref:`OUTPUTFORMAT <outputformat>` reference.
+
+Using XMP Metadata
+------------------
+
+There can be one XMP package per image, so the XMP metadata for a map is set in the top level of the map file, in the :ref:`WEB` object under the `METADATA` section.
+
+The `METADATA` key for each XMP entry is of the form `xml_<namespace>_<tag>`, so for example setting just the Dublin Core "Title" would look like::
+
+  WEB
+    METADATA
+      "xmp_dc_Title" "Super Map"
+    END
+  END
+  
+Note that the Dublin Core schema is specified using the code"dc" and the tag is specified using the fully spelled out tag name, "Title". The following schema codes are supported by default:
+
+ * "meta_" which is the standard XMP tag set 
+ * "cc_" which is the Creative Commons tag set 
+ * "dc_" which is the Dublin Core tag set 
+ * "rights_" which is the standard XMP Rights tag set 
+ * "exif_" which is the EXIF tags set 
+ * "tiff_" which is the TIFF tags set 
+ * "crs_" which is the Photoshop Camera Raw Schema 
+ * "photoshop_" which is the Photoshop tag set
+ 
+For a listing of the valid tags within each namespace, see http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/XMP.html.
+
+Here is an example of setting several tags using the default namespaces::
+
+  WEB
+    METADATA
+      "xmp_rights_Marked" "true"
+      "xmp_cc_License" "http://creativecommons.org/licenses/by-sa/2.0/"
+      "xmp_cc_AttributionURL" "http://www.landgate.wa.gov.au/corporate.nsf/web/About+Us"
+      "xmp_cc_AttributionName" "Landgate (landgate.wa.gov.au)"
+    END
+  END
+
+It is also possible to define a new namespace and place any tags you like within it. Here is an example::
+
+  WEB
+    METADATA
+      "xmp_lightroom_namespace" "http://ns.adobe.com/lightroom/1.0/"
+      "xmp_lightroom_PrivateRTKInfo" "My Information Here"
+    END
+  END
+
+The first tag, of the form "xml_<namespace>_namespace" defines the unique URI for the XML namespace, which will be declared in the XMP document. The following tags can then reference the namespace the same way they reference the default namespaces.
+
+.. _meta: http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/XMP.html#xmp
+.. _cc: http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/XMP.html#cc
+.. _dc: http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/XMP.html#dc
+.. _rights: http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/XMP.html#xmpRights
+.. _exif: http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/XMP.html#exif
+.. _tiff: http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/XMP.html#tiff
+.. _crs: http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/XMP.html#crs
+.. _photoshop: http://www.sno.phy.queensu.ca/~phil/exiftool/TagNames/XMP.html#photoshop
+
+   
+   
