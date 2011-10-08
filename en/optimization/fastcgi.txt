@@ -36,10 +36,16 @@ high startup costs (like heavy database connections) over many requests.
     *configure* command a --prefix=/usr to put it in a location that is 
     already visible to ldconfig.
 
-2.  Assuming you are running `Apache <http://httpd.apache.org>`__, the next 
-    piece you need is mod_fcgi.  Mod_fcgi depends on the version of Apache 
-    you are running, so make sure to download the correct fork 
-    (Apache 1.3 vs. Apache 2).
+2.  Assuming you are running `Apache <http://httpd.apache.org>`__, the next
+    piece you need is the fastcgi module. There are two fastcgi implementations
+    for apache:
+    
+    - *mod_fcgid*: mod_fcgid is the newer and recommended way to run fastcgi
+      programs under recent apache versions. It can be downloaded from the
+      `Apache fcgid homepage <http://httpd.apache.org/mod_fcgid/>`__
+    - **deprecated** *mod_fcgi*:  Mod_fcgi depends on the version of Apache
+      you are running, so make sure to download the correct fork (Apache 1.3
+      vs. Apache 2).
 
 3.  The third and final piece is to compile MapServer with FastCGI support. 
     This is pretty straightforward, and all you need to do is tell 
@@ -48,23 +54,52 @@ high startup costs (like heavy database connections) over many requests.
 
 ::
 
-  ./configure [other options] --with-fastcgi=/usr
+  ./configure [other options] --with-fastcgi=/usr/local
 
 With those pieces in place, the MapServer CGI (mapserv) should now be 
 FastCGI-enabled.  You can verify this by testing it on with the command line:
 
 ::
 
-  [hobu@kenyon mapserver-4.4.2]# ./mapserv -v
-  MapServer version 4.4.2 OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG OUTPUT=WBMP 
+  [hobu@kenyon mapserver-6.2.0]# ./mapserv -v
+  MapServer version 6.2.0 OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG OUTPUT=WBMP 
   SUPPORTS=PROJ SUPPORTS=FREETYPE SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT 
   SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=FASTCGI INPUT=EPPL7 
   INPUT=SDE INPUT=ORACLESPATIAL INPUT=OGR INPUT=GDAL 
   INPUT=SHAPEFILE DEBUG=MSDEBUG
 
 =============================================================================
- Configuration
+ mod_fcgid Configuration
 =============================================================================
+
+1.  Modify http.conf to load the FastCGI module.
+
+.. code-block:: apache 
+
+      LoadModule fcgid_module modules/mod_fcgid.so
+
+2.  Add an Apache handler for FastCGI applications.
+
+.. code-block:: apache 
+
+      AddHandler fcgid-script fcgi
+
+3.  Set FastCGI processing information
+
+.. code-block:: apache 
+   
+   <IfModule mod_fcgid.c>
+      FcgidMaxProcessesPerClass 30
+      FcgidInitialEnv PROJ_LIB /usr/local/share/proj
+      FcgidInitialEnv LD_LIBRARY_PATH "/usr/local/lib:/usr/local/pgsql/lib:/usr3/pkg3/oracle9/lib"
+   </IfModule>
+    
+=============================================================================
+ Deprecated mod_fcgi Configuration
+=============================================================================
+
+This section is left for reference. The recommended way to run fastcgi programs
+under apache is to use mod_fcgid, as detailed above.
 
 1.  Modify http.conf to load the FastCGI module.
 
@@ -87,7 +122,11 @@ FastCGI-enabled.  You can verify this by testing it on with the command line:
       -appConnTimeout 60 -idle-timeout 60 -init-start-delay 1 
       -minProcesses 2 -maxClassProcesses 20 -startDelay 5
 
-4.  Install a copy of the mapserv executable (originally **mapserv**
+=============================================================================
+ Common mod_fcgid/mod_fcgi Configuration
+=============================================================================
+
+1.  Install a copy of the mapserv executable (originally **mapserv**
     or **mapserv.exe**) into the cgi-bin directory with the extension
     **.fcgi** (ie. **mapserv.fcgi**).  Use this executable when you
     want to utilize fastcgi support.
@@ -119,7 +158,7 @@ FastCGI-enabled.  You can verify this by testing it on with the command line:
       http://your.domain.name/cgi-bin/mapserv.fcgi?MAP=/path/to/mapfile.map
 
 
-5.  In your mapfile, set a PROCESSING directive to tell FastCGI to cache 
+2.  In your mapfile, set a PROCESSING directive to tell FastCGI to cache 
     the connections and layer information on all layers for which connection 
     caching is desired - ie. all slow layers.
 

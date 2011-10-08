@@ -77,6 +77,10 @@
 	management                     :ref:`File Management <management>`
 	map                            :ref:`MAP <map>`
 	map_context                    :ref:`Map Context <map_context>`
+	mapcache_cache_sqlite          :ref:`MapCache Sqlite Caches <mapcache_cache_sqlite>`
+	mapcache_cache_disk            :ref:`MapCache Disk Caches <mapcache_cache_disk>`
+	mapcache_cache_memcache        :ref:`MapCache Memcache Caches <mapcache_cache_memcache>`
+	mapcache_cache_tiff            :ref:`MapCache TIFF Caches <mapcache_cache_tiff>`
 	mapcontext_cgi                 :ref:`Map Context Files <mapcontext_cgi>`
 	mapfile                        :ref:`Mapfile <mapfile>`
 	mapfile_tuning                 :ref:`Mapfile <mapfile_tuning>`
