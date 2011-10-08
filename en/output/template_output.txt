@@ -1,3 +1,6 @@
+.. index::
+   single: Template-driven output
+
 .. _template_output:
 
 *****************************************************************************
@@ -28,6 +31,9 @@ definition in a single file instead of the standard header/template/footer.
     There are other, simpler, ways to output some of these formats using MapServer.
     However, template-driven output provides maximal flexibility and customization
     of the output, at the cost of additional complexity and configuration.
+
+.. index::
+   pair: Template-driven output; OUTPUTFORMAT
 
 OUTPUTFORMAT Declarations
 =========================
@@ -69,6 +75,9 @@ but this line is not output to the client.
 Note that both the MIMETYPE and FORMATOPTION "ATTACHMENT=..." parameters are
 very useful for controlling how a web browser handles the output file.
 
+.. index::
+   pair: Template-driven output; Template substitution tags
+
 Template Substitution Tags
 ==========================
 
@@ -79,24 +88,37 @@ to simplify the templating to a single file for custom ouput formats.
     Includes another template file; the path to the template file is relative
     to the mapfile path.
 
-[resultset name=layername]...[/resultset]
+    Attributes:
+
+    * src: The file to be included.
+
+[resultset layer=layername]...[/resultset]
     Defines the location of the results for a given layer.
+
+    Attributes:
+
+    * layer: The layer to be used
+
+    * nodata: (optional) A string to return if no results are returned.
 
 [feature]...[/feature]
     Defines the loop around the features returned for a given layer.
 
-    Optional arguments:
+    Attributes:
 
-    - limit=
-        specifies the maximum number of features to output for this layer. 
+    * limit: (optional) Specifies the maximum number of features to
+      output for this layer.
    
-    - trimlast=
-        specifies a string to be trimmed off of the end of the final feature
-        that is output. This is intended to allow for trailing record
-        delimiters to be removed. See the examples below. 
+    * trimlast: (optional) Specifies a string to be trimmed off of the
+      end of the final feature that is output.  This is intended to
+      allow for trailing record delimiters to be removed.  See the
+      examples below.
 
 [join name=join1]...[/join]
     defines the loop around the features join from another layer.
+
+.. seealso::
+   :ref:`template`
 
 Examples
 ========
@@ -108,7 +130,7 @@ to compare the usage:
 
   <!-- mapserver template -->
   [include src="templates/header.html"]
-  [resultset name=lakes]
+  [resultset layer=lakes]
     ... old layer HEADER stuff goes here, if a layer has no results this block disappears...
     [feature]
       ...repeat this block for each feature in the result set...
@@ -118,7 +140,7 @@ to compare the usage:
     [/feature]
     ...old layer FOOTER stuff goes here...
   [/resultset]
-  [resulset name=streams]
+  [resulset layer=streams]
     ... old layer HEADER stuff goes here, if a layer has no results this block disappears...
     [feature]
       ...repeat this block for each feature in the result set...
