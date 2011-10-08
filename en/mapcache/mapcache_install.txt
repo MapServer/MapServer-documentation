@@ -51,12 +51,19 @@ process should resume to:
 
   $ ./configure
   $ make
+
+Apache Module Specific Instructions
+================================================================================
+
+.. code-block:: bash
+
   $ sudo make install-module
 
 The installation script takes care of putting the built module in the apache
 module directory.  The process for activating a module is usually distro
 specific, but can be resumed by the following snippet that should be present in
-the apache configuration file(s):
+the apache configuration file ( e.g. /usr/local/httpd/conf/httpd.conf or
+/etc/apache2/sites-available/default ):
 
 .. code-block:: apache
 
@@ -83,6 +90,36 @@ Finally, restart apache to take the modified configuration into account
 
 If you have not disabled the demo service, you should now have access to it on
 http://myserver/mapcache/demo
+
+CGI/FastCGI Specific Instructions
+================================================================================
+
+A binary cgi/fastcgi is located in the src/ subfolder, and is named "mapcache".
+Activating fastcgi for the mapcache program on your web server is not part of
+these instructions, more details may be found on the :ref:`FastCGI <fastcgi>`
+page or on more general web pages across the web.
+
+The MapCache fastcgi program looks for it's configuration file in the environment
+variable called MAPCACHE_CONFIG_FILE, which must be set by the web server before
+spawning the mapcache processes.
+
+
+For apache with mod_cgi:
+
+
+.. code-block:: apache
+
+   SetEnv "MAPCACHE_CONFIG_FILE" "/path/to/mapserver/mapcache/mapcache.xml"
+
+For apache with mod_fcgid:
+
+.. code-block:: apache
+
+   FcgidInitialEnv "MAPCACHE_CONFIG_FILE" "/path/to/mapserver/mapcache/mapcache.xml
+
+If you have not disabled the demo service, you should now have access to it on
+http://myserver/fcgi-bin/mapcache/demo supposing your fcgi processes are accessed
+under the fcgi-bin alias.
 
 
 Customizing the build, or if something went wrong
