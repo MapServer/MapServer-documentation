@@ -77,10 +77,23 @@
 	management                     :ref:`File Management <management>`
 	map                            :ref:`MAP <map>`
 	map_context                    :ref:`Map Context <map_context>`
+	mapcache_caches                :ref:`MapCache Cache Backends <mapcache_caches>`
+	mapcache_grids                 :ref:`MapCache Tile Grids <mapcache_grids>`
 	mapcache_cache_sqlite          :ref:`MapCache Sqlite Caches <mapcache_cache_sqlite>`
 	mapcache_cache_disk            :ref:`MapCache Disk Caches <mapcache_cache_disk>`
 	mapcache_cache_memcache        :ref:`MapCache Memcache Caches <mapcache_cache_memcache>`
 	mapcache_cache_tiff            :ref:`MapCache TIFF Caches <mapcache_cache_tiff>`
+	mapcache_services              :ref:`MapCache Tile Services <mapcache_services>`
+	mapcache_ve                    :ref:`MapCache VirtualEarth Quadkey Tile Service <mapcache_ve>`
+	mapcache_tms                   :ref:`MapCache Tile Map Service <mapcache_tms>`
+	mapcache_kml                   :ref:`MapCache Super-Overlay KML Services <mapcache_kml>`
+	mapcache_wmts                  :ref:`MapCache OGC WMTS Service <mapcache_wmts>`
+	mapcache_wms                   :ref:`MapCache OGC WMS Service <mapcache_wms>`
+	mapcache_gmaps                 :ref:`MapCache GoogleMaps Tile Service <mapcache_gmaps>`
+	mapcache_proxying              :ref:`MapCache Proxying Support <mapcache_proxying>`
+	mapcache_dimensions            :ref:`MapCache Tileset Dimensions <mapcache_dimensions>`
+	mapcache_featureinfo           :ref:`MapCache FeatureInfo Requests <mapcache_featureinfo>`
+	mapcache_tile_assembling       :ref:`MapCache Tile Assembling <mapcache_tile_assembling>`
 	mapcontext_cgi                 :ref:`Map Context Files <mapcontext_cgi>`
 	mapfile                        :ref:`Mapfile <mapfile>`
 	mapfile_tuning                 :ref:`Mapfile <mapfile_tuning>`

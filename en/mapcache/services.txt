@@ -1,0 +1,384 @@
+.. _mapcache_services:
+
+*****************************************************************************
+Supported Tile Services
+*****************************************************************************
+
+:Author: Thomas Bonfort
+:Contact: tbonfort at terriscope.fr
+:Author: Stephen Woodbridge
+
+
+MapCache has the ability to serve tiles using a variety of different
+request protocols and tile naming conventions. This document is to describe
+these. The various services must be turned on in the mapcache.xml file for
+MapCache to respond to those specific requests.
+
+All services are available on the demo interface, from which you are highly
+encouraged to copy/paste the javascript code to get started when creating
+your own pages accessing the MapCache tiles.
+
+The following notation is used on this page and refer to object names in the
+mapcache.xml configuration file.
+
+ - <tileset_name> - name of a configured tileset
+ - <grid_name> - name of explicitly or implicitly defined grid
+ - <quadkey> - specific to the Virtual Earth Tile service
+ - <z> - Zoom level in zxy naming scheme
+ - <y> - row number in zxy naming scheme
+ - <x> - column number in zxy naming scheme
+
+.. _mapcache_tms:
+
+TMS service
+--------------------------------------------------------------------------------
+
+The TMS service uses a z/x/y tile naming scheme where:
+
+ - *z* is the zoom level
+ - *x* is the column number
+ - *y* is the row number
+
+To activate the TMS service, add these lines to the mapcache.xml configuration
+file:
+
+.. code-block:: xml
+
+   <service type="tms" enabled="true"/>
+
+A "capabilities" document can be fetched via:
+
+::
+
+  http://myhost.com/mapcache/tms/1.0.0/
+
+Tiles are requested using this scheme:
+
+::
+
+  http://myhost.com/mapcache/tms/1.0.0/<tileset_name>@<grid_name>/<z>/<x>/<y>.png
+
+
+For epsg:3857 or epsg:900913 or GoogleMapsCompatible grids, with cell = [z/x/y]:
+
+z0:
+
+::
+  
+  [0/0/0]
+
+z1:
+
+::
+
+  [1/0/0][1/1/0]
+  [1/0/1][1/1/1]
+
+z2:
+
+::
+  
+  [2/0/0][2/1/0][2/2/0][2/3/0]
+  [2/0/1][2/1/1][2/2/1][2/3/1]
+  [2/0/2]...
+  [2/0/3]...
+
+etc...
+
+For epsg:4326 or WGS84 grids:
+
+.. note::
+
+  The OGC WMTS specification rather absurdly requires the GoogleCRS84Quad
+  WellKnownScaleset to have a level 0 who's extent is -180,-180,180,180. The
+  default "WGS84" MapCache grid honors this, which may cause some
+  incompatibilities with software that expects level 0 to be 2x1 tiles with
+  extent -180,-90,180,90
+
+z0:
+
+::
+  
+  [0/0/0]
+
+z1:
+
+::
+
+  [1/0/0][1/1/0]
+
+z2:
+
+::
+
+  [2/0/0][2/1/0][2/2/0][2/3/0]
+  [2/0/1][2/1/1][2/2/1][2/3/1]
+
+etc...
+
+.. _mapcache_kml:
+
+KML Service
+--------------------------------------------------------------------------------
+
+The KML service produces `Super-Overlays
+<http://code.google.com/apis/kml/documentation/kml_21tutorial.html#superoverlays>`__
+for tilesets that are aligned to the WGS84 / epsg:4326 grids. A Super-Overlay
+is a KML file that links to an image url, and to a set of other KML urls
+corresponding to neighbouring resoltions.  The KML service uses a z/x/y tile
+naming scheme where: 
+
+ - *z* is the zoom level
+ - *x* is the column number
+ - *y* is the row number
+
+.. note::
+
+   For the KML service to be functional, the TMS service must also be activated, as
+   the KML super-overlays link to images using this spec.
+
+To activate the KML service, add these lines to the mapcache.xml configuration
+file:
+
+.. code-block:: xml
+
+   <service type="tms" enabled="true"/>
+   <service type="kml" enabled="true"/>
+
+Tiles are requested using this scheme:
+
+::
+
+  http://myhost.com/mapcache/kml/<tileset_name>@<grid_name>/<z>/<x>/<y>.kml
+
+.. _mapcache_wmts:
+
+OGC WMTS Service
+--------------------------------------------------------------------------------
+
+To activate the WMTS service, add these lines to the mapcache.xml configuration
+file:
+
+.. code-block:: xml
+
+   <service type="wmts" enabled="true"/>
+
+This service follows the standard OGC WMTS requests and supports both the
+classical OGC style KVP encoded and REST style requests.
+
+::
+  
+  http://myhost.com/mapcache/wmts?SERVICE=WMTS&VERSION=1.0.0&...
+  http://myhost.com/mapcache/wmts/1.0.0/....
+
+The capabilities are obtained through:
+
+::
+
+  http://myhost.com/mapcache/wmts?service=wmts&request=getcapabilities&version=1.0.0
+  http://myhost.com/mapcache/wmts/1.0.0/WMTSCapabilities.xml
+
+.. seealso:: :ref:`mapcache_featureinfo`
+.. seealso:: :ref:`mapcache_dimensions`
+
+
+.. _mapcache_wms:
+
+OGC WMS Service
+--------------------------------------------------------------------------------
+
+MapCache responds to WMS version 1.1.1 requests, and has limited support for
+version 1.3.0 ones.
+
+.. code-block:: xml
+
+   <service type="wms" enabled="true"/>
+
+.. note::
+  
+  Note that the WMS service is a little different than the
+  other MapCache services, as it listens on the root of the configured instance
+  instead of on an additional endpoint (i.e. the service replies on
+  http://server/mapcache/? and not on http://server/mapcache/wms?). This
+  behavior is required in order to enable :ref:`proxying of unsupported requests
+  <mapcache_proxying>` while offering a single endpoint for all OGC services.
+  
+.. note::
+  MapCache primarily supports version 1.1.1 WMS requests, but has limited
+  support for the newer version 1.3.0 ones. For the 1.3.0 requests,
+  MapCache will determine which :ref:`grid <mapcache_grids>` to use by using
+  the CRS= parameter instead of the SRS= one, and will correctly honor axis
+  ordering for the epsg reference systems that switch the usual x/y ordering
+  of the BBOX parameter.
+
+.. seealso:: :ref:`mapcache_featureinfo`
+.. seealso:: :ref:`mapcache_dimensions`
+.. seealso:: :ref:`mapcache_tile_assembling`
+
+WMS requests follow the classical KVP encoded style:
+
+::
+
+  http://myhost.com/mapcache?SERVICE=WMS&VERSION=1.1.1&REQUEST=....
+
+
+The capabilities document is returned by:
+
+::
+
+  http://myhost.com/mapcache?service=wms&request=getcapabilities
+
+
+.. _mapcache_gmaps:
+
+GoogleMaps XYZ Service
+--------------------------------------------------------------------------------
+
+.. code-block:: xml
+
+   <service type="gmaps" enabled="true"/>
+
+Prerequisites: your WMS should be capable of producing images in the
+EPSG:900913 or EPSG:3857 SRS, i.e. it should reference the "g" or
+"GoogleMapsCompatible" grid
+
+This is the minimal html page that should get you going.The important bits are
+in the urlTemplate (for V2) and getTileURL (for V3) variables:
+
+- /mapcache is the apache path where MapCache handles requests
+- test@g is the tileset and grid name to use, joined by a '@' - the {Z}/{X}/{Y}
+  should be left alone
+- the final extemsion should be changed to "jpg" if you are using a jpeg format
+  with your tileset.
+
+V2 API
+================================================================================
+
+.. code-block:: html
+
+  <!DOCTYPE html
+    PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+    "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd"> 
+  <html xmlns="http://www.w3.org/1999/xhtml"> 
+  <head> 
+  <meta http-equiv="content-type" content="text/html; charset=utf-8"/> 
+  <title>Google/MapServer Tile Example</title> 
+  <script src="http://maps.google.com/maps?file=api&v=2&key=ABQIAAAAnfs7bKE82qgb3Zc2YyS-oBT2yXp_ZAY8_ufC3CFXhHIE1NvwkxSySz_REpPq-4WZA27OwgbtyR3VcA"
+          type="text/javascript"></script> 
+  <script type="text/javascript"> 
+   
+  function load() {
+    if (GBrowserIsCompatible()) {
+      var urlTemplate = '/mapcache/gmaps/test@g/{Z}/{X}/{Y}.png';
+      var myLayer = new GTileLayer(null,0,18,{
+                                   tileUrlTemplate:urlTemplate,
+                                   isPng:true,
+                                   opacity:0.8 });
+      var map = new GMap2(document.getElementById("map"));
+      map.addControl(new GLargeMapControl());
+      map.addControl(new GMapTypeControl());
+      map.setCenter(new GLatLng(0, 0), 1);
+      map.addOverlay(new GTileLayerOverlay(myLayer));
+    }
+  }
+   
+  </script> 
+  </head> 
+  <body onload="load()" onunload="GUnload()"> 
+    <div id="map" style="width: 500px; height: 500px"></div> 
+  </body> 
+  </html> 
+
+V3 API
+================================================================================
+
+The previous javascript for the V2 example should be slightly changed to:
+
+.. code-block:: javascript
+
+  var map = new google.maps.Map("<element-id>", { /*options*/ });
+  var layerOptions = {
+    getTileUrl: function(coord, zoom) {
+      return "/mapcache/gmaps/test@g/" + zoom + "/" + coord.x + "/" + coord.y + ".png";
+    },
+    tileSize: new google.maps.Size(256,256) // or whatever
+  };
+  map.overlayMapTypes.insertAt(0, new google.maps.ImageMapType(layerOptions));
+
+
+
+.. _mapcache_ve:
+
+Virtual Earth Tile service
+--------------------------------------------------------------------------------
+
+Tiles are organized in one of two different layouts depending on whether they
+are using a Spherical Mercator project, like epsg:3857 or epsg:900913, or if
+they are using the geographical projection, like epsg:4326. 
+
+Tiles are requested using this scheme:
+ 
+::
+  
+  http://myhost.com/mapcache/ve?LAYER=<tileset_name>@<grid_name>&tile=<quadkey>
+
+
+For epsg:3857 or epsg:900913 or GoogleMapsCompatible grids, <quadkey> are
+arranged:
+
+z0:
+
+::
+  
+  [0]
+
+  http://myhost.com/mapcache/ve?LAYER=osm@GoogleMapsCompatible&tile=0
+
+z1:
+
+::
+
+  [00][01]
+  [02][03]
+
+  http://myhost.com/mapcache/ve?LAYER=osm@GoogleMapsCompatible&tile=00
+  http://myhost.com/mapcache/ve?LAYER=osm@GoogleMapsCompatible&tile=01
+  http://myhost.com/mapcache/ve?LAYER=osm@GoogleMapsCompatible&tile=02
+  http://myhost.com/mapcache/ve?LAYER=osm@GoogleMapsCompatible&tile=03
+
+::
+
+  etc...
+
+For epsg:4326 or WGS84 grids, <quadkey> are arranged:
+
+z1:
+
+::
+
+  [0][1]
+
+  http://myhost.com/mapcache/ve?LAYER=osm@WGS84&tile=0
+  http://myhost.com/mapcache/ve?LAYER=osm@WGS84&tile=1
+
+z2:
+
+::
+
+  [00][01][10][11]
+  [02][03][12][13]
+
+  http://myhost.com/mapcache/ve?LAYER=osm@WGS84&tile=00
+  http://myhost.com/mapcache/ve?LAYER=osm@WGS84&tile=01
+  http://myhost.com/mapcache/ve?LAYER=osm@WGS84&tile=02
+  http://myhost.com/mapcache/ve?LAYER=osm@WGS84&tile=03
+  http://myhost.com/mapcache/ve?LAYER=osm@WGS84&tile=10
+  http://myhost.com/mapcache/ve?LAYER=osm@WGS84&tile=11
+  http://myhost.com/mapcache/ve?LAYER=osm@WGS84&tile=12
+  http://myhost.com/mapcache/ve?LAYER=osm@WGS84&tile=13
+
+
+::
+
+  etc...
+
