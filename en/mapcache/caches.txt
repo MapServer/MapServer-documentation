@@ -195,7 +195,7 @@ You can add multiple <server> entries.
 
 .. _mapcache_cache_tiff:
 
-TIFF Caches
+(Geo)TIFF Caches
 --------------------------------------------------------------------------------
 
 TIFF caches are the most recent addition to the family of caches, and use the 
@@ -209,15 +209,18 @@ files can be used by programs or WMS servers that only understand regular GIS
 raster formats, and be served up with high performance for tile access.
 
 The TIFF cache should be considered read-only for the time being. Write access
-is already possible but not ready for production, and is missing basic
-functionality (such as choosing the JPEG compression level, or adding the
-geotiff referencing).
+is already possible but should be considered experimental as there might be
+some file corruption issues, notably on network file-systems. Note that until
+all the tiles in a given tiff file have been seeded/created, the TIFF file is
+said to be "sparse" in the sense that it is missing a number of jpeg tiles. As
+such most non-gdal based programs will have problems opening these incomplete
+files.
 
 Note that the tiff tile structure must
 exactly match the structure of the grid used by the tileset, and the tif file
 names must follow strict naming rules.
 
-There are three parameters to configure a TIFF cache:
+There are three mandatory parameters to configure a TIFF cache:
 
 - <xcount> the number of tiles stored along the x (horizontal) direction of
   the TIFF file.
@@ -242,6 +245,12 @@ There are three parameters to configure a TIFF cache:
   {inv_y} and {inv_div_y} will find some usage for people who prefer to index
   their TIFF files from top to bottom rather than bottom to top.
 
+An additional optional parameter defines which JPEG compression should be 
+applied to the tiles when saved into the TIFF file:
+
+- <format> the name of the (jpeg) format to use
+
+.. seealso:: :ref:`mapcache_jpeg_format`
 
 .. code-block:: xml
 
@@ -249,9 +258,41 @@ There are three parameters to configure a TIFF cache:
       <template>/data/tiffs/{tileset}/{grid}/L{z}/R{inv_y}/C{x}.tif</template>
       <xcount>64</xcount>
       <ycount>64</ycount>
+      <format>myjpeg</format>
    </cache>
 
 In this example, assuming a grid using 256x256 tiles, the files that are read
 to load the tiles are tiled TIFFs with jpeg compression, who's size are
 16384x16384. The number of files to store on disk is thus reduced 4096 times
 compared to the basic disk cache.
+
+
+If compiled with GeoTiff and write support, MapCache will add referencing
+information to the TIFF files it creates, so that the TIFF files can be used
+in any geotiff- enabled software. Write support does not produce full geotiffs
+with the definition of the projection used, but only the pixel scale and
+tie-points, i.e.  what is usually found in .tfw files.
+
+For reference, here is the gdalinfo output on a TIFF file created by MapCache
+when compiled with geotiff support:
+
+::
+
+   LOCAL_CS["unnamed",
+       UNIT["metre",1,
+           AUTHORITY["EPSG","9001"]]]
+   Origin = (-20037508.342789247632027,20037508.342789247632027)
+   Pixel Size = (156543.033928040997125,-156543.033928040997125)
+   Metadata:
+     AREA_OR_POINT=Area
+   Image Structure Metadata:
+     COMPRESSION=YCbCr JPEG
+     INTERLEAVE=PIXEL
+     SOURCE_COLOR_SPACE=YCbCr
+   Corner Coordinates:
+   Upper Left  (-20037508.343,20037508.343) 
+   Lower Left  (-20037508.343,-20037508.343) 
+   Upper Right (20037508.343,20037508.343) 
+   Lower Right (20037508.343,-20037508.343) 
+   Center      (   0.0000000,   0.0000000)
+

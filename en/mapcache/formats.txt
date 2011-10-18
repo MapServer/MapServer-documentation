@@ -1,0 +1,80 @@
+.. _mapcache_formats:
+
+********************************************************************************
+Image Formats
+********************************************************************************
+
+:Author: Thomas Bonfort
+:Contact: tbonfort at terriscope.fr
+
+MapCache allows you to configure how the image should be saved to a cache once
+it has been requested from a source. The JPEG format should mostly be used for
+raster imagery, whereas the PNG format is most usefull for vector based imagery
+where there are large uniform areas.
+
+.. _mapcache_jpeg_format:
+
+JPEG Format
+--------------------------------------------------------------------------------
+
+The JPEG format saves tiles to jpeg, you can configure the JPEG compression
+level (from 1 to 100) and the colorspace that should be used (rgb or ycbcr)
+
+.. code-block:: xml
+   
+   <format name="myjpeg" type="JPEG">
+      <quality>85</quality>
+      <photometric>ycbcr</photometric>
+   </format>
+
+- *quality*: this is the typical jpeg quality setting. Values under 50 produce
+  lighter images but with notable compression artifacts. 100 should be avoided
+  as it produces very heavy images
+- *photometric*: By default the YCbCr colorspace is used as it produces images
+  that tend to be 2 to 3 times lighter. Use rgb if you don't want the default.
+
+.. _mapcache_png_format:
+
+PNG Format
+--------------------------------------------------------------------------------
+
+The PNG format creates PNG images, with optional quantization (reduction of
+the number of colors to create an 8bit paletted PNG)
+
+.. code-block:: xml
+   
+   <format name="mypng" type="PNG">
+      <compression>fast</compression>
+      <colors>256</colors>
+   </format>
+
+- *compression*: choose which zlib compression to apply to the image data.
+  Recognized values are "fast" and "best". Omit the key to use the default
+  zlib compression.
+- *colors*: number of colors to use for quantization. Ommit this key to
+  produce 24 or 32 bit RGB/RGBA pngs, or set to a value between 2 and 256
+  to create an 8-bit paletted png. The quantization step is destructive, 
+  there is no guarantee that pixels will not have a noticable shift in color
+  in the case when the tile contains many colors.
+
+.. _mapcache_mixed_format:
+
+Mixed Format
+--------------------------------------------------------------------------------
+
+There is a third special format which mixes JPEG and PNG compression depending
+on the contents of the image. This format allows to create caches for raster
+imagery using JPEG compression (which is more efficient) on zones with imagery
+data, and PNG compression (which supports trasnparency) on zones with no 
+imagery or on a boundary between imagery and emptiness.
+
+.. code-block:: xml
+   
+   <format name="mymixed" type="MIXED">
+      <opaque>myjpeg</opaque>
+      <transparent>mypng</transparent>
+   </format>
+
+- *opaque*: the format to use when the image has only fully opaque pixels
+- *transparent*: the format to use if when the image has some transparent or
+  semi-opaque pixels.

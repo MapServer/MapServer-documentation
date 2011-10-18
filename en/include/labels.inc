@@ -77,6 +77,10 @@
 	management                     :ref:`File Management <management>`
 	map                            :ref:`MAP <map>`
 	map_context                    :ref:`Map Context <map_context>`
+	mapcache_formats               :ref:`MapCache Image Formats <mapcache_formats>`
+	mapcache_jpeg_format           :ref:`MapCache JPEG Format <mapcache_jpeg_format>`
+	mapcache_png_format            :ref:`MapCache PNG Format <mapcache_png_format>`
+	mapcache_mixed_format          :ref:`MapCache Mixed PNG+JPEG Format <mapcache_mixed_format>`
 	mapcache_caches                :ref:`MapCache Cache Backends <mapcache_caches>`
 	mapcache_grids                 :ref:`MapCache Tile Grids <mapcache_grids>`
 	mapcache_cache_sqlite          :ref:`MapCache Sqlite Caches <mapcache_cache_sqlite>`
