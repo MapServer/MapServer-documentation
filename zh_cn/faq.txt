@@ -41,29 +41,19 @@ MapServer的版本路线图与Linux的十分相似。例如，MapServer 4.2.5的
 MapServer是否线程安全的？
 -------------------------------------------------------------------------------
 
-**问**：MapServer是否线程安全的？
+** 问 ** ：MapServer是否线程安全的？
 
-**答**：Generally, no (but see the next question). Many components of MapServer
-use static or global data that could potentially be modified by another
-thread. Under heavy load these unlikely events become inevitable, and could
-result in sporadic errors.
+** 答 ** ：总的来说，不是（请同阅下一个问题）。 MapServer 的许多组建使用静态变量或全局变量，这些变量的值都有被其他线程修改的可能。重复加载这些组建不可避免，并且可能会导致一些错误。
 
-**Q**: Is it possible to safely use any of MapServer in a multi-threaded
-application?
+** 问 ** ：能够在多线程程序中安全地使用MapServer或者其组建吗？
 
-**A**: Some of it, yes, with care. Or with Python :) Programmers must either
-avoid using the unsafe components of MapServer or carefully place locks around
-them. Python's global interpreter lock immunizes against MapServer threading
-problems; since no mapscript code ever releases the GIL all mapscript
-functions or methods are effectively atomic. Users of mapscript and Java,
-.NET, mod_perl, or mod_php do not have this extra layer of protection.
+** 答 ** ：有一些可以很谨慎地加以使用。对于 Python 程序员来说，他们必须谨慎地选择使用 MapServer 组件，同时还得要在恰当的地方加上锁。 Python 的全局解释器锁加大 MapServer 的线程问题；由于 mapscript 代码都没有 GIL，所有的 mapscript 函数赫方法都是原子的。 mapscript 和 Java、.Net、mod_perl、或 mod_php 并没有这一层额外的安全机制。
 
-**A**: Which components are to be avoided?
+** 问 ** ：那些组件需要避免使用？
 
-**Q**: Below are lists of unsafe and unprotected components and unsafe but
-locked components.
+** 答 ** ：以下是一些不安全的组件、未受保护的组件和不安全但被锁定的组件列表：
 
-Unsafe:
+不安全的组件：
 
 - OGR layers: use unsafe CPL services 
 - Cartoline rendering: static data
@@ -74,7 +64,7 @@ Unsafe:
 - Forcing a temporary file base (an obscure feature): static data
 - MyGIS: some static data
 
-Unsafe, but locked:
+不安全但被锁定的组件：
 
 - Map config file loading: global parser
 - Setting class and and layer filter expressions (global parser)
