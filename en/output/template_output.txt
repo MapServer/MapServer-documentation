@@ -28,9 +28,10 @@ definition in a single file instead of the standard header/template/footer.
 
 .. note::
 
-    There are other, simpler, ways to output some of these formats using MapServer.
-    However, template-driven output provides maximal flexibility and customization
-    of the output, at the cost of additional complexity and configuration.
+    There are other, simpler, ways to output some of these formats
+    using MapServer.  However, template-driven output provides maximal
+    flexibility and customization of the output, at the cost of
+    additional complexity and configuration.
 
 .. index::
    pair: Template-driven output; OUTPUTFORMAT
@@ -38,9 +39,9 @@ definition in a single file instead of the standard header/template/footer.
 OUTPUTFORMAT Declarations
 =========================
 
-Details of template-driven output formats are controlled by an :ref:`OUTPUTFORMAT`
-declaration.  The declarations define the template file to be used, as well as
-other standard OUTPUTFORMAT options.
+Details of template-driven output formats are controlled by an
+:ref:`OUTPUTFORMAT` declaration.  The declarations define the template
+file to be used, as well as other standard OUTPUTFORMAT options.
 
 Examples:
 
@@ -131,7 +132,8 @@ to compare the usage:
   <!-- mapserver template -->
   [include src="templates/header.html"]
   [resultset layer=lakes]
-    ... old layer HEADER stuff goes here, if a layer has no results this block disappears...
+    ... old layer HEADER stuff goes here, if a layer has no results
+        this block disappears...
     [feature]
       ...repeat this block for each feature in the result set...
       [join name=join1]
@@ -141,7 +143,8 @@ to compare the usage:
     ...old layer FOOTER stuff goes here...
   [/resultset]
   [resulset layer=streams]
-    ... old layer HEADER stuff goes here, if a layer has no results this block disappears...
+    ... old layer HEADER stuff goes here, if a layer has no results
+        this block disappears...
     [feature]
       ...repeat this block for each feature in the result set...
     [/feature]
@@ -156,8 +159,12 @@ A specific GML3 example:
   <!-- mapserver template -->
   <?xml version="1.0" encoding="ISO-8859-1"?>
   [resultset layer=mums]
-  <MapServerUserMeetings xmlns="http://localhost/ms_ogc_workshop" xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:gml="http://www.opengis.net/gml" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://localhost/ms_ogc_workshop ./mums.xsd">
-   <gml:description>This is a GML document which provides locations of all MapServer User Meeting that have taken place</gml:description>
+  <MapServerUserMeetings xmlns="http://localhost/ms_ogc_workshop"
+      xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:gml="http://www.opengis.net/gml"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://localhost/ms_ogc_workshop ./mums.xsd">
+   <gml:description>This is a GML document which provides locations of
+      all MapServer User Meeting that have taken place</gml:description>
    <gml:name>MapServer User Meetings</gml:name>
    <gml:boundedBy>
     <gml:Envelope>
@@ -223,95 +230,104 @@ with holes, and also that a point placemark is included with each feature using
 
 ::
 
-    <!--MapServer Template-->
-    <?xml version="1.0" encoding="UTF-8"?>
-    <kml xmlns="http://www.opengis.net/kml/2.2" xmlns:gx="http://www.google.com/kml/ext/2.2" xmlns:kml="http://www.opengis.net/kml/2.2" xmlns:atom="http://www.w3.org/2005/Atom">
-    <Document>
-	<Style id="parks_highlight">
-		<IconStyle>
-			<scale>1.4</scale>
-			<Icon>
-				<href>http://maps.google.com/mapfiles/kml/shapes/parks.png</href>
-			</Icon>
-			<hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
-		</IconStyle>
-		<LineStyle>
-			<color>ffff5500</color>
-			<width>4.2</width>
-		</LineStyle>
-		<PolyStyle>
-			<color>aaaaaaaa</color>
-		</PolyStyle>
-		<BalloonStyle>
-			<text>
-				<![CDATA[
-					<p ALIGN="center"><b>$[name]</b></p>
-					$[description]
-				]]>
-			</text>
-		</BalloonStyle>
-	</Style>
-	<Style id="parks_normal">
-		<IconStyle>
-			<scale>1.2</scale>
-			<Icon>
-				<href>http://maps.google.com/mapfiles/kml/shapes/parks.png</href>
-			</Icon>
-			<hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
-		</IconStyle>
-		<LineStyle>
-			<color>ffff5500</color>
-			<width>4.2</width>
-		</LineStyle>
-		<PolyStyle>
-			<color>ff7fff55</color>
-		</PolyStyle>
-		<BalloonStyle>
-			<text>
-				<![CDATA[
-					<p ALIGN="center"><b>$[name]</b></p>
-					$[description]
-				]]>
-			</text>
-		</BalloonStyle>
-	</Style>
-	<StyleMap id="parks_map">
-		<Pair>
-			<key>normal</key>
-			<styleUrl>#parks_normal</styleUrl>
-		</Pair>
-		<Pair>
-			<key>highlight</key>
-			<styleUrl>#parks_highlight</styleUrl>
-		</Pair>
-	</StyleMap>
-    [resultset layer=parks]
-	<Folder>
-		<name>Parks</name>
-                [feature trimlast=',' limit=1]
-		<Placemark>
-			<name>[NAME]</name>
-			<Snippet/>
-			<description>
-				<![CDATA[
-					<p>Year Established: [YEAR_ESTABLISHED]</p>
-					<p>Area: [AREA_KILOMETERS_SQUARED] sq km</p>
-				]]>
-			</description>
-			<styleUrl>#parks_map</styleUrl>
-			<ExtendedData>
-			  <Data name="Year Established">[YEAR_ESTABLISHED]</Data>
-		          <Data name="Area">[AREA_KILOMETERS_SQUARED]</Data>
-			</ExtendedData>
-			<MultiGeometry>
-			<Point>
-				<coordinates>[shplabel proj=epsg:4326 precision=10],0</coordinates>
-			</Point>
-    [shpxy ph="<Polygon><tessellate>1</tessellate>" pf="</Polygon>" xf="," xh=" " yh=" " yf=",0 " orh="<outerBoundaryIs><LinearRing><coordinates>" orf="</coordinates></LinearRing></outerBoundaryIs>" irh="<innerBoundaryIs><LinearRing><coordinates>" irf="</coordinates></LinearRing></innerBoundaryIs>" proj=epsg:4326 precision=10]
-			</MultiGeometry>
-		</Placemark>
-                [/feature]
-	</Folder>
-    [/resultset]
-    </Document>
-    </kml> 
+  <!--MapServer Template-->
+  <?xml version="1.0" encoding="UTF-8"?>
+  <kml xmlns="http://www.opengis.net/kml/2.2"
+       xmlns:gx="http://www.google.com/kml/ext/2.2"
+       xmlns:kml="http://www.opengis.net/kml/2.2"
+       xmlns:atom="http://www.w3.org/2005/Atom">
+  <Document>
+    <Style id="parks_highlight">
+      <IconStyle>
+        <scale>1.4</scale>
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/shapes/parks.png</href>
+        </Icon>
+        <hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
+      </IconStyle>
+      <LineStyle>
+        <color>ffff5500</color>
+        <width>4.2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>aaaaaaaa</color>
+      </PolyStyle>
+      <BalloonStyle>
+        <text>
+          <![CDATA[
+            <p ALIGN="center"><b>$[name]</b></p>
+            $[description]
+          ]]>
+        </text>
+      </BalloonStyle>
+    </Style>
+    <Style id="parks_normal">
+      <IconStyle>
+        <scale>1.2</scale>
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/shapes/parks.png</href>
+        </Icon>
+        <hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
+      </IconStyle>
+      <LineStyle>
+        <color>ffff5500</color>
+        <width>4.2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>ff7fff55</color>
+      </PolyStyle>
+      <BalloonStyle>
+        <text>
+          <![CDATA[
+            <p ALIGN="center"><b>$[name]</b></p>
+            $[description]
+          ]]>
+        </text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="parks_map">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#parks_normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#parks_highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+  [resultset layer=parks]
+    <Folder>
+      <name>Parks</name>
+  [feature trimlast=',' limit=1]
+      <Placemark>
+        <name>[NAME]</name>
+        <Snippet/>
+        <description>
+          <![CDATA[
+            <p>Year Established: [YEAR_ESTABLISHED]</p>
+            <p>Area: [AREA_KILOMETERS_SQUARED] sq km</p>
+          ]]>
+        </description>
+        <styleUrl>#parks_map</styleUrl>
+        <ExtendedData>
+          <Data name="Year Established">[YEAR_ESTABLISHED]</Data>
+          <Data name="Area">[AREA_KILOMETERS_SQUARED]</Data>
+        </ExtendedData>
+        <MultiGeometry>
+          <Point>
+            <coordinates>[shplabel proj=epsg:4326 precision=10],0</coordinates>
+          </Point>
+  [shpxy     ph="<Polygon><tessellate>1</tessellate>" pf="</Polygon>"
+             xf="," xh=" " yh=" " yf=",0 "
+             orh="<outerBoundaryIs><LinearRing><coordinates>"
+             orf="</coordinates></LinearRing></outerBoundaryIs>"
+             irh="<innerBoundaryIs><LinearRing><coordinates>"
+             irf="</coordinates></LinearRing></innerBoundaryIs>"
+             proj=epsg:4326 precision=10]
+        </MultiGeometry>
+      </Placemark>
+  [/feature]
+    </Folder>
+  [/resultset]
+  </Document>
+  </kml> 
