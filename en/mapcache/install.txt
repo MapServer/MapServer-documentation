@@ -400,45 +400,6 @@ prefork mpm or fastcgi, **and** you do not plan to use the seeder. For thread
 safety on the mapserver side, you might want to have a look at tickets #4041 and
 #4044.
 
-File Locking
-================================================================================
-
-.. code-block:: bash
-
-   --with-lock-mechanism=file|semaphore
-
-mod-mapcache needs to keep a cross-process and cross-thread lock on tiles so
-that requests for tiles of a same metatile don't end up becoming multiple
-requests for the same metatile on the wms server. The default mechanism "file"
-is highly recommended unless you know what you are doing.
-
-This can be configured in two different ways in mod-mapcache, each with their
-advantage and inconvenience:
-
- * file : mod-mapcache will use a file to signal other rendering threads that
-   the given metatile is being rendered by the wms source. (the location of
-   these files is configurable with the <lock_dir> configuration directive). In
-   the case of threaded mpm, this has the inconvenience that we cannot be
-   signaled by the operating system that this file has been deleted, and thus
-   must resort to sleeping every .5 sec and checking if the file still exists
-   until the file is deleted.  This isn't very efficient, but should not be
-   problematic in practice as this loop only happens if the tile wasn't already
-   in the cache, i.e. at most once per tile for the whole lifetime of the
-   cache.
-
- * semaphore : mod-mapcache can use posix semaphores for waiting on tile
-   rendering. This method has the inconvenience that if a rendering thread
-   crashes (or more likely is killed by the system administrator while waiting
-   for the wms source to finish rendering), the semaphore lives on in the
-   operating system and will prevent all accesses to the tile until the
-   sempahore is manually deleted. As apache threads are locked while waiting
-   for this semaphore that will never be released, you might end up with loads
-   of idle processes stacking up. (stuck semaphores on linux can be discarded
-   by deleteing the files of the form sem.x-x-x-gridname-tilesetname(...)  that
-   are located in /dev/shm/.  The "file" maechanism does not have this
-   limitation, as stale lockfiles can be deleted upon server restart.
-
-
 Win32 compilation instructions
 --------------------------------------------------------------------------------
 Awaiting your contribution ;)
