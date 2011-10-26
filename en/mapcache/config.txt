@@ -22,8 +22,7 @@ outlined here:
       <services>...</services>
    </mapcache>
 
-Concepts
---------------------------------------------------------------------------------
+.. _mapcache_sources:
 
 Source
 ================================================================================
@@ -234,6 +233,7 @@ to clients, and to store tile data on disk.
 
 
 
+.. _mapcache_grids:
 
 Grid
 ================================================================================
@@ -241,43 +241,166 @@ Grid
 A grid is the matrix that maps tiles on an area, and consists of a
 spatial reference, a geographic extent, resolutions, and tile sizes.
 
-There are for now two predefined grids you can use with "default" openlayers
-settings:
+Mandatory Configuration Options
+--------------------------------------------------------------------------------
 
-* the "WGS84" grid corresponds to the grid that openlayers will request if
-  you use:
+* **<size>**: The width and height of an individual tile, in pixels. Must be
+  specified as to positive integers separated by a space character. The most 
+  common entry for this is:
+  
+  .. code-block:: xml
+  
+     <size>256 256</size>
 
-.. code-block:: javascript
-   
-   var layer = new OpenLayers.WMS("foobar","http://myserver/mapcache",{LAYERS:layername});
+* **<extent>**: The geographical extent covered by the grid, in ground units (e.g.
+  meters, degrees, feet, ...). Must be specified as 4 floating point numbers 
+  separated be spaces, order like minx, miny, maxx, maxy. The (minx,miny) point
+  defines the origin of the grid, i.e. the pixel at the bottom left of the bottom-
+  leftmost tile is always placed on the (minx,miny) geographical point.
 
-* the "g" grid corresponds to the case when you wish to overlay tiles on top of googlemaps:
+  The (maxx,maxy) point is used to determine how many tiles there are for each
+  zoom level.
+  
+  .. code-block:: xml
+  
+     <extent>-180 -90 180 90</extent>
 
-.. code-block:: javascript
-   
-   var options = {
-      projection: new OpenLayers.Projection("EPSG:900913"),
-      units: "m",
-      maxResolution: 156543.0339,
-      maxExtent: new OpenLayers.Bounds(-20037508.34, -20037508.34, 20037508.34,20037508.34) };
+* **<srs>**: The projection of the grid, usually given by it epsg identifier. The
+  actual meaning of the value put here isn't used directly by mapcache to compute
+  reprojections, it is only used to lookup which grid to use when receiving WMS
+  requests.
+  
+  .. code-block:: xml
+  
+     <srs>epsg:4326</srs>
 
-   map = new OpenLayers.Map( 'map', options );
-   var gmap = new OpenLayers.Layer.Google("Google Streets", 
-         {
-            'sphericalMercator': true,
-            'maxExtent': new OpenLayers.Bounds(-20037508.34,-20037508.34,20037508.34,20037508.34),
-            visibility: true 
-         }
-   );
+  .. note::
+    
+    This is the value that is passed on to the :ref:`source <mapcache_sources>`
+    when requesting a tile that is not already cached for the current grid. You
+    must make sure that the source that is queried is capable of returning 
+    image data for this srs.
 
-   var wms = new OpenLayers.Layer.WMS(
-         "WMS",
-         "/mapcache",
-         { layers: 'osm', },
-         { 
-            gutter:0,
-            ratio:1
-         });
+* **<units>**: The ground units used by the grid's projection. This entry is not
+  used directly by mapcache aside from calculating scales for the WMTS capabilites
+  document. Allowed values are:
+
+  * **m**: meters
+  * **dd**: decimal degrees
+  * **ft**: feet
+  
+  .. code-block:: xml
+  
+     <units>dd</units>
+
+* **<resolutions>**: This is a list of resolutions for each of the zoom levels
+  defined by the grid. This must be supplied as a list of positive floating
+  point values, separated by a space and ordered from largest to smallest. The
+  largest value will correspond to the grid's zoom level 0. Resolutions are
+  expressed in "units-per-pixel", depending on the unit used by the grid (e.g.
+  resolutions are in meters per pixel for most grids used in webmapping).
+    
+  .. code-block:: xml
+  
+    <resolutions>0.703125000000000 0.351562500000000 0.175781250000000 8.78906250000000e-2 4.39453125000000e-2 2.19726562500000e-2 1.09863281250000e-2 5.49316406250000e-3 2.74658203125000e-3 1.37329101562500e-3 6.86645507812500e-4 3.43322753906250e-4 1.71661376953125e-4 8.58306884765625e-5 4.29153442382812e-5 2.14576721191406e-5 1.07288360595703e-5 5.36441802978516e-6</resolutions>
+
+
+Optional Configuration Options
+--------------------------------------------------------------------------------
+
+* **<srsalias>**: This tag can be specified multiple times, and allows the user
+  to add multiple srs entries for a given grid. This is especially usefull if
+  the epsg id for a given projection has evolved over time, or to support other
+  catalogues than the epsg one (which is the only catalog supported by the wms
+  specification).
+  
+  .. code-block:: xml
+
+    <srs>EPSG:310024802</srs>
+    <srsalias>IGNF:GEOPORTALFXX</srsalias>
+    <srsalias>EPSG:310024001</srsalias>
+
+* **<metadata>**:
+  
+  * **<title>**: The name of the grid, in human readable form. Appears in the
+    capabilities documents.
+
+    .. code-block:: xml
+
+      <title>This grid covers the area blah blah blah</title>
+
+  * **<WellKnownScaleSet>**: see the WMTS keyword. This will add a
+    WellKnownScaleSet entry to the WMTS capabilites document. It is up to the
+    user to make sure that the supplied resolutions for the grid actually match
+    the pre-defined WellKnownScaleSet.
+    
+    .. code-block:: xml
+      
+      <WellKnownScaleSet>urn:ogc:def:wkss:OGC:1.0:GoogleCRS84Quad</WellKnownScaleSet>
+
+
+Preconfigured Grids
+--------------------------------------------------------------------------------
+
+There are three predefined grids you can use without referencing them in the
+mapcache.xml file:
+
+* the "WGS84" grid corresponds to a grid where the whole world is rendered on
+  2 times 1  256x256 pixel tiles at level 0 (i.e. the (-180,-90,180,90) extent
+  fits on a 512x256 image). It goes down to zoom level 17.
+
+  .. code-block:: xml
+
+     <grid name="WGS84">
+        <metadata>
+           <title>GoogleCRS84Quad</title>
+           <WellKnownScaleSet>urn:ogc:def:wkss:OGC:1.0:GoogleCRS84Quad</WellKnownScaleSet>
+        </metadata>
+        <extent>-180 -90 180 90</extent>
+        <srs>EPSG:4326</srs>
+        <units>dd</units>
+        <size>256 256</size>
+        <resolutions>0.703125000000000 0.351562500000000 0.175781250000000 8.78906250000000e-2 4.39453125000000e-2 2.19726562500000e-2 1.09863281250000e-2 5.49316406250000e-3 2.74658203125000e-3 1.37329101562500e-3 6.86645507812500e-4 3.43322753906250e-4 1.71661376953125e-4 8.58306884765625e-5 4.29153442382812e-5 2.14576721191406e-5 1.07288360595703e-5 5.36441802978516e-6</resolutions>
+     </grid>
+
+* the "g" grid corresponds to the case when you wish to overlay tiles on top of
+  googlemaps, and is the default tiling scheme used in webmapping applications.
+  This grid goes down to zoom level 18. Level 0 is a single 256x256 tile. This
+  grid's default srs is EPSG:900913 which is non-standard, but in wider use than
+  than its official EPSG:3857 entry.
+
+  .. code-block:: xml
+     
+     <grid name="GoogleMapsCompatible">
+        <metadata>
+           <title>GoogleMapsCompatible</title>
+           <WellKnownScaleSet>urn:ogc:def:wkss:OGC:1.0:GoogleMapsCompatible</WellKnownScaleSet>
+        </metadata>
+        <extent>-20037508.3427892480 -20037508.3427892480 20037508.3427892480 20037508.3427892480</extent>
+        <srs>EPSG:900913</srs>
+        <srsalias>EPSG:3857</srsalias>
+        <units>m</units>
+        <size>256 256</size>
+        <resolutions>156543.0339280410 78271.51696402048 39135.75848201023 19567.87924100512 9783.939620502561 4891.969810251280 2445.984905125640 1222.992452562820 611.4962262814100 305.7481131407048 152.8740565703525 76.43702828517624 38.21851414258813 19.10925707129406 9.554628535647032 4.777314267823516 2.388657133911758 1.194328566955879 0.5971642834779395</resolutions>
+     </grid>
+
+* the "GoogleMapsCompatible" grid is nearly identical to the "g" grid, except
+  its default srs is EPSG:3857 instead of EPSG:900913.
+
+  .. code-block:: xml
+  
+     <grid name="GoogleMapsCompatible">
+        <metadata>
+           <title>GoogleMapsCompatible</title>
+           <WellKnownScaleSet>urn:ogc:def:wkss:OGC:1.0:GoogleMapsCompatible</WellKnownScaleSet>
+        </metadata>
+        <extent>-20037508.3427892480 -20037508.3427892480 20037508.3427892480 20037508.3427892480</extent>
+        <srs>EPSG:3857</srs>
+        <srsalias>EPSG:900913</srsalias>
+        <units>m</units>
+        <size>256 256</size>
+        <resolutions>156543.0339280410 78271.51696402048 39135.75848201023 19567.87924100512 9783.939620502561 4891.969810251280 2445.984905125640 1222.992452562820 611.4962262814100 305.7481131407048 152.8740565703525 76.43702828517624 38.21851414258813 19.10925707129406 9.554628535647032 4.777314267823516 2.388657133911758 1.194328566955879 0.5971642834779395</resolutions>
+     </grid>
 
 Tileset
 ================================================================================
