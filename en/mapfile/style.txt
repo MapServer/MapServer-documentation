@@ -129,16 +129,17 @@ GAP [double]
     specified for the :ref:`LAYER`), `GAP` specifies the distance in
     layer `SIZEUNITS` at the map scale 1:`SYMBOLSCALEDENOM`.
 
-    - For lines, the first symbol will be placed `GAP`/2 from the
-      start of the line.
+    - For lines, if `INITIALGAP` is not specified, the first symbol
+      will be placed `GAP`/2 from the start of the line.
     - For lines, a negative `GAP` value will cause the symbols' X axis
       to be aligned relative to the tangent of the line.
     - For lines, a positive `GAP` value aligns the symbols' X axis
       relative to the X axis of the output device.
     - For lines, a `GAP` of 0 (the default value) will cause the symbols
       to be rendered edge to edge
-    - For polygons, a missing `GAP` or a `GAP` of 0 will cause the
-      symbols to be rendered edge to edge.
+    - For polygons, a missing `GAP` or a `GAP` of less than or equal
+      to the size of the symbol will cause the symbols to be rendered
+      edge to edge.
 
     Symbols can be rotated using `ANGLE`.
 
@@ -149,9 +150,8 @@ GAP [double]
       The behaviour of `GAP` has not been stable over time.  It has
       specified the amount of space between the symbols, and also
       something in between the amount of space between the symbols and
-      the center to center distance.  The goal is to have `GAP`
-      specify the center to center distance, but in version 6.0 it is
-      the amount of space between the symbols that is specified.
+      the center to center distance.  Since 6.2 `GAP` specifies the
+      center to center distance between the symbols.
 
 .. index::
    pair: STYLE; GEOMTRANSFORM
@@ -176,6 +176,53 @@ GEOMTRANSFORM [bbox|end|labelpnt|labelpoly|start|vertices]
       the current feature geometry (the start and end are excluded).
       When used with `ANGLE` AUTO, the marker is oriented by the half
       angle formed by the two adjacent line segments.
+
+.. index::
+   pair: STYLE; INITIALGAP
+
+INITIALGAP [double]
+    `INITIALGAP` is useful for styling dashed lines.
+
+    If used with `GAP`, `INITIALGAP` specifies the distance to the
+    first symbol on a styled line.
+    
+    If used with `PATTERN`, `INITIALGAP` specifies the distance to
+    the first dash on a dashed line.
+
+    Example 1 - dashed line styled with circles:
+
+    .. code-block:: mapfile
+    
+      STYLE
+        COLOR 0 0 0
+        WIDTH 4
+        PATTERN 40 10 END
+      END
+      STYLE
+        SYMBOL "circlef"
+        COLOR 0 0 0
+        SIZE 8
+        INITIALGAP 20
+        GAP 50
+      END
+
+    Example 1 - dashed line styled with dashed line overlay:
+
+    .. code-block:: mapfile
+    
+      STYLE
+        COLOR 0 0 0
+        WIDTH 6
+        PATTERN 40 10
+      END
+      STYLE
+        COLOR 255 255 255
+        WIDTH 4 
+        INITIALGAP 2
+        PATTERN 36 14
+      END
+
+    .. versionadded:: 6.2
 
 .. index::
    pair: STYLE; LINECAP
