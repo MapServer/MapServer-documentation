@@ -122,10 +122,22 @@ real world units.
 - If the size is set in screen pixels, symbols look the same at all
   scales.
 
-MapServer implements the "screen pixels" size type for displaying
-cartographical elements.  "Real world units", as described above, can
-be achieved using the `SYMBOLSCALEDENOM` parameter of the
+The default behaviour of MapServer is to implement the "screen pixels"
+size type for displaying cartographical elements.
+
+"Real world units", as described above, can be achieved using either
+the `SIZEUNITS` or the `SYMBOLSCALEDENOM` parameter of the
 :ref:`layer`.
+
+- When `SIZEUNITS` is set (and is not `pixels`), symbol sizes are
+  specified in real world units (for instance meters).  For available
+  units, see the `SIZEUNIT` documentation.
+
+- When `SYMBOLSCALEDENOM` is set, the given symbols size is used for
+  the map scale 1:`SYMBOLSCALEDENOM`, for other scales, the symbols
+  are scaled proportionally.
+
+:ref:`style` `MAXSIZE` and `MINSIZE` limits the scaling of symbols.
 
 
 .. index::
@@ -226,23 +238,24 @@ Output formats
 --------------
 
 MapServer support raster output formats (e.g. PNG, JPEG and GIF) and
-vector output formats (e.g. PDF, SWG).  The raster formats (except for
-GIF) use anti-aliasing.  See :ref:`outputformat` for more.
+vector output formats (e.g. PDF, SVG).  The raster formats (except for
+GIF) use anti-aliasing.  See :ref:`outputformat` (and :ref:`map`
+`IMAGETYPE`) for more.
 
 Symbol units
 ------------
 
 The units used for specifying dimensions is defined in the `SIZEUNITS`
-parameter of the :ref:`layer`.  `SIZEUNITS` can be `pixels`, `feet`,
-`inches`, `kilometers`, `meters`, `miles`, `dd` and `nauticalmiles`.
-The default is `pixels`.
+parameter of the :ref:`layer`.  The available units are listed there.
+The default unit is `pixels`.
 
 The `MAP` element's `RESOLUTION` and `DEFRESOLUTION` parameters will
-determine the actual scale of the resulting map and hence the size of
-the symbols on the map.  DEFRESOLUTION is by default 72 dpi (dots per
-inch).  If `RESOLUTION` is set to 144 (and `DEFRESOLUTION` is 72), all
-dimensions specified in the map file will be multiplied by 144/72 = 2.
-This can be used to produce higher resolution images.
+determine the resolution of the resulting map and hence the size in
+pixels of the symbols on the map.  `DEFRESOLUTION` is by default 72
+dpi (dots per inch).  If `RESOLUTION` is set to 144 (and
+`DEFRESOLUTION` is 72), all dimensions specified in the map file will
+be multiplied by 144/72 = 2.  This can be used to produce higher
+resolution images.
 
 Dimensions can be specified using decimals.
 
@@ -262,11 +275,13 @@ parameters inside the :ref:`style` element limit the scaling of
 symbols to the maximum and minimum size specified here (but does not
 affect the size calculations).
 
-When the scale changes, the elements (defined in :ref:`style`\s) of a
-composite cartographical symbol may change their positions relative to
-each other, especially at very small map scales (large scale
-denominators). They can also slightly change their shape when they are
-displayed as tiny little images.
+When symbols are scaled as the scale changes, the elements (defined in
+:ref:`style`\s) of a composite cartographical symbol may change their
+positions relative to each other.  This is due to rounding effects
+when creating the image.  The effect is most noticable at small scales
+(large scale denominators), when the symbols get small.  Due to the
+same effects, symbols can also slightly change their shape when they
+get small.
 
 It is not possibile to define the display intervals with
 `MINSCALEDENOM` and `MAXSCALEDENOM` in the :ref:`style`\-section, so
@@ -275,9 +290,9 @@ this, create several :ref:`layer`\s with the same geometries for
 different scale levels.
 
 Always observe that cartographical symbols depend a lot on the scale!
-So be careful with the interaction of content, symbols and scale when
-creating projects.  All three parameters heavily interact and have to
-be coordinated to produce a good map.
+So be careful with the interaction of content, symbols and scale.  All
+three parameters heavily interact and have to be coordinated to
+produce a good map.
 
 
 .. index::
@@ -308,37 +323,49 @@ All point symbols can be rotated using the `ANGLE` parameter.
 Symbols of `TYPE` `vector` and `ellipse`
 ----------------------------------------
 
-The `TYPE` `vector` defines the shape of a symbol by setting X and
-Y values in a local two dimensional coordinate system with X values
-increasing to the right and Y values increasing downwards.
+For symbols of `TYPE` `vector` and `ellipse` the shape of the symbol
+by setting X and Y values in a local two dimensional coordinate system
+with X values increasing to the right and Y values increasing
+downwards.  The coordinates defining the symbol is listed in the
+`POINTS` parameter, which is explicitly ended using `END`.
 
-The coordinates defining the symbol is listed in the `POINTS`
-parameter, which is explicitly ended using `END`.  The maximum number
-of points can be increased by changing the parameter
-MS_MAXVECTORPOINTS in the file mapsymbols.h before compilation.  The
-current default is 100. Note that by setting the end point equal to
-the start point you obtain a closed shape (polygon).  A `vector`
-symbol can consist of several elements (lines, polygons).  The
-coordinates -99 -99 are used to separate the elements.
+- `TYPE` `ellipse` is used to create ellipses (and circles).  The
+  shape of the ellipse is defined in the `POINTS` parameter (X - size in
+  the horizontal direction, Y - size in the vertical direction).  To
+  create a circle, let X and Y have the same value.
 
-When creating symbols of `TYPE` `vector` you should observe some style
-guidelines.  Avoid downtilted lines in area symbols, as they will lead
-to heavy aliasing effects. Furthermore you should not go below a
-useful minimum size, which is relevant for all types of symbols. Keep
-in mind that for pixel images, every symbol of `TYPE` `vector` has to
-be rendered using pixels (`pixmap` symbols may be used directly for
-drawing).
+- `TYPE` `vector` is used to define advanced vector symbols.  The
+  shape of the symbol is defined in the `POINTS` parameter.  A `vector`
+  symbol can consist of several elements.  The coordinates -99 -99 are
+  used to separate the elements.
 
-.. note::
+  To create a polygon vector symbol, the :ref:`symbol` `FILLED`
+  parameter must be set to `true`.  If the end point is not equal to
+  the start point of a polygon geometry, it will be closed
+  automatically.
 
-  Current behaviour is for the bounding box of a vector symbol to
-  always have 0,0 (in the :ref:`symbol` coordinate system) as its upper
-  left corner.  This can be used to generate asymmetrical symbols.
+  The maximum number of points is 100, but this can be increased by
+  changing the parameter MS_MAXVECTORPOINTS in the file mapsymbols.h
+  before compilation.
 
-To create ellipses (and circles), use the `TYPE` `ellipse`.  The
-shape of the ellipse is set in the `POINTS` parameter (X - size in the
-horizontal direction, Y - size in the vertical direction).  To create
-a circle, let X and Y have the same value.
+  When creating symbols of `TYPE` `vector` you should observe some style
+  guidelines.
+
+  - Avoid downtilted lines in area symbols, as they will lead to heavy
+    aliasing effects.
+
+  - Do not go below a useful minimum size.  This is relevant for all
+    types of symbols.
+
+  - Keep in mind that for pixel images, every symbol of `TYPE`
+    `vector` has to be rendered using pixels.
+
+  .. note::
+
+    Current behaviour is for the bounding box of a vector symbol to
+    always have 0,0 (in the :ref:`symbol` coordinate system) as its
+    upper left corner.  This can be used to generate asymmetrical
+    symbols.
 
 
 .. index::
@@ -361,32 +388,28 @@ It is recommended to do this especially with more complex symbols and
 whenever they don't fit well into the raster matrix or show a visible
 pixel structure.
 
-In the :ref:`style` section of the :ref:`layer` object it is possible
-to define colours for `truetype` symbols (as with signatures of the
-`TYPE` `vector`).  You can specify both fill colour and outline
-colour.
-
+Colours for `truetype` symbols can be specified in :ref:`layer`
+:ref:`class` :ref:`style` (as with symbols of the `TYPE` `vector` and
+`ellipse`).  You can specify both fill colour and outline colour.
 
 To find out the character number of a symbol use one of the following
 options:
 
 - Use the software FontMap (Shareware, with free trial version for
-  download, thanks Till!)
+  download, thanks Till!).
 
-- Use the MS Windows truetype map
+- Use the MS Windows truetype map.
  
-- Trial and Error :-) 
+- Trial and Error. :-) 
 
 Please note that the numbering of the so-called "symbol fonts" starts
 at 61440!  So if you want to use character &#84, you have to use 61440
 + 84 = &#61524.  (ain't that a pain!!)
 
-
 You can also place truetype characters and strings on the map using
 `LABEL`.  Then you can control the placing of the text by using the
 `POSITION` parameter [ul|uc|ur|cl|cc|cr|ll|lc|lr], that specifies the
 position relative to the geometric origin of the geometry.
-
 
 .. index::
    single: Pixmap symbols
@@ -396,8 +419,8 @@ Symbols of `TYPE` `pixmap`
 
 Symbols of the `TYPE` `pixmap` are simply small raster images. The
 file name of the raster image is specified in the `IMAGE` parameter of
-the :ref:`symbol` element.  MapServer supports the raster formats GIF and
-PNG for `pixmap`\s.
+the :ref:`symbol` element.  MapServer supports the raster formats GIF
+and PNG for `pixmap`\s.
 
 Observe the colour depth of the images and avoid using 24 bit PNG
 symbols displayed in 8 bit mode as this may cause unexpected colour
@@ -412,9 +435,10 @@ underlying objects and colours are visible.
 
 The `SIZE` parameter defines the height of `pixmap` symbols when
 rendered.  The pixel structure will show when the `SIZE` grows too
-large.  If you are using symbol scaling (`SYMBOLSCALEDENOM` is set)
-and want to prevent this from happening, you should set the `MAXSIZE`
-parameter.
+large.  If you are using symbol scaling (:ref:`layer`
+`SYMBOLSCALEDENOM` is set or :ref:`layer` `SIZEUNITS` is not `pixels`)
+and want to prevent this from happening, you should set the
+:ref:`style` `MAXSIZE` parameter.
 
 
 Symbol definitions for the figure that demonstrates point symbols
@@ -451,6 +475,7 @@ First, the symbol definitions:
   SYMBOL
     NAME "v-line"
     TYPE vector
+    FILLED false
     POINTS
       0  0
       5  10
@@ -461,7 +486,7 @@ First, the symbol definitions:
   SYMBOL
     NAME "v-poly"
     TYPE vector
-    FILLED false
+    FILLED true
     POINTS
       0  0
       3.5 8
@@ -696,11 +721,11 @@ larger irregularities.
 Construction of Line Symbols
 ============================
 
-For displaying line geometries you specify the width of the lines
+For displaying line geometries, you specify the width of the lines
 using the `WIDTH` parameter and the colour using the `COLOR`
 parameter.  If no colour is specified, the line will not be rendered.
-If no width is specified, a thin line (one unit (pixel) wide) will
-result.  The `LINECAP`, `LINEJOIN` and `LINEJOINMAXSIZE` parameters
+If no width is specified, a thin line (one unit (pixel) wide) will be
+rendered.  The `LINECAP`, `LINEJOIN` and `LINEJOINMAXSIZE` parameters
 are used to specify how line ends and corners are to be rendered.
 
 .. index::
@@ -856,8 +881,7 @@ The :ref:`layer`\s are ordered from bottom to top of the figure.
       STYLE
         COLOR 0 0 0
         WIDTH 5.0
-        LINECAP butt
-        PATTERN 40 5 END
+        PATTERN 40 10 END
       END # STYLE
     END # CLASS
   END # LAYER
@@ -1103,12 +1127,12 @@ The :ref:`layer`\s are ordered from bottom to top of the figure.
 
 By default, all lines (and patterns) will be drawn with rounded ends
 (extending the lines slightly beyond their ends).  This effect gets
-more obvious the larger the width of line is.  It is possible to alter
-this behaviour using the `LINECAP` parameter of the :ref:`style`.
-`LINECAP` `butt` will give butt ends (stops the line exactly at the
-end), with no extension of the line.  `LINECAP` `square` will give
-square ends, with an extension of the line.  `LINECAP` `round` is the
-default.
+more obvious the larger the width of the line is.  It is possible to
+alter this behaviour using the `LINECAP` parameter of the
+:ref:`style`.  `LINECAP` `butt` will give butt ends (stops the line
+exactly at the end), with no extension of the line.  `LINECAP`
+`square` will give square ends, with an extension of the line.
+`LINECAP` `round` is the default.
 
 
 .. index::
@@ -1527,10 +1551,10 @@ Creating vector symbols for polygon fills is done in much the same
 way as for pixmap symbols.  Precision is necessary to get nice
 symmetrical symbols.
 
-Both polygon (`FILL` on) and line (`FILL` off) vector symbols can be
-used.  For line symbols, the `WIDTH` parameter of the :ref:`style`
-will give the line width and the `SIZE` parameter will specify the
-height of the symbol.
+Both polygon (`FILLED` `true`) and line (`FILLED` `false`) vector
+symbols can be used.  For line symbols, the `WIDTH` parameter of the
+:ref:`style` will give the line width and the `SIZE` parameter will
+specify the height of the symbol.
 
 .. note::
 
@@ -1580,10 +1604,6 @@ First, the :ref:`layer`\s
         COLOR 0 0 0
         SIZE 35
       END # STYLE
-      STYLE
-        OUTLINECOLOR 0 0 0
-        WIDTH 1
-      END # STYLE
     END # CLASS
   END # LAYER
 
@@ -1606,10 +1626,6 @@ First, the :ref:`layer`\s
         WIDTH 5
         SIZE 35
       END # STYLE
-      STYLE
-        OUTLINECOLOR 0 0 0
-        WIDTH 1
-      END # STYLE
     END # CLASS
   END # LAYER
 
@@ -1631,10 +1647,6 @@ First, the :ref:`layer`\s
         COLOR 0 0 0
         SIZE 35
       END # STYLE
-      STYLE
-        OUTLINECOLOR 0 0 0
-        WIDTH 1
-      END # STYLE
     END # CLASS
   END # LAYER
 
@@ -1651,18 +1663,11 @@ First, the :ref:`layer`\s
       END # Points
     END # Feature
     CLASS
-      #STYLE
-      #  COLOR 255 255 0
-      #END
       STYLE
         SYMBOL "circlef"
         COLOR 0 0 0
         SIZE 20
         GAP 18
-      END # STYLE
-      STYLE
-        OUTLINECOLOR 0 0 0
-        WIDTH 1
       END # STYLE
     END # CLASS
   END # LAYER
@@ -1684,11 +1689,6 @@ First, the :ref:`layer`\s
         COLOR 0 0 0
         SYMBOL "x-poly-fill"
         SIZE 35
-        #WIDTH 2
-      END # STYLE
-      STYLE
-        OUTLINECOLOR 0 0 0
-        WIDTH 1
       END # STYLE
     END # CLASS
   END # LAYER
@@ -1711,10 +1711,6 @@ First, the :ref:`layer`\s
         SYMBOL "ind_marsh_poly"
         SIZE 25
       END # STYLE
-      STYLE
-        OUTLINECOLOR 0 0 0
-        WIDTH 1
-      END # STYLE
     END # CLASS
   END # LAYER
 
@@ -1735,11 +1731,6 @@ First, the :ref:`layer`\s
         COLOR  255 230 51
         SYMBOL "diag_dots"
         SIZE 30
-        #WIDTH 10
-      END # STYLE
-      STYLE
-        OUTLINECOLOR 0 0 0
-        WIDTH 1
       END # STYLE
     END # CLASS
   END # LAYER
@@ -1748,7 +1739,6 @@ First, the :ref:`layer`\s
   LAYER  # diagonal holes in yellow
     STATUS DEFAULT
     TYPE POLYGON
-    #OPACITY 50
     FEATURE
       POINTS
         55 80
@@ -1763,14 +1753,6 @@ First, the :ref:`layer`\s
         SYMBOL "diag_holes"
         SIZE 30
         COLOR 250 220 102
-      END # STYLE
-      #STYLE
-      #  COLOR 255 255 255
-      #  SIZE 30
-      #END # STYLE
-      STYLE
-        OUTLINECOLOR 0 0 0
-        WIDTH 1
       END # STYLE
     END # CLASS
   END # LAYER
@@ -1803,10 +1785,6 @@ First, the :ref:`layer`\s
         WIDTH 10
         GAP 45
       END # STYLE
-      STYLE
-        OUTLINECOLOR 0 0 0
-        WIDTH 1
-      END # STYLE
     END # CLASS
   END # LAYER
 
@@ -1833,10 +1811,6 @@ First, the :ref:`layer`\s
         SIZE 30
         COLOR 250 220 0
         OPACITY 75
-      END # STYLE
-      STYLE
-        OUTLINECOLOR 0 0 0
-        WIDTH 1
       END # STYLE
     END # CLASS
   END # LAYER
@@ -1867,10 +1841,6 @@ First, the :ref:`layer`\s
         SIZE 10
         WIDTH 3
         GAP 30
-      END # STYLE
-      STYLE
-        OUTLINECOLOR 0 0 0
-        WIDTH 1
       END # STYLE
     END # CLASS
   END # LAYER
@@ -1926,7 +1896,6 @@ Then the :ref:`symbol`\s:
   SYMBOL
     NAME "x-line"
     TYPE vector
-    #FILLED true
     POINTS
       0 0
       1 1
@@ -1985,21 +1954,21 @@ Then the :ref:`symbol`\s:
     TYPE vector
     FILLED true
     POINTS
-      # Et halvt linjestykke
+      # Half line
       0 2
       4.5 2
       4.5 3
       0 3
       0 2
       -99 -99
-      # Et halvt linjestykke
+      # Half line
       7 2
       11.5 2
       11.5 3
       7 3
       7 2
       -99 -99
-      # Det hele linjestykket
+      # Hole line
       1.25 5
       10.25 5
       10.25 6
@@ -2162,7 +2131,7 @@ Polygon outlines
 ----------------
 
 Polygon outlines can be created by using `OUTLINECOLOR` in the
-:ref:`STYLE`.  `WIDTH` specifies the width of the outlineline.
+:ref:`STYLE`.  `WIDTH` specifies the width of the outline.
 
 .. code-block:: mapfile
 
