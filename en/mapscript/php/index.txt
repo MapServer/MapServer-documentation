@@ -273,23 +273,6 @@ int deletestyle(int index)
    Delete the style specified by the style index. If there are any
    style that follow the deleted style, their index will decrease by 1.
 
-   .. note::
-      if you are using the numstyles parameter while using the 
-      deletestyle function on the class object you need to refetch 
-      a new class object. 
-    
-      Example :
-    
-      .. code-block:: php
-          
-         //class has 2 styles
-         $class = $oLayer->getclass(0);
-         $class->deletestyle(1);
-         echo $class->numstyles; : will echo 2
-
-         $class = $oLayer->getclass(0);
-         echo $class->numstyles; : will echo 1 
-
 int drawLegendIcon(int width, int height, imageObj im, int dstX, int dstY)
     Draw the legend icon on im object at dstX, dstY.
     Returns MS_SUCCESS/MS_FAILURE.
@@ -710,6 +693,7 @@ int             mindistance
 int             minfeaturesize
 int             minlength
 int             minsize
+int             numstyles
 int             offsetx
 int             offsety
 colorObj        outlinecolor
@@ -729,6 +713,10 @@ int             wrap
 Methods
 ...............................................................................
 
+int deleteStyle(int index)
+   Delete the style specified by the style index. If there are any
+   style that follow the deleted style, their index will decrease by 1.
+
 string getBinding(const labelbinding)
     Get the attribute binding for a specified label property. Returns
     NULL if there is no binding for this property.
@@ -740,10 +728,28 @@ string getBinding(const labelbinding)
         $oLabel->setbinding(MS_LABEL_BINDING_COLOR, "FIELD_NAME_COLOR");
         echo $oLabel->getbinding(MS_LABEL_BINDING_COLOR); // FIELD_NAME_COLOR
 
+styleObj getStyle(int index)
+    Return the style object using an index. index >= 0 &&
+    index < label->numstyles.
+
 void free()
     Free the object properties and break the internal references. 
     Note that you have to unset the php variable to free totally the
     resources.
+
+int moveStyleDown(int index)
+    The style specified by the style index will be moved down into
+    the array of classes. Returns MS_SUCCESS or MS_FAILURE.
+    ex label->movestyledown(0) will have the effect of moving style 0
+    up to position 1, and the style at position 1 will be moved
+    to position 0.
+
+int moveStyleUp(int index)
+    The style specified by the style index will be moved up into
+    the array of classes. Returns MS_SUCCESS or MS_FAILURE.
+    ex label->movestyleup(1) will have the effect of moving style 1
+    up to position 0, and the style at position 0 will be moved
+    to position 1.
 
 int removeBinding(const labelbinding)
     Remove the attribute binding for a specfiled style property.  
@@ -2466,13 +2472,15 @@ styleObj
 Constructor
 ...............................................................................
 
-Instances of styleObj are always embedded inside the `classObj`_.
+Instances of styleObj are always embedded inside a `classObj`_ or `labelObj`_.
 
 .. code-block:: php
 
    new styleObj(classObj class [, styleObj style])
+   // or
+   new styleObj(labelObj label [, styleObj style])
 
-or using the old constructor
+or using the old constructor (do not support a labelObj at first argument)
 
 .. code-block:: php
     
