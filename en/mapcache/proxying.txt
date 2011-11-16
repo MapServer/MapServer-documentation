@@ -7,6 +7,10 @@ Proxying Unsupported Requests
 :Author: Thomas Bonfort
 :Contact: tbonfort at terriscope.fr
 
+.. note::
+ 
+  This page is a work in progress
+
 MapCache has the ability to forward any incoming request that it cannot
 natively respond to (either by returning a tile directly, by :ref:`merging
 <mapcache_tile_assembling>` multiple tiles, etc...).
@@ -21,4 +25,81 @@ compatibility for, e.g., unsupported grids, WFS requests, ...
   The proxying of requests is configured inside the :ref:`WMS <mapcache_wms>`
   MapCache service, which is semantically awkward.
 
-TBD
+The configuration for this behavior is activated by a succession of entries
+inside the <forwarding_rule> element of the wms <service>. Rules are tested
+for in the order in which they appear in the mapcache.xml configuration file,
+and the first one that matches is used. If no rules are defined, or if no
+rule matches the incoming request, an error is returned to the user.
+
+.. code-block:: xml
+   <service type="wms" enabled="true">
+      <forwarding_rule name="first rule">
+         <!-- rule tests -->
+         <!-- proxy destination -->
+      </forwarding_rule>
+      <forwarding_rule name="second rule">
+         <!-- rule tests -->
+         <!-- proxy destination -->
+      </forwarding_rule>
+   </service>
+
+
+A <forwarding_rule> consists of a set of matching rules and an <http> block
+defining where the request should be forwarded to.
+
+Parameter Filtering
+--------------------------------------------------------------------------------
+
+The rules apply to the KVP parameters that were passed in the incoming request,
+and are added with the <param> keyword:
+
+.. code-block:: xml
+   
+   <forwarding_rule name="first rule">
+     <param name="SERVICE" type="values">WFS,WCS</param>
+     <!-- ... !>
+   <forwarding_rule>
+
+The "type" attribute is the same that what is allowed for :ref:`dimensions
+<mapcache_dimensions>`, i.e. allowed values are "values", "regex", and
+"intervals". In the previous example, the rule would match any incoming
+request having ...&SERVICE=WFS&... or ...&SERVICE=WCS&... in its request
+parameters.
+
+.. code-block:: xml
+  
+   <forwarding_rule name="first rule">
+     <param name="SERVICE" type="values">WFS,WCS</param>
+     <param name="LAYERS" type="values">somelayername</param>
+     <!-- ... !>
+   <forwarding_rule>
+
+Multiple rules can be used if the filtering has to be done on mutiple
+parameters. In the previous example, the rule would match a WFS or WCS
+request that concerns the "somelayername" layer only.
+
+A <forwarding_rule> that has no <param> child will match any incoming
+request that could not be serviced by MapCache directly from its cache,
+and can be used to forward all unsupported request to a full OGC
+compliant server so that an un-cached response can be returned to the
+client.
+
+.. seealso:: :ref:`mapcache_dimension`
+
+Proxy Destination
+--------------------------------------------------------------------------------
+
+Once a <forwarding_rule> matches, its <http> child will be used to proxy the
+request to another server.
+   
+.. code-block:: xml
+  
+   <forwarding_rule name="first rule">
+     <!-- ... !>
+     <http>
+        <url>http://wmsserver/ogc.cgi?</url>
+     </http>
+   <forwarding_rule>
+
+.. seealso:: :ref:`mapcache_http`
+

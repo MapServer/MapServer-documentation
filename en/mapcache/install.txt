@@ -121,6 +121,25 @@ If you have not disabled the demo service, you should now have access to it on
 http://myserver/fcgi-bin/mapcache/demo supposing your fcgi processes are accessed
 under the fcgi-bin alias.
 
+With a working mod_fcgid apache instance, the full httpd.conf snippet to activate
+mapcache could be:
+
+.. code-block:: apache
+
+   <IfModule mod_fcgid.c>
+      IPCCommTimeout 120
+      MaxProcessCount 10
+      FcgidInitialEnv "MAPCACHE_CONFIG_FILE" "/Users/tbonfort/dev/mapserver/mapcache/mapcache.xml"
+      <Location /map.fcgi>
+         Order Allow,Deny
+         Allow from all
+         SetHandler fcgid-script
+      </Location>
+      ScriptAlias /map.fcgi "/Users/tbonfort/dev/mapserver/mapcache/src/mapcache"
+   </IfModule>
+
+The mapcache service would then be accessible at http://myserver/map.fcgi[/demo]
+
 
 Customizing the build, or if something went wrong
 -------------------------------------------------
