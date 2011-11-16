@@ -1,31 +1,31 @@
 .. _rfc78:
 
 =========================================================================
-MS RFC 78: Vector Field Rendering
+MS RFC 78: Vector Field Rendering (CONNECTIONTYPE UVRASTER)
 =========================================================================
 
 :Date:  2011/11/04
 :Author: Alan Boudreault
 :Contact: aboudreault at mapgears.com
-:Last Edited: $Date: 2011-03-03 16:29:55 -0600 (Thu, 03 Mar 2011) $
+:Last Edited: $Date$
 :Status: Draft
 :Version: MapServer 6.2
-:Id: $Id: ms-rfc-77.txt 11057 2011-03-03 22:29:55Z tamas $
+:Id: $Id$
 
 1. Overview
 -----------
 
-This is a proposal to add the ability to render vector field layer in
+This is a proposal to add the ability to render vector field layers in
 MapServer. Vector fields are used for instance in meteorology to
 store/display wind direction and magnitude.
 
-The source is two single-band raster images, one band represents the U
+The source is two bands of raster data, one band represents the U
 component of the vector, and the 2nd band the V component. Using the u,v
 values at a given location we can compute a rotation and magnitude and use
 that to draw an arrow of a size proportional to the magnitude and pointing
 in the direction of the phenomenon (wind, current, etc.)
 
-For more detail about vector field, refer to: http://en.wikipedia.org/wiki/Vector_field 
+For more details about vector fields, refer to: http://en.wikipedia.org/wiki/Vector_field 
 
 Visual example (rendered with MapServer):
 
@@ -34,36 +34,38 @@ Visual example (rendered with MapServer):
 2. The proposed solution
 ------------------------
 
-This RFC proposes to add an new type of layer in MapServer. The new type is
-a hybrid layer, which has a raster data source but vector features as
-output. Initially, only the point representation of those vector features
-will be supported. Also, the query wont be supported in this phase. 
+This RFC proposes the addition of a new type of layer in MapServer: 
+CONNECTIONTYPE UVRASTER.
+The new type is a hybrid layer, which has a raster data source as input and
+vector features as output. Initially, only the point representation of those 
+vector features will be supported. Also, queries won't be supported in this
+phase. 
 
 Since the data source is a raster, all raster processing options can be
-used (ie. RESAMPLE). After a few tests, we determined that the best results
-(for all different zoom levels) for vector fields was when using
-RESAMPLE=AVERAGE and has been set by default for uv layers. You can of
-course set any resample option manually.
+used (e.g. RESAMPLE). After a few tests, we determined that the best results
+(for all different zoom levels) for vector fields were when using
+RESAMPLE=AVERAGE and this will be set by default for UV layers unless another
+type of resampling is explicitly specified in the layer definition.
 
 To render a vector field layer, we need to define a layer in the mapfile
 with the following options:
 
- * Set the layer type to POINT.
- * Set connection type to UVRASTER.
- * Set the data to the raster file that contains u/v bands.
+ * Set the layer TYPE to POINT.
+ * Set CONNECTIONTYPE to UVRASTER.
+ * Set the DATA to the raster file that contains u/v bands.
  * Specify the 2 bands to use as u and v.
  * Specify a class to render the point features.
 
-optionnal options:
+Optional "PROCESSING" settings:
 
- * Set the UV_SPACING. The spacing is simply the space, in pixel, between
-vector fields. Default is 32.  
- * Set the UV_SIZE_SCALE. The uv size scale is used to convert the vector
-lengths (magnitude) of the raster in pixel for a better rendering. Default
-is 1. 
+ * UV_SPACING: The spacing is simply the distance, in pixels, between arrows
+   to be displayed in the vector field. Default is 32.  
+ * UV_SIZE_SCALE: The uv size scale is used to convert the vector
+   lengths (magnitude) of the raster to pixels for a better rendering. Default
+   is 1. 
 
-UV layer has 4 attribute bindings that can be used in the layer definition
-and/or class expressions:
+The UVRASTER layer has 4 attribute bindings that can be used in the layer 
+definition and/or class expressions:
 
  * [u]: the raw u value
  * [v]: the raw v value
@@ -99,17 +101,17 @@ Example of a layer definition:
 3. Implementation Details
 -------------------------
 
-Internally, a uv layer will have its own renderer/driver code. It's a
+Internally, a UVRASTER layer will have its own renderer/driver code. It's a
 hybrid layer because it reads the raster source as a normal raster
 layer does, but all other functions behave like a vector layer. The
-layer can be drawed as a normal point layer using whichShape, GetShape
+layer can be drawn as a normal point layer using whichShape, GetShape
 etc.
 
-Basic internal draw process of a uv layer:
+Basic internal draw process of a UVRASTER layer:
 
  1. whichShape() is called: the raster data source is read using the
-    internal gdal functions, resample and all other raster options are applied
-    and the u/v pixels result is stored in the internal layer structure.
+    internal GDAL functions, resample and all other raster options are applied
+    and the u,v pixels result is stored in the internal layer structure.
 
  2. getShape() is called: loop through the raster pixels and returns a
     shapeObj (Point) created with the pixel location.
@@ -131,7 +133,7 @@ The following files will be modified/created by this RFC:
 3.2 MapScript
 -------------
 
-No issue for any MapScript bindings. The uv layer is handled/rendered internally as
+No issue for any MapScript bindings. The UVRASTER layer is handled/rendered internally as
 any other layer..
 
 3.4 Backwards Compatibilty Issues
