@@ -114,6 +114,7 @@
 	oci                            :ref:`Oracle Spatial <oci>`
 	oci_install                    :ref:`Oracle Installation <oci_install>`
 	ogc                            :ref:`OGC Support and Configuration <ogc>`
+	ogc_support                    :ref:`OGC Support <ogc_support>`
 	ogr                            :ref:`OGR <ogr>`
 	online_resource_wms            :ref:`More About the Online Resource URL <online_resource_wms>`
 	optimization                   :ref:`Optimization <optimization>`
