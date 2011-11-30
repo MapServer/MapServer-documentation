@@ -1,11 +1,13 @@
-.. _rfc78:
+.. _rfc79:
 
 =========================================================================
-MS RFC 78: Vector Field Rendering (CONNECTIONTYPE UVRASTER)
+MS RFC 79: Layer Masking
 =========================================================================
 
-:Date:  2011/11/04
+:Date:  2011/11/30
+:Author: Thomas Bonfort
 :Author: Alan Boudreault
+:Contact: tbonfort at terriscope.fr
 :Contact: aboudreault at mapgears.com
 :Last Edited: $Date$
 :Status: Draft
@@ -15,108 +17,98 @@ MS RFC 78: Vector Field Rendering (CONNECTIONTYPE UVRASTER)
 1. Overview
 -----------
 
-This is a proposal to add the ability to render vector field layers in
-MapServer. Vector fields are used for instance in meteorology to
-store/display wind direction and magnitude.
+For some applications, it is desirable to mask out one or more layers so
+that only the features that intersect another set of features are rendered
+in the returned image.
+While it is relatively trivial to achieve this goal with sql joins if all
+the data is stored in postgis, the task becomes much more evolved or even
+impossible if the layer to be masked, or the layer to use as a mask, comes
+from a shapefile or a raster datasource.
 
-The source is two bands of raster data, one band represents the U
-component of the vector, and the 2nd band the V component. Using the u,v
-values at a given location we can compute a rotation and magnitude and use
-that to draw an arrow of a size proportional to the magnitude and pointing
-in the direction of the phenomenon (wind, current, etc.)
+A example use-case for this could be rendering meteo data for a given
+client, but only on the areas where the client has purchased the service.
+In this case, the meteo data should only be rendered on the areas covered by
+a set of polygons that represent the purchased areas.
 
-For more details about vector fields, refer to: http://en.wikipedia.org/wiki/Vector_field 
+Another example use-case given an input DEM raster, could be to only render
+data where the elevation is comprised in a given range.
 
-Visual example (rendered with MapServer):
+To achieve these goals, the present RFC proposes the introduction of "MASK"
+layers, where only the features that intersect the given mask are rendered
+onto the final image.
 
- .. image:: ../../images/uv.png
-
-2. The proposed solution
+2. Proposed solution
 ------------------------
 
-This RFC proposes the addition of a new type of layer in MapServer: 
-CONNECTIONTYPE UVRASTER.
-The new type is a hybrid layer, which has a raster data source as input and
-vector features as output. Initially, only the point representation of those 
-vector features will be supported. Also, queries won't be supported in this
-phase. 
+In order to work with all layer types, this RFC proposes to implement layer
+masking at the pixel level, with the addition of a single "MASK" mapfile
+keyword. The MASK keywords is placed at the layer level, and takes a single
+argument which is the name of another mapfile layer that should be used as
+a mask.
 
-Since the data source is a raster, all raster processing options can be
-used (e.g. RESAMPLE). After a few tests, we determined that the best results
-(for all different zoom levels) for vector fields were when using
-RESAMPLE=AVERAGE and this will be set by default for UV layers unless another
-type of resampling is explicitly specified in the layer definition.
+The mechanism to achieve masking at rendering time is:
 
-To render a vector field layer, we need to define a layer in the mapfile
-with the following options:
+- Each layer that is used as a mask is rendered in its own temporary image.
+  All the filtering and styling is done as usual, which implies that raster
+  classification/filtering can be performed, as well as style-level
+  geomtransforms, etc...
 
- * Set the layer TYPE to POINT.
- * Set CONNECTIONTYPE to UVRASTER.
- * Set the DATA to the raster file that contains u/v bands.
- * Specify the 2 bands to use as u and v.
- * Specify a class to render the point features.
+- When a layer references a MASK, it is rendered in its own temporary image,
+  in the same way that is done when OPACITY is set. As before, all kind of
+  filtering/transformations can be performed on the masked layer
 
-Optional "PROCESSING" settings:
+- The masked layer is blended onto the final map image, but only for the
+  pixels that have been set in the mask image.
 
- * UV_SPACING: The spacing is simply the distance, in pixels, between arrows
-   to be displayed in the vector field. Default is 32.  
- * UV_SIZE_SCALE: The uv size scale is used to convert the vector
-   lengths (magnitude) of the raster to pixels for a better rendering. Default
-   is 1. 
-
-The UVRASTER layer has 4 attribute bindings that can be used in the layer 
-definition and/or class expressions:
-
- * [u]: the raw u value
- * [v]: the raw v value
- * [uv_angle]: the vector angle
- * [uv_length]: the vector length (scaled with the UV_SIZE_SCALE option value)
-
-Example of a layer definition:
+Example of MASK usage:
 
 ::
 
   LAYER
-   NAME "my_uv_layer"
-   TYPE POINT
-   STATUS DEFAULT
-   CONNECTIONTYPE UVRASTER
-   DATA /mnt/data/raster/grib/wind.grib2
-   PROCESSING "BANDS=1,2"
-   PROCESSING "UV_SPACING=40"
-   PROCESSING "UV_SIZE_SCALE=0.2"
+   NAME "parcels"
+   TYPE POLYGON
+   STATUS OFF
+   DATA "the_geom from parcels where clientid='%token%'"
    CLASS
     STYLE
-    ANGLE [uv_angle]
-    SYMBOL "arrow"
-    SIZE [uv_length]
-    COLOR 255 0 0
-    POSITION CC
-    MINSIZE 5
+     COLOR 0 0 0
+    END
    END
   END
 
-  
+  LAYER
+   NAME "meteo"
+   STATUS ON
+   TYPE RASTER
+   DATA "raster.tif"
+   MASK "parcels"
+  END
+
 
 3. Implementation Details
 -------------------------
 
-Internally, a UVRASTER layer will have its own renderer/driver code. It's a
-hybrid layer because it reads the raster source as a normal raster
-layer does, but all other functions behave like a vector layer. The
-layer can be drawn as a normal point layer using whichShape, GetShape
-etc.
+- The parser will have a MASK keyword added to it, expecting a string
+- The layerObj will have two properties added to it:
+  
+  - char* masklayer : the name of the layer that should be used as a mask
+  - imageObj* maskimage : for a layer that has been referenced as a mask by
+    another layer, this will contain the pixels that should be used to
+    determine where data can be rendered on the final map image. This is to
+    prevent the mask layer from being rendered multiple times if it is
+    referenced by multiple layers.
 
-Basic internal draw process of a UVRASTER layer:
-
- 1. whichShape() is called: the raster data source is read using the
-    internal GDAL functions, resample and all other raster options are applied
-    and the u,v pixels result is stored in the internal layer structure.
-
- 2. getShape() is called: loop through the raster pixels and returns a
-    shapeObj (Point) created with the pixel location.
-
- 3. MapServer draws its point feature as any other vector layer.
+- In msDrawLayer(), if the current layer references a MASK layer:
+  
+  - a temp image is created and rendered into by another call to
+    msDrawLayer()
+  - a temp image is created and rendered into following the same codepath
+    as if layer->opacity has been set
+  - the second temporary image's
+    alpha channel is tampered with and set to 0 for all the pixels that haven't
+    been set in the first temporary image.
+  - the second temporary image is blended into the final map image, again
+    following codepath as if layer->opacity has been set.
 
 3.1 Files affected
 ------------------
@@ -125,28 +117,44 @@ The following files will be modified/created by this RFC:
 
 ::
 
-  mapserver.h/mapfile.c (Connection type UVRASTER support in the mapfile)
-  mapuvraster.c (new file for the UVRASTER renderer)
-  maplayer.c (new layer type handling, virtual tables init etc.)
-  maplexer.l (add additional UVRASTER keyword)
+  mapserver.h/mapfile.c/mapfile.h/maplexer.l/mapcopy.c: parser and new layerObj members
+  mapdraw.c: implementation in msDrawLayer()
 
 3.2 MapScript
 -------------
 
-No issue for any MapScript bindings. The UVRASTER layer is handled/rendered internally as
-any other layer..
+Getters and Setters will have to be added to programmatically add a MASK to a layerObj.
+No other issues are to be expected.
 
 3.4 Backwards Compatibilty Issues
 ---------------------------------
 
 This change provides a new functionality with no backwards compatibility issues being considered.
 
-4. Bug ID
----------
+4. Limitations
+--------------
 
- * http://trac.osgeo.org/mapserver/ticket/4094
+- Querying: The masking is done at the pixel level, as such all operations that query the
+  datasource will not mask out features.
+- Vector renderers: masking operations will not be supported on the vector renderers (svg,pdf)
+- Labelling: Labelling is usually performed after all layers have been rendered, in the labelcache
+  phase. If the layer that is referenced as a mask has labels, these have the potential to
+  be rendered outside of the mask areas. A test will be
+  added to msAddLabel to discard labels who's label point does not intersect the mask image.
+  If a layer is set with LABELCACHE FALSE, the rendered labels will be filtered out automatically
+  at the pixel level, although there will probably be truncated labels that can appear.
 
-5. Voting history
+5. Error Handling
 -----------------
 
-+1 from Jeff, Olivier, Assefa, Perry, FrankW, Daniel, Stephen, Michael, Thomas, Tom and Steve.
+There are no special cases to treat here aside from the classic ones (parsing errors, invalid
+layer referenced by MASK, invalid renderer selected)
+
+6. Bug ID
+---------
+
+ * TODO
+
+7. Voting history
+-----------------
+TODO
