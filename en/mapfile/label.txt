@@ -11,10 +11,12 @@
    pair: LABEL; ALIGN
 
 ALIGN [left|center|right]
-    Since version 5.4 . Specifies text alignment for multiline labels
-    (see WRAP_) Note that the alignment algorithm is far from precise,
-    so don't expect fabulous results (especially for *right*
-    alignment) if you're not using a fixed width font.
+    Specifies text alignment for multiline labels (see WRAP_) Note
+    that the alignment algorithm is far from precise, so don't expect
+    fabulous results (especially for *right* alignment) if you're not
+    using a fixed width font.
+
+    .. versionadded:: 5.4
 
 .. index::
    pair: LABEL; ANGLE
@@ -60,18 +62,24 @@ ANTIALIAS [true|false]
 BACKGROUNDCOLOR [r] [g] [b]
     Color to draw a background rectangle (i.e. billboard). Off by default.
 
-    .. deprecated:: 6.0  Use STYLE object and `GEOMTRANSFORM labelpoly`.
+    .. note::
+       Removed in 6.0.  Use a `LABEL STYLE`_ object with
+       `GEOMTRANSFORM labelpoly` and `COLOR`.
 
 BACKGROUNDSHADOWCOLOR [r] [g] [b]
     Color to draw a background rectangle (i.e. billboard) shadow. Off by 
     default.
 
-    .. deprecated:: 6.0  Use STYLE object and `GEOMTRANSFORM labelpoly`.
+    .. note::
+       Removed in 6.0.  Use a `LABEL STYLE`_ object with
+       `GEOMTRANSFORM labelpoly`, `COLOR` and `OFFSET`.
 
 BACKGROUNDSHADOWSIZE [x][y]
     How far should the background rectangle be offset? Default is 1.
 
-    .. deprecated:: 6.0  Use STYLE object and `GEOMTRANSFORM labelpoly`.
+    .. note::
+       Removed in 6.0.  Use a `LABEL STYLE`_ object with
+       `GEOMTRANSFORM labelpoly`, `COLOR` and `OFFSET`.
 
 .. index::
    pair: LABEL; BUFFER
@@ -144,9 +152,8 @@ FORCE [true|false]
 .. _MAXLENGTH:
 
 MAXLENGTH [integer]
-    Introduced in mapserver 5.4, this keyword interacts with the WRAP_
-    keyword so that line breaks only occur after the defined number of
-    characters.	    
+    This keyword interacts with the WRAP_ keyword so that line breaks
+    only occur after the defined number of characters.
 
     .. csv-table:: Interaction with WRAP_ keyword
 
@@ -155,6 +162,8 @@ MAXLENGTH [integer]
         **no wrap** ,no processing,skip label if it contains more than MAXLENGTH_ characters , hard wrap (always break at exactly MAXLENGTH_ characters)
 
     The associated RFC document for this feature is :ref:`RFC40`.
+
+    .. versionadded:: 5.4
 
 .. index::
    pair: LABEL; MAXOVERLAPANGLE
@@ -282,37 +291,40 @@ POSITION [ul|uc|ur|cl|cc|cr|ll|lc|lr|auto]
    pair: LABEL; PRIORITY
 
 PRIORITY [integer]|[item_name]|[attribute]
-     The priority parameter (added in v5.0) takes an integer value
-     between 1 (lowest) and 10 (highest). The default value is 1. It
-     is also possible to bind the priority to an attribute (item_name)
-     using square brackets around the [item_name]. e.g. "PRIORITY
-     [someattribute]"
+    The priority parameter takes an integer value between 1 (lowest)
+    and 10 (highest). The default value is 1. It is also possible to
+    bind the priority to an attribute (item_name) using square
+    brackets around the [item_name]. e.g. "PRIORITY [someattribute]"
 
-     Labels are stored in the label cache and rendered in order of
-     priority, with the highest priority levels rendered first.
-     Specifying an out of range PRIORITY value inside a map file will
-     result in a parsing error. An out of range value set via
-     MapScript or coming from a shape attribute will be clamped to the
-     min/max values at rendering time.  There is no expected impact on
-     performance for using label priorities.
+    Labels are stored in the label cache and rendered in order of
+    priority, with the highest priority levels rendered first.
+    Specifying an out of range PRIORITY value inside a map file will
+    result in a parsing error. An out of range value set via
+    MapScript or coming from a shape attribute will be clamped to the
+    min/max values at rendering time.  There is no expected impact on
+    performance for using label priorities.
 
-     [*Attribute*] was introduced in version 5.6.
+    [*Attribute*] was introduced in version 5.6.
+
+    .. versionadded:: 5.0
 
 .. index::
    pair: LABEL; REPEATDISTANCE
 
 REPEATDISTANCE [integer] 
-    - Introduced in version 5.6. The label will be repeated on every
-      line of a multiline shape and will be repeated multiple times
-      along a given line at an interval of REPEATDISTANCE pixels.
+    The label will be repeated on every line of a multiline shape and
+    will be repeated multiple times along a given line at an interval
+    of REPEATDISTANCE pixels.
 
-      The associated RFC document for this feature is :ref:`RFC57`.
+    The associated RFC document for this feature is :ref:`RFC57`.
+
+    .. versionadded:: 5.6
 
 .. index::
    pair: LABEL; SHADOWCOLOR
 
 SHADOWCOLOR [r] [g] [b]
-    Color of drop shadow. An label with the same text will be rendered
+    Color of drop shadow. A label with the same text will be rendered
     in this color before the main label is drawn, resulting in a
     shadow effect on the the label characters. The offset of the
     renderered shadow is set with SHADOWSIZE.
@@ -321,11 +333,11 @@ SHADOWCOLOR [r] [g] [b]
    pair: LABEL; SHADOWSIZE
 
 SHADOWSIZE [x][y]|[attribute][attribute]|[x][attribute]|[attribute][y]
-     Shadow offset in pixels, see SHADOWCOLOR.
+    Shadow offset in pixels, see SHADOWCOLOR.
 
-     [*Attribute*] was introduced in version 6.0, and can be used like:
+    [*Attribute*] was introduced in version 6.0, and can be used like:
 
-      .. code-block:: mapfile
+    .. code-block:: mapfile
 
         SHADOWSIZE 2 2
         SHADOWSIZE [shadowsizeX] 2
@@ -345,10 +357,8 @@ SIZE [double]|[tiny|small|medium|large|giant]|[attribute]
       <symbolscaledenom>` is specified for the :ref:`LAYER`), `SIZE`
       gives the size of the font to be used at the map scale
       1:`SYMBOLSCALEDENOM`.
-
     - Starting from version 5.4, the value can also be a fractional
       value (and not only integer).
-
     - [*Attribute*] was introduced in version 5.0, to specify the item
       name in the attribute table to use for size values.  The hard
       brackets [] are required.  For example, if your shapefile's DBF
@@ -372,14 +382,16 @@ SIZE [double]|[tiny|small|medium|large|giant]|[attribute]
 .. index::
    pair: LABEL; STYLE
 
-:ref:`STYLE`
-    The start of a `STYLE` object.
+.. _`LABEL STYLE`:
 
-    Label specific mechanisms of the STYLE object are the
+:ref:`STYLE`
+    The start of a :ref:`STYLE` object.
+
+    Label specific mechanisms of the :ref:`STYLE` object are the
     GEOMTRANSFORM options:
 
     GEOMTRANSFORM [labelpnt|labelpoly]
-      Creates geometries that can be used for styling the label.
+      Creates a geometry that can be used for styling the label.
 
       - labelpnt generates a point with its center at the middle of
         the bounding rectangle of the text.
@@ -390,8 +402,22 @@ SIZE [double]|[tiny|small|medium|large|giant]|[attribute]
       The resulting geometries can be styled using the mechanisms
       available in the `STYLE` object.
 
-    .. versionadded:: 6.0
+        Example - draw a red background rectangle for the labels
+        (i.e. billboard) with a "shadow" in gray:
 
+        .. code-block:: mapfile
+ 
+          STYLE
+            GEOMTRANSFORM 'labelpoly'
+            COLOR 153 153 153
+            OFFSET 3 2
+          END # STYLE
+          STYLE
+            GEOMTRANSFORM 'labelpoly'
+            COLOR 255 0 0
+          END # STYLE
+
+    .. versionadded:: 6.0
 
 .. index::
    pair: LABEL; TYPE
