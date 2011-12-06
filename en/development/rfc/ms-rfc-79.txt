@@ -10,7 +10,7 @@ MS RFC 79: Layer Masking
 :Contact: tbonfort at terriscope.fr
 :Contact: aboudreault at mapgears.com
 :Last Edited: $Date$
-:Status: Draft
+:Status: Adopted
 :Version: MapServer 6.2
 :Id: $Id$
 
@@ -119,6 +119,8 @@ The following files will be modified/created by this RFC:
 
   mapserver.h/mapfile.c/mapfile.h/maplexer.l/mapcopy.c: parser and new layerObj members
   mapdraw.c: implementation in msDrawLayer()
+  maplabel.c: implementation for dropping labels from the labelcache if they don't
+              intersect the mask layer in msAddLabel()
 
 3.2 MapScript
 -------------
@@ -138,11 +140,19 @@ This change provides a new functionality with no backwards compatibility issues 
   datasource will not mask out features.
 - Vector renderers: masking operations will not be supported on the vector renderers (svg,pdf)
 - Labelling: Labelling is usually performed after all layers have been rendered, in the labelcache
-  phase. If the layer that is referenced as a mask has labels, these have the potential to
-  be rendered outside of the mask areas. A test will be
-  added to msAddLabel to discard labels who's label point does not intersect the mask image.
-  If a layer is set with LABELCACHE FALSE, the rendered labels will be filtered out automatically
-  at the pixel level, although there will probably be truncated labels that can appear.
+  phase.
+  
+  - For layers that are referenced as a mask, the layer's labelcache will be set to OFF, which
+    results in all labels being directly added to the temporary mask image instead of being added
+    to the labelcache. Of course, it is not recommended to add labels to a layer used as a mask
+    (that is, unless someone finds a compelling use-case to do so)
+  - If the layer that is being masked has labels, these have the potential to be rendered outside the
+    mask area if they go through the labelcache. To overcome this, there will be a test to ensure
+    that the labelpoint is contained in the masked areas before adding it to the labelcache. Note that
+    the label text itself might be rendered outside of the masked areas, but this should not be an
+    issue. If the masked layer is set with LABELCACHE FALSE, the rendered labels will be filtered
+    out automatically at the pixel level, although there will probably be truncated labels that
+    can appear.
 
 5. Error Handling
 -----------------
@@ -153,8 +163,10 @@ layer referenced by MASK, invalid renderer selected)
 6. Bug ID
 ---------
 
- * TODO
+ * http://trac.osgeo.org/mapserver/ticket/4111
 
 7. Voting history
 -----------------
-TODO
+
+Passed with +1 from ThomasB, MichaelS, StephenW, AssefaY, FrankW, TamasS, DanielM, JeffMcK, TomK,
+OlivierC, SteveL
