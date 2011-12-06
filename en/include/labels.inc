@@ -98,6 +98,10 @@
 	mapcache_dimensions            :ref:`MapCache Tileset Dimensions <mapcache_dimensions>`
 	mapcache_featureinfo           :ref:`MapCache FeatureInfo Requests <mapcache_featureinfo>`
 	mapcache_tile_assembling       :ref:`MapCache Tile Assembling <mapcache_tile_assembling>`
+	mapcache_sources               :ref:`MapCache Input Sources <mapcache_sources>`
+	mapcache_source_wms            :ref:`MapCache WMS Source <mapcache_source_wms>`
+	mapcache_source_mapfile        :ref:`MapCache Native Mapserver Sources <mapcache_source_mapfile>`
+	mapcache_http                  :ref:`MapCache HTTP Request <mapcache_http>`
 	mapcontext_cgi                 :ref:`Map Context Files <mapcontext_cgi>`
 	mapfile                        :ref:`Mapfile <mapfile>`
 	mapfile_tuning                 :ref:`Mapfile <mapfile_tuning>`
