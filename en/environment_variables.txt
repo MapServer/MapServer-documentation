@@ -1,0 +1,215 @@
+.. index::
+   single: Environment variables
+
+.. _environment_variables:
+
+***************************************************
+ Environment Variables
+***************************************************
+
+A number of environment variables can be used to control MapServer's
+behavior or specify the location of some resources.
+
+.. index::
+   pair: Environment variables; CURL_CA_BUNDLE
+
+CURL_CA_BUNDLE
+
+   Used to specify the location of the Certificate
+   Authority (CA) bundle file to be used by Curl when using HTTPS
+   connections in WMS/WFS client layers. Curl comes bundled with its
+   own CA bundle by default, so this variable is not required unless
+   you have an unusual installation::
+
+     export CURL_CA_BUNDLE=/path/to/ca-bundle.crt
+
+   .. versionadded:: 5.4.1
+
+.. index::
+   pair: Environment variables; MS_DEBUGLEVEL
+
+MS_DEBUGLEVEL
+   A default `DEBUG` level value can be set using the `MS_DEBUGLEVEL`
+   environment variable in combination with the `MS_ERRORFILE`
+   variable.
+
+   When set, this value is used as the default debug level value for
+   all map and layer objects as they are loaded by the mapfile parser.
+   This option also sets the debug level for any msDebug() call
+   located outside of the context of a map or layer object, for
+   instance for debug statements relating to initialization before a
+   map is loaded.  If a `DEBUG` value is also specified in the mapfile
+   in some map or layer objects then the local value (in the mapfile)
+   takes precedence over the value of the environment variable.
+
+   This option is mostly useful when tuning applications by enabling
+   timing/debug output before the map is loaded, to capture the full
+   process initialization and map loading time, for instance.
+
+   .. versionadded:: 5.0
+
+   .. seealso:: :ref:`rfc28`
+
+.. index::
+   pair: Environment variables; MS_ENCRYPTION_KEY
+
+MS_ENCRYPTION_KEY
+
+   .. seealso:: :ref:`msencrypt <MSENCRYPT>`
+
+   .. versionadded:: 4.10 
+
+.. index::
+   pair: Environment variables; MS_ERRORFILE
+
+MS_ERRORFILE
+   The `MS_ERRORFILE` environment variable specifies the location of
+   the logging/debug output, with possible values being either a file
+   path on disk, or one of the following special values:
+
+   * "stderr" to send output to standard error. Under Apache stderr is
+     the Apache error_log file. Under IIS stderr goes to stdout so its
+     use is discouraged. With IIS it is recommended to do direct output
+     to a file on disk instead.
+
+   * "stdout" to send output to standard output, combined with the
+     rest of MapServer’s output.
+
+   * "windowsdebug" to send output to the Windows OutputDebugString
+     API, allowing the use of external programs like SysInternals
+     debugview to display the debug output.
+
+   It is possible to specify `MS_ERRORFILE` either as an environment
+   variable or via a `CONFIG` directive inside a mapfile::
+
+     CONFIG  "MS_ERRORFILE" "/tmp/mapserver.log"
+
+   or::
+
+     CONFIG  "MS_ERRORFILE" "stderr"
+
+   If both the `MS_ERRORFILE` environment variable is set and a
+   `CONFIG` `MS_ERRORFILE` is set, then the `CONFIG` directive takes
+   precedence.
+
+   If `MS_ERRORFILE` is not set, then error/debug logging is disabled.
+   During parsing of a mapfile, error/debug logging may become
+   available only after the `MS_ERRORFILE` directive has been parsed.
+
+   .. seealso:: :ref:`rfc28`
+
+.. index::
+   pair: Environment variables; MS_MAP_NO_PATH
+
+MS_MAP_NO_PATH
+   The `MS_MAP_NO_PATH` environment variable can be set to any value
+   to forbid the use of explicit paths in the map=... URL parameter.
+   Setting `MS_MAP_NO_PATH` to **any value** forces the use of the
+   map=<env_variable_name> mechanism in mapserv CGI URLs.
+
+   If this variable is not set then nothing changes and the mapserv
+   CGI still accepts explicit file paths via the map=... URL
+   parameter.
+
+   Example, set set `MS_MAP_NOPATH` and some mapfile paths in Apache's
+   httpd.conf::
+
+     SetEnv MS_MAP_NO_PATH "foo"
+     SetEnv MY_MAPFILE "/opt/mapserver/map1/mymapfile.map"
+
+   and then calls the mapserv CGI must use environment variables for
+   the map=... parameter::
+
+     http://localhost/cgi-bin/mapserv?map=MY_MAPFILE&mode=...
+
+   .. versionadded:: 5.4
+
+   .. seealso:: :ref:`rfc56`
+
+.. index::
+   pair: Environment variables; MS_MAPFILE
+
+MS_MAPFILE
+   The mapfile to use if the map=... URL parameter is not provided.
+
+   It is also possible to use an environment variable name as the
+   value of the map=... URL parameter.  The value of this environment
+   variable will be used as the mapfile path::
+   
+     map=ENV_VAR
+
+
+.. index::
+   pair: Environment variables; MS_MAPFILE_PATTERN
+
+MS_MAPFILE_PATTERN
+   `MS_MAPFILE_PATTERN` can be used to override the default regular
+   expression which is used to validate mapfile filename extensions.
+
+   The default value for this variable is::
+
+     MS_MAPFILE_PATTERN='\.map$'
+
+.. index::
+   pair: Environment variables; MS_MAP_PATTERN
+
+MS_MAP_PATTERN
+   The `MS_MAP_PATTERN` environment variable can be used to specify a
+   Regular Expression that must be matched by all mapfile paths passed
+   to the mapserv CGI in the map=... URL parameter.
+
+   If `MS_MAP_PATTERN` is not set then any .map file can be loaded.
+
+   Example, use Apache's SetEnv? directive to restrict mapfiles to the
+   /opt/mapserver/ directory and subdirectories::
+
+     SetEnv MS_MAP_PATTERN "^/opt/mapserver/"
+
+   .. versionadded:: 5.4
+
+   .. seealso:: :ref:`rfc56`
+
+.. index::
+   pair: Environment variables; MS_MODE
+
+MS_MODE
+   Default value for the mode=... URL parameter. Setting mode=... in
+   the URL takes precedence over the environment variable.
+
+.. index::
+   pair: Environment variables; MS_OPENLAYERS_JS_URL
+
+MS_OPENLAYERS_JS_URL
+   The URL to the OpenLayers javascript library (can be used when
+   testing WMS services using imagetype application/openlayers),
+   for instance::
+
+     http://openlayers.org/api/OpenLayers.js
+
+.. index::
+   pair: Environment variables; MS_TEMPPATH
+
+MS_TEMPPATH
+   Set the :ref:`WEB` `TEMPPATH`.
+
+   .. versionadded:: 6.0
+
+.. index::
+   pair: Environment variables; MS_XMLMAPFILE_XSLT
+
+MS_XMLMAPFILE_XSLT
+   Used to enable XML Mapfile support.  Points to the location of the
+   XSLT to use for the XML->text mapfile conversion.
+
+   .. seealso:: :ref:`xml_mapfile`
+
+.. index::
+   pair: Environment variables; PROJ_LIB
+
+PROJ_LIB
+   The `PROJ_LIB` environment variable or `CONFIG` directive can be
+   used to specify the directory where the PROJ.4 data files
+   (including the "epsg" file) are located, if they are not in the
+   default directory where PROJ.4 expects them.
+
+   .. seealso:: `Setting the location of the epsg file` in :ref:`errors`.
