@@ -1,0 +1,70 @@
+=========================================================================
+MS RFC 80: Font Fallback Support
+=========================================================================
+
+:Date:  2011/12/07
+:Author: Thomas "fake" Jakobi
+:Author: Thomas Bonfort
+:Contact: thomas at derfake.com
+:Contact: tbonfort at terriscope.fr
+:Last Edited: $Date$
+:Status: Draft
+:Version: MapServer 6.2
+:Id: $Id$
+
+1. Overview
+-----------
+This RFC proposes allowing for the definition of fallback fonts for labels, to be used when a glyph is not available in the initial font.
+
+Presently, if a glyph is not available in the font of a label, the font's error glyph is drawn (usually an empty box). This is problematic when rendering international data, as it may contain a wide range of unicode charachters. Up to now, this can only be fixed using a (near-)complete unicode font. The free "unifont" contains all glyphs of the basic unicode set (~60.000), but does not look very pleasing as a default font.
+
+With fallback fonts, glyph lookup would try a set of fonts, in a given order, before accepting the error glyph. This way, a unicode font like unifont would only be used as "last resort" on a glyph-by-glyph basis.
+
+In the mapfile, a list of fonts would be given as a comma-separated string like "font1,font2,font3", where each font is listed in the fonts.lst as usual. If only one font is specified, this functionality has no effect. The same fontlist support is availabe for attribute binding.
+
+2. Proposed Technical Change
+----------------------------
+
+2.1 Core Object Changes
+-----------------------
+The Label Style Object would need to support multiple fonts. The proposed implementation uses a hard limit to the number of fonts, to avoid overhead. The number of fonts can be changed using the MS_MAX_LABEL_FONTS define, the suggested default is 5.
+
+2.2 Label Rendering Changes
+---------------------------
+The function pointer signature of GetTruetypeTextBBox needs to be changed to be able to recieve multiple fonts and their count. This requires a change to every renderer, as does the change of the labelStyleObj.
+
+Renderers supporting single-glyph operation like cairo and agg can use the font list passed in to implement the glyph fallback. Renderers operating on complete strings can use fonts[0] for no change in behavior.
+
+2.3 MapScript
+-------------
+
+3. Implementation Details
+-------------------------
+The proposed implementation adds font fallback support to the cairo and agg renderers.
+
+3.1. Files Affected
+-------------------
+::
+
+  maprendering.c: lookup and set list of fonts on labelStyleObj
+  mapagg.cpp: glyph fallback
+  mapgd.c: use fonts[0]
+  mapserver.h: add msFontsetLookupFonts function and MS_MAX_LABEL_FONTS define, change labelStyleObj char* font to char* font[MS_MAX_LABEL_FONTS]
+  mapsymbol.c: symbol font fallback adoptions
+  maputil.c: only bind font from shape if it's different
+  maplabel.c: add msFontsetLookupFonts implementation and use it
+  mapkmlrenderer.h: getTruetypeTextBBox adoption
+  mapcairo.c: glyph fallback
+  mapogl.cpp: use fonts[0]
+  mapdummyrenderer.c: getTruetypeTextBBox adoption
+  mapkml.c: getTruetypeTextBBox adoption
+
+3.2 Bug ID
+----------
+ * http://trac.osgeo.org/mapserver/ticket/4114
+
+4. Enhancements
+---------------
+
+5. Voting history
+-----------------
