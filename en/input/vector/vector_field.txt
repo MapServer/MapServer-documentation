@@ -1,0 +1,128 @@
+.. index::
+   single: Vector field
+
+.. index::
+   single: uvraster
+
+.. _input_vector_field
+
+*****************************************************************************
+ Vector field rendering - UVraster
+*****************************************************************************
+
+Vector fields are used for instance in meteorology to store/display
+wind direction and magnitude.
+
+The source is two bands of raster data, the first band represents the
+U component of the vector, and the second band the V component.  Using
+the u,v values at a given location we can compute a rotation and
+magnitude and use that to draw an arrow of a size proportional to the
+magnitude and pointing in the direction of the phenomenon (wind,
+current, etc.)
+
+For more details about vector fields, refer to: `Vector field`_
+
+A vector field :ref:`LAYER` is a hybrid layer, which has a raster data
+source as input and vector features as output.  The output features
+are represented as points.  Queries are not supported.
+
+Since the data source is a raster, all raster processing options can
+be used (e.g. RESAMPLE).  RESAMPLE=AVERAGE generally gives a good
+result, and the default.  This can be overridden by explicitly
+specifying the type of resampling.
+
+Vector field layers are of `TYPE` `point`, and have `CONNECTIONTYPE`
+`uvraster`.  The raster data set is specified in `DATA`.  The two
+bands that define the vector field are specified using `PROCESSING`
+`BANDS` (U first, V second).
+
+The UVraster connection type offers the following attributes:
+
+* [u]: the raw u value
+* [v]: the raw v value
+* [uv_angle]: the vector angle
+* [uv_minus_angle]: the vector angle - opposite direction
+* [uv_length]: the vector length (scaled with the `UV_SIZE_SCALE`
+  optional value)
+* [uv_length_2]: half the vector length
+
+Optional `PROCESSING` settings:
+
+* `UV_SPACING`: The spacing is simply the distance, in pixels, between
+  arrows to be displayed in the vector field. Default is 32.
+* `UV_SIZE_SCALE`: The uv size scale is used to convert the vector
+  lengths (magnitude) of the raster to pixels for a better
+  rendering. Default is 1.
+
+Example of a layer definition:
+
+.. code-block:: mapfile
+
+  SYMBOL
+    NAME "horizline"
+    TYPE VECTOR
+    POINTS
+       0 0
+       1 0
+    END # points
+  END # symbol
+  SYMBOL
+    NAME "arrowhead"
+    TYPE vector
+    FILLED true
+    #ANCHORPOINT 0 0.5
+    POINTS
+      0 2
+      4 1
+      0 0
+    END # points
+  END # symbol
+  SYMBOL
+    NAME "arrowtail"
+    TYPE vector
+    FILLED true
+    ANCHORPOINT 1 0.5 # to shift the arrowtail
+    POINTS
+      0 2
+      4 1
+      0 0
+      -99 -99
+      0 1
+      4 1
+    END # points
+  END # symbol
+  LAYER
+    NAME "my_uv_test"
+    TYPE POINT
+    STATUS DEFAULT
+    CONNECTIONTYPE uvraster
+    DATA /path/wind.grib2
+    PROCESSING "BANDS=1,2"
+    PROCESSING "UV_SPACING=40"
+    PROCESSING "UV_SIZE_SCALE=0.2"
+    CLASS
+      STYLE
+        SYMBOL "horizline"
+        ANGLE [uv_angle]
+        SIZE [uv_length]
+        WIDTH 3
+        COLOR 100 255 0
+      END # style
+      STYLE
+        SYMBOL "arrowhead"
+        ANGLE [uv_angle]
+        SIZE 10
+        COLOR 255 0 0
+        POLAROFFSET [uv_length_2] [uv_angle]
+      END # style
+      STYLE
+        SYMBOL "arrowtail"
+        ANGLE [uv_angle]
+        SIZE 10
+        COLOR 255 0 0
+        POLAROFFSET [uv_length_2] [uv_minus_angle]
+      END # style
+    END # class
+  END # layer
+
+.. _`Vector field`: http://en.wikipedia.org/wiki/Vector_field

@@ -391,6 +391,67 @@ PATTERN [double on] [double off] [double on] [double off] ... END
     .. versionadded:: 6.0 moved from :ref:`SYMBOL`
 
 .. index::
+   pair: STYLE; POLAROFFSET
+
+POLAROFFSET [double|attribute] [double|attribute]
+    Offset given in polar coordinates.
+
+    The first parameter is a double value in layer `SIZEUNITS` (or the
+    name of a layer attribute) that specifies the radius/distance.
+
+    The second parameter is a double value (or the name of a layer
+    attribute) that specifies the angle (counter clockwise).
+
+    When scaling of symbols is in effect (`SYMBOLSCALEDENOM` is
+    specified for the :ref:`LAYER`), `POLAROFFSET` gives the
+    distance in layer `SIZEUNITS` at the map scale
+    1:`SYMBOLSCALEDENOM`.
+
+    A `POLAROFFSET` of `20` `40` will shift the geometry to a position
+    that is 20 `SIZEUNITS` away along a line that is at an angle of 40
+    degrees with a line that goes horizontally to the right.
+
+    When `POLAROFFSET` is used with layers that have `CONNECTIONTYPE`
+    `uvraster` (:ref:`vector field <input_vector_field>`), the special
+    attributes `uv_length`, `uv_length_2`, `uv_angle` and
+    `uv_minus_angle` are available, making it convenient to specify
+    arrow heads and tails.  Example:
+
+    .. code-block:: mapfile
+
+      LAYER
+        ...
+        TYPE POINT 
+        CONNECTIONTYPE uvraster
+        ...
+        CLASS
+          STYLE
+            SYMBOL "arrowbody"
+            ANGLE [uv_angle]
+            SIZE [uv_length]
+            WIDTH 3
+            COLOR 100 255 0
+          END
+          STYLE
+            SYMBOL "arrowhead"
+            ANGLE [uv_angle]
+            SIZE 10
+            COLOR 255 0 0
+            POLAROFFSET [uv_length_2] [uv_angle]
+          END
+          STYLE
+            SYMBOL "arrowtail"
+            ANGLE [uv_angle]
+            SIZE 10
+            COLOR 255 0 0
+            POLAROFFSET [uv_length_2] [uv_minus_angle]
+          END
+        END #class
+      END #layer
+
+    .. versionadded:: 6.2 (:ref:`rfc78`)
+
+.. index::
    pair: STYLE; SIZE
 
 SIZE [double|attribute]
