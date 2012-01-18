@@ -1,65 +1,28 @@
 .. _mapcache_install:
 
 *****************************************************************************
-Compilation - Installation
+Compilation & Installation
 *****************************************************************************
 
 :Author: Thomas Bonfort
 :Contact: tbonfort at terriscope.fr
 :Author: Alan Boudreault
 :Contact: aboudreaut at magears.com
+:Author: Jeff McKenna
+:Contact: jmckenna at gatewaygeomatics.com
 
-Windows Instructions
---------------------------------------------------------------------------------
+.. contents:: Table of Contents
+    :depth: 3
+    :backlinks: top
 
-These instructions target a Windows 7 setup with a Apache httpd
-compiled from source. I have successfully built the module with VC
-2003, 2008 and 2010.
+Getting the Source
+==================
 
-Dependencies
-================================================================================
-
-Required:
-
-- **apache / apr / apr-util**: included with apache httpd installation
-
-Those can be installed manually, or using the appropriate Windows SDK
-from: http://vbkto.dyndns.org/sdk/
-
-- **png** 
-- **jpeg** 
-- **curl**
-
-Recommended:
-
-- **pcre**: ftp://ftp.gnu.org/pub/gnu/regex/regex-0.12.tar.gz
-
-Optional:
-
-- **fcgi**: Needed to build a fastcgi program if you don't want to run
-  mapcache as an apache module.
-- **gdal / geos**: Needed to enable advanced seeding options (for only
-  seeding tiles that intersect a given geographical feature)
-- **sqlite**: For enabling the sqlite backend storages
-- **tiff**: For enabling the TIFF backend storages
-
-Configuration
-================================================================================
-
-Open nmake.opt and modify the paths to point to the various libraries.
-
-Compilation
-================================================================================
-
-.. code-block:: bash
-
-  $ nmake /f Makefile.vc
-
-The result libraries and executables will be in their associated
-directory. ie. apache/mod_mapcache.dll for the apache module.
+MapCache source is stored in the */mapserver/mapcache/* directory in :ref:`svn`.
+You can visually browse the Subversion repository at http://trac.osgeo.org/mapserver/browser/trunk/mapserver/mapcache
 
 Linux Instructions
---------------------------------------------------------------------------------
+==================
 
 These instructions target a debian/ubuntu setup, but should apply with few
 modifications to any linux installation.
@@ -104,7 +67,7 @@ process should resume to:
   $ make
 
 Apache Module Specific Instructions
-================================================================================
+-----------------------------------
 
 .. code-block:: bash
 
@@ -143,7 +106,7 @@ If you have not disabled the demo service, you should now have access to it on
 http://myserver/mapcache/demo
 
 CGI/FastCGI Specific Instructions
-================================================================================
+---------------------------------
 
 A binary cgi/fastcgi is located in the src/ subfolder, and is named "mapcache".
 Activating fastcgi for the mapcache program on your web server is not part of
@@ -200,7 +163,7 @@ locations, that can be overriden or specified with switches
 (./configure --help should give you a full list).
 
 Apache apxs
-================================================================================
+***********
 
 .. code-block:: bash
 
@@ -214,7 +177,7 @@ packages.  apxs is sometimes called apxs2 (notably on debian)
 
 
 Apr
-================================================================================
+***
 
 .. code-block:: bash
 
@@ -229,7 +192,7 @@ cause bugs.
 
 
 Apr-Util
-================================================================================
+********
 
 .. code-block:: bash
 
@@ -239,7 +202,7 @@ apu-config is sometimes called apu-1-config.
 
 
 Libcurl
-================================================================================
+*******
 
 .. code-block:: bash
 
@@ -248,7 +211,7 @@ Libcurl
 
 
 Libpng
-================================================================================
+******
 
 .. code-block:: bash
 
@@ -261,7 +224,7 @@ configure script will be looking for [path]/include/png.h and
 
 
 Libjpeg
-================================================================================
+*******
 
 .. code-block:: bash
 
@@ -274,7 +237,7 @@ configure script will be looking for [path]/include/jpeg.h and
 
 
 Pixman (recommended)
-================================================================================
+********************
 
 .. code-block:: bash
 
@@ -290,7 +253,7 @@ that are slower.
 
 
 Sqlite (optional)
-================================================================================
+*****************
 
 .. code-block:: bash
 
@@ -304,7 +267,7 @@ newer is required.
 
 
 GDAL/OGR (optional, also requires geos)
-================================================================================
+***************************************
 
 .. code-block:: bash
 
@@ -317,7 +280,7 @@ given country.
 
 
 GEOS (optional)
-================================================================================
+***************
 
 .. code-block:: bash
 
@@ -332,7 +295,7 @@ used)
 
 
 PCRE (optional)
-================================================================================
+***************
 
 .. code-block:: bash
 
@@ -349,7 +312,7 @@ covered by posix REs.
 
 
 FastCGI Support (optional)
-================================================================================
+**************************
 
 .. code-block:: bash
 
@@ -363,7 +326,7 @@ compared to the apache module version on some minor details, YMMV.
 
 
 TIFF Readonly Cache Support (optional)
-================================================================================
+**************************************
 
 .. code-block:: bash
 
@@ -373,7 +336,7 @@ TIFF Readonly Cache Support (optional)
 
 
 Debug Mode
-================================================================================
+**********
 
 .. code-block:: bash
 
@@ -386,7 +349,7 @@ want to track down a problem happening inside MapCache.
 
 
 Memcached Cache Support (optional)
-================================================================================
+**********************************
 
 The memcached cache backend is enabled by default, as it does not depend on
 other external libraries (support is obtained through apr-util). You can
@@ -399,7 +362,7 @@ optionally disable it if you have no need for it.
 .. seealso:: :ref:`mapcache_cache_memcache`
 
 Apache Module Options
-================================================================================
+*********************
 
 You can disable the apache module building if you only plan on using the
 fastcgi executable or the seeder.
@@ -419,7 +382,7 @@ Experimental options, use at your own risk
 ------------------------------------------
 
 TIFF read/write Cache Support (optional)
-================================================================================
+****************************************
 
 TIFF write support (for creating new TIFF files and adding tiles to existing
 TIFF files) is still experimental and disabled by default. There is a risk in
@@ -451,7 +414,7 @@ in, but will only produce those defining the pixel scale and the tiepoints
     
 
 Native MapServer Mode
-================================================================================
+*********************
 
 MapCache is by default not linked to MapServer in any way, and communicates 
 through the WMS protocol only. For performance reasons, there is a possibility
@@ -470,7 +433,102 @@ prefork mpm or fastcgi, **and** you do not plan to use the seeder. For thread
 safety on the mapserver side, you might want to have a look at tickets #4041 and
 #4044.
 
-Win32 compilation instructions
---------------------------------------------------------------------------------
-Awaiting your contribution ;)
+Windows Instructions
+====================
 
+These instructions target a Windows 7 setup with an Apache httpd compiled from 
+source. The Apache mapcache module has been successfully built with with 
+Microsoft Visual Studio C++ versions 2003, 2008 and 2010.
+
+Dependencies
+------------
+
+Required:
+
+- **Apache / APR / APR-UTIL**: included with apache httpd installation
+
+Those can be installed manually, or using the appropriate Windows SDK
+from: http://vbkto.dyndns.org/sdk/
+
+- **PNG** 
+- **JPEG** 
+- **CURL**
+
+Recommended:
+
+- **PCRE**: ftp://ftp.gnu.org/pub/gnu/regex/regex-0.12.tar.gz
+
+Optional:
+
+- **FCGI**: Needed to build a fastcgi program if you don't want to run
+  mapcache as an apache module.
+- **GDAL / GEOS**: Needed to enable advanced seeding options (for only
+  seeding tiles that intersect a given geographical feature)
+- **SQLITE**: For enabling the sqlite backend storages
+- **TIFF**: For enabling the TIFF backend storages
+
+Configure Your Makefile
+-----------------------
+
+Open nmake.opt and modify the paths to point to the various libraries.
+
+Compilation
+-----------
+
+.. code-block:: bash
+
+  $ nmake /f Makefile.vc
+
+If successful, the resulting libraries and executables will generated in their associated
+directories:
+
+apache/
+  Apache module (mod_mapcache.dll)
+
+cgi/
+  FastCGI MapCache executable (mapcache.exe)
+  
+util/
+  MapCache utilities (mapcache_seed.exe)
+  
+Move the Module into Apache Directory
+-------------------------------------
+
+Copy the *mod_mapcache.dll* file into one of your Apache subdirectories.
+
+.. note::
+    Although other modules are installed into */Apache/modules/*, you should place
+    mod_mapcache.dll wherever its required dll files (libcurl.dll, zlib.dll, etc.) live,
+    to avoid any loading issues later on.
+
+Configure Your Installed Apache
+-------------------------------
+
+- Modify your *httpd.conf* file to load the module:
+
+  .. code-block:: apache
+
+    LoadModule mapcache_module "D:/ms4w/Apache/cgi-bin/mod_mapcache.dll"
+
+- Next, configure your mapcache directory with the following
+  snippet
+
+  .. code-block:: apache
+   
+     <IfModule mapcache_module>
+        <Directory "D:/ms4w/apps/mapcache/">
+           Order Allow,Deny
+           Allow from all
+        </Directory>
+        MapCacheAlias /mapcache "D:/ms4w/apps/mapcache/mapcache.xml"
+     </IfModule>
+     
+- Configure your *mapcache.xml* file (see the :ref:`Configuration <mapcache_config>` section
+  for help)
+
+- Finally, restart your Apache.  You should see a message in Apache's error.log with a message
+  similar to:
+  
+  .. code-block:: bash
+  
+    [notice] Apache/2.2.21 (Win32) mod-mapcache/0.5-dev configured -- resuming normal operations
