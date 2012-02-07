@@ -69,6 +69,10 @@ You can also get the latest MapServer source code from :ref:`svn`.
 * `libcurl <http://curl.haxx.se/libcurl/>`__: libcurl is the foundation of 
   OGC (WFS/WMS/WCS) client and server support.  Version 7.10 or greater is 
   required
+
+  .. installing libcurl::
+      sudo apt-get install -y libcurl4-gnutls-dev
+
 * `OGR <http://www.gdal.org/ogr/>`__: OGR provides access to at least 18 
   different vector formats.  
 * `GDAL <http://www.gdal.org/>`__: GDAL provides access to at least 
@@ -145,6 +149,40 @@ You can also get the latest MapServer source code from :ref:`svn`.
 * `libming <http://www.libming.org>`__: libming provides Macromedia 
   Flash output to MapServer.  Version 0.2a is required. Later versions are 
   not known to work.
+
+* `libgif-dev <http://sourceforge.net/projects/giflib/>`__: giflib is one of the
+  default renderers, but can be disabled with the "--without-gif" configure option.
+
+* `FastCGI <http://www.fastcgi.com>`__: FastCGI is a popular protocol for
+  interfacing MapServer with various web servers.  You will need to install
+  the development package if you use the "--with-fastcgi" configure option.
+  More details on how to use this feature in MapServer is here :ref:`fastcgi`.
+  On Ubuntu, that would be
+
+  .. installing fastcgi development package::
+      sudo apt-get -y install libfcgi-dev
+
+* `cairo (svg, pdf) support <http://cairographics.org/>`__: This library is required
+  when using the "--with-cairo" configure option.  If you're on an ubuntu system, it
+  can be installed with "sudo apt-get install -y libcairo2-dev"
+
+* `kml support <http://mapserver.org/output/kml_output.html>`__: This renderer is
+  controlled with the "--with-kml" parameter.
+
+* opengl: This renderer is highly experimental, and is controlled with the
+  "--with-opengl[=DIR] " parameter, where DIR is OpenGL's install dir.
+
+
+-----------------------------------------------------------------------------
+ Optional Features
+-----------------------------------------------------------------------------
+
+* `cairo svg parser support <http://mapserver.org/development/rfc/ms-rfc-73.html>`__:
+  The "--with-libsvg-cairo" option is part of a proposal to improve SVG support.
+  Using this feature requires installing the libsvg-cairo library available here:
+  http://cairographics.org/snapshots/ .  You will need to compile and install cairo,
+  libsvg, and libsvg-cairo.
+
 
 =============================================================================
  libgd
@@ -374,6 +412,19 @@ request it.
 
 More information on using this feature is available in :ref:`wfs_client`.
 
+WCS Server
+-------------------
+Support for WCS is enabled by passing the "--with-wcs" option to the
+configure script.  WCS must be compiled against certain libraries.
+More information on this service is available in :ref:`wcs_server`.
+
+SOS Server
+-------------------
+Support for SOS is enabled by passing the "--with-sos" option to the
+configure script.  More information on this service is available in
+:ref:`sos_server`.
+
+
 =============================================================================
  Spatial Warehousing
 =============================================================================
@@ -456,7 +507,15 @@ usually use:
    library.  
    
 4. Compile libcurl.  libcurl is a straight-forward configure/make/make install
-   library.
+   library.  This library is only used along with other features, so
+   "--with-curl-config" won't do anything unless something like "--with-wmsclient"
+   or "--with-wfsclient" is also selected.
+
+   .. note::
+
+        If you want to configure MapServer to use SSL when accessing a WMS/WFS server
+        libcurl must be configured / compiled with the "--with-ssl" option.
+        Details about how to set this up is available in :ref:`wxs_secure`.
 
 5. Compile/install optional libraries.  These might include SDE, PostGIS,
    Oracle Spatial, AGG, Ming, PDFlib, or MyGIS.  Mix and match as you need
@@ -470,10 +529,12 @@ usually use:
 
 7. Configure your environment using "configure".  I often place my configure
    command in its own file and changes its mode to be executable (+x) to save 
-   typing and have a record of how MapServer was configured.
+   typing and have a record of how MapServer was configured.  This is meant to be
+   an example, you will need to edit the following script.  If you get
+   "No such file or directory" errors, try removing the "#" comments in this script.
 
    ::
-    
+
       ./configure     --with-sde=/usr/sde/sdeexe90 \
                       --with-sde-version=90 \
                       --with-ogr=/usr/local/bin/gdal-config \
@@ -494,7 +555,6 @@ usually use:
                       --with-postgis=/usr/local/database/bin/pg_config \
                       --with-libiconv=/usr \ # new in 4.8
                       --with-geos=/usr/local/bin/geos-config \ # new in 4.8
-                      --with-libiconv=/usr \ # new in 4.8
                       --with-xml2-config=/usr/bin/xml2-config \ # new in 4.10
                       --with-sos \ # new in 4.10
                       --with-agg=/path/to/agg-2.4
@@ -510,9 +570,15 @@ usually use:
    
       [user@host mapserver]$ make
 
-9. There is no *make install* step in the installation of MapServer.  The 
-   output of the compilation of MapServer is a binary executable that you 
+
+9. There is now a *make install* step in the installation of MapServer (yes,
+   you read that correctly).  This will install the 'mapserver' libraries.
+   The other output of the compilation of MapServer is a binary executable that you
    can use in a CGI execution environment.
+
+   ::
+
+         [user@host mapserver]$ sudo make install
    
    To make sure all went well, look for the file called *mapserv*
    
@@ -539,23 +605,56 @@ usually use:
 -----------------------------------------------------------------------------
  MapServer binary
 -----------------------------------------------------------------------------
-The MapServer program itself consists of only one file, the "mapserv" binary 
-executable. This is a CGI executable, meant to be called and run by your 
+The MapServer program itself consists of only one file, the "mapserv" binary
+executable. This is a CGI executable, meant to be called and run by your
 web server.
 
 In this section, we will assume you are running Apache under its default 
-directory structure in /usr/local/apache. You may need to have privileges 
+directory structure in /usr/local/apache. You may need to have privileges
 to edit your httpd.conf (the main apache configuration file), or have 
 someone (such as your webmaster) help you with the configuration details.
+
+   ::
+
+      If you don't have apache installed, and you want apache, php, fastcgi, etc,
+      That might look something like this:
+
+      [user@host mapserver]$ sudo apt-get install -y apache2 apache2-mpm-worker libapache2-mod-fastcgi
+      [user@host mapserver]$ sudo a2enmod actions fastcgi alias
+      [user@host mapserver]$ sudo apt-get install libapache2-mod-php5 php5-common php5-cli php5-fpm php5
+
 
 The main goal is to get the "mapserv" binary installed in a publicly 
 accessible directory that is configured to run CGI programs and scripts.
 
-The basic install
+1.  Locate your cgi-bin directory.  Under a default configuration,
+the CGI directory is "/usr/local/apache/cgi-bin" (RedHat users
+will use "/home/httpd/cgi-bin").   if you're using apache, there should be a
+ScriptAlias directive in your http.conf, or default site, something like:
+
+   ::
+
+      [user@host mapserver]$ cat /etc/apache2/sites-available/default | grep 'cgi-bin'
+      ...
+      ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/
+
+2.  Locate the installation path of your freshly compiled mapserv executable.
+This is shown when you run "sudo make install", something like this:
+
+   ::
+
+      libtool: install: /usr/bin/install -c .libs/mapserv /usr/local/bin/mapserv
+
+3.  You'll want to setup a symlink to that executable from your cgi-bin directory.
+
+   ::
+
+      [user@host mapserver]$ sudo ln -s /usr/local/bin/mapserv /usr/lib/cgi-bin/mapserv
+
+
+Testing your new Install
 -------------------
-Under a default configuration, the CGI directory is "/usr/local/apache/cgi-bin" 
-(RedHat users will use "/home/httpd/cgi-bin"). Placing the mapserv file in this 
-directory makes it accessible by the following URL: 
+Placing the mapserv file in this directory makes it accessible by the following URL:
 "http://yourhostname.com/cgi-bin/mapserv". When accessing this URL through your 
 web client, you should expect the following output if all has worked well: 
 "No query information to decode. QUERY_STRING is set, but empty." If you get 
@@ -588,7 +687,13 @@ server configuration isn't right:
    All it basically tells you is that the web server was unsuccessful 
    in running the program. You will have to consult the web server's error 
    log to find out more, and may need to enlist the help of your 
-   webmaster/system administrator.
+   webmaster/system administrator.  The apache docs also have pointers
+   on setting up cgi-bin here http://httpd.apache.org/docs/2.2/howto/cgi.html
+
+     ::
+        Check your server logs
+        [user@host mapserver]$ tail /var/log/apache2/error.log
+
 
 -----------------------------------------------------------------------------
  Where to go once you've got it compiled
