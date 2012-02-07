@@ -1,0 +1,117 @@
+.. _tinyows_mapfileconfig:
+
+*****************************************************************************
+Mapfile Configuration File Support for TinyOWS
+*****************************************************************************
+
+Mapfile Config File support for TinyOWS 
+-----------------------------------------------------------------------------
+
+TinyOWS supports a standard MapServer Mapfile. This allow a single
+file to configure both MapServer and TinyOWS. To indicate where your
+Mapfile is located, use the ''TINYOWS_MAPFILE'' environment variable.
+  
+
+Here an example of a single Mapfile: 
+
+.. code-block:: mapfile
+
+    MAP
+	NAME "TinyOWS"
+
+        WEB
+	     METADATA
+			"tinyows_schema_dir" "/usr/local/share/tinyows/schema/"
+			"tinyows_onlineresource" "127.0.0.1/cgi-bin/tinyows.fcgi"
+			"wfs_title" "TinyOWS service provided by a MapFile"
+			"wfs_contact" "foo@bar.net"
+	     END
+        END
+
+	LAYER
+		NAME 'France'
+		CONNECTIONTYPE postgis
+		CONNECTION "host=127.0.0.1 user=postgres password=postgres dbname=tinyows_demo port=5432"
+		METADATA
+			'wfs_title' 'France'
+			'wfs_namespace_prefix' 'tows'
+			'wfs_namespace_uri' 'www.tows.com'
+			'wfs_srs' 'EPSG:27582' 
+			'tinyows_table'  'france'
+			'tinyows_writable' '1'
+                        'tinyows_retrievable' '1'
+		END
+		DUMP TRUE
+	END
+    END
+
+Current concepts and limitations
+- Only PostGIS ''CONNECTIONTYPE'' are handled
+- We don't pretend to support right now all the WFS parameters available in Mapfile
+- But on the other hand you should be able to configure every part of TinyOWS from Mapfile  
+- Each ''CONNECTION'' string value in layers must be the same.
+- Mapfile ''PROJECTION'' content is not parsed, so use explicit ''wfs_srs'' 
+- Mapfile ''LAYER/FILTER'' is not parsed.
+- Defaults values are TinyOWS ones, even for common properties shared by both apps.
+- We don't use ''DATA'' element from Mapfile, so you have to use ''tinyows_table'' (and ''tinyows_schema'' if needed) in each layer.
+- If DUMP is not set to TRUE on a layer both Read and Write access are shutdown for these layer
+
+== Mapfile path of each TinyOWS config element ==
+
+||Original TinyOWS XML Config File||!MapFile counterpart||
+||/tinyows@online_resource||/map/metadata@tinyows_onlineresource||
+||/tinyows@schema_dir||/map/metadata@tinyows_schema_dir||
+||/tinyows@log||/map/metadata@tinyows_log||
+||/tinyows@log_level||/map/metadata@tinyows_log_level||
+||/tinyows@degree_precision||/map/metadata@tinyows_degree_precision||
+||/tinyows@meter_precision||/map/metadata@tinyows_meter_precision||
+||/tinyows@display_bbox||/map/metadata@tinyows_display_bbox||
+||/tinyows@estimated_extent||/map/metadata@tinyows_estimated_extent||
+||/tinyows@check_schema||/map/metadata@tinyows_check_schema||
+||/tinyows@check_valid_geom||/map/metadata@tinyows_check_valid_geom||
+||/tinyows@encoding||/map/metadata@wfs_encoding||
+||/tinyows@db_encoding||/map/metadata@tinyows_db_encoding||
+||/tinyows@expose_pk||/map/metadata@tinyows_expose_pk||
+||/tinyows/limits@features||/map/metadata@wfs_maxfeatures||
+||/tinyows/limits@geobbox||/map/metadata@tinyows_geobbox||
+||/tinyows/pg@host||/map/layer@connection||
+||/tinyows/pg@user||/map/layer@connection||
+||/tinyows/pg@password||/map/layer@connection||
+||/tinyows/pg@dbname||/map/layer@connection||
+||/tinyows/pg@port||/map/layer@connection||
+||/tinyows/pg@encoding||/map/metadata@tinyows_db_encoding||
+||/tinyows/metadata@name||/map@name||
+||/tinyows/metadata@title||/map/metadata@wfs_title||
+||/tinyows/metadata@keywords||/map/metadata@wfs_keywordlist||
+||/tinyows/metadata/abstract||/map/metadata@wfs_abstract||
+||/tinyows/metadata@fees||/map/metadata@wfs_fees||
+||/tinyows/metadata@access_constraints||/map/metadata@wfs_accessconstraints||
+||/tinyows/layer@ns_prefix||/map/layer/metadata@wfs_namespace_prefix or /map/metadata@wfs_namespace_prefix||
+||/tinyows/layer@ns_uri||/map/layer/metadata@wfs_namespace_uri or /map/metadata@wfs_namespace_uri||
+||/tinyows/layer@name||/map/layer@name||
+||/tinyows/layer@title||/map/layer/metadata@wfs_title||
+||/tinyows/layer@retrievable||/map/layer/metadata@tinyows_retrievable and /map/layer@dump||
+||/tinyows/layer@writable||/map/layer/metadata@tinyows_writable and /map/layer@dump||
+||/tinyows/layer@schema||/map/layer/metadata@tinyows_schema||
+||/tinyows/layer@keywords||/map/layer/metadata@wfs_keywordlist||
+||/tinyows/layer/abstract||/map/layer/metadata@wfs_abstract||
+||/tinyows/layer@srid||/map/metadata@wfs_srs and /map/layer/metadata@wfs_srs||
+||/tinyows/layer@geobbox||/map/layer/metadata@tinyows_geobbox||
+||/tinyows/contact@name||/map/metadata@ows_contactorganization||
+||/tinyows/contact@site||
+||/tinyows/contact@email||/map/metadata@ows_contactelectronicmailaddress||
+||/tinyows/contact@individual_name||/map/metadata@ows_contactperson||
+||/tinyows/contact@position||/map/metadata@ows_contactposition||
+||/tinyows/contact@phone||/map/metadata@ows_contactvoicetelephone||
+||/tinyows/contact@fax||/map/metadata@ows_contactfacsimiletelephone||
+||/tinyows/contact@online_resource||
+||/tinyows/contact@address||/map/metadata@ows_address||
+||/tinyows/contact@city||/map/metadata@ows_city||
+||/tinyows/contact@administrative_area||
+||/tinyows/contact@country||/map/metadata@ows_country||
+||/tinyows/contact@hours_of_service||
+||/tinyows/contact@contact_instructions ||
+
+
+
+

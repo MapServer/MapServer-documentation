@@ -1,0 +1,255 @@
+.. _tinyows_configfile:
+
+*****************************************************************************
+Configuration File 
+*****************************************************************************
+
+Configuration is done via a single XML file called 'config.xml'.
+
+The default path is ''/usr/local/tinyows/config.xml'', you could
+also use TINYOWS_CONFIG_FILE environment var to set your own path.
+
+
+== Configuration file simple Example ==
+
+You could find an example of 'config.xml' file in demo directory:
+
+{{{
+<tinyows online_resource="http://127.0.0.1/cgi-bin/tinyows"
+         schema_dir="/usr/local/tinyows/schema/">
+
+  <pg host="127.0.0.1" user="postgres" password="postgres" dbname="tinyows_demo" port="5432"/>
+
+  <metadata name="TinyOWS Server"
+            title="TinyOWS Server - Demo Service" />
+
+  <layer retrievable="1"
+         writable="1"
+         ns_prefix="tows"
+         ns_uri="http://www.tinyows.org/"
+         name="world"
+         title="World Administrative Boundaries" />
+
+  <layer retrievable="1"
+         writable="1"
+         ns_prefix="tows"
+         ns_uri="http://www.tinyows.org/"
+         name="france"
+         title="French Administrative Sub Boundaries (IGN - GeoFLA Departements)" />
+
+</tinyows>
+
+}}}
+
+
+----
+== Check Config.xml file ==
+
+Once you have a config.xml file related to your service,
+you could launch the --check option:
+
+{{{
+./tinyows --check
+Config File:	 OK
+PG Connection:	 OK
+Available layers:
+ - public.world  -> 4326 RW
+ - public.france  -> 27582 RW
+
+}}}
+
+
+----
+
+== TinyOWS Element ==
+
+TinyOWS is the root element. 
+He is mandatory, and must contains some system informations about the service itself.
+Some globals service options could also be switched on or off at this level.
+
+
+=== TinyOWS attributes ===
+
+||Attribute||Mandatory||Description||
+||online_resource||Mandatory||URL where the service is located, e.g: ''http://127.0.0.1/cgi-bin/tinyows''||
+||schema_dir||Mandatory||Path where TinyOWS schema dir is located e.g: ''/usr/local/tinyows/schema/''||
+||log||Optional||Path where TinyOWS could log input requests. e.g: ''/var/log/tinyows.log'' (This file must have correct write permissions).||
+||log_level||Optional||Bit field value to indicate what to log: 1: ERROR, 2: EVENT, 4: HTTP QUERY, 8: SQL||
+||degree_precision||Optional||Indicate how many digits use to decimal precision when datas are lat/lon. Default is ''6''.||
+||meter_precision||Optional||Indicate how many digits use to decimal precision when datas are meters based. Default is ''0''.||
+||display_bbox||Optional||Flag to indicate if bbox should be computed for WFS GML !GetFeature output. It's mandatory in WFS specification. But as it's time consuming it could be interresting to be able to deactivate it. Default is ''1''.||
+||estimated_extent||Optional||Flag to indicate if TinyOWS should use estimated_extent (faster but less accurate). Default is ''0''|| 
+||check_schema||Optional||Flag to indicate if input data must be checked against schema before to be executed. Caution, schema validation is an important part on security stage. Default is ''1''.||
+||check_valid_geom||Optional||Flag to indicate if geometry OGC SFS 1.1 validation should be done prior to execute a transaction. Default is ''1''.||
+||encoding||Optional||Output encoding. Default is UTF-8. Others values could be ISO-8859-1 for instance. No encoding conversion is done on datas, encoding is declarative.||
+||expose_pk||Optional||Flag to indicate if TinyOWS should expose PK in schema (and so require them in Transcation query). Default is ''0''|| 
+ 
+
+----
+
+== Limits Element ==
+
+Limits Element is dedicated to put limitation on the whole server output.
+It could help to prevent DoS or stupid huge query from userland.
+This element is optional.
+
+=== Limits attributes ===
+||Attribute||Mandatory||Description||
+||features||Optional||Use to set maximum number of features returned to WFS client, on !GetFeature request||
+||geobbox||Optional||WGS 84 Geographic Bbox, used to indicate maximum extent: East,West,North,South|| 
+
+=== Example ===
+{{{
+<tinyows>
+  ...
+  <limits features="10000" />
+  ...
+</tinyows>
+}}}
+
+
+----
+
+== PostgreSQL Connection ==
+
+PostgreSQL connection element.
+This element is mandatory.
+
+||Attribute||Mandatory||Description||
+||host||optional||Name (or IP) to PostgreSQL server (default is localhost)||
+||user||optional||PostgreSQL user to connect (default is the system user used to run the server)||
+||password||optional||PostgreSQL password connection||
+||dbname||optional||PostGIS database (by default, same as the system user used to run the server||
+||port||optional||PostgreSQL port number (by default 5432)||
+||encoding||optional||PostgreSQL DB encoding, cf http://www.postgresql.org/docs/9.0/static/multibyte.html#CHARSET-TABLE (by default UTF8)||
+
+=== Example ===
+
+{{{
+<tinyows>
+  ...
+  <pg host="127.0.0.1"
+         user="postgres"
+         password="postgres"
+         dbname="gis_data"
+         port="5432" />
+   ...
+</tinyows>
+}}}
+
+
+----
+
+== Metadata and Contact Elements ==
+
+Use to fill some Medatada's information about the service itself.
+Theses two elements are mandatory.
+
+
+=== Metadata attributes ===
+||Attribute||Mandatory||Description||
+|| name || Mandatory || Web Service Name ||
+|| title || Mandatory || Web Service Title ||
+|| keywords || Optional || Web Service Keywords list (use comma as separator)||
+|| fees || Optional || Web Service Fees ||
+|| access_constraints || Optional || Web Service Access Constraints||
+
+
+=== Abstract Element ===
+Abstract Element is an optional child element of Metadata.
+It's dedicaded to give some abstract metadata informations about the service itself.
+
+
+=== Contact attributes ===
+||Attribute||Mandatory||Description||
+|| name || Mandatory || Web Service Contact Name ||
+|| site || Mandatory || Web Service Contact URL  ||
+|| email || Mandatory || Web Service Contact Email ||
+|| individual_name || Optional || Web Service Contact Individual Name ||
+|| position || Optional || Web Service Contact Position ||
+|| phone || Optional || Web Service Contact Phone ||
+|| fax || Optional || Web Service Contact Fax ||
+|| online_resource || Optional || Web Service Contact URL (e.g additional Metadatas)||
+|| address || Optional || Web Service Contact Postal Address ||
+|| postcode || Optional || Web Service Contact Postcode ||
+|| city || Optional || Web Service Contact City ||
+|| administrative_area || Optional || Web Service Contact Administrative Area ||
+|| country || Optional || Web Service Contact Country ||
+|| hours_of_service || Optional || Web Service Contact Hours of Services ||
+|| contact_instructions || Optional || Web Service Contact Instructions ||
+
+
+=== Contact and Metadata example with only mandatory attributes: ===
+
+{{{
+  <metadata name="TinyOWS Server"
+            title="TinyOWS Server - Demo Service" />
+
+  <contact name="TinyOWS Server"
+           site="http://www.tinyows.org/"
+           email="tinyows-users@lists.maptools.org" />
+
+}}}
+
+----
+
+
+== Layer Element ==
+
+Layer element is used to set all layers provided by the service.
+Even if layer is not mandatory, if omitted, no layer at all will be provided.
+
+
+=== Layer attributes ===
+||Attribute||Mandatory||Default|| Inherited values || Description||
+||ns_prefix||Mandatory|| - || Yes ||Layer's Namespace Prefix used in WFS ||
+||ns_uri||Mandatoty|| - || Yes || Layer's Namespace URI used in WFS || 
+||name||Mandatory|| - || No || Layer's Name||
+||title||Mandatory|| - || No || Layer's Title||
+||retrievable||Optional||false || Yes || If true layer is retrievable on WFS !GetFeature request ||
+||writable||Optional||false|| Yes || If true layer is editable with WFS Transaction request||
+||schema||Optional||'public'|| No || PostgreSQL Schema name.||
+||abstract||Optional|| - || No || Abstract text||
+||keywords||Optional|| - || No || Keywords (comma separated list)|| 
+||srid||Optional || - || Yes || Comma separated list of output SRID||  
+||geobbox||Optional|| - || Yes ||WGS 84 bbox of max extent: East,West,North,South||
+
+
+=== Example ===
+{{{
+<tinyows>
+  ...
+      <layer retrievable="1"
+         writable="1"
+         ns_prefix="tows"
+         ns_uri="http://www.tinyows.org/"
+         name="world"
+         title="World Administrative Boundaries" />
+  ...
+</tinyows>
+}}}
+
+
+
+=== Nested Layers ===
+
+Layer entities could be nested, properties in this case are inherited.
+
+=== Nested Layers Example ===
+{{{
+<tinyows>
+  ...
+      <layer retrievable="1"
+         writable="1"
+         ns_prefix="tows"
+         ns_uri="http://www.tinyows.org/"
+         name="root"  >
+
+           <layer name="foo" title="foo"/>
+           <layer name="bar" title="bar"/>
+  
+      </layer>
+     
+  ...
+</tinyows>
+}}}

@@ -1,0 +1,168 @@
+.. _tinyows_openlayershowtobasic:
+
+*****************************************************************************
+WFS with TinyOWS and OpenLayers 
+*****************************************************************************
+
+
+
+0) Install PostGIS and TinyOWS.
+
+
+1) Create a spatial Database called 'france'
+
+.. code-block:: bash
+
+  createdb -U postgres france
+  createlang -U postgres plpgsql france
+  psql -U postgres -d france < `pg_config --sharedir`/contrib/postgis-1.5/postgis.sql
+  psql -U postgres -d france < `pg_config --sharedir`/contrib/postgis-1.5/spatial_ref_sys.sql
+
+
+
+2) Import france data
+
+.. code-block:: bash
+  wget tinyows.org/tracdocs/release/france_data.tar.gz
+  tar xvzf france_data.tar.gz
+  cd world
+  shp2pgsql -I -s 27572 france.shp france | psql -U postgres -d france
+
+
+
+3) Configure TinyOWS (/usr/local/tinyows/config.xml)
+
+.. code-block:: xml
+
+  <tinyows online_resource="http://127.0.0.1/cgi-bin/tinyows"
+         schema_dir="/usr/local/tinyows/schema/">
+  <pg host="127.0.0.1" user="postgres" password="postgres" dbname="world" port="5432"/>
+  <metadata name="TinyOWS Server"
+            title="TinyOWS Server - WFS-T World Service" />
+  <contact name="TinyOWS Server"
+           site="http://www.tinyows.org/"
+           email="tinyows-users@lists.maptools.org" />
+  <layer retrievable="1"
+         prefix="tows"
+         server="http://www.tinyows.org"
+         name="france"
+         title="France Departments Boundaries" />
+  </tinyows>
+
+
+
+4) Check everything is fine with TinyOWS and PostGIS
+
+{{{
+./YOUR_CGI-BIN_PATH/tinyows --check
+Config File:	 OK
+PG Connection:	 OK
+Available layers:
+ - public.france  -> 27572 R
+}}}
+
+
+5) Deploy OpenLayers 
+
+.. code-block:: bash
+wget http://openlayers.org/download/OpenLayers-2.9.tar.gz
+tar xvzf OpenLayers-2.9.tar.gz
+mv OpenLayers-2.9  /YOUR/SERVER/HTDOCS/
+
+
+6) Install OpenLayers proxy (you need Python interpreter to make it works)
+
+.. code-block:: bash
+cp OpenLayers-2.9/examples/proxy.cgi  /YOUR/SERVER/CGI-BIN/
+
+
+7) Add localhost (or your server IP) to proxy allowedHosts (/YOUR/SERVER/CGI-BIN/proxy.cgi)
+ 
+.. code-block:: bash
+allowedHosts = ['127.0.0.1', 'www.openlayers.org', 'openlayers.org', ... ]
+ 
+
+
+8) Create a new file in OpenLayers-2.9/examples/tinyows.html :
+
+
+.. code-block:: html
+  <html>
+    <head>
+        <link rel="stylesheet" href="../theme/default/style.css" type="text/css" />
+        <link rel="stylesheet" href="style.css" type="text/css" />
+        <title>WFS Basic with TinyOWS and GeoJSON</title>
+        <script src="../lib/OpenLayers.js"></script>
+        <script src="tinyows.js"></script>
+    </head>
+    <body onload="init()">
+        <h1 id="title">WFS Basic example with TinyOWS, using GeoJSON.</h1>
+        <div id="tags"></div>
+        <p id="shortdesc">
+            Shows the use of the WFS Basic with TinyOWS Server, using GeoJSON.
+        </p>
+        <div id="map" class="smallmap"></div>
+        <div id="docs">
+            <p>
+                WMS base layer is GeoSignal one.<br />
+                Vector datas are GeoFLA Departements (IGN).<br />
+                Size of datas are about 800 Ko (either Shapefile or GeoJSON).<br />
+                Right now it's the top limit that OpenLayers can decently handle.<br />
+            </p>
+            <p>
+                See the <a href="tinyows.js" target="_blank">tinyows.js
+                source</a> to see how this is done.
+            </p>
+        </div>
+    </body>
+  </html>
+
+
+
+9) Create a new file in OpenLayers-2.9/examples/tinyows.js 
+
+
+.. code-block:: javascript
+  var map;
+  OpenLayers.ProxyHost = "/cgi-bin/proxy.cgi?url=";
+  function init() {
+    map = new OpenLayers.Map('map', {
+        projection: new OpenLayers.Projection("EPSG:27582"),
+        units: "m",
+        maxResolution: "auto",
+        maxExtent: new OpenLayers.Bounds(5000,1620000,1198000,2678000),
+        controls: [
+            new OpenLayers.Control.PanZoom()
+        ]
+    });
+    var base = new OpenLayers.Layer.WMS("OpenLayers WMS",
+        "http://www.geosignal.org/cgi-bin/wmsmap?",
+        {layers: "Regions,Departements",
+	 projection:"EPSG:27582",
+         units: "m",
+	 maxResolution: "auto",
+	 maxExtent: new OpenLayers.Bounds(5000,1620000,1198000,2678000),
+	 sld: "http://www.tinyows.org/tracdocs/demo/OpenLayers-2.9/examples/sld.xml"
+	}
+    );
+    map.addLayer(base);
+    var wfs = new OpenLayers.Layer.Vector("Countries", {
+        strategies: [new OpenLayers.Strategy.BBOX()],
+	projection:"EPSG:27582",
+        protocol: new OpenLayers.Protocol.WFS({
+            url: "http://www.tinyows.org/cgi-bin/tinyows?",
+            featureType: "france",
+            featureNS: "http://www.tinyows.org/",
+            outputFormat: "application/json",
+	    readFormat: new OpenLayers.Format.GeoJSON()
+        })
+    });
+    map.addLayer(wfs);
+    map.zoomToExtent(new OpenLayers.Bounds(5000,1620000,1198000,2678000));
+  }
+
+
+
+
+10) Just test and play with !
+    You should obtain this kind of result: http://tinyows.org/tracdocs/demo/OpenLayers-2.9/examples/tinyows.html
