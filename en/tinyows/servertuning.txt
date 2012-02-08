@@ -1,45 +1,76 @@
 .. _tinyows_servertuning:
 
 *****************************************************************************
-= Server Tuning: How to speed up your TinyOWS server ? =
+Server Tuning: How to speed up your TinyOWS server
 *****************************************************************************
-== PostgreSQL/PostGIS datas ==
-  * Be sure to have a spatial index on your geometry/geography datas
-  * Put index on each column who could be used frequently as a filter
 
-----
+.. warning:: Author Block?
 
-== HTTP Gzip compression ==
-  * In Apache, activate mod_deflate
-  * Deflate basic configuration:
-{{{
-AddOutputFilterByType DEFLATE text/html text/plain text/xml application/xml application/json
-}}}
 
-----
+Tips and Tricks for PostgreSQL / PostGIS databases
+-----------------------------------------------------------------------------
+ * Index any column that could be used frequently as a filter
+ * Use Spatial Indexes on your geometry/geography columns
+   `PostGIS Spatial Indexes <http://postgis.refractions.net/docs/ch04.html#id2628096>`_.
 
-== Fast-CGI ==
-  * Check that your TinyOWS is compiled with FastCGI support:
-{{{
-tinyows --check
-TinyOWS version:   0.9.0 SVN
-FCGI support:      Yes
-...
-}}}
+ * General `PostGIS Performance tips <http://postgis.refractions.net/docs/ch06.html>`_
+ * General `PostgreSQL Performance tips <http://wiki.postgresql.org/wiki/Performance_Optimization>`_
+ * `Even more tips on Tuning PostgreSQL <http://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server>`_
 
-=== Unix Like ===
+Tips and Tricks for Apache
+-----------------------------------------------------------------------------
+
+HTTP Gzip compression
+~~~~~~~~~~~~~~~~~~~~~~
+* In Apache, activate `mod_deflate <http://httpd.apache.org/docs/2.0/mod/mod_deflate.html>`_
+* Deflate basic configuration, (note we're including xml and json):
+
+    ::
+
+        AddOutputFilterByType DEFLATE text/html text/plain text/xml application/xml application/json
+
+
+Using Fast-CGI
+-----------------------------------------------------------------------------
+* Check that your TinyOWS is compiled with FastCGI support:
+
+    ::
+
+        [user@host mapserver]$ tinyows --check
+        TinyOWS version:   1.0.0 SVN
+        FCGI support:      Yes
+        ...
+
+Fast-CGI in Apache
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
   * In Apache, activate mod_fcgi
+
+    ::
+
+       [user@host mapserver]$ sudo apt-get install -y libapache2-mod-fastcgi
+       [user@host mapserver]$ sudo a2enmod fastcgi
+
+
   * Apache fast-cgi configuration:
-{{{
-  FastCgiServer /usr/lib/cgi-bin/tinyows.fcgi -processes 40
-  FastCgiConfig -initial-env LD_LIBRARY_PATH=/usr/local/lib:/usr/pgsql/lib:/usr/lib:/lib -appConnTimeout 60 -idle-timeout 60 -init-start-delay 1 -minProcesses 3 -maxClassProcesses 30 -startDelay 10
-}}}
+
+    ::
+
+        #in your CGI-BIN directive, add the following to run all cgi-bin using FastCGI
+        SetHandler fastcgi-script
+
+        #in your FastCGI config file (typically something like /etc/apache2/mods-enabled/fastcgi.conf)
+        FastCgiServer /usr/lib/cgi-bin/tinyows.fcgi -processes 40
+        FastCgiConfig -initial-env LD_LIBRARY_PATH=/usr/local/lib:/usr/pgsql/lib:/usr/lib:/lib -appConnTimeout 60 -idle-timeout 60 -init-start-delay 1 -minProcesses 3 -maxClassProcesses 30 -startDelay 10
 
 
-=== MS4W ===
-  * Please refer to the fastcgi doc in ms4w: [http://www.maptools.org/ms4w/index.phtml?page=README_INSTALL.html#f-fastcgi]
-  * Add the following 2 lines:
-{{{
-DefaultInitEnv TINYOWS_CONFIG_FILE "/ms4w/apps/tinyows/config.xml"
-DefaultInitEnv TINYOWS_SCHEMA_DIR "/ms4w/apps/tinyows/schema/" 
-}}}
+Fast-CGI in MS4W
+~~~~~~~~~~~~~~~~~~~~~~
+* Please refer to the  `fastcgi doc in ms4w <http://www.maptools.org/ms4w/index.phtml?page=README_INSTALL.html#f-fastcgi>`_
+* Add the following 2 lines:
+
+    ::
+
+        DefaultInitEnv TINYOWS_CONFIG_FILE "/ms4w/apps/tinyows/config.xml"
+        DefaultInitEnv TINYOWS_SCHEMA_DIR "/ms4w/apps/tinyows/schema/"
+

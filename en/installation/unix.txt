@@ -159,8 +159,10 @@ You can also get the latest MapServer source code from :ref:`svn`.
   More details on how to use this feature in MapServer is here :ref:`fastcgi`.
   On Ubuntu, that would be
 
-  .. installing fastcgi development package::
-      sudo apt-get -y install libfcgi-dev
+  ::
+
+        installing fastcgi development package
+        [user@host mapserver]$ sudo apt-get -y install libfcgi-dev
 
 * `cairo (svg, pdf) support <http://cairographics.org/>`__: This library is required
   when using the "--with-cairo" configure option.  If you're on an ubuntu system, it
@@ -204,7 +206,7 @@ following command:
 
 ::
 
-    gdlib-config --version
+    [user@host mapserver]$ gdlib-config --version
 
 -----------------------------------------------------------------------------
  libiconv
@@ -217,7 +219,7 @@ for yourself, issue the following command and look for '-liconv' in the output:
 
 ::
 
-    gdlib-config --libs
+    [user@host mapserver]$ gdlib-config --libs
 
 -----------------------------------------------------------------------------
  Pre-packaged/system libraries
@@ -260,8 +262,8 @@ separately as well, generating output looking somewhat like this:
 
     checking where FreeType is installed...
     checking for FT_Init_FreeType in -lfreetype... yes
-	    using libfreetype -lfreetype from system libs.
-	
+    using libfreetype -lfreetype from system libs.
+
 Even though you have FreeType installed on your system *and* the 
 configure script finds it, does *NOT* mean you will have TrueType 
 font support. GD *MUST* be compiled against FreeType either way.
@@ -627,29 +629,31 @@ someone (such as your webmaster) help you with the configuration details.
 The main goal is to get the "mapserv" binary installed in a publicly 
 accessible directory that is configured to run CGI programs and scripts.
 
-1.  Locate your cgi-bin directory.  Under a default configuration,
+1. Locate your cgi-bin directory.  Under a default configuration,
 the CGI directory is "/usr/local/apache/cgi-bin" (RedHat users
 will use "/home/httpd/cgi-bin").   if you're using apache, there should be a
-ScriptAlias directive in your http.conf, or default site, something like:
+ScriptAlias directive in your http.conf, or default site, something like::
 
-   ::
+    [user@host mapserver]$ cat /etc/apache2/sites-available/default | grep 'cgi-bin'
+    ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/
 
-      [user@host mapserver]$ cat /etc/apache2/sites-available/default | grep 'cgi-bin'
-      ...
-      ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/
 
-2.  Locate the installation path of your freshly compiled mapserv executable.
-This is shown when you run "sudo make install", something like this:
+2. Locate the installation path of your freshly compiled mapserv executable.
+This is shown when you run "sudo make install", something like this::
 
-   ::
+    libtool: install: /usr/bin/install -c .libs/mapserv /usr/local/bin/mapserv
 
-      libtool: install: /usr/bin/install -c .libs/mapserv /usr/local/bin/mapserv
 
-3.  You'll want to setup a symlink to that executable from your cgi-bin directory.
+.. This indent is driving me insane.
 
-   ::
+3. You'll want to setup a symlink to that executable from your cgi-bin directory::
 
-      [user@host mapserver]$ sudo ln -s /usr/local/bin/mapserv /usr/lib/cgi-bin/mapserv
+    [user@host mapserver]$ sudo ln -s /usr/local/bin/mapserv /usr/lib/cgi-bin/mapserv
+
+    .. warning::
+
+       Make sure you are linking against the installed mapserv file (after running 'make install')
+       and NOT against where it was compiled in your source tree.
 
 
 Testing your new Install
