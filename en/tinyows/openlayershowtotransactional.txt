@@ -7,91 +7,98 @@ WFS-T with TinyOWS and OpenLayers
 
 
 
-0) Install PostGIS and TinyOWS
+0) Install PostGIS and TinyOWS (:ref:`tinyows_serverinstallation`)
 
 
-1) Create a spatial Database
+1) Within PostGIS, create a spatial database called 'tinyows'
 
-{{{
-createdb -U postgres tinyows
-createlang -U postgres plpgsql tinyows
-psql -U postgres -d tinyows < `pg_config --sharedir`/contrib/postgis-1.5/postgis.sql
-psql -U postgres -d tinyows < `pg_config --sharedir`/contrib/postgis-1.5/spatial_ref_sys.sql
-}}}
+.. code-block:: bash
 
-
-
-2) Import Frida data (we will use the parks layer)
-{{{
-wget ftp://ftp.intevation.de/freegis/frida/frida-1.0.1-shp.tar.gz
-tar xvzf frida-1.0.1-shp.tar.gz
-cd frida-1.0.1-shp
-shp2pgsql -s 31467 -W LATIN1 -I gruenflaechen.shp frida | psql -U postgres -d tinyows
-}}}
+  createdb -U postgres tinyows
+  createlang -U postgres plpgsql tinyows
+  psql -U postgres -d tinyows < `pg_config --sharedir`/contrib/postgis-1.5/postgis.sql
+  psql -U postgres -d tinyows < `pg_config --sharedir`/contrib/postgis-1.5/spatial_ref_sys.sql
 
 
-3) Configure TinyOWS (/usr/local/tinyows/config.xml)
-{{{
-<tinyows online_resource="http://127.0.0.1/cgi-bin/tinyows"
+
+2) Import Frida data (we will use the parks layer) into your PostGIS database
+
+.. code-block:: bash
+
+  wget ftp://ftp.intevation.de/freegis/frida/frida-1.0.1-shp.tar.gz
+  tar xvzf frida-1.0.1-shp.tar.gz
+  cd frida-1.0.1-shp
+  shp2pgsql -s 31467 -W LATIN1 -I gruenflaechen.shp frida | psql -U postgres -d tinyows
+
+
+
+3) Configure TinyOWS by editing /usr/local/tinyows/config.xml
+
+.. code-block:: xml
+
+  <tinyows online_resource="http://127.0.0.1/cgi-bin/tinyows"
          schema_dir="/usr/local/tinyows/schema/">
-
   <pg host="127.0.0.1" user="postgres" password="postgres" dbname="tinyows" port="5432"/>
-
   <metadata name="TinyOWS Server"
             title="TinyOWS Server - WFS-T Frida Service" />
-
   <contact name="TinyOWS Server"
            site="http://www.tinyows.org/"
            email="tinyows-users@lists.maptools.org" />
-
   <layer retrievable="1"
          writable="1"
          ns_prefix="tows"
          ns_uri="http://www.tinyows.org/"
          name="frida"
          title="Frida Parks" />
-
-</tinyows>
-}}}
+  </tinyows>
 
 
-4) Check PostGIS ans Tinyows config:
-{{{
-./YOUR_CGI-BIN_PATH/tinyows --check
-Config File:	 OK
-PG Connection:	 OK
-Available layers:
- - public.frida  -> 31467 RW
-}}}
+
+4) Test your installations of TinyOWS and PostGIS
+
+.. code-block:: bash
+
+  ./YOUR_CGI-BIN_PATH/tinyows --check
+  Config File:	 OK
+  PG Connection:	 OK
+  Available layers:
+   - public.frida  -> 31467 RW
 
 
-5) Install !OpenLayers 
-{{{
-wget http://openlayers.org/download/OpenLayers-2.9.tar.gz
-tar xvzf OpenLayers-2.9.tar.gz
-mv OpenLayers-2.9  /YOUR/SERVER/HTDOCS/
-}}}
+5) Install OpenLayers 
 
-6) Deploy !OpenLayers proxy
-{{{
-cp OpenLayers-2.9/examples/proxy.cgi  /YOUR/SERVER/CGI-BIN/
-}}}
+.. code-block:: bash
+
+  wget http://openlayers.org/download/OpenLayers-2.9.tar.gz
+  tar xvzf OpenLayers-2.9.tar.gz
+  mv OpenLayers-2.9  /YOUR/SERVER/HTDOCS/
+
+
+6) Install the OpenLayers proxy (you need the Python interpreter to make it work)
+
+.. code-block:: bash
+
+  cp OpenLayers-2.9/examples/proxy.cgi  /YOUR/SERVER/CGI-BIN/
 
 7) Add localhost (or your server IP) to proxy allowedHosts (/YOUR/SERVER/CGI-BIN/proxy.cgi)
-{{{ 
-allowedHosts = ['127.0.0.1', 'www.openlayers.org', 'openlayers.org', ... ]
-}}} 
+ 
+.. code-block:: bash
+
+  allowedHosts = ['127.0.0.1', 'www.openlayers.org', 'openlayers.org', ... ]
+ 
 
 
-8) Create a new file named !OpenLayers-2.9/examples/tinyows_wfs-t.html :
-{{{
-<html>
+8) Create a new file at OpenLayers-2.9/examples/tinyows_wfs-t.html 
+
+
+.. code-block:: html
+
+  <html>
   <head>
     <link rel="stylesheet" href="../theme/default/style.css" type="text/css" />
     <link rel="stylesheet" href="style.css" type="text/css" />
     <script src="../lib/OpenLayers.js"></script>
     <style>
-
 	#map {
     	    width: 800px;
    	    height: 500px;
@@ -160,7 +167,6 @@ allowedHosts = ['127.0.0.1', 'www.openlayers.org', 'openlayers.org', ... ]
     </style>
     <script src="tinyows_wfs-t.js"></script>
     </head>
-
     <body onload="init()">
         <h1 id="title">WFS Transaction Example, (TinyOWS ans OpenLayers)</h1>
         <div id="tags"></div>
@@ -186,22 +192,20 @@ allowedHosts = ['127.0.0.1', 'www.openlayers.org', 'openlayers.org', ... ]
             </p>
             <p>
                 See the <a href="tinyows_wfs-t.js" target="_blank">
-
                 wfs-protocol-transactions.js source</a> to see how this is done.
             </p>        
         </div>
     </body>
-</html>
-}}}
+  </html>
 
 
-9) Create a new file named !OpenLayers-2.9/examples/tinyows_wfs-t.js:
+9) Create a new file at OpenLayers-2.9/examples/tinyows_wfs-t.js
 
-{{{
-var map, wfs;
-OpenLayers.ProxyHost = "/cgi-bin/proxy.cgi?url=";
+.. code-block:: javascript
 
-var DeleteFeature = OpenLayers.Class(OpenLayers.Control, {
+  var map, wfs;
+  OpenLayers.ProxyHost = "/cgi-bin/proxy.cgi?url=";
+  var DeleteFeature = OpenLayers.Class(OpenLayers.Control, {
     initialize: function(layer, options) {
         OpenLayers.Control.prototype.initialize.apply(this, [options]);
         this.layer = layer;
@@ -226,26 +230,19 @@ var DeleteFeature = OpenLayers.Class(OpenLayers.Control, {
         OpenLayers.Control.prototype.setMap.apply(this, arguments);
     },
     CLASS_NAME: "OpenLayers.Control.DeleteFeature"
-});
-
-
-
-function showMsg(szMessage) {
+  });
+  function showMsg(szMessage) {
     document.getElementById("message").innerHTML = szMessage;
     setTimeout(
         "document.getElementById('message').innerHTML = ''",2000);
-}
-
-function showSuccessMsg(){
+  }
+  function showSuccessMsg(){
     showMsg("Transaction successfully completed");
-};
-
-function showFailureMsg(){
+  };
+  function showFailureMsg(){
     showMsg("An error occured while operating the transaction");
-};
-
-
-function init() {
+  };
+  function init() {
     map = new OpenLayers.Map('map', {
         projection: new OpenLayers.Projection("EPSG:31467"),
         units: "m",
@@ -255,18 +252,15 @@ function init() {
             new OpenLayers.Control.PanZoom()
         ]
     });
-
     var osm = new OpenLayers.Layer.WMS(
         "OSM by Omniscale WMS",
 	"http://osm.omniscale.net/proxy/service",
         {layers: 'osm', format: 'image/jpeg'},
 	{projection:"EPSG:31467",  units: "m", maxResolution: "auto", maxExtent: new OpenLayers.Bounds(3427000,5788000,3444000,5800000)}
     );
-
     var saveStrategy = new OpenLayers.Strategy.Save();
     saveStrategy.events.register("success", '', showSuccessMsg);
     saveStrategy.events.register("fail", '', showFailureMsg);
-
     wfs = new OpenLayers.Layer.Vector("Editable Features", {
         strategies: [new OpenLayers.Strategy.BBOX(), saveStrategy],
         projection: new OpenLayers.Projection("EPSG:31467"),
@@ -280,17 +274,13 @@ function init() {
             schema: "http://127.0.0.1/cgi-bin/tinyows?service=wfs&request=DescribeFeatureType&version=1.1.0&typename=tows:frida"
         })
     }); 
-   
     map.addLayers([osm, wfs]);
-
     var panel = new OpenLayers.Control.Panel(
         {'displayClass': 'customEditingToolbar'}
     );
-    
     var navigate = new OpenLayers.Control.Navigation({
         title: "Pan Map"
     });
-    
     var draw = new OpenLayers.Control.DrawFeature(
         wfs, OpenLayers.Handler.Polygon,
         {
@@ -299,14 +289,11 @@ function init() {
             multi: true
         }
     );
-    
     var edit = new OpenLayers.Control.ModifyFeature(wfs, {
         title: "Modify Feature",
         displayClass: "olControlModifyFeature"
     });
-
     var del = new DeleteFeature(wfs, {title: "Delete Feature"});
-   
     var save = new OpenLayers.Control.Button({
         title: "Save Changes",
         trigger: function() {
@@ -317,19 +304,17 @@ function init() {
         },
         displayClass: "olControlSaveFeatures"
     });
-
     panel.addControls([navigate, save, del, edit, draw]);
     panel.defaultControl = navigate;
     map.addControl(panel);
     map.zoomToMaxExtent();
-}
-
-}}} 
+  }
 
 
-10) Just test and play with !
-    You should obtain something like: http://tinyows.org/tracdocs/demo/OpenLayers-2.9/examples/tinyows_wfs-t.html
+10) You should obtain an image similar to the one below. Note the
+    editor icons in the upper right corner. These icons allow you to
+    add and edit features in the database from your web browser. Live version is at
+    http://tinyows.org/tracdocs/demo/OpenLayers-2.9/examples/tinyows_wfs-t.html
 
-11) Think about Optimization
-   - !OpenLayers build: http://trac.openlayers.org/wiki/Profiles
-   - TinyOWS Tuning: http://tinyows.org/trac/wiki/ServerTuning
+.. image:: ../images/tinyOWS-WFS-T.png
+
