@@ -65,15 +65,18 @@ process should resume to:
 
   $ ./configure
   $ make
+  $ sudo make install
 
 Apache Module Specific Instructions
 -----------------------------------
+
+The make install above installs the apache module, but if you need to
+specifically need to install only the apache module you can do the following
 
 .. code-block:: bash
 
   $ sudo make install-module
   $ sudo ldconfig
-
 
 The installation script takes care of putting the built module in the apache
 module directory.  The process for activating a module is usually distro
@@ -106,6 +109,68 @@ Finally, restart apache to take the modified configuration into account
 
 If you have not disabled the demo service, you should now have access to it on
 http://myserver/mapcache/demo
+
+Nginx Specific Instructions
+----------------------------
+
+.. warning:: Working with nginx is still highly experimental. The following workflow has only been tested on the development version of nginx-1.1.14
+
+For nginx support you need to build mapcache's nginx module against the 
+nginx source. Download the nginx source code:
+
+.. code-block:: bash
+
+   $ cd /usr/local/src
+   $ mkdir nginx
+   $ cd nginx
+   $ wget http://nginx.org/download/nginx-1.1.14.tar.gz
+   $ tar -xzvf nginx-1.1.14.tar.gz
+   $ cd nginx-1.1.14/
+
+Run the configure command with the flag\  ``--add-module`` \. This flag
+must point to mapcache's nginx child directory. Assuming that 
+mapserver trunk was checked out to\  ``/usr/local/src`` \, an example configure
+command for nginx would look like this:
+
+.. code-block:: bash
+
+   $ ./configure --add-module=/usr/local/src/mapserver-trunk/mapcache/nginx
+
+Then build nginx:
+
+.. code-block:: bash
+
+   $ make 
+   $ sudo make install
+
+Mapcache supplies a\  ``nginx.conf`` \in its nginx child directory. The conf 
+contains an example configuration to load mapcache. The most relevant part of
+the configuration is the location directive that points the\  ``mapcache`` \URI 
+to the\  ``mapcache.xml`` \path. You will need to change this path to point to 
+your own\  ``mapcache.xml`` \ in the mapcache source
+
+.. code-block:: bash
+
+	## BEFORE PATH EDIT
+        location ~ ^/mapcache(?<path_info>/.*|$) {
+           set $url_prefix "/mapcache";
+           mapcache /home/tbonfort/dev/mapserver-trunk/mapcache/mapcache.xml;
+        }
+
+	## AFTER PATH EDIT
+        location ~ ^/mapcache(?<path_info>/.*|$) {
+           set $url_prefix "/mapcache";
+           mapcache /usr/local/src/mapserver-trunk/mapcache/mapcache.xml;
+        }
+
+Now copy the\  ``nginx.conf`` \ from mapcache's nginx child directory into
+nginx's conf directory (the nginx root directory in this case is \  ``/usr/local/nginx`` \) 
+
+.. code-block:: bash
+
+   $ sudo cp /usr/local/src/mapserver-trunk/mapcache/nginx/nginx.conf /usr/local/nginx/conf       
+
+You should now have access to the demo. Notice the port number:  http://myserver:8083/mapcache/demo
 
 CGI/FastCGI Specific Instructions
 ---------------------------------
