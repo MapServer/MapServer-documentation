@@ -287,7 +287,8 @@ Mapfile Layer
           CONNECTIONTYPE CSV
           TABLE "../data/lookup.csv"
           FROM "ID"
-          TO "IDENT"
+          #TO "IDENT"  # see note below
+          TO "1"       # see note below
           TYPE ONE-TO-ONE
         END
       END # layer
@@ -316,7 +317,7 @@ CSV File Structure
    row. It just uses indexes (1, 2, ... n) to reference the
    columns. It's ok to leave column names as the first row since they
    likely won't match anything but they aren't used. Typically you'd
-   see something like "TO '1'" in the JOIN block. Then in the template
+   see something like TO "1" in the JOIN block. Then in the template
    you'd use [name_1], [name_2], etc...
 
 Ogrinfo
@@ -336,14 +337,24 @@ Ogrinfo
   IDENT: String (0.0)
   VAL: String (0.0)
 
-Template
---------
+Template (prov.html)
+--------------------
 
-::
+Ideally this the template should look like this::
 
+  <!-- MapServer Template -->
   <tr bgcolor="#EFEFEF">
     <td align="left">[NAME]</td>
     <td align="left">[test_VAL]</td>
+  </tr>
+
+But since attribute names are not supported for CSV files (see note
+above), the following will have to be used::
+
+  <!-- MapServer Template -->
+  <tr bgcolor="#EFEFEF">
+    <td align="left">[NAME]</td>
+    <td align="left">[test_2]</td>
   </tr>
 
 Example 4: Join from Shape dataset to MySQL
