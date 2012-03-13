@@ -206,8 +206,21 @@ display those points.
 How do I set line width in my maps?
 -------------------------------------------------------------------------------
 
-You must set the symbol for the LAYER to be 'circle' and then you can set the
-symbol SIZE to be the width you want. A 'circle' symbol can be defined as
+In the current Mapserver version, line width is set using
+the STYLE parameter WIDTH.  For a LINE layer, lines can be
+made red and 3 pixels wide by using the following style in
+a CLASS.
+
+.. code-block:: mapfile
+
+    STYLE
+      COLOR 255 0 0
+      WIDTH 3
+    END
+
+In earlier versions of Mapserver, you could set the symbol for the
+LAYER to 'circle' and then you can set the symbol SIZE to be the
+width you want. A 'circle' symbol can be defined as
 
 .. code-block:: mapfile
 
@@ -221,18 +234,25 @@ symbol SIZE to be the width you want. A 'circle' symbol can be defined as
 Why do my JPEG input images look crappy via MapServer?
 -------------------------------------------------------------------------------
 
-The default output format for MapServer is 8bit pseudo-colored PNG or GIF.
-Inherently there will be some color degredation in converting a 24bit image
-(16 million colors) image into 8bit (256 colors).
+You must be using an old version of Mapserver (where GD was the
+default library for rendering).
 
-But in order to ensure fast rendering MapServer uses quite a simple method to
-do the transformation, converting pixels to the nearest color in a 175 color
-colorcube. This will usually result in blotchy color in a fairly smoothly
-varying image.   
+Newer versions of Mapserver use AGG for rendering, and the default
+output formats is 24 bit colour, so there should not be a problem.
 
-Solutions include:
+The default output format for MapServer with GD was 8bit
+pseudo-colored PNG or GIF.  Inherently there will be some color
+degradation in converting a 24bit image (16 million colors) image into
+8bit (256 colors).
 
-- Select 24bit output. This might be as easy as "IMAGETYPE JPEG" in your MAP
+With GD output, MapServer used quite a simple method to do the
+transformation, converting pixels to the nearest color in a 175 color
+colorcube. This would usually result in blotchy color in a fairly
+smoothly varying image.
+
+For GD, solutions used to be:
+
+- Select 24bit output.  This might be as easy as "IMAGETYPE JPEG" in your MAP
   section.
 - Enable dithering (PROCESSING "DITHER=YES") to produce a better color
   appearance.
@@ -244,7 +264,7 @@ For more information review the :ref:`raster`.
 Which image format should I use?
 -------------------------------------------------------------------------------
 
-Although MapScript can generate the map in any desired image format it
+Although MapScript can generate the map in any desired image format it is
 sufficient to only consider the three most prevalent ones: JPEG, PNG, and GIF.
 
 JPEG is an image format that uses a lossy compression algorithm to reduce an
@@ -279,7 +299,7 @@ labels/annotations etc.)
 Although GIF shows a quantitative as well as qualitative advantage over PNG
 when generating maps that contain full coloured remote sensing imagery, PNG is
 the clear quantitative winner in terms of generated file sizes for maps with
-or without additional monochrome imagery and should therefore been the
+or without additional monochrome imagery and should therefore be the
 preferred image format. If the mapping application however can also display
 fullcolour aerial or satellite imagery, the output file format can be changed
 dynamically to either GIF or even PNG24 to achieve the highest possible image
@@ -309,6 +329,10 @@ Why do my symbols look poor in JPEG output?
 
 When I render my symbols to an 8bit output (PNG, GIF) they look fine, but in
 24bit jpeg output they look very blocky and gross.
+
+You must be using an old version of Mapserver.  This should not be
+problem with newer versions.  The following explains the old (GD)
+behaviour.
 
 In order to render some classes of symbols properly in 24bit output, such as
 symbols from true type fonts, it is necessary to force rendering to occur in
@@ -349,8 +373,12 @@ Example Layer
           SIZE 8
           BUFFER 1
           COLOR 0 0 0
-          BACKGROUNDCOLOR 255 255 255
+          # BACKGROUNDCOLOR 255 255 255 # old way
           FORCE TRUE
+          STYLE # new in mapserver 6
+            GEOMTRANSFORM 'labelpoly'
+            COLOR 255 255 255
+          END # STYLE
         END
       END 
       UNITS PIXELS #sets the units for the feature object
@@ -381,22 +409,25 @@ in your class.
     STYLE # solid fill
       COLOR 255 0 0
     END
-    STYLE # thick outline (could use a circle symbol with size too)
+    STYLE # thick outline
       OUTLINECOLOR 0 0 0
       WIDTH 3
-      ANTIALIAS TRUE
     END
 
 How can I create simple antialiased line features?
 -------------------------------------------------------------------------------
 
-The easiest way to produce antialiased lines is to:
+With AGG (used in recent Mapserver version), antialiased lines is the
+default, and can't be turned off.
+
+With GD, the easiest way to produce antialiased lines is to:
 
 - use a 24-bit output image type (IMAGEMODE RGB (or RGBA))
 - set TRANSPARENCY ALPHA in the layer using antialiased lines
 - set ANTIALIAS TRUE in the STYLE element of the CLASS with antialiased lines
 
-The following mapfile snippets enable antialiased county borders:
+The following mapfile snippets enable antialiased county borders for
+GD:
 
 .. code-block:: mapfile
 
@@ -448,7 +479,7 @@ The following mapfile snippets enable antialiased county borders:
 Which OGC Specifications does MapServer support?
 -------------------------------------------------------------------------------
 
-See: :ref:`OGCSUPPORT`
+See: :ref:`ogc_support`.
 
 Why does my requested WMS layer not align correctly?
 -------------------------------------------------------------------------------
