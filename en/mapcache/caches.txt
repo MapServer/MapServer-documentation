@@ -88,6 +88,46 @@ value for each tile to store.
       <template>/tmp/template-test/{tileset}#{grid}#{dim}/{z}/{x}/{y}.{ext}</template>
    </cache>
 
+
+.. _mapcache_cache_bdb:
+
+BerkeleyDB Caches
+--------------------------------------------------------------------------------
+
+The BerkeleyDB cache backend stores tiles in a key-value flat-file database.
+and therefore does not have the disadvantages of disk caches with regards to
+the number of files stored on the filesystem. As the image blobs are stored
+contiguously, the block size chosen for the filesystem has no influence on the
+storage capacity of the volume.
+
+Note that for a given bdb cache, only a single database file is created, which
+will store the tiles of its associated tilesets (i.e. there is not a database
+file created per tileset, grid, and or dimension). If you need to store different
+tilesets to different files, then use multiple dbd cache entries. It is not
+possible to use multiple database files for tileset grids or dimensions.
+
+The berkeleyDB based caches are a bit faster than the disk based caches during
+reads, but may be a bit slower during concurrent writes if a high number of
+threads all try to insert new tiles concurrently.
+
+.. code-block:: xml
+
+   <cache name="bdb" type="bdb">
+      <!-- base (required)
+         absolute filesystem path where the berkeley db database file is to be stored.
+         this directory must exist, and be writable
+      -->
+      <base>/tmp/foo/</base>
+      
+      <!-- key_template (optional)
+         string template used to create the key for a tile entry in the database.
+         defaults to the value below. you should include {tileset}, {grid} and {dim} here
+         unless you know what you are doing, or you will end up with mixed tiles
+      <key_template>{tileset}-{grid}-{dim}-{z}-{y}-{x}.{ext}</key_template>
+      -->
+   </cache>
+
+
 .. _mapcache_cache_sqlite:
 
 Sqlite Caches
