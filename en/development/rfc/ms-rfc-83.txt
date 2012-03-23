@@ -1,0 +1,145 @@
+.. _rfc83:
+
+=========================================================================
+MS RFC 83: Source tree reorganization
+=========================================================================
+
+:Date:  2012-02-06
+:Author: Daniel Morissette
+:Contact: dmorissette at mapgears.com
+:Last Edited: $Date: 2011-11-25 15:59:20 -0500 (Fri, 25 Nov 2011) $
+:Status: Draft
+:Version: MapServer 6.2
+:Id: $Id: ms-rfc-78.txt 12806 2011-11-25 20:59:20Z aboudreault $
+
+1. Overview
+-----------
+
+With the inclusion of the new MapCache and TinyOWS components in the MapServer project, it would be ideal to reorganize the directory structure of the source tree to facilitate builds and maintenance in the future.
+
+2. Current directory structure
+------------------------------
+
+::
+
+  ls -R | grep -v svn | grep ":$" | sed -e 's/:$//' -e 's/[^-][^\/]*\//--/g' -e 's/^/   /' -e 's/-/|/'
+
+   mapserver
+   |-fonts
+   |-m4
+   |-mapcache
+   |---apache
+   |---cgi
+   |---include
+   |---lib
+   |---m4
+   |---nginx
+   |---static
+   |---util
+   |-mapscript
+   |---csharp
+   |-----config
+   |-----examples
+   |---doc
+   |---java
+   |-----data
+   |-----examples
+   |-----tests
+   |-------threadtest
+   |---perl
+   |-----examples
+   |---php
+   |-----examples
+   |---python
+   |-----examples
+   |-----pygdioctx
+   |-----tests
+   |-------cases
+   |-------timing
+   |---ruby
+   |-----examples
+   |---swiginc
+   |---tcl
+   |-----examples
+   |-----win
+   |-opengl
+   |-renderers
+   |---agg
+   |-----include
+   |-------util
+   |-----src
+   |-symbols
+   |-tests
+   |---vera
+   |-xmlmapfile
+   |---tests
+
+Where the most interesting pieces are:
+
+::
+
+   mapserver
+   |-mapcache
+   |-mapscript
+   |-opengl
+   |-renderers
+   |---agg
+   |-xmlmapfile
+
+
+3. New proposed directory structure
+-----------------------------------
+
+The most important change is that most of the .c/.h source files currently in the mapserver root directory will be moved to one of two new sub-directories:
+
+* lib: Contains all the mapserver core source files that are built into libmapserver.so and shared with multiple components. This directory would also be the home of libmapfile.so when we create it.
+* apps: Contains the source files related to the traditional mapserv CGI/FastCGI application and command-line utilities such as shp2img, etc.
+
+A new "tinyows" sub-directory will be created to serve as the future home of TinyOWS source files.
+
+The result will look like this:
+
+::
+
+   mapserver
+   |-lib
+   |---renderers
+   |-----agg
+   |-----opengl
+   |-apps
+   |-mapscript
+   |-mapcache
+   |-tinyows
+   |-xmlmapfile
+
+For the time being, the following files will continue to reside in the mapserver root directory:
+
+::
+
+  configure.in
+  Makefile.in
+  HISTORY.TXT (applicable to releases of the full suite)
+
+Initially the root directory's configure.in will be the same one that we currently have, and it will update the Makefile.in in the lib, apps and mapscript sub-directories.
+
+Our long term goal (to happen slowly over time) is that most of the sub-directories (especially mapserv, mapscript, mapcache and tinyows) will also eventually contain their own standalone configure script and Makefile to allow building a given component independently. At that point the master configure script and Makefile in the mapserver root directory will simply call each sub-project's configure and Makefile to automate building of multiple selected components at once.
+
+HISTORY.TXT files will be maintained at two levels:
+
+* HISTORY.TXT in root directory: contains history information relevant to releases of the full suite
+* HISTORY.TXT in each sub-project directory: contains detailed history information related to each specific component. The current HISTORY.TXT would be moved to the libmapserver.so sub-directory.
+
+4. Backwards Compatibilty Issues
+---------------------------------
+
+Patches against older releases may not apply directly any more due to files moving around. For the same reasons, merging of changes from a svn sandbox or branch may be more complicated.
+
+5. Bug ID
+---------
+
+* TBD
+
+6. Voting history
+-----------------
+
+No vote yet.
