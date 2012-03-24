@@ -270,8 +270,8 @@ imageObj createLegendIcon(int width, int height)
     Draw the legend icon and return a new imageObj.
  
 int deletestyle(int index)
-   Delete the style specified by the style index. If there are any
-   style that follow the deleted style, their index will decrease by 1.
+    Delete the style specified by the style index. If there are any
+    style that follow the deleted style, their index will decrease by 1.
 
 int drawLegendIcon(int width, int height, imageObj im, int dstX, int dstY)
     Draw the legend icon on im object at dstX, dstY.
@@ -714,8 +714,13 @@ Methods
 ...............................................................................
 
 int deleteStyle(int index)
-   Delete the style specified by the style index. If there are any
-   style that follow the deleted style, their index will decrease by 1.
+    Delete the style specified by the style index. If there are any
+    style that follow the deleted style, their index will decrease by 1.
+
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the
+    resources.
 
 string getBinding(const labelbinding)
     Get the attribute binding for a specified label property. Returns
@@ -731,11 +736,6 @@ string getBinding(const labelbinding)
 styleObj getStyle(int index)
     Return the style object using an index. index >= 0 &&
     index < label->numstyles.
-
-void free()
-    Free the object properties and break the internal references. 
-    Note that you have to unset the php variable to free totally the
-    resources.
 
 int moveStyleDown(int index)
     The style specified by the style index will be moved down into
@@ -856,18 +856,32 @@ int             type
 Methods
 ...............................................................................
 
-int updateFromString(string snippet)
-    Update a layer from a string snippet. Returns MS_SUCCESS/MS_FAILURE.
+int addFeature(shapeObj shape)
+    Add a new feature in a layer. Returns MS_SUCCESS or MS_FAILURE on
+    error.
 
-    .. code-block:: php
+int applySLD(string sldxml, string namedlayer)
+    Apply the :ref:`SLD <sld>` document to the layer object. 
+    The matching between the sld document and the layer will be done 
+    using the layer's name.
+    If a namedlayer argument is passed (argument is optional), 
+    the NamedLayer in the sld that matchs it will be used to style 
+    the layer.
+    See :ref:`SLD HowTo <sld>` for more information on the SLD support.
 
-      /*modify the name */
-      $oLayer->updateFromString('LAYER NAME land_fn2 END');
-      /*add a new class*/
-      $oLayer->updateFromString('LAYER CLASS STYLE COLOR 255 255 0 END END END');
+int applySLDURL(string sldurl, string namedlayer)
+    Apply the :ref:`SLD <sld>` document pointed by the URL to the
+    layer object. The matching between the sld document and the layer
+    will be done using the layer's name.  If a namedlayer argument is
+    passed (argument is optional), the NamedLayer in the sld that
+    matchs it will be used to style the layer.  See :ref:`SLD HowTo
+    <sld>` for more information on the SLD support.
 
-int set(string property_name, new_value)
-    Set object property to a new value.
+void clearProcessing()
+    Clears all the processing strings.
+
+void close()
+    Close layer previously opened with open().
 
 int draw(imageObj image)
     Draw a single layer, add labels to cache if required. 
@@ -875,6 +889,20 @@ int draw(imageObj image)
 
 int drawQuery(imageObj image)
     Draw query map for a single layer.
+
+string   executeWFSGetfeature()
+    Executes a GetFeature request on a WFS layer and returns the
+    name of the temporary GML file created. Returns an empty
+    string on error.
+
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the
+    resources.
+
+string generateSLD()
+    Returns an SLD XML string based on all the classes found in the
+    layer (the layer must have `STATUS` `on`).
 
 classObj getClass(int classIndex)
     Returns a classObj from the layer given an index value (0=first class)
@@ -884,6 +912,143 @@ int getClassIndex(shape [, classgroup,  numclasses])
     class matches. classgroup is an array of class ids to check
     (Optionnal). numclasses is the number of classes that the classgroup
     array contains. By default, all the layer classes will be checked.
+
+rectObj getExtent()
+    Returns the layer's data extents or NULL on error.
+    If the layer's EXTENT member is set then this value is used, 
+    otherwise this call opens/closes the layer to read the 
+    extents. This is quick on shapefiles, but can be
+    an expensive operation on some file formats or data sources.
+    This function is safe to use on both opened or closed layers: it
+    is not necessary to call open()/close() before/after calling it.
+
+string getFilterString()
+    Returns the :ref:`expression <expressions>` for this layer or NULL
+    on error.
+
+array getGridIntersectionCoordinates()
+    Returns an array containing the grid intersection coordinates. If
+    there are no coordinates, it returns an empty array.
+
+array getItems()
+    Returns an array containing the items. Must call open function first.
+    If there are no items, it returns an empty array.
+
+int getMetaData(string name)
+    Fetch layer metadata entry by name.  Returns "" if no entry 
+    matches the name.  Note that the search is case sensitive.
+
+    .. note::
+      getMetaData's query is case sensitive.
+    
+int getNumResults()
+    Returns the number of results in the last query.
+
+array getProcessing()
+    Returns an array containing the processing strings.
+    If there are no processing strings, it returns an empty array.
+
+string getProjection()
+    Returns a string representation of the :ref:`projection <projection>`. 
+    Returns NULL on error or if no projection is set.
+
+resultObj getResult(int index)
+    Returns a resultObj by index from a layer object with 
+    index in the range 0 to numresults-1.  
+    Returns a valid object or FALSE(0) if index is invalid.
+
+rectObj getResultsBounds()
+    Returns the bounding box of the latest result.
+
+shapeObj getShape(resultObj result])
+    If the resultObj passed has a valid resultindex, retrieve shapeObj from
+    a layer's resultset. (You get it from the resultObj returned by
+    getResult() for instance). Otherwise, it will do a single query on
+    the layer to fetch the shapeindex
+
+    .. code-block:: php
+
+      $map = new mapObj("gmap75.map");
+      $l = $map->getLayerByName("popplace");
+      $l->queryByRect($map->extent);
+      for ($i=0; $i<$l->getNumResults();$i++){
+        $s = $l->getShape($l->getResult($i));
+        echo $s->getValue($l,"Name");
+        echo "\n";
+      }
+
+string getWMSFeatureInfoURL(int clickX, int clickY, int featureCount, string infoFormat)
+    Returns a WMS GetFeatureInfo URL (works only for WMS layers)
+    clickX, clickY is the location of to query in pixel coordinates
+    with (0,0) at the top left of the image.
+    featureCount is the number of results to return.
+    infoFormat is the format the format in which the result should be
+    requested.  Depends on remote server's capabilities.  MapServer
+    WMS servers support only "MIME" (and should support "GML.1" soon).
+    Returns "" and outputs a warning if layer is not a WMS layer 
+    or if it is not queriable.
+    
+boolean isVisible()
+    Returns MS_TRUE/MS_FALSE depending on whether the layer is 
+    currently visible in the map (i.e. turned on, in scale, etc.). 
+
+int moveclassdown(int index)
+    The class specified by the class index will be moved down into
+    the array of layers. Returns MS_SUCCESS or MS_FAILURE.
+    ex layer->moveclassdown(0) will have the effect of moving class 0
+    up to position 1, and the class at position 1 will be moved
+    to position 0.
+
+int moveclassup(int index)
+    The class specified by the class index will be moved up into
+    the array of layers. Returns MS_SUCCESS or MS_FAILURE.
+    ex layer->moveclassup(1) will have the effect of moving class 1
+    up to position 0, and the class at position 0 will be moved
+    to position 1.
+
+int open()
+    Open the layer for use with getShape().  
+    Returns MS_SUCCESS/MS_FAILURE.
+
+shapeobj nextShape()
+    Called after msWhichShapes has been called to actually retrieve
+    shapes within a given area. Returns a shape object or NULL on
+    error.
+
+    .. code-block:: php
+
+      $map = ms_newmapobj("d:/msapps/gmap-ms40/htdocs/gmap75.map");
+      $layer = $map->getLayerByName('road');
+      $status = $layer->open();
+      $status = $layer->whichShapes($map->extent);
+      while ($shape = $layer->nextShape()) 
+      {
+        echo $shape->index ."<br>\n";
+      }
+      $layer->close();
+
+int queryByAttributes(string qitem, string qstring, int mode)
+    Query layer for shapes that intersect current map extents.  qitem
+    is the item (attribute) on which the query is performed, and
+    qstring is the expression to match.  The query is performed on all
+    the shapes that are part of a :ref:`CLASS` that contains a
+    :ref:`TEMPLATE <template>` value or that match any class in a
+    layer that contains a :ref:`LAYER` :ref:`TEMPLATE <template>`
+    value.  Note that the layer's FILTER/FILTERITEM are ignored by
+    this function.  Mode is MS_SINGLE or MS_MULTIPLE depending on
+    number of results you want.  Returns MS_SUCCESS if shapes were
+    found or MS_FAILURE if nothing was found or if some other error
+    happened (note that the error message in case nothing was found
+    can be avoided in PHP using the '@' control operator).
+
+int queryByFeatures(int slayer) 
+    Perform a query set based on a previous set of results from
+    another layer. At present the results MUST be based on a polygon
+    layer.
+    Returns MS_SUCCESS if shapes were found or MS_FAILURE if nothing
+    was found or if some other error happened (note that the error 
+    message in case nothing was found can be avoided in PHP using 
+    the '@' control operator).
 
 int queryByPoint(pointObj point, int mode, double buffer)
     Query layer at point location specified in georeferenced map 
@@ -920,39 +1085,42 @@ int queryByShape(shapeObj shape)
     message in case nothing was found can be avoided in PHP using 
     the '@' control operator).
 
-int queryByFeatures(int slayer) 
-    Perform a query set based on a previous set of results from
-    another layer. At present the results MUST be based on a polygon
-    layer.
-    Returns MS_SUCCESS if shapes were found or MS_FAILURE if nothing
-    was found or if some other error happened (note that the error 
-    message in case nothing was found can be avoided in PHP using 
-    the '@' control operator).
+classObj removeClass(int index)
+    Removes the class indicated and returns a copy, or NULL in the case
+    of a failure.  Note that subsequent classes will be renumbered by
+    this operation. The numclasses field contains the number of classes
+    available.
 
-int queryByAttributes(string qitem, string qstring, int mode)
-    Query layer for shapes that intersect current map extents.  qitem
-    is the item (attribute) on which the query is performed, and
-    qstring is the expression to match.  The query is performed on all
-    the shapes that are part of a :ref:`CLASS` that contains a
-    :ref:`TEMPLATE <template>` value or that match any class in a
-    layer that contains a :ref:`LAYER` :ref:`TEMPLATE <template>`
-    value.  Note that the layer's FILTER/FILTERITEM are ignored by
-    this function.  Mode is MS_SINGLE or MS_MULTIPLE depending on
-    number of results you want.  Returns MS_SUCCESS if shapes were
-    found or MS_FAILURE if nothing was found or if some other error
-    happened (note that the error message in case nothing was found
-    can be avoided in PHP using the '@' control operator).
+int removeMetaData(string name)
+    Remove a metadata entry for the layer.  Returns MS_SUCCESS/MS_FAILURE.
 
+int set(string property_name, new_value)
+    Set object property to a new value.
+
+int setConnectionType(int connectiontype [,string plugin_library])
+    Changes the connectiontype of the layer and recreates the vtable 
+    according to the new connection type. This method should be used 
+    instead of setting the connectiontype parameter directly. 
+    In the case when the layer.connectiontype = MS_PLUGIN the plugin_library
+    parameter should also be specified so as to select the library to 
+    load by MapServer. For the other connection types this parameter 
+    is not used. 
+    
 int setFilter(string expression)
     Set layer filter :ref:`expression <expressions>`.
 
-string getFilterString()
-    Returns the :ref:`expression <expressions>` for this layer or NULL
-    on error.
+int setMetaData(string name, string value)
+    Set a metadata entry for the layer.  Returns MS_SUCCESS/MS_FAILURE.
 
-string getProjection()
-    Returns a string representation of the :ref:`projection <projection>`. 
-    Returns NULL on error or if no projection is set.
+int setProcessing(string)
+    Add the string to the processing string list for the layer.
+    The layer->num_processing is incremented by 1.
+    Returns MS_SUCCESS or MS_FAILURE on error.
+
+    .. code-block:: php
+
+      $oLayer->setprocessing("SCALE_1=AUTO");
+      $oLayer->setprocessing("SCALE_2=AUTO");       
 
 int setProjection(string proj_params)
     Set layer :ref:`projection <projection>` and coordinate system.
@@ -966,20 +1134,15 @@ int setWKTProjection(string proj_params)
     .. note::
       setWKTProjection requires GDAL support
 
-int getNumResults()
-    Returns the number of results in the last query.
+int updateFromString(string snippet)
+    Update a layer from a string snippet. Returns MS_SUCCESS/MS_FAILURE.
 
-resultObj getResult(int index)
-    Returns a resultObj by index from a layer object with 
-    index in the range 0 to numresults-1.  
-    Returns a valid object or FALSE(0) if index is invalid.
+    .. code-block:: php
 
-rectObj getResultsBounds()
-    Returns the bounding box of the latest result.
-
-int open()
-    Open the layer for use with getShape().  
-    Returns MS_SUCCESS/MS_FAILURE.
+      /*modify the name */
+      $oLayer->updateFromString('LAYER NAME land_fn2 END');
+      /*add a new class*/
+      $oLayer->updateFromString('LAYER CLASS STYLE COLOR 255 255 0 END END END');
 
 int whichshapes(rectobj)
     Performs a spatial, and optionally an attribute based feature
@@ -988,169 +1151,6 @@ int whichshapes(rectobj)
     nextshape function).  Returns MS_SUCCESS, MS_FAILURE or MS_DONE.
     MS_DONE is returned if the layer extent does not overlap the
     rectObj.
-
-shapeobj nextShape()
-    Called after msWhichShapes has been called to actually retrieve
-    shapes within a given area. Returns a shape object or NULL on
-    error.
-
-    .. code-block:: php
-
-      $map = ms_newmapobj("d:/msapps/gmap-ms40/htdocs/gmap75.map");
-      $layer = $map->getLayerByName('road');
-      $status = $layer->open();
-      $status = $layer->whichShapes($map->extent);
-      while ($shape = $layer->nextShape()) 
-      {
-        echo $shape->index ."<br>\n";
-      }
-      $layer->close();
-
-void close()
-    Close layer previously opened with open().
-
-rectObj getExtent()
-    Returns the layer's data extents or NULL on error.
-    If the layer's EXTENT member is set then this value is used, 
-    otherwise this call opens/closes the layer to read the 
-    extents. This is quick on shapefiles, but can be
-    an expensive operation on some file formats or data sources.
-    This function is safe to use on both opened or closed layers: it
-    is not necessary to call open()/close() before/after calling it.
-
-int addFeature(shapeObj shape)
-    Add a new feature in a layer. Returns MS_SUCCESS or MS_FAILURE on
-    error.
-
-int getMetaData(string name)
-    Fetch layer metadata entry by name.  Returns "" if no entry 
-    matches the name.  Note that the search is case sensitive.
-
-    .. note::
-      getMetaData's query is case sensitive.
-    
-int setMetaData(string name, string value)
-    Set a metadata entry for the layer.  Returns MS_SUCCESS/MS_FAILURE.
-
-int removeMetaData(string name)
-    Remove a metadata entry for the layer.  Returns MS_SUCCESS/MS_FAILURE.
-
-string getWMSFeatureInfoURL(int clickX, int clickY, int featureCount, string infoFormat)
-    Returns a WMS GetFeatureInfo URL (works only for WMS layers)
-    clickX, clickY is the location of to query in pixel coordinates
-    with (0,0) at the top left of the image.
-    featureCount is the number of results to return.
-    infoFormat is the format the format in which the result should be
-    requested.  Depends on remote server's capabilities.  MapServer
-    WMS servers support only "MIME" (and should support "GML.1" soon).
-    Returns "" and outputs a warning if layer is not a WMS layer 
-    or if it is not queriable.
-    
-array getItems()
-    Returns an array containing the items. Must call open function first.
-    If there are no items, it returns an empty array.
-
-int setProcessing(string)
-    Add the string to the processing string list for the layer.
-    The layer->num_processing is incremented by 1.
-    Returns MS_SUCCESS or MS_FAILURE on error.
-
-    .. code-block:: php
-
-      $oLayer->setprocessing("SCALE_1=AUTO");
-      $oLayer->setprocessing("SCALE_2=AUTO");       
-
-array getProcessing()
-    Returns an array containing the processing strings.
-    If there are no processing strings, it returns an empty array.
-
-void clearProcessing()
-    Clears all the processing strings.
-
-string   executeWFSGetfeature()
-    Executes a GetFeature request on a WFS layer and returns the
-    name of the temporary GML file created. Returns an empty
-    string on error.
-
-int applySLD(string sldxml, string namedlayer)
-    Apply the :ref:`SLD <sld>` document to the layer object. 
-    The matching between the sld document and the layer will be done 
-    using the layer's name.
-    If a namedlayer argument is passed (argument is optional), 
-    the NamedLayer in the sld that matchs it will be used to style 
-    the layer.
-    See :ref:`SLD HowTo <sld>` for more information on the SLD support.
-
-int applySLDURL(string sldurl, string namedlayer)
-    Apply the :ref:`SLD <sld>` document pointed by the URL to the
-    layer object. The matching between the sld document and the layer
-    will be done using the layer's name.  If a namedlayer argument is
-    passed (argument is optional), the NamedLayer in the sld that
-    matchs it will be used to style the layer.  See :ref:`SLD HowTo
-    <sld>` for more information on the SLD support.
-
-string generateSLD()
-    Returns an SLD XML string based on all the classes found in the
-    layer (the layer must have `STATUS` `on`).
-
-int moveclassup(int index)
-    The class specified by the class index will be moved up into
-    the array of layers. Returns MS_SUCCESS or MS_FAILURE.
-    ex layer->moveclassup(1) will have the effect of moving class 1
-    up to position 0, and the class at position 0 will be moved
-    to position 1.
-
-int moveclassdown(int index)
-    The class specified by the class index will be moved down into
-    the array of layers. Returns MS_SUCCESS or MS_FAILURE.
-    ex layer->moveclassdown(0) will have the effect of moving class 0
-    up to position 1, and the class at position 1 will be moved
-    to position 0.
-
-classObj removeClass(int index)
-    Removes the class indicated and returns a copy, or NULL in the case
-    of a failure.  Note that subsequent classes will be renumbered by
-    this operation. The numclasses field contains the number of classes
-    available.
-
-boolean isVisible()
-    Returns MS_TRUE/MS_FALSE depending on whether the layer is 
-    currently visible in the map (i.e. turned on, in scale, etc.). 
-
-int setConnectionType(int connectiontype [,string plugin_library])
-    Changes the connectiontype of the layer and recreates the vtable 
-    according to the new connection type. This method should be used 
-    instead of setting the connectiontype parameter directly. 
-    In the case when the layer.connectiontype = MS_PLUGIN the plugin_library
-    parameter should also be specified so as to select the library to 
-    load by MapServer. For the other connection types this parameter 
-    is not used. 
-    
-shapeObj getShape(resultObj result])
-    If the resultObj passed has a valid resultindex, retrieve shapeObj from
-    a layer's resultset. (You get it from the resultObj returned by
-    getResult() for instance). Otherwise, it will do a single query on
-    the layer to fetch the shapeindex
-
-    .. code-block:: php
-
-      $map = new mapObj("gmap75.map");
-      $l = $map->getLayerByName("popplace");
-      $l->queryByRect($map->extent);
-      for ($i=0; $i<$l->getNumResults();$i++){
-        $s = $l->getShape($l->getResult($i));
-        echo $s->getValue($l,"Name");
-        echo "\n";
-      }
-
-array getGridIntersectionCoordinates()
-    Returns an array containing the grid intersection coordinates. If
-    there are no coordinates, it returns an empty array.
-
-void free()
-    Free the object properties and break the internal references. 
-    Note that you have to unset the php variable to free totally the
-    resources.
 
 .. index::
    triple: MapScript; PHP; legendObj
@@ -1325,30 +1325,35 @@ int             width              see setSize()
 Methods
 ...............................................................................
 
-int set(string property_name, new_value)
-    Set map object property to new value.
+int applyconfigoptions()
+    Applies the config options set in the map file. For example
+    setting the PROJ_LIB using the setconfigoption only modifies
+    the value in the map object. applyconfigoptions will actually
+    change the PROJ_LIB value that will be used when dealing with
+    projection.
 
-int getsymbolbyname(string symbol_name)  
-    Returns the symbol index using the name.
+int applySLD(string sldxml)
+    Apply the :ref:`SLD` document to the map file. The matching between the
+    sld document and the map file will be done using the layer's name.
+    See :ref:`SLD HowTo <sld>` for more information on the SLD support.
 
-symbol getsymbolobjectbyid(int symbolid)
-    Returns the symbol object using a symbol id. Refer to
-    the symbol object reference section for more details.
-
-void preparequery()
-    Calculate the scale of the map and set map->scaledenom.
-         
-imageObj prepareImage()
-    Return a blank image object.
+int applySLDURL(string sldurl)
+    Apply the SLD document pointed by the URL to the map file. The 
+    matching between the sld document and the map file will be done 
+    using the layer's name.
+    See :ref:`SLD HowTo <sld>` for more information on the SLD support.
 
 imageObj draw()
     Render map and return an image object or NULL on error.
 
-imageObj drawQuery()
-    Render a query map and return an image object or NULL on error.
+int drawLabelCache(imageObj image)
+    Renders the labels for a map. Returns MS_SUCCESS or MS_FAILURE on error.
 
 imageObj drawLegend()
     Render legend and return an image object.
+
+imageObj drawQuery()
+    Render a query map and return an image object or NULL on error.
 
 imageObj drawReferenceMap()
     Render reference map and return an image object.
@@ -1356,7 +1361,7 @@ imageObj drawReferenceMap()
 imageObj drawScaleBar()
     Render scale bar and return an image object.
 
-int embedlegend(imageObj image) 
+int embedLegend(imageObj image) 
     embeds a legend. Actually the legend is just added to the label 
     cache so you must invoke drawLabelCache() to actually do the 
     rendering (unless postlabelcache is set in which case it is 
@@ -1368,8 +1373,34 @@ int embedScalebar(imageObj image)
     (unless postlabelcache is set in which case it is drawn right away).
     Returns MS_SUCCESS or MS_FAILURE on error.
 
-int drawLabelCache(imageObj image)
-    Renders the labels for a map. Returns MS_SUCCESS or MS_FAILURE on error.
+void free()
+    Free the object properties and break the internal references.
+    Note that you have to unset the php variable to free totally the
+    resources.
+ 
+void freeQuery(layerindex)
+    Frees the query result on a specified layer. If the layerindex is -1,
+    all queries on layers will be freed.
+
+string generateSLD()
+    Returns an SLD XML string based on all the classes found in all 
+    the layers that have `STATUS` `on`.
+
+array getAllGroupNames()
+    Return an array containing all the group names used in the
+    layers. If there are no groups, it returns an empty array. 
+
+array getAllLayerNames()
+    Return an array containing all the layer names.
+    If there are no layers, it returns an empty array.
+
+colorObj getColorbyIndex(int iCloIndex)
+    Returns a colorObj corresponding to the color index in the
+    palette.
+
+string getConfigOption(string key)
+    Returns the config value associated with the key.
+    Returns an empty sting if key not found.
 
 labelcacheMemberObj getLabel(int index)
     Returns a labelcacheMemberObj from the map given an index value
@@ -1389,82 +1420,143 @@ layerObj getLayerByName(string layer_name)
     Returns a layerObj from the map given a layer name.  
     Returns NULL if layer doesn't exist.
 
-colorObj getcolorbyindex(int iCloIndex)
-    Returns a colorObj corresponding to the color index in the
-    palette.
+array getLayersDrawingOrder()
+    Return an array containing layer's index in the order which they
+    are drawn. If there are no layers, it returns an empty array.
 
-void setExtent(double minx, double miny, double maxx, double maxy)
-    Set the map extents using the georef extents passed in argument.
+array getLayersIndexByGroup(string groupname)
+    Return an array containing all the layer's indexes given
+    a group name. If there are no layers, it returns an empty array.
+
+int getMetaData(string name)
+    Fetch metadata entry by name (stored in the :ref:`WEB` object in
+    the map file).  Returns "" if no entry matches the name.
+
+    .. note::
+      getMetaData's query is case sensitive.
+
+int getNumSymbols()
+    Return the number of symbols in map.
+   
+string getProjection()
+    Returns a string representation of the projection. 
+    Returns NULL on error or if no projection is set.
+
+int getSymbolByName(string symbol_name)  
+    Returns the symbol index using the name.
+
+symbol getSymbolObjectById(int symbolid)
+    Returns the symbol object using a symbol id. Refer to
+    the symbol object reference section for more details.
+
+int insertLayer( layerObj layer [, int nIndex=-1 ] )
+    Insert a copy of *layer* into the Map at index *nIndex*.  The
+    default value of *nIndex* is -1, which means the last possible
+    index.  Returns the index of the new Layer, or -1 in the case of a
+    failure.
+
+int loadMapContext(string filename [, boolean unique_layer_name])
+    Available only if WMS support is enabled.  Load a :ref:`WMS Map
+    Context <map_context>` XML file into the current mapObj.  If the
+    map already contains some layers then the layers defined in the
+    WMS Map context document are added to the current map.  The 2nd
+    argument unique_layer_name is optional and if set to MS_TRUE
+    layers created will have a unique name (unique prefix added to the
+    name). If set to MS_FALSE the layer name will be the the same name
+    as in the context. The default value is MS_FALSE.  Returns
+    MS_SUCCESS/MS_FAILURE.
+
+int loadOWSParameters(owsrequest request, string version)
+    Load OWS request parameters (BBOX, LAYERS, &c.) into map.  Returns 
+    MS_SUCCESS or MS_FAILURE.  2nd argument version is not mandatory. 
+    If not given, the version will be set to 1.1.1
+
+int loadQuery(filename)
+    Loads a query from a file. Returns MS_SUCESS or MS_FAILURE.
+    To be used with savequery.
+
+int moveLayerDown(int layerindex)
+    Move layer down in the hierarcy of drawing. 
     Returns MS_SUCCESS or MS_FAILURE on error.
 
-int setCenter(pointObj center)
-    Set the map center to the given map point. 
-    Returns MS_SUCCESS or MS_FAILURE. 
+int moveLayerUp(int layerindex)
+    Move layer up in the hierarcy of drawing. 
+    Returns MS_SUCCESS or MS_FAILURE on error. 
 
 int offsetExtent(double x, double y)
     Offset the map extent based on the given distances in map coordinates. 
     Returns MS_SUCCESS or MS_FAILURE. 
 
-int scaleExtent(double zoomfactor, double minscaledenom, double maxscaledenom)
-    Scale the map extent using the zoomfactor and ensure the extent
-    within the minscaledenom and maxscaledenom domain.  If
-    minscaledenom and/or maxscaledenom is 0 then the parameter is not
-    taken into account.  Returns MS_SUCCESS or MS_FAILURE.
+int owsDispatch(owsrequest request)
+    Processes and executes the passed OpenGIS Web Services request on
+    the map.  Returns MS_DONE (2) if there is no valid OWS request in
+    the req object, MS_SUCCESS (0) if an OWS request was successfully
+    processed and MS_FAILURE (1) if an OWS request was not
+    successfully processed.  OWS requests include :ref:`WMS
+    <wms_server>`, :ref:`WFS <wfs_server>`, :ref:`WCS <wcs_server>`
+    and :ref:`SOS <sos_server>` requests supported by MapServer.
+    Results of a dispatched request are written to stdout and can be
+    captured using the msIO services (ie. ms_ioinstallstdouttobuffer()
+    and ms_iogetstdoutbufferstring())
 
-int setRotation(double rotation_angle)
-    Set map rotation angle. The map view rectangle (specified in 
-    EXTENTS) will be rotated by the indicated angle in the counter-
-    clockwise direction. Note that this implies the rendered map 
-    will be rotated by the angle in the clockwise direction.
-    Returns MS_SUCCESS or MS_FAILURE.
+imageObj prepareImage()
+    Return a blank image object.
 
-int setSize(int width, int height)
-    Set the map width and height. This method updates the internal
-    geotransform and other data structures required for map rotation
-    so it should be used instead of setting the width and height members
-    directly.
-    Returns MS_SUCCESS or MS_FAILURE.
+void prepareQuery()
+    Calculate the scale of the map and set map->scaledenom.
+         
+string processLegendTemplate(array params)     
+    Process legend template files and return the result in a buffer.
 
-int zoompoint(int nZoomFactor, pointObj oPixelPos, int nImageWidth, int nImageHeight, rectObj oGeorefExt)
-    Zoom to a given XY postion. Returns MS_SUCCESS or MS_FAILURE on error.
+    .. seealso::
 
-    Parameters are :                                                 
-       - Zoom factor : positive values do zoom in, negative values 
-         zoom out. Factor of 1 will recenter.           
-       - Pixel position (pointObj) : x, y coordinates of the click, 
-         with (0,0) at the top-left
-       - Width : width in pixel of the current image.                 
-       - Height : Height in pixel of the current image.               
-       - Georef extent (rectObj) : current georef extents.            
-       - MaxGeoref extent (rectObj) : (optional) maximum georef extents.
-         If provided then it will be impossible to zoom/pan outside of
-         those extents.
+      :ref:`processtemplate <processtemplate>`
+   
+string processQueryTemplate(array params, boolean generateimages)     
+    Process query template files and return the result in a buffer.
+    Second argument generateimages is not mandatory. If not given
+    it will be set to TRUE.
 
-int zoomrectangle(rectObj oPixelExt, int nImageWidth, int nImageHeight, rectObj oGeorefExt)
-    Set the map extents to a given extents. Returns MS_SUCCESS or
-    MS_FAILURE on error.
+    .. seealso::
 
-    Parameters are :
-        - oPixelExt (rect object) : Pixel Extents     
-        - Width : width in pixel of the current image.
-        - Height : Height in pixel of the current image. 
-        - Georef extent (rectObj) : current georef extents.
+      :ref:`processtemplate <processtemplate>`
 
-int zoomscale(double nScaleDenom, pointObj oPixelPos, int nImageWidth, int nImageHeight, rectObj oGeorefExt [, rectObj oMaxGeorefExt])
-    Zoom in or out to a given XY position so that the map is 
-    displayed at specified scale. Returns MS_SUCCESS or MS_FAILURE on error.
+.. _processtemplate:
 
-    Parameters are :                                                 
-       - ScaleDenom : Scale denominator of the scale at which the map 
-         should be displayed.
-       - Pixel position (pointObj) : x, y coordinates of the click, 
-         with (0,0) at the top-left
-       - Width : width in pixel of the current image.                 
-       - Height : Height in pixel of the current image.               
-       - Georef extent (rectObj) : current georef extents.            
-       - MaxGeoref extent (rectObj) : (optional) maximum georef extents.
-         If provided then it will be impossible to zoom/pan outside of
-         those extents.
+string processTemplate(array params, boolean generateimages)
+    Process the template file specified in the web object and return the 
+    result in a buffer. The processing consists of opening the template 
+    file and replace all the tags found in it. Only tags that have an 
+    equivalent element in the map object are replaced (ex [scaledenom]). 
+    The are two exceptions to the previous statement :
+
+    - [img], [scalebar], [ref], [legend] would be replaced with the 
+      appropriate url if the parameter generateimages is set to 
+      MS_TRUE. (Note :  the images corresponding to the different objects 
+      are generated if the object is set to MS_ON in the map file)
+    - the user can use the params parameter to specify tags and 
+      their values. For example if the user have a specific tag call
+      [my_tag] and would like it to be replaced by "value_of_my_tag"
+      he would do 
+
+    .. code-block:: php
+
+      $tmparray["my_tag"] = "value_of_my_tag";
+      $map->processtemplate($tmparray, MS_FALSE);
+     
+int queryByFeatures(int slayer) 
+    Perform a query based on a previous set of results from
+    a layer. At present the results MUST be based on a polygon layer.
+    Returns MS_SUCCESS if shapes were found or MS_FAILURE if nothing
+    was found or if some other error happened (note that the error 
+    message in case nothing was found can be avoided in PHP using 
+    the '@' control operator).
+
+int queryByIndex(layerindex, tileindex, shapeindex[, addtoquery])
+    Add a specific shape on a given layer to the query result.
+    If addtoquery (which is a non mandatory argument) is set to MS_TRUE,
+    the shape will be added to the existing query list. Default behavior
+    is to free the existing query list and add only the new shape.
 
 int queryByPoint(pointObj point, int mode, double buffer)
     Query all selected layers in map at point location specified in 
@@ -1501,150 +1593,35 @@ int queryByShape(shapeObj shape)
     message in case nothing was found can be avoided in PHP using 
     the '@' control operator).
 
-int queryByFeatures(int slayer) 
-    Perform a query based on a previous set of results from
-    a layer. At present the results MUST be based on a polygon layer.
-    Returns MS_SUCCESS if shapes were found or MS_FAILURE if nothing
-    was found or if some other error happened (note that the error 
-    message in case nothing was found can be avoided in PHP using 
-    the '@' control operator).
+layerObj removeLayer( int nIndex )
+    Remove a layer from the mapObj. The argument is the index of the
+    layer to be removed. Returns the removed layerObj on success, else
+    null.
 
-int queryByIndex(layerindex, tileindex, shapeindex[, addtoquery])
-    Add a specific shape on a given layer to the query result.
-    If addtoquery (which is a non mandatory argument) is set to MS_TRUE,
-    the shape will be added to the existing query list. Default behavior
-    is to free the existing query list and add only the new shape.
-
-int savequery(filename)
-    Save the current query in a file. Returns MS_SUCESS or MS_FAILURE.
-    Can be used with loadquery
-
-int loadquery(filename)
-    Loads a query from a file. Returns MS_SUCESS or MS_FAILURE.
-    To be used with savequery.
-
-void freequery(layerindex)
-    Frees the query result on a specified layer. If the layerindex is -1,
-    all queries on layers will be freed.
+int removeMetaData(string name)
+    Remove a metadata entry for the map (stored in the WEB object in the map
+    file).  Returns MS_SUCCESS/MS_FAILURE.
 
 int save(string filename)
     Save current map object state to a file. Returns -1 on error.
     Use absolute path. If a relative path is used, then it will be 
     relative to the mapfile location.
 
-string getProjection()
-    Returns a string representation of the projection. 
-    Returns NULL on error or if no projection is set.
+int saveMapContext(string filename)
+    Available only if WMS support is enabled.  Save current map object
+    state in :ref:`WMS Map Context <map_context>` format.  Only WMS
+    layers are saved in the WMS Map Context XML file.  Returns
+    MS_SUCCESS/MS_FAILURE.
 
-int setProjection(string proj_params, boolean bSetUnitsAndExtents)
-    Set map projection and coordinate system. Returns MS_SUCCESS or
-    MS_FAILURE on error.  
+int saveQuery(filename)
+    Save the current query in a file. Returns MS_SUCESS or MS_FAILURE.
+    Can be used with loadquery
 
-    Parameters are given as a single string of comma-delimited PROJ.4
-    parameters.  The argument : bSetUnitsAndExtents is used to
-    automatically update the map units and extents based on the new
-    projection. Possible values are MS_TRUE and MS_FALSE. By defualt it is
-    set at MS_FALSE.
-
-int setWKTProjection(string proj_params, boolean bSetUnitsAndExtents)
-    Same as setProjection(), but takes an OGC WKT projection 
-    definition string as input. Returns MS_SUCCESS or MS_FAILURE on error.
-
-    .. note::
-      setWKTProjection requires GDAL support
-
-int getMetaData(string name)
-    Fetch metadata entry by name (stored in the :ref:`WEB` object in
-    the map file).  Returns "" if no entry matches the name.
-
-    .. note::
-      getMetaData's query is case sensitive.
-
-int setMetaData(string name, string value)
-    Set a metadata entry for the map (stored in the WEB object in the map
-    file).  Returns MS_SUCCESS/MS_FAILURE.
-
-int removeMetaData(string name)
-    Remove a metadata entry for the map (stored in the WEB object in the map
-    file).  Returns MS_SUCCESS/MS_FAILURE.
-
-array getLayersIndexByGroup(string groupname)
-    Return an array containing all the layer's indexes given
-    a group name. If there are no layers, it returns an empty array.
-
-array getAllGroupNames()
-    Return an array containing all the group names used in the
-    layers. If there are no groups, it returns an empty array. 
-
-array getAllLayerNames()
-    Return an array containing all the layer names.
-    If there are no layers, it returns an empty array.
-
-int moveLayerUp(int layerindex)
-    Move layer up in the hierarcy of drawing. 
-    Returns MS_SUCCESS or MS_FAILURE on error. 
-
-int moveLayerDown(int layerindex)
-    Move layer down in the hierarcy of drawing. 
-    Returns MS_SUCCESS or MS_FAILURE on error.
-
-array getLayersDrawingOrder()
-    Return an array containing layer's index in the order which they
-    are drawn. If there are no layers, it returns an empty array.
-
-boolean  setLayersDrawingOrder(array layeryindex)
-    Set the layer's order array. The argument passed must be a valid
-    array with all the layer's index. 
-    Returns MS_SUCCESS or MS_FAILURE on error.
-
-.. _processtemplate:
-
-string processTemplate(array params, boolean generateimages)
-    Process the template file specified in the web object and return the 
-    result in a buffer. The processing consists of opening the template 
-    file and replace all the tags found in it. Only tags that have an 
-    equivalent element in the map object are replaced (ex [scaledenom]). 
-    The are two exceptions to the previous statement :
-
-    - [img], [scalebar], [ref], [legend] would be replaced with the 
-      appropriate url if the parameter generateimages is set to 
-      MS_TRUE. (Note :  the images corresponding to the different objects 
-      are generated if the object is set to MS_ON in the map file)
-    - the user can use the params parameter to specify tags and 
-      their values. For example if the user have a specific tag call
-      [my_tag] and would like it to be replaced by "value_of_my_tag"
-      he would do 
-
-    .. code-block:: php
-
-      $tmparray["my_tag"] = "value_of_my_tag";
-      $map->processtemplate($tmparray, MS_FALSE);
-     
-string processquerytemplate(array params, boolean generateimages)     
-    Process query template files and return the result in a buffer.
-    Second argument generateimages is not mandatory. If not given
-    it will be set to TRUE.
-
-    .. seealso::
-
-      :ref:`processtemplate <processtemplate>`
-
-string processlegendtemplate(array params)     
-    Process legend template files and return the result in a buffer.
-
-    .. seealso::
-
-      :ref:`processtemplate <processtemplate>`
-   
-int setSymbolSet(string fileName)
-    Load and set a symbol file dynamically.
-   
-int getNumSymbols()
-    Return the number of symbols in map.
-   
-int setFontSet(string fileName)
-    Load and set a new :ref:`fontset`.
-   
+int scaleExtent(double zoomfactor, double minscaledenom, double maxscaledenom)
+    Scale the map extent using the zoomfactor and ensure the extent
+    within the minscaledenom and maxscaledenom domain.  If
+    minscaledenom and/or maxscaledenom is 0 then the parameter is not
+    taken into account.  Returns MS_SUCCESS or MS_FAILURE.
 
 int selectOutputFormat(string type)
     Selects the output format to be used in the map. 
@@ -1656,85 +1633,108 @@ int selectOutputFormat(string type)
       with the mimetype parameter in the output format structure and
       then to the name parameter in the structure.
 
-int saveMapContext(string filename)
-    Available only if WMS support is enabled.  Save current map object
-    state in :ref:`WMS Map Context <map_context>` format.  Only WMS
-    layers are saved in the WMS Map Context XML file.  Returns
-    MS_SUCCESS/MS_FAILURE.
+int set(string property_name, new_value)
+    Set map object property to new value.
 
-int loadMapContext(string filename [, boolean unique_layer_name])
-    Available only if WMS support is enabled.  Load a :ref:`WMS Map
-    Context <map_context>` XML file into the current mapObj.  If the
-    map already contains some layers then the layers defined in the
-    WMS Map context document are added to the current map.  The 2nd
-    argument unique_layer_name is optional and if set to MS_TRUE
-    layers created will have a unique name (unique prefix added to the
-    name). If set to MS_FALSE the layer name will be the the same name
-    as in the context. The default value is MS_FALSE.  Returns
-    MS_SUCCESS/MS_FAILURE.
+int setCenter(pointObj center)
+    Set the map center to the given map point. 
+    Returns MS_SUCCESS or MS_FAILURE. 
 
-int applySLD(string sldxml)
-    Apply the :ref:`SLD` document to the map file. The matching between the
-    sld document and the map file will be done using the layer's name.
-    See :ref:`SLD HowTo <sld>` for more information on the SLD support.
-
-int applySLDURL(string sldurl)
-    Apply the SLD document pointed by the URL to the map file. The 
-    matching between the sld document and the map file will be done 
-    using the layer's name.
-    See :ref:`SLD HowTo <sld>` for more information on the SLD support.
-
-string generateSLD()
-    Returns an SLD XML string based on all the classes found in all 
-    the layers that have `STATUS` `on`.
-
-string getconfigoption(string key)
-    Returns the config value associated with the key.
-    Returns an empty sting if key not found.
-
-int setconfigoption(string key, string value)
+int setConfigOption(string key, string value)
     Sets a config parameter using the key and the value passed
 
-int applyconfigoptions()
-    Applies the config options set in the map file. For example
-    setting the PROJ_LIB using the setconfigoption only modifies
-    the value in the map object. applyconfigoptions will actually
-    change the PROJ_LIB value that will be used when dealing with
-    projection.
+void setExtent(double minx, double miny, double maxx, double maxy)
+    Set the map extents using the georef extents passed in argument.
+    Returns MS_SUCCESS or MS_FAILURE on error.
 
-int loadowsparameters(owsrequest request, string version)
-    Load OWS request parameters (BBOX, LAYERS, &c.) into map.  Returns 
-    MS_SUCCESS or MS_FAILURE.  2nd argument version is not mandatory. 
-    If not given, the version will be set to 1.1.1
+int setFontSet(string fileName)
+    Load and set a new :ref:`fontset`.
+   
+boolean  setLayersDrawingOrder(array layeryindex)
+    Set the layer's order array. The argument passed must be a valid
+    array with all the layer's index. 
+    Returns MS_SUCCESS or MS_FAILURE on error.
 
-int owsdispatch(owsrequest request)
-    Processes and executes the passed OpenGIS Web Services request on
-    the map.  Returns MS_DONE (2) if there is no valid OWS request in
-    the req object, MS_SUCCESS (0) if an OWS request was successfully
-    processed and MS_FAILURE (1) if an OWS request was not
-    successfully processed.  OWS requests include :ref:`WMS
-    <wms_server>`, :ref:`WFS <wfs_server>`, :ref:`WCS <wcs_server>`
-    and :ref:`SOS <sos_server>` requests supported by MapServer.
-    Results of a dispatched request are written to stdout and can be
-    captured using the msIO services (ie. ms_ioinstallstdouttobuffer()
-    and ms_iogetstdoutbufferstring())
+int setMetaData(string name, string value)
+    Set a metadata entry for the map (stored in the WEB object in the map
+    file).  Returns MS_SUCCESS/MS_FAILURE.
 
-int insertLayer( layerObj layer [, int nIndex=-1 ] )
-    Insert a copy of *layer* into the Map at index *nIndex*.  The
-    default value of *nIndex* is -1, which means the last possible
-    index.  Returns the index of the new Layer, or -1 in the case of a
-    failure.
+int setProjection(string proj_params, boolean bSetUnitsAndExtents)
+    Set map projection and coordinate system. Returns MS_SUCCESS or
+    MS_FAILURE on error.  
 
-layerObj removeLayer( int nIndex )
-    Remove a layer from the mapObj. The argument is the index of the
-    layer to be removed. Returns the removed layerObj on success, else
-    null.
+    Parameters are given as a single string of comma-delimited PROJ.4
+    parameters.  The argument : bSetUnitsAndExtents is used to
+    automatically update the map units and extents based on the new
+    projection. Possible values are MS_TRUE and MS_FALSE. By defualt it is
+    set at MS_FALSE.
 
-void free()
-    Free the object properties and break the internal references.
-    Note that you have to unset the php variable to free totally the
-    resources.
- 
+int setRotation(double rotation_angle)
+    Set map rotation angle. The map view rectangle (specified in 
+    EXTENTS) will be rotated by the indicated angle in the counter-
+    clockwise direction. Note that this implies the rendered map 
+    will be rotated by the angle in the clockwise direction.
+    Returns MS_SUCCESS or MS_FAILURE.
+
+int setSize(int width, int height)
+    Set the map width and height. This method updates the internal
+    geotransform and other data structures required for map rotation
+    so it should be used instead of setting the width and height members
+    directly.
+    Returns MS_SUCCESS or MS_FAILURE.
+
+int setSymbolSet(string fileName)
+    Load and set a symbol file dynamically.
+   
+int setWKTProjection(string proj_params, boolean bSetUnitsAndExtents)
+    Same as setProjection(), but takes an OGC WKT projection 
+    definition string as input. Returns MS_SUCCESS or MS_FAILURE on error.
+
+    .. note::
+      setWKTProjection requires GDAL support
+
+int zoomPoint(int nZoomFactor, pointObj oPixelPos, int nImageWidth, int nImageHeight, rectObj oGeorefExt)
+    Zoom to a given XY postion. Returns MS_SUCCESS or MS_FAILURE on error.
+
+    Parameters are :                                                 
+       - Zoom factor : positive values do zoom in, negative values 
+         zoom out. Factor of 1 will recenter.           
+       - Pixel position (pointObj) : x, y coordinates of the click, 
+         with (0,0) at the top-left
+       - Width : width in pixel of the current image.                 
+       - Height : Height in pixel of the current image.               
+       - Georef extent (rectObj) : current georef extents.            
+       - MaxGeoref extent (rectObj) : (optional) maximum georef extents.
+         If provided then it will be impossible to zoom/pan outside of
+         those extents.
+
+int zoomRectangle(rectObj oPixelExt, int nImageWidth, int nImageHeight, rectObj oGeorefExt)
+    Set the map extents to a given extents. Returns MS_SUCCESS or
+    MS_FAILURE on error.
+
+    Parameters are :
+        - oPixelExt (rect object) : Pixel Extents     
+        - Width : width in pixel of the current image.
+        - Height : Height in pixel of the current image. 
+        - Georef extent (rectObj) : current georef extents.
+
+int zoomScale(double nScaleDenom, pointObj oPixelPos, int nImageWidth, int nImageHeight, rectObj oGeorefExt [, rectObj oMaxGeorefExt])
+    Zoom in or out to a given XY position so that the map is 
+    displayed at specified scale. Returns MS_SUCCESS or MS_FAILURE on error.
+
+    Parameters are :                                                 
+       - ScaleDenom : Scale denominator of the scale at which the map 
+         should be displayed.
+       - Pixel position (pointObj) : x, y coordinates of the click, 
+         with (0,0) at the top-left
+       - Width : width in pixel of the current image.                 
+       - Height : Height in pixel of the current image.               
+       - Georef extent (rectObj) : current georef extents.            
+       - MaxGeoref extent (rectObj) : (optional) maximum georef extents.
+         If provided then it will be impossible to zoom/pan outside of
+         those extents.
+
+
 .. index::
    triple: MapScript; PHP; outputformatObj
 
@@ -1820,30 +1820,7 @@ int             type (read-only): MS_GET_REQUEST or MS_POST_REQUEST
 Methods
 ...............................................................................
 
-string getname(int index)
-    Return the name of the parameter at *index* in the request's array
-    of parameter names.
-
-string getvalue(int index)
-    Return the value of the parameter at *index* in the request's array
-    of parameter values.
-
-string getvaluebyname(string name)
-    Return the value associated with the parameter *name*.
-
-int loadparams()
-    Initializes the OWSRequest object from the cgi environment variables
-    REQUEST_METHOD, QUERY_STRING and HTTP_COOKIE.  Returns the number of 
-    name/value pairs collected.
-
-int setparameter(string name, string value)
-    Set a request parameter.  For example :
-    
-    .. code-block:: php
-
-       $request->setparameter('REQUEST', 'GetMap');
-
-int addparameter(string name, string value)
+int addParameter(string name, string value)
     Add a request parameter, even if the parameter key was previousely set.
     This is useful when multiple parameters with the same key are required.
     For example :
@@ -1852,6 +1829,29 @@ int addparameter(string name, string value)
 
         $request->addparameter('SIZE', 'x(100)');
         $request->addparameter('SIZE', 'y(100)');
+
+string getName(int index)
+    Return the name of the parameter at *index* in the request's array
+    of parameter names.
+
+string getValue(int index)
+    Return the value of the parameter at *index* in the request's array
+    of parameter values.
+
+string getValueByName(string name)
+    Return the value associated with the parameter *name*.
+
+int loadParams()
+    Initializes the OWSRequest object from the cgi environment variables
+    REQUEST_METHOD, QUERY_STRING and HTTP_COOKIE.  Returns the number of 
+    name/value pairs collected.
+
+int setParameter(string name, string value)
+    Set a request parameter.  For example :
+    
+    .. code-block:: php
+
+       $request->setparameter('REQUEST', 'GetMap');
 
 .. index::
    triple: MapScript; PHP; pointObj
@@ -2185,7 +2185,7 @@ void free()
 int set(string property_name, new_value)
     Set object property to a new value.
     
-int setimagecolor(int red, int green, int blue)
+int setImageColor(int red, int green, int blue)
     Sets the imagecolor propery (baclground) of the object.
     Returns MS_SUCCESS or MS_FAILURE on error.  
 
@@ -2318,54 +2318,17 @@ The key to the values in the array is the attribute name, e.g.
 Methods
 ...............................................................................
 
-int set(string property_name, new_value)
-    Set object property to a new value.
-
 int add(lineObj line)
     Add a line (i.e. a part) to the shape.
 
-LineObj line(int i)
-    Returns a reference to line number i.
-
-int draw(mapObj map, layerObj layer, imageObj img)
-    Draws the individual shape using layer.
-    Returns MS_SUCCESS/MS_FAILURE.
-
-boolean contains(pointObj point)
-    Returns MS_TRUE if the point is inside the shape, MS_FALSE otherwise.
-
-boolean intersects(shapeObj shape)
-    Returns MS_TRUE if the two shapes intersect, MS_FALSE otherwise.
- 
-int project(projectionObj in, projectionObj out)
-    Project the shape from "in" projection (1st argument) to "out" 
-    projection (2nd argument).  Returns MS_SUCCESS/MS_FAILURE.
-
-pointObj getpointusingmeasure(double m)
-    Apply only on Measured shape files. Given a measure m, retun the 
-    corresponding XY location on the shapeobject.
-
-pointObj  getmeasureusingpoint(pointObject point)
-   Apply only on Measured shape files. Given an XY Location, find the 
-   nearest point on the shape object. Return a point object
-   of this point with the m value set.
-
-string getvalue(layerObj layer, string filedname)
-    Returns the value for a given field name.
+shapeobj boundary()
+    Returns the boundary of the shape.
+    Only available if php/mapscript is built with GEOS library.
 
 shapeobj buffer(width)
     Returns a new buffered shapeObj based on the supplied distance (given
     in the coordinates of the existing shapeObj). 
     Only available if php/mapscript is built with GEOS library.   
-
-shapeobj convexhull()
-    Returns a shape object representing the convex hull of shape.
-    Only available if php/mapscript is built with GEOS 
-    library.
-
-shapeobj boundary()
-    Returns the boundary of the shape.
-    Only available if php/mapscript is built with GEOS library.
 
 int containsShape(shapeobj shape2)
     Returns true if shape2 passed as argument is entirely within the shape. 
@@ -2373,15 +2336,17 @@ int containsShape(shapeobj shape2)
     Only available if php/mapscript is built with GEOS 
     library.
 
-shapeobj union(shapeobj shape)
-    Returns a shape object representing the union of the shape object 
-    with the one passed as parameter. 
+shapeobj convexhull()
+    Returns a shape object representing the convex hull of shape.
     Only available if php/mapscript is built with GEOS 
-    library
+    library.
 
-shapeobj intersection(shapeobj shape)
-    Returns a shape object representing the intersection of the shape 
-    object with the one passed as parameter. 
+boolean contains(pointObj point)
+    Returns MS_TRUE if the point is inside the shape, MS_FALSE otherwise.
+
+int crosses(shapeobj shape)  
+    Returns true if the shape passed as argument crosses the shape.
+    Else return false.
     Only available if php/mapscript is built with GEOS library.
 
 shapeobj difference(shapeobj shape)
@@ -2389,60 +2354,74 @@ shapeobj difference(shapeobj shape)
     shape object with the one passed as parameter. 
     Only available if php/mapscript is built with GEOS library.
 
-shapeobj symdifference(shapeobj shape)
-    Returns the computed symmetric difference of the supplied and
-    existing shape.
+int disjoint(shapeobj shape)  
+    Returns true if the shape passed as argument is disjoint to the 
+    shape. Else return false.
     Only available if php/mapscript is built with GEOS library.
 
-int overlaps(shapeobj shape)  
-    Returns true if the shape passed as argument overlaps the shape.
-    Else returns false.
-    Only available if php/mapscript is built with GEOS library.
-
-int within(shapeobj shape2) 
-    Returns true if the shape is entirely within the shape2 passed as
-    argument.
-    Else returns false. 
-    Only available if php/mapscript is built with GEOS library.
-
-int crosses(shapeobj shape)  
-    Returns true if the shape passed as argument crosses the shape.
-    Else return false.
-    Only available if php/mapscript is built with GEOS library.
-
-int touches(shapeobj shape)  
-    Returns true if the shape passed as argument touches the shape.
-    Else return false.
-    Only available if php/mapscript is built with GEOS library.
+int draw(mapObj map, layerObj layer, imageObj img)
+    Draws the individual shape using layer.
+    Returns MS_SUCCESS/MS_FAILURE.
 
 int equals(shapeobj shape)  
     Returns true if the shape passed as argument is equal to the 
     shape (geometry only). Else return false.
     Only available if php/mapscript is built with GEOS library.
 
-int disjoint(shapeobj shape)  
-    Returns true if the shape passed as argument is disjoint to the 
-    shape. Else return false.
+void free()
+    Free the object properties and break the internal references. 
+    Note that you have to unset the php variable to free totally the resources.
+
+double getArea()  
+    Returns the area of the shape (if applicable).
     Only available if php/mapscript is built with GEOS library.
 
 pointObj getCentroid()  
     Returns a point object representing the centroid of the shape.
     Only available if php/mapscript is built with GEOS library.
 
-double getArea()  
-    Returns the area of the shape (if applicable).
-    Only available if php/mapscript is built with GEOS library.
+pointObj getLabelPoint()  
+    Returns a point object with coordinates suitable for labelling 
+    the shape.
 
 double getLength()  
     Returns the length (or perimeter) of the shape.
     Only available if php/mapscript is built with GEOS library.
 
-pointObj getLabelPoint()  
-    Returns a point object with coordinates suitable for labelling 
-    the shape.
+pointObj  getMeasureUsingPoint(pointObject point)
+   Apply only on Measured shape files. Given an XY Location, find the 
+   nearest point on the shape object. Return a point object
+   of this point with the m value set.
 
-string toWkt()
-    Returns WKT representation of the shape's geometry.
+pointObj getPointUsingMeasure(double m)
+    Apply only on Measured shape files. Given a measure m, retun the 
+    corresponding XY location on the shapeobject.
+
+string getValue(layerObj layer, string filedname)
+    Returns the value for a given field name.
+
+shapeobj intersection(shapeobj shape)
+    Returns a shape object representing the intersection of the shape 
+    object with the one passed as parameter. 
+    Only available if php/mapscript is built with GEOS library.
+
+boolean intersects(shapeObj shape)
+    Returns MS_TRUE if the two shapes intersect, MS_FALSE otherwise.
+ 
+LineObj line(int i)
+    Returns a reference to line number i.
+
+int overlaps(shapeobj shape)  
+    Returns true if the shape passed as argument overlaps the shape.
+    Else returns false.
+    Only available if php/mapscript is built with GEOS library.
+
+int project(projectionObj in, projectionObj out)
+    Project the shape from "in" projection (1st argument) to "out" 
+    projection (2nd argument).  Returns MS_SUCCESS/MS_FAILURE.
+
+int set(string property_name, new_value)
+    Set object property to a new value.
 
 int setBounds()    
     Updates the bounds property of the shape.
@@ -2454,14 +2433,35 @@ shapeObj simplify(double tolerance)
     error.  Only available if php/mapscript is built with GEOS library
     (>=3.0).
 
+shapeobj symdifference(shapeobj shape)
+    Returns the computed symmetric difference of the supplied and
+    existing shape.
+    Only available if php/mapscript is built with GEOS library.
+
 shapeObj topologySimplifyPreservingSimplify(double tolerance)
     Given a tolerance, returns a simplified shape object or NULL on
     error.  Only available if php/mapscript is built with GEOS library
     (>=3.0).
 
-void free()
-    Free the object properties and break the internal references. 
-    Note that you have to unset the php variable to free totally the resources.
+int touches(shapeobj shape)  
+    Returns true if the shape passed as argument touches the shape.
+    Else return false.
+    Only available if php/mapscript is built with GEOS library.
+
+string toWkt()
+    Returns WKT representation of the shape's geometry.
+
+shapeobj union(shapeobj shape)
+    Returns a shape object representing the union of the shape object 
+    with the one passed as parameter. 
+    Only available if php/mapscript is built with GEOS 
+    library
+
+int within(shapeobj shape2) 
+    Returns true if the shape is entirely within the shape2 passed as
+    argument.
+    Else returns false. 
+    Only available if php/mapscript is built with GEOS library.
 
 .. index::
    triple: MapScript; PHP; styleObj
@@ -2626,11 +2626,11 @@ void free()
     Note that you have to unset the php variable to free totally the
     resources.
 
-array getpatternarray()  
+array getPatternArray()  
     Returns an array containing the pattern. If there is no pattern, it
     returns an empty array.
         
-array getpointsarray()
+array getPointsArray()
     Returns an array containing the points of the symbol. Refer to
     setpoints to see how the array should be interpreted. If there are no
     points, it returns an empty array.
@@ -2638,15 +2638,15 @@ array getpointsarray()
 int set(string property_name, new_value)
     Set object property to a new value.
 
-int setimagepath(char filename)
+int setImagePath(char filename)
     Loads a pixmap symbol specified by the filename. 
     The file should be of either  Gif or Png format.
 
-int setpattern(array int)
+int setPattern(array int)
     Set the pattern of the symbol (used for dash patterns). 
     Returns MS_SUCCESS/MS_FAILURE.
 
-int setpoints(array double)
+int setPoints(array double)
     Set the points of the symbol. Note that the values passed is an
     array containing the x and y values of the points. Returns
     MS_SUCCESS/MS_FAILURE.
