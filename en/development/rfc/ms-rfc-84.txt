@@ -44,7 +44,8 @@ with:
 This option consists in moving our entire code+ticket infrastructure
 to github. The current trac instance becomes nearly read-only, new 
 tickets cannot be created on it. Existing tickets are migrated to github
-either manually on a ticket-by-ticket basis, or automatically (huge task!).
+with a script taking a trac postgresql dump (once the migration starts,
+our trac instance becomes read-only).
 
 Advantages
 ==========
@@ -78,50 +79,43 @@ Inconveniences
   as is possible to maintain a mirror on an osgeo server, and each developper
   has a checkout of the full source control history. Ticket migration would be
   an issue, but there are APIs available to extract existing tickets.
-- Issue tracker is in soem ways less featurefull than trac. The only hardcoded
+- Issue tracker is in some ways less featurefull than trac. The only hardcoded
   attributes are the assignee and the milestone. All the other triaging
   information goes into free formed labels, a la gmail.
  
  - No way to automatically assign a ticket owner given a component
  - No support for image attachments, can be referenced by url but must be
    hosted elsewhere.
-
-- Ticket migration from the trac instance will be a time consuming task, should
-  we want to migrate them. Ticket numbering cannot be maintained, CCs will be
-  lost. I personally do not feel the need to migrate existing tickets, provided
-  the exisiting trac instance is kept up readonly for reference.
- 
- - migration of open trac tickets to github will represent a substantial task,
-   in the order of several days
- - have trac send an email to the reporter of each open ticket in trac:
-
-   .. pull-quote::
-
-      You are the reporter for ticket XXXX. This trac instance is going read-only,
-      current ticket tracking is now done through http://github/url . If you think
-      that this ticket is still valid, please take the time to open a new issue on
-      github. Without reaction from your part, this trac ticket will be closed 
-      automatically in xxx months.
+ - No support for private security tickets
 
 - Administering committer access will be done through github, osgeo credentials do 
-  not apply.
+  not apply. Git does not support fine-grained commit permissions per directory, there
+  will be a separate repository for the docs to account for the larger number of
+  committers there.
 
-2. OSGEO hosting
------------------
-This option consists in setting up a git repository on git.osgeo.org, and migrate
-the current trac instance so that it points to this repository.
+3. Git Worflows
+---------------
 
-Advantages
-==========
-- We keep our independance and hosting options open
-- With some work, code references in tickets (r12345 syntax) can be updated to
-  point on the correct git commit
-- No change of workflow in our usage of trac
+Stable Branches
+===============
 
-Inconveniences
-==============
-- Need to maintain and setup the trac instance with git support
-- No nifty collaboration tools provided by github
+This document outlines a workflow for fixing bugs in our stable branches:
+http://www.net-snmp.org/wiki/index.php/Git_Workflow
+I beleive it is a very good match for our stable release management:
+- pick the oldest branch where the fix should be applied
+- commit the fix to this oldest branch
+- merge the old branch down to all the more recent ones, including master
+
+Release Management
+==================
+
+Instead of freezing development during our beta cycle, a new release branch is
+created once the feature freeze is decided, and our betas, release and
+subsequent bugfix releases are tagged off of this branch. Bug fixes are
+committed to this new stable branch, and merged into master. New features can
+continue to be added to master during all the beta phase.
+http://nvie.com/posts/a-successful-git-branching-model/ is an interesting read 
+even if it does not fit our stable release branches exactly.
 
 
 4. Upgrade path for SVN users
@@ -166,7 +160,6 @@ fix in branch, and merge fix into master
 - document release process
 - migrate website scripts
 - switch trac site to read-only
-- inform ticket reporters
 
 6. Bug ID
 ---------
