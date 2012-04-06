@@ -26,7 +26,8 @@ git checkout -b $TEMPBRANCH
 # Copy all untranslated files in language dir and
 for lang in $LANGUAGES;
 do 
-    if [ $lang != "en" ]; then
+   if [ ! -d $lang ] ; then continue; fi 
+   if [ $lang != "en" ]; then
 	cd $REPO/en
 	IFS=$'\n'
 	for file in `find .`;
