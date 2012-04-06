@@ -13,7 +13,13 @@ LANGUAGES="en de es fr"
 cd $REPO
 
 git checkout $BRANCH
-git pull origin
+git pull origin | grep "up-to-date"
+
+if test $? -eq 0; then
+   echo "repo not updated, no use building"
+   exit
+fi
+
 git checkout -b $TEMPBRANCH
 
 # Copy all untranslated files in language dir and
