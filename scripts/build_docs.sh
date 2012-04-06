@@ -59,4 +59,4 @@ cp $BUILDDIR/epub/en/MapServer.epub $OUTPUT_LOCATION/en/MapServer.epub
 cd $REPO
 git clean -f -d
 git checkout master
-git branch -d $TEMPBRANCH
+git branch -D $TEMPBRANCH
