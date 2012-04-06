@@ -49,6 +49,6 @@ done
 cp -fr $BUILDDIR/html/* $OUTPUT_LOCATION/
 cp $BUILDDIR/epub/en/MapServer.epub $OUTPUT_LOCATION/en/MapServer.epub
 
-git clean -f
+git clean -f -d
 git checkout master
 git branch -d $TEMPBRANCH

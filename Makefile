@@ -38,7 +38,7 @@ help:
 	@echo "  linkcheck to check all external links for integrity"
 
 clean:
-	-rm -rf BUILDDIR/*
+	-rm -rf $(BUILDDIR)/*
 
 init:
 	@for lang in $(TRANSLATIONS) ;\
