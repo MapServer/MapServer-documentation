@@ -18,7 +18,7 @@ git pull origin | grep "up-to-date"
 
 if test $? -eq 0; then
    echo "repo not updated, no use building"
-   #exit
+   exit
 fi
 
 git checkout -b $TEMPBRANCH
