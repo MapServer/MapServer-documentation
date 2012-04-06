@@ -9,7 +9,7 @@ TEMPBRANCH="$BRANCH-$RANDOM"
 mkdir -p $BUILDDIR
 
 #LOCATION="/osgeo/mapserver.org"
-LANGUAGES="en de es fr it cn"
+LANGUAGES="en de es fr"
 cd $REPO
 
 git checkout $BRANCH
