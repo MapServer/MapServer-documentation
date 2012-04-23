@@ -18,8 +18,17 @@ Compilation & Installation
 Getting the Source
 ==================
 
-MapCache source is stored in the */mapserver/mapcache/* directory in :ref:`svn`.
-You can visually browse the Subversion repository at http://trac.osgeo.org/mapserver/browser/trunk/mapserver/mapcache
+The MapCache project is located at https://github.com/mapserver/mapcache, and can be checked out
+with either:
+
+.. code-block:: bash
+
+   # readonly
+   git clone git://github.com/mapserver/mapcache.git
+   # ssh authenticated
+   git clone git@github.com:mapserver/mapcache.git
+   # tarball
+   wget https://github.com/mapserver/mapcache/zipball/master
 
 Linux Instructions
 ==================
@@ -91,6 +100,8 @@ the apache configuration file ( e.g. /usr/local/httpd/conf/httpd.conf or
 Next, a mapcache configuration is mapped to the server url with the following
 snippet
 
+For apache < 2.4:
+
 .. code-block:: apache
    
    <IfModule mapcache_module>
@@ -100,6 +111,18 @@ snippet
       </Directory>
       MapCacheAlias /mapcache "/path/to/directory/mapcache.xml"
    </IfModule>
+
+For apache >= 2.4:
+
+.. code-block:: apache
+   
+   <IfModule mapcache_module>
+      <Directory /path/to/directory>
+         Require all granted
+      </Directory>
+      MapCacheAlias /mapcache "/path/to/directory/mapcache.xml"
+   </IfModule>
+
 
 Finally, restart apache to take the modified configuration into account
 
@@ -113,7 +136,8 @@ http://myserver/mapcache/demo
 Nginx Specific Instructions
 ----------------------------
 
-.. warning:: Working with nginx is still highly experimental. The following workflow has only been tested on the development version of nginx-1.1.14
+.. warning:: Working with nginx is still somewhat experimental. The following
+             workflow has only been tested on the development version of nginx-1.1.14
 
 For nginx support you need to build mapcache's nginx module against the 
 nginx source. Download the nginx source code:
@@ -127,14 +151,14 @@ nginx source. Download the nginx source code:
    $ tar -xzvf nginx-1.1.14.tar.gz
    $ cd nginx-1.1.14/
 
-Run the configure command with the flag\  ``--add-module`` \. This flag
+Run the configure command with the flag  ``--add-module``. This flag
 must point to mapcache's nginx child directory. Assuming that 
-mapserver trunk was checked out to\  ``/usr/local/src`` \, an example configure
-command for nginx would look like this:
+mapserver source was cloned or un tarred into to ``/usr/local/src``,
+an example configure command for nginx would look like this:
 
 .. code-block:: bash
 
-   $ ./configure --add-module=/usr/local/src/mapserver-trunk/mapcache/nginx
+   $ ./configure --add-module=/usr/local/src/mapcache/nginx
 
 Then build nginx:
 
@@ -143,39 +167,90 @@ Then build nginx:
    $ make 
    $ sudo make install
 
-Mapcache supplies a\  ``nginx.conf`` \in its nginx child directory. The conf 
+
+Due to nginx's non-blocking architecture, the mapcache nginx module does not
+perform any operations that may lead to a worker process being blocked by a
+long computation (i.e.: requesting a (meta)tile to be rendered if not in the
+cache, proxying a request to an upstream wms server, or waiting for a tile to
+be rendered by another worker), it will instead issue a 404 error. This
+behavior is essential so as not to occupy all nginx worker threads, therefore
+preventing it from responding to all other incoming requests. While this isn't
+an issue for completely seeded tilesets, this implies that these kinds of
+requests need to be proxied to another mapcache instance that does not suffer
+from these starvation issues (i.e. either a fastcgi mapcache, or an internal
+proxied apache server). In this scenario, both the nginx mapcache instance and
+the apache/fastcgi mapcache instance should be running with the same
+``mapcache.xml`` configuration file.
+
+Mapcache supplies a ``nginx.conf`` in its nginx child directory. The conf 
 contains an example configuration to load mapcache. The most relevant part of
-the configuration is the location directive that points the\  ``mapcache`` \URI 
-to the\  ``mapcache.xml`` \path. You will need to change this path to point to 
-your own\  ``mapcache.xml`` \ in the mapcache source
+the configuration is the location directive that points the  ``^/mapcache`` URI 
+to the ``mapcache.xml`` path. You will need to change this path to point to 
+your own ``mapcache.xml``  in the mapcache source
 
-.. code-block:: bash
+The basic configuration without any proxying (which will return 404 errors on
+unseeded tile requests) is:
 
-	## BEFORE PATH EDIT
-        location ~ ^/mapcache(?<path_info>/.*|$) {
-           set $url_prefix "/mapcache";
-           mapcache /home/tbonfort/dev/mapserver-trunk/mapcache/mapcache.xml;
-        }
+.. code-block:: nginx
 
-	## AFTER PATH EDIT
-        location ~ ^/mapcache(?<path_info>/.*|$) {
-           set $url_prefix "/mapcache";
-           mapcache /usr/local/src/mapserver-trunk/mapcache/mapcache.xml;
-        }
+   location ~ ^/mapcache(?<path_info>/.*|$) {
+      set $url_prefix "/mapcache";
+      mapcache /usr/local/src/mapcache/mapcache.xml;
+   }
 
-Now copy the\  ``nginx.conf`` \ from mapcache's nginx child directory into
-nginx's conf directory (the nginx root directory in this case is \  ``/usr/local/nginx`` \) 
+If proxying unseeded tile requests to a mapcache instance running on an apache
+server, we will proxy all 404 mapcache errors to a ``mapcache.apache.tld``
+server listening on port 8080, configured to respond to mapcache requests on
+the ``/mapcache`` location.
 
-.. code-block:: bash
+.. code-block:: nginx
 
-   $ sudo cp /usr/local/src/mapserver-trunk/mapcache/nginx/nginx.conf /usr/local/nginx/conf       
+   location ~ ^/mapcache(?<path_info>/.*|$) {
+      set $url_prefix "/mapcache";
+      mapcache /usr/local/src/mapcache/mapcache.xml;
+      error_page 404 = @apache_mapcache;
+   }
 
-You should now have access to the demo. Notice the port number:  http://myserver:8083/mapcache/demo
+   location @apache_mapcache {
+      proxy_pass http://mapcache.apache.tld:8080;
+   }
+
+If using fastcgi instances of mapcache, spawned with e.g. spawn-fcgi or
+supervisord on port 9001 (make sure to enable fastcgi when building mapcache,
+and to set the MAPCACHE_CONFIG_FILE environment variable before spawning):
+
+.. code-block:: nginx
+
+   location ~ ^/mapcache(?<path_info>/.*|$) {
+      set $url_prefix "/mapcache";
+      mapcache /usr/local/src/mapcache/mapcache.xml;
+      error_page 404 = @fastcgi_mapcache;
+   }
+
+   location @fastcgi_mapcache {
+      fastcgi_pass   localhost:9001;
+      fastcgi_param  QUERY_STRING     $query_string;
+      fastcgi_param  REQUEST_METHOD   $request_method;
+      fastcgi_param  CONTENT_TYPE     $content_type;
+      fastcgi_param  CONTENT_LENGTH   $content_length;
+      fastcgi_param  PATH_INFO        $path_info;
+      fastcgi_param  SERVER_NAME      $server_name;
+      fastcgi_param  SERVER_PORT      $server_port;
+      fastcgi_param  SCRIPT_NAME      "/mapcache";
+   }
+
+Copy the relevant sections of ``nginx.conf`` from mapcache's ``nginx``
+directory into nginx's conf file (in this case
+``/usr/local/nginx/conf/nginx.conf``) , you should now have access to the demo
+at http://myserver/mapcache/demo
 
 CGI/FastCGI Specific Instructions
 ---------------------------------
 
-A binary cgi/fastcgi is located in the src/ subfolder, and is named "mapcache".
+.. warning:: Fastcgi support is not built in by default, you must explicitely
+   enable it at compile time, see :ref:`FastCGI <fastcgi>`
+
+A binary cgi/fastcgi is located in the mapcache/ subfolder, and is named "mapcache".
 Activating fastcgi for the mapcache program on your web server is not part of
 these instructions, more details may be found on the :ref:`FastCGI <fastcgi>`
 page or on more general web pages across the web.
@@ -193,13 +268,13 @@ For apache with mod_cgi:
 
 .. code-block:: apache
 
-   SetEnv "MAPCACHE_CONFIG_FILE" "/path/to/mapserver/mapcache/mapcache.xml"
+   SetEnv "MAPCACHE_CONFIG_FILE" "/path/to/mapcache/mapcache.xml"
 
 For apache with mod_fcgid:
 
 .. code-block:: apache
 
-   FcgidInitialEnv "MAPCACHE_CONFIG_FILE" "/path/to/mapserver/mapcache/mapcache.xml
+   FcgidInitialEnv "MAPCACHE_CONFIG_FILE" "/path/to/mapcache/mapcache.xml
 
 If you have not disabled the demo service, you should now have access to it on
 http://myserver/fcgi-bin/mapcache/demo supposing your fcgi processes are accessed
@@ -213,13 +288,13 @@ mapcache could be:
    <IfModule mod_fcgid.c>
       IPCCommTimeout 120
       MaxProcessCount 10
-      FcgidInitialEnv "MAPCACHE_CONFIG_FILE" "/Users/tbonfort/dev/mapserver/mapcache/mapcache.xml"
+      FcgidInitialEnv "MAPCACHE_CONFIG_FILE" "/path/to/mapcache/mapcache.xml"
       <Location /map.fcgi>
          Order Allow,Deny
          Allow from all
          SetHandler fcgid-script
       </Location>
-      ScriptAlias /map.fcgi "/Users/tbonfort/dev/mapserver/mapcache/src/mapcache"
+      ScriptAlias /map.fcgi "/path/to/mapcache/src/mapcache"
    </IfModule>
 
 The mapcache service would then be accessible at http://myserver/map.fcgi[/demo]
@@ -489,15 +564,15 @@ Native MapServer Mode
 MapCache is by default not linked to MapServer in any way, and communicates 
 through the WMS protocol only. For performance reasons, there is a possibility
 to directly use the mapserver C library and avoid an http request and an image
-compression/decompression. This integration is highly experimental and should
-not be enabled for general use.
+compression/decompression. This integration is still experimental and should
+be used cautiously
 
 
 .. code-block:: bash
 
-   --enable-mapserver
+   --enable-mapserver=/path/to/mapserver-srcdir
 
-This will use the libmapserver.a from MapCache's parent directory. MapServer
+This will use the libmapserver.so from mapserver's install directory. MapServer
 itself should be compiled with thread-safety enabled, unless you plan use the
 prefork mpm or fastcgi, **and** you do not plan to use the seeder. For thread
 safety on the mapserver side, you might want to have a look at tickets #4041 and
