@@ -1,4 +1,3 @@
-
 args=("$@")
 REPO=${args[0]}
 BRANCH=${args[1]}
@@ -14,7 +13,7 @@ PDF_LANGUAGES="en"
 cd $REPO
 
 git checkout $BRANCH
-git pull origin | grep "up-to-date"
+git pull origin $BRANCH | grep "up-to-date"
 
 if test $? -eq 0; then
    echo "repo not updated, no use building"
