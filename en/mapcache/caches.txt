@@ -133,7 +133,7 @@ threads all try to insert new tiles concurrently.
 Sqlite Caches
 --------------------------------------------------------------------------------
 
-There are three different sqlite caches that vary by the database schema they
+There are two different sqlite caches that vary by the database schema they
 create and query. Sqlite caches have the advantage that they store tiles as
 blobs inside a single database file, and therefore do not have the
 disadvantages of disk caches with regards to the number of files stored. As the
@@ -148,33 +148,44 @@ insert new tiles concurrently.
 Default Schema
 ================================================================================
 
-There are two different configuration options for sqlite caches, which drive how
-the database files are named on the filesystem for each tileset. You can either
-supply a base directory, where multiple database files will be created, or 
-supply a template that will be populated with the name of the tileset and grid.
+Tiles are stored in the configured sqlite file created by mapcache with
 
-Note 
+.. code-block:: sql
+
+   create table if not exists tiles(
+      tileset text,
+      grid text,
+      x integer,
+      y integer,
+      z integer,
+      data blob,
+      dim text,
+      ctime datetime,
+      primary key(tileset,grid,x,y,z,dim)
+   );
 
 .. code-block:: xml
 
    <cache name="sqlite" type="sqlite3">
-      <base>/tmp/sqlitecachedir</base>
    </cache>
 
+
+You may also add custom sqlite pragmas that will be executed when first 
+connecting to a sqlite db, e.g. to override some compiled in sqlite
+defaults
 
 .. code-block:: xml
    
    <cache name="sqlitetemplate" type="sqlite3">
-      <dbname_template>/tmp/{tileset}-{grid}.db</dbname_template>
+      <dbfile>/tmp/sqlitefile.db</dbfile>
+      <pragma name="max_page_count">10000000</pragma>
    </cache>
 
-
-The default sqlite schema is created by the call
+<pragma> entries will result in a call to
 
 .. code-block:: sql
 
-   create table tiles(x integer, y integer, z integer, data blob, dim text, ctime datetime, atime datetime, hitcount integer default 0, primary key(x,y,z,dim))
-
+   PRAGMA max_page_count = 1000000;
 
 
 Custom Schema
@@ -193,15 +204,51 @@ MBTiles Schema
 This cache type is a shortcut to the previous custom schema sqlite cache, with
 pre-populated SQL queries that correspond to the MBTiles specification.
 
-Note that most mbtiles file you download cannot be populated on demand as the
-spec-mandated table names are actually views and not simple tables.
+Although the default mbtiles schema is very simple, mapcache uses the same multi-
+table schema found in most downloadable mbtiles file, to notably enable storing
+blank (i.e. uniform) tiles without duplicating the encoded image data (in the 
+same way the disk cache supports tile symlinking).
+
+The mbtiles schema is created with:
+
+.. code-block:: sql
+
+       create table if not exists images(
+         tile_id text,
+         tile_data blob,
+         primary key(tile_id));
+       create table if not exists map (
+         zoom_level integer,
+         tile_column integer,
+         tile_row integer,
+         tile_id text,
+         foreign key(tile_id) references images(tile_id),
+         primary key(tile_row,tile_column,zoom_level));
+       create table if not exists metadata(
+         name text,
+         value text); -- not used or populated yet
+       create view if not exists tiles 
+         as select
+            map.zoom_level as zoom_level,
+            map.tile_column as tile_column,
+            map.tile_row as tile_row,
+            images.tile_data as tile_data
+         from map
+            join images on images.tile_id = map.tile_id;
 
 
 .. code-block:: xml
    
    <cache name="mbtiles" type="mbtiles">
-      <dbname_template>/Users/XXX/Documents/MapBox/tiles/natural-earth-1.mbtiles</dbname_template>
+      <dbfile>/Users/XXX/Documents/MapBox/tiles/natural-earth-1.mbtiles</dbfile>
    </cache>
+
+.. note::
+   
+   Contrarily to the standard sqlite mapcache schema, the mbtiles db file only
+   supports a single tileset per cache. The bahavior if multiple tilesets are
+   associated to the same mbtiles cache is undefined, and will definitely
+   produce incorrect results.
 
 
 .. _mapcache_cache_memcache:
