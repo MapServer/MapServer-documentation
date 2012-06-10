@@ -95,7 +95,7 @@ BACKGROUNDCOLOR [r] [g] [b]
 COLOR [r] [g] [b] | [attribute]
     Color to use for drawing features. 
 
-    -  `r`, `g` and `b` shall be
+    - `r`, `g` and `b` shall be
       integers [0..255].  To specify green, the following is used:
 
       .. code-block:: mapfile
@@ -129,17 +129,16 @@ GAP [double]
     specified for the :ref:`LAYER`), `GAP` specifies the distance in
     layer `SIZEUNITS` at the map scale 1:`SYMBOLSCALEDENOM`.
 
-    - For lines, if `INITIALGAP` is not specified, the first symbol
-      will be placed `GAP`/2 from the start of the line.
+    - For lines, the first symbol will be placed `GAP`/2 from the
+      start of the line.
     - For lines, a negative `GAP` value will cause the symbols' X axis
       to be aligned relative to the tangent of the line.
     - For lines, a positive `GAP` value aligns the symbols' X axis
       relative to the X axis of the output device.
     - For lines, a `GAP` of 0 (the default value) will cause the symbols
       to be rendered edge to edge
-    - For polygons, a missing `GAP` or a `GAP` of less than or equal
-      to the size of the symbol will cause the symbols to be rendered
-      edge to edge.
+    - For polygons, a missing `GAP` or a `GAP` of 0 will cause the
+      symbols to be rendered edge to edge.
 
     Symbols can be rotated using `ANGLE`.
 
@@ -150,8 +149,9 @@ GAP [double]
       The behaviour of `GAP` has not been stable over time.  It has
       specified the amount of space between the symbols, and also
       something in between the amount of space between the symbols and
-      the center to center distance.  Since 6.2 `GAP` specifies the
-      center to center distance between the symbols.
+      the center to center distance.  The goal is to have `GAP`
+      specify the center to center distance, but in version 6.0 it is
+      the amount of space between the symbols that is specified.
 
 .. index::
    pair: STYLE; GEOMTRANSFORM
@@ -173,9 +173,6 @@ GAP [double]
 
 .. index::
    triple: STYLE; GEOMTRANSFORM; vertices
-
-.. index::
-   triple: STYLE; GEOMTRANSFORM; expression
 
 GEOMTRANSFORM [bbox|end|labelpnt|labelpoly|start|vertices]
     Used to indicate that the current feature will be transformed
@@ -199,76 +196,6 @@ GEOMTRANSFORM [bbox|end|labelpnt|labelpoly|start|vertices]
       the current feature geometry (the start and end are excluded).
       When used with `ANGLE` AUTO, the marker is oriented by the half
       angle formed by the two adjacent line segments.
-    - *<expression>*: Applies the given expression to the geometry.
-       Supported expressions:
-
-       .. index::
-          triple: STYLE; GEOMTRANSFORM; buffer
-
-       - *(buffer([shape],dist)*
-          Buffer the geometry (`[shape]`) using `dist` pixels as
-          buffer distance.  For polygons, a negative `dist` will
-          produce a setback.
- 
-          Example (polygon data set) - draw a two pixel wide line 5
-          pixels inside the boundary of the polygon::
-
-            STYLE
-              OUTLINECOLOR 255 0 0
-              WIDTH 2
-              GEOMTRANSFORM (buffer([shape],-5))
-            END
-
-          .. note::
- 
-              Depends on GEOS.
-
-.. index::
-   pair: STYLE; INITIALGAP
-
-INITIALGAP [double]
-    `INITIALGAP` is useful for styling dashed lines.
-
-    If used with `GAP`, `INITIALGAP` specifies the distance to the
-    first symbol on a styled line.
-    
-    If used with `PATTERN`, `INITIALGAP` specifies the distance to
-    the first dash on a dashed line.
-
-    Example 1 - dashed line styled with circles:
-
-    .. code-block:: mapfile
-    
-      STYLE
-        COLOR 0 0 0
-        WIDTH 4
-        PATTERN 40 10 END
-      END
-      STYLE
-        SYMBOL "circlef"
-        COLOR 0 0 0
-        SIZE 8
-        INITIALGAP 20
-        GAP 50
-      END
-
-    Example 1 - dashed line styled with dashed line overlay:
-
-    .. code-block:: mapfile
-    
-      STYLE
-        COLOR 0 0 0
-        WIDTH 6
-        PATTERN 40 10
-      END
-      STYLE
-        COLOR 255 255 255
-        WIDTH 4 
-        INITIALGAP 2
-        PATTERN 36 14
-      END
-
-    .. versionadded:: 6.2
 
 .. index::
    pair: STYLE; LINECAP
@@ -421,17 +348,14 @@ OUTLINECOLOR [r] [g] [b] | [attribute]
    pair: STYLE; PATTERN
 
 PATTERN [double on] [double off] [double on] [double off] ... END
-    Used to define a dash pattern for line work (lines, polygon
-    outlines, hatch lines, ...).  The numbers (doubles) specify the
-    lengths of the dashes and gaps of the dash pattern in layer
-    `SIZEUNITS`.
+    Currently used to defines a dash pattern for line work (lines,
+    polygon outlines, ...).  The numbers (doubles) specify the lengths
+    of the dashes and gaps of the dash pattern in layer `SIZEUNITS`.
+
     When scaling of symbols is in effect (`SYMBOLSCALEDENOM` is
     specified for the :ref:`LAYER`), the numbers specify the lengths
     of the dashes and gaps in layer `SIZEUNITS` at the map scale
     1:`SYMBOLSCALEDENOM`.
-
-    `LINECAP`, `LINEJOIN` and `LINEJOINMAXSIZE` can be used to control
-    the appearance of the dashed lines.
 
     To specify a dashed line that is 5 units wide, with dash lengths
     of 5 units and gaps of 5 units, the following style can be used:
@@ -445,75 +369,7 @@ PATTERN [double on] [double off] [double on] [double off] ... END
           PATTERN 5.0 5.0 END
         END
 
-    Since version 6.2, `PATTERN` can be used to create dashed lines
-    for :ref:`symbol`\s of `TYPE` `hatch`.  Patterns for hatches are
-    always drawn with `LINECAP` `butt`.  The patterns are generated
-    relative to the edges of the bounding box of the polygon (an
-    illustrated example can be found in the :ref:`hatch fill section
-    of the symbol construction document <construction_hatch_fill>`).
-
     .. versionadded:: 6.0 moved from :ref:`SYMBOL`
-
-.. index::
-   pair: STYLE; POLAROFFSET
-
-POLAROFFSET [double|attribute] [double|attribute]
-    Offset given in polar coordinates.
-
-    The first parameter is a double value in layer `SIZEUNITS` (or the
-    name of a layer attribute) that specifies the radius/distance.
-
-    The second parameter is a double value (or the name of a layer
-    attribute) that specifies the angle (counter clockwise).
-
-    When scaling of symbols is in effect (`SYMBOLSCALEDENOM` is
-    specified for the :ref:`LAYER`), `POLAROFFSET` gives the
-    distance in layer `SIZEUNITS` at the map scale
-    1:`SYMBOLSCALEDENOM`.
-
-    A `POLAROFFSET` of `20` `40` will shift the geometry to a position
-    that is 20 `SIZEUNITS` away along a line that is at an angle of 40
-    degrees with a line that goes horizontally to the right.
-
-    When `POLAROFFSET` is used with layers that have `CONNECTIONTYPE`
-    `uvraster` (:ref:`vector field <input_vector_field>`), the special
-    attributes `uv_length`, `uv_length_2`, `uv_angle` and
-    `uv_minus_angle` are available, making it convenient to specify
-    arrow heads and tails.  Example:
-
-    .. code-block:: mapfile
-
-      LAYER
-        ...
-        TYPE POINT 
-        CONNECTIONTYPE uvraster
-        ...
-        CLASS
-          STYLE
-            SYMBOL "arrowbody"
-            ANGLE [uv_angle]
-            SIZE [uv_length]
-            WIDTH 3
-            COLOR 100 255 0
-          END
-          STYLE
-            SYMBOL "arrowhead"
-            ANGLE [uv_angle]
-            SIZE 10
-            COLOR 255 0 0
-            POLAROFFSET [uv_length_2] [uv_angle]
-          END
-          STYLE
-            SYMBOL "arrowtail"
-            ANGLE [uv_angle]
-            SIZE 10
-            COLOR 255 0 0
-            POLAROFFSET [uv_length_2] [uv_minus_angle]
-          END
-        END #class
-      END #layer
-
-    .. versionadded:: 6.2 (:ref:`rfc78`)
 
 .. index::
    pair: STYLE; SIZE
@@ -607,9 +463,6 @@ SYMBOL [integer|string|filename|url|attribute]
     .. seealso::
 
        :ref:`symbol`
-
-.. index::
-   pair: STYLE; WIDTH
 
 WIDTH [double|attribute]
     `WIDTH` refers to the thickness of line work drawn, in layer
