@@ -18,7 +18,7 @@ function! GetMapFileFold(lnum)
     " If it's a group statement, fold one level
     let line = getline(a:lnum)
 
-    if line =~ '\c^\s*\(CLASS\|JOIN\|LABEL\|LAYER\|LEGEND\|METADATA\|OUTPUTFORMAT\|PROJECTION\|QUERYMAP\|REFERENCE\|SCALEBAR\|STYLE\|SYMBOL\|WEB\)\s*\(#.*\)*$'
+    if line =~ '\c^\s*\(CLASS\|CLUSTER\|FEATURE\|JOIN\|LABEL\|LAYER\|LEGEND\|METADATA\|OUTPUTFORMAT\|PROJECTION\|QUERYMAP\|REFERENCE\|SCALEBAR\|STYLE\|SYMBOL\|VALIDATION\|WEB\)\s*\(#.*\)*$'
 	return "a1"
     endif
 
@@ -40,8 +40,8 @@ function! MapFileFoldText()
   let name = ""
   while i < v:foldend
     let iline = getline(i)
-    if iline =~ '\c^\s*\(NAME\|EXPRESSION\)\s\s*'
-      let name = substitute(iline, '\c\s*\(NAME\|EXPRESSION\)\s*', '', '')
+    if iline =~ '\c^\s*\(NAME\|EXPRESSION\|GROUP\)\s\s*'
+      let name = substitute(iline, '\c\s*\(NAME\|EXPRESSION\|GROUP\)\s*', '', '')
       break
     endif
     let i = i + 1
