@@ -7,6 +7,18 @@
  GRID
 *****************************************************************************
 
+Description
+===========
+
+The GRID object can be used to add labeled graticule lines to your map.  Initially
+developed in 2003 by John Novak, the GRID object is designed to be used inside a
+:ref:`LAYER` object to allow multiple GRID objects for a single map (allowing 
+for example: a lat/long GRID, a State Plane GRID, and a UTM GRID to be displayed 
+on the same map image).
+
+Mapfile Parameters:
+===================
+
 .. index::
    pair: GRID; LABELFORMAT
     
@@ -61,43 +73,117 @@ MAXSUBDIVIDE [double]
     graticule should be very straight, use this to minimize the number of 
     points for faster rendering.  Optional, default 256.
 
-The following is an example of a GRID object in use: 
+Example1: Grid Displaying Degrees
+=================================
 
-::
+.. code-block:: mapfile
 
     LAYER
-     NAME "grid"
-     METADATA
-       "DESCRIPTION" "Grid"
-     END
-     TYPE LINE
-     STATUS ON
-     CLASS
-       NAME "Graticule"
-       COLOR 0 0 0
-       LABEL
-         COLOR  255 0 0
-         FONT "fritqat"
-         TYPE truetype
-         SIZE 8
-         POSITION AUTO          
-         PARTIALS FALSE
-         BUFFER 5
-         OUTLINECOLOR 255 255 255           
-       END 
-    END
-    PROJECTION
+      NAME "grid"
+      METADATA
+        "DESCRIPTION" "Grid"
+      END
+      TYPE LINE
+      STATUS ON
+      CLASS
+        NAME "Graticule"
+        COLOR 0 0 0
+        LABEL
+          COLOR  255 0 0
+          FONT "sans"
+          TYPE truetype
+          SIZE 8
+          POSITION AUTO          
+          PARTIALS FALSE
+          BUFFER 2
+          OUTLINECOLOR 255 255 255           
+        END 
+      END
+      PROJECTION
         "init=epsg:4326"
-    END
-    GRID
-      LABELFORMAT "DDMM"
-    #  LABELFORMAT '%g°'  # dec degrees with symbol
-      MAXARCS 10
-      MAXINTERVAL 10
-      MAXSUBDIVIDE 2
-    #  LABELFORMAT '%7.0f m'  # nice if a projected SRS used
-    #  MININTERVAL 20000
-    #  MAXSUBDIVIDE 2
-    END
+      END
+      GRID
+        LABELFORMAT "DD"
+      END
     END # Layer
+    
+.. image:: ../images/grid-degrees.png   
+
+Example2: Grid Displaying Degrees with Symbol
+=============================================
+
+.. code-block:: mapfile
+
+    LAYER
+      NAME "grid"
+      METADATA
+        "DESCRIPTION" "Grid"
+      END
+      TYPE LINE
+      STATUS ON
+      CLASS
+        NAME "Graticule"
+        COLOR 0 0 0
+        LABEL
+          COLOR  255 0 0
+          FONT "sans"
+          TYPE truetype
+          SIZE 8
+          POSITION AUTO          
+          PARTIALS FALSE
+          BUFFER 2
+          OUTLINECOLOR 255 255 255           
+        END 
+      END
+      PROJECTION
+        "init=epsg:4326"
+      END
+      GRID
+        LABELFORMAT '%g°'
+      END
+    END # Layer
+    
+.. image:: ../images/grid-degrees-symbol.png  
+
+Example2: Grid Displayed in Other Projection (Google Mercator)
+==============================================================
+
+.. code-block:: mapfile
+
+    LAYER
+      NAME "grid"
+      METADATA
+        "DESCRIPTION" "Grid"
+      END
+      TYPE LINE
+      STATUS ON
+      CLASS
+        NAME "Graticule"
+        COLOR 0 0 0
+        LABEL
+          COLOR  255 0 0
+          FONT "sans"
+          TYPE truetype
+          SIZE 8
+          POSITION AUTO          
+          PARTIALS FALSE
+          BUFFER 2
+          OUTLINECOLOR 255 255 255           
+        END 
+      END
+      PROJECTION
+        "init=epsg:3857"
+      END
+      GRID
+        LABELFORMAT '%.0fm'
+        MININTERVAL 5000000
+      END
+    END # Layer
+    
+.. image:: ../images/grid-google-mercator.png  
+
+.. note::
+    Pay attention to the values you use for the INTERVAL parameter; it is possible
+    to confuse/overload MapServer by telling it to draw a graticule line every
+    meter (MININTERVAL 1).
 
