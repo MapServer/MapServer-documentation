@@ -181,7 +181,7 @@ labelObj_, and hashTableObj_.
     | Class | ---------> | Style |
     +-------+            +-------+
 
-    +-------+ 1     0..1 +-------+
+    +-------+ 1     0..* +-------+
     | Class | ---------> | Label |
     +-------+            +-------+
 
@@ -192,8 +192,9 @@ labelObj_, and hashTableObj_.
                          +-----------+
 
 
-Multiple class styles are now supported in 4.1.  See the styleObj_ section
-for details on use of multiple class styles.
+Multiple class styles have been supported since 4.1, and multiple
+class labels since 6.2.  See the styleObj_ section for details on use
+of multiple class styles.
 
 classObj Attributes
 -------------------
@@ -205,7 +206,8 @@ keyimage : string
     **TODO** Not sure what this attribute is for
 
 label : labelObj_ immutable
-    Definition of class labeling
+    Definition of class labeling.  Removed (6.2) - use addLabel,
+    getLabel and removeLabel instead.
 
 layer : layerObj_ immutable
     Reference to the parent layer
@@ -221,6 +223,11 @@ minscaledenom : float
 
 name : string
     Unique within a layer
+
+numlabels : int
+    Number of labels for class.
+
+    .. versionadded:: 6.2
 
 numstyles : int
     Number of styles for class.  In the future, probably the 4.4 release,
@@ -247,6 +254,12 @@ new classObj( [ layerObj_ parent_layer=NULL ] ) : classObj
     the context of a parent layer by omitting the single constructor
     argument.
 
+addLabel( labelObj ) : int
+    Add a labelObj to the classObj and return its index in the labels
+    array.
+
+    .. versionadded:: 6.2
+
 clone( ) : classObj
     Return an independent copy of the class without a parent layer.
 
@@ -269,6 +282,14 @@ getFirstMetaDataKey() : string
        getNextMetaDataKey() are deprecated and will be removed in a
        future version.  Replaced by direct metadata access, see
        hashTableObj_.
+
+getLabel( int index ) : labelObj_
+    Return a reference to the labelObj at *index* in the labels array.
+
+    See the labelObj_ section for more details on multiple class
+    labels.
+
+    .. versionadded:: 6.2
 
 getMetaData( string key ) : string
     Return the value of the classObj metadata at *key*.
@@ -308,6 +329,13 @@ moveStyleDown( int index ) : int
     
 moveStyleUp( int index ) : int
     Swap the styleObj at *index* with the styleObj *index* - 1.
+
+removeLabel( int index ) : labelObj_
+    Remove the labelObj at *index* from the labels array and return a
+    reference to the labelObj.  numlabels is decremented, and the
+    array is updated.
+
+    .. versionadded:: 6.2
 
 removeStyle( int index ) : styleObj_
     Remove the styleObj at *index* from the styles array and return a
@@ -707,12 +735,20 @@ A labelObj is associated with a classObj, a scalebarObj, or a legendObj.
 ::
 
     +-------+ 0..1     1 +----------+
-    | Label | <--------- | Class    |
+    | Label | <--------- | Scalebar |
     +-------+            | -------- |
-                         | Scalebar |
-                         | -------- |
                          | Legend   |
                          +----------+ 
+
+    +-------+ 0..*     1 +-------+
+    | Label | <--------- | Class |
+    +-------+            +-------+
+
+An instance of labelObj can exist outside of a classObj container and
+be explicitly inserted into the classObj::
+
+    new_label = new labelObj()
+    the_class.addLabel(new_label)
                            
 labelObj Attributes
 -------------------
