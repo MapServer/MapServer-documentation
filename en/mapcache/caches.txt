@@ -133,7 +133,7 @@ threads all try to insert new tiles concurrently.
 Sqlite Caches
 --------------------------------------------------------------------------------
 
-There are three different sqlite caches that vary by the database schema they
+There are two different sqlite caches that vary by the database schema they
 create and query. Sqlite caches have the advantage that they store tiles as
 blobs inside a single database file, and therefore do not have the
 disadvantages of disk caches with regards to the number of files stored. As the
@@ -148,33 +148,44 @@ insert new tiles concurrently.
 Default Schema
 ================================================================================
 
-There are two different configuration options for sqlite caches, which drive how
-the database files are named on the filesystem for each tileset. You can either
-supply a base directory, where multiple database files will be created, or 
-supply a template that will be populated with the name of the tileset and grid.
+Tiles are stored in the configured sqlite file created by mapcache with
 
-Note 
+.. code-block:: sql
+
+   create table if not exists tiles(
+      tileset text,
+      grid text,
+      x integer,
+      y integer,
+      z integer,
+      data blob,
+      dim text,
+      ctime datetime,
+      primary key(tileset,grid,x,y,z,dim)
+   );
 
 .. code-block:: xml
 
    <cache name="sqlite" type="sqlite3">
-      <base>/tmp/sqlitecachedir</base>
    </cache>
 
+
+You may also add custom sqlite pragmas that will be executed when first 
+connecting to a sqlite db, e.g. to override some compiled in sqlite
+defaults
 
 .. code-block:: xml
    
    <cache name="sqlitetemplate" type="sqlite3">
-      <dbname_template>/tmp/{tileset}-{grid}.db</dbname_template>
+      <dbfile>/tmp/sqlitefile.db</dbfile>
+      <pragma name="max_page_count">10000000</pragma>
    </cache>
 
-
-The default sqlite schema is created by the call
+<pragma> entries will result in a call to
 
 .. code-block:: sql
 
-   create table tiles(x integer, y integer, z integer, data blob, dim text, ctime datetime, atime datetime, hitcount integer default 0, primary key(x,y,z,dim))
-
+   PRAGMA max_page_count = 1000000;
 
 
 Custom Schema
@@ -193,15 +204,51 @@ MBTiles Schema
 This cache type is a shortcut to the previous custom schema sqlite cache, with
 pre-populated SQL queries that correspond to the MBTiles specification.
 
-Note that most mbtiles file you download cannot be populated on demand as the
-spec-mandated table names are actually views and not simple tables.
+Although the default mbtiles schema is very simple, mapcache uses the same multi-
+table schema found in most downloadable mbtiles file, to notably enable storing
+blank (i.e. uniform) tiles without duplicating the encoded image data (in the 
+same way the disk cache supports tile symlinking).
+
+The mbtiles schema is created with:
+
+.. code-block:: sql
+
+       create table if not exists images(
+         tile_id text,
+         tile_data blob,
+         primary key(tile_id));
+       create table if not exists map (
+         zoom_level integer,
+         tile_column integer,
+         tile_row integer,
+         tile_id text,
+         foreign key(tile_id) references images(tile_id),
+         primary key(tile_row,tile_column,zoom_level));
+       create table if not exists metadata(
+         name text,
+         value text); -- not used or populated yet
+       create view if not exists tiles 
+         as select
+            map.zoom_level as zoom_level,
+            map.tile_column as tile_column,
+            map.tile_row as tile_row,
+            images.tile_data as tile_data
+         from map
+            join images on images.tile_id = map.tile_id;
 
 
 .. code-block:: xml
    
    <cache name="mbtiles" type="mbtiles">
-      <dbname_template>/Users/XXX/Documents/MapBox/tiles/natural-earth-1.mbtiles</dbname_template>
+      <dbfile>/Users/XXX/Documents/MapBox/tiles/natural-earth-1.mbtiles</dbfile>
    </cache>
+
+.. note::
+   
+   Contrarily to the standard sqlite mapcache schema, the mbtiles db file only
+   supports a single tileset per cache. The bahavior if multiple tilesets are
+   associated to the same mbtiles cache is undefined, and will definitely
+   produce incorrect results.
 
 
 .. _mapcache_cache_memcache:
@@ -265,30 +312,84 @@ Note that the tiff tile structure must
 exactly match the structure of the grid used by the tileset, and the tif file
 names must follow strict naming rules.
 
-There are three mandatory parameters to configure a TIFF cache:
+Defining the TIFF file sizes
+===============================
+
+The number of tiles stored in each the horizontal and vertical direction
+must be defined:
 
 - <xcount> the number of tiles stored along the x (horizontal) direction of
   the TIFF file.
 - <ycount> the number of tiles stored along the y (vertical) direction of
   the TIFF file.
-- <template> the template to use when looking up a TIFF file name given the
-  x,y,z of the requested tile
 
-  - {x} is replaced by the x value of the leftmost tile inside the TIFF file
-    containing the requested tile
-  - {inv_x} is replaced by the x value of the rightmost tile.
-  - {y} is replaced by the y value of the bottommost tile.
-  - {inv_y} is replaced by the y value of the topmost tile.
-  - {div_x} is replaced by the index of the TIFF file starting from the left
-    of the grid (i.e. {div_x} = {x}/<countx>)
-  - {inv_div_x} same as {div_x} but starting from the right.
-  - {div_y} is replaced by the index of the TIFF file starting from the bottom
-    of the grid (i.e. {div_y} = {y}/<county>)
-  - {inv_div_y} same as {div_y} but starting from the top.
+.. code-block:: xml
 
-  Note that {inv_x} and {inv_div_x} will probably be rarely used, whereas
-  {inv_y} and {inv_div_y} will find some usage for people who prefer to index
-  their TIFF files from top to bottom rather than bottom to top.
+   <cache name="tiff" type="tiff">
+      <xcount>64</xcount>
+      <ycount>64</ycount>
+      ...
+   </cache>
+
+Setting up the file naming convention
+========================================
+
+The <template> tag sets the template to use when looking up a TIFF file
+name given the x,y,z of the requested tile
+
+.. code-block:: xml
+
+   <cache name="tiff" type="tiff">
+      <template>/data/tiffs/{tileset}/{grid}/L{z}/R{inv_y}/C{x}.tif</template>
+      ...
+   </cache>
+
+The following template keys are available for operating on the given tile's
+x,y, and z:
+
+- {x} is replaced by the x value of the leftmost tile inside the TIFF file
+  containing the requested tile
+- {inv_x} is replaced by the x value of the rightmost tile.
+- {y} is replaced by the y value of the bottommost tile.
+- {inv_y} is replaced by the y value of the topmost tile.
+- {div_x} is replaced by the index of the TIFF file starting from the left
+  of the grid (i.e. {div_x} = {x}/<countx>)
+- {inv_div_x} same as {div_x} but starting from the right.
+- {div_y} is replaced by the index of the TIFF file starting from the bottom
+  of the grid (i.e. {div_y} = {y}/<county>)
+- {inv_div_y} same as {div_y} but starting from the top.
+
+.. note::
+
+   {inv_x} and {inv_div_x} will probably be rarely used, whereas
+   {inv_y} and {inv_div_y} will find some usage for people who prefer to index
+   their TIFF files from top to bottom rather than bottom to top.
+
+Customizing the template keys
+======================================
+
+In some occurences, it may be desirable to have a precise hand on the
+filename to use for a given x,y,z, tile lookup, e.g. to look for a file
+named "Z03-R00003-C000009.tif" instead of just "Z3-R3-C9.tif". The 
+<template> entry supports formatting attributes, following the unix
+printf syntax ( c.f.: http://linux.die.net/man/3/printf ), by suffixing
+each template key with "_fmt", e.g.:
+
+.. code-block:: xml
+
+   <cache name="tiff" type="tiff">
+      <template
+         x_fmt="%08d"
+         inv_y_fmt="%08d"
+      >/data/tiffs/{tileset}/{grid}/L{z}/R{inv_y}/C{x}.tif</template>
+   </cache>
+
+.. note::
+
+   If not specified, the default behavior is to use "%d" for formatting.
+
+Setting JPEG compression options
+======================================
 
 An additional optional parameter defines which JPEG compression should be 
 applied to the tiles when saved into the TIFF file:
@@ -300,9 +401,7 @@ applied to the tiles when saved into the TIFF file:
 .. code-block:: xml
 
    <cache name="tiff" type="tiff">
-      <template>/data/tiffs/{tileset}/{grid}/L{z}/R{inv_y}/C{x}.tif</template>
-      <xcount>64</xcount>
-      <ycount>64</ycount>
+      ...
       <format>myjpeg</format>
    </cache>
 
@@ -311,6 +410,8 @@ to load the tiles are tiled TIFFs with jpeg compression, who's size are
 16384x16384. The number of files to store on disk is thus reduced 4096 times
 compared to the basic disk cache.
 
+GeoTIFF Support
+===========================
 
 If compiled with GeoTiff and write support, MapCache will add referencing
 information to the TIFF files it creates, so that the TIFF files can be used
@@ -340,4 +441,5 @@ when compiled with geotiff support:
    Upper Right (20037508.343,20037508.343) 
    Lower Right (20037508.343,-20037508.343) 
    Center      (   0.0000000,   0.0000000)
+
 

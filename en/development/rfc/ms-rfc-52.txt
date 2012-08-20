@@ -112,19 +112,21 @@ It becomes necessary to instead recreate the result set but re-executing the
 query. Problem is, there's no easy way to serialize query parameters.
 
 I propose creating a new object, a queryObj, to store the various parameters
-associated with MapServer queries. It might look something like:
+associated with MapServer queries. It might look something like::
 
-typedef struct {
-  int type; /* By rect, point, shape, attribute, etc... Types match the query functions. */
-  int qlayer; /* used by all functions */
+.. code-block:: python
 
-  rectObj *rect; /* used by msQueryByRect() */
+  typedef struct {
+    int type; /* By rect, point, shape, attribute, etc... Types match the query functions. */
+    int qlayer; /* used by all functions */
 
-  char *qitem; /* used by msQueryByAttribute() */
-  char *qstring; /* used by msQueryByAttribute() */
+    rectObj *rect; /* used by msQueryByRect() */
 
-  ...and so on...
-} queryObj;
+    char *qitem; /* used by msQueryByAttribute() */
+    char *qstring; /* used by msQueryByAttribute() */
+
+    ...and so on...
+  } queryObj;
 
 A single queryObj would hang off a mapObj and the mapObj would be the sole parameter 
 passed to the various query methods. MapServer C code, primarily the CGI and OGC

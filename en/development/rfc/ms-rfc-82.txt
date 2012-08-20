@@ -38,7 +38,7 @@ It is proposed that MapServer be enhanced with the following capabilities:
 * support of direct handling of XML metadata documents to advertise
   OWS Capabilities metadata automaticall
 * support of generating XML metadata documents from a given layer's METADATA
-properties, as well its spatial properties
+  properties, as well its spatial properties
 
 Advantages of this enhancement:
 
@@ -106,40 +106,40 @@ This is an alternative service description that supports the INSPIRE initiative.
 Implementation Details
 ======================
 
-mapmetadata.c
+.. code-block:: c
 
-- char * msMetadataGetLayerMetadata(layer.metadata)
- - if MAP.LAYER.METADATA/ows_metadata_path
-  - read value of metadata_file (MAP.LAYER.METADATA/ows_metadata_path)
-   - returns char * of content
- - else
-  - generate metadata XML based on LAYER.METADATA/ows_* and layer's spatial
-    properties
- - calling function will write to HTTP response
-   (if we have similar "read file, return a char *" type functions, use those instead)
+  - char * msMetadataGetLayerMetadata(layer.metadata)
+   - if MAP.LAYER.METADATA/ows_metadata_path
+    - read value of metadata_file (MAP.LAYER.METADATA/ows_metadata_path)
+     - returns char * of content
+   - else
+    - generate metadata XML based on LAYER.METADATA/ows_* and layer's spatial
+      properties
+   - calling function will write to HTTP response
+     (if we have similar "read file, return a char *" type functions, use those instead)
 
-- layerObj msMetadataParseMetadata(metadata_format, metadata_file, ows_service_type)
- - libxml2 required
- - metadata format support: ISO 19115:2003 is initially proposed; others can be
-   added
- - if MAP.LAYER.METADATA/ows_metadata_path
-  - read file (given format)
-   - parse and set layer->metadata as per the ows_service_type from the metadata XML
-    - ows_title
-    - ows_abstract
-    - ows_keywordlist
-    - ows_extent
+  - layerObj msMetadataParseMetadata(metadata_format, metadata_file, ows_service_type)
+   - libxml2 required
+   - metadata format support: ISO 19115:2003 is initially proposed; others can be
+     added
+   - if MAP.LAYER.METADATA/ows_metadata_path
+    - read file (given format)
+     - parse and set layer->metadata as per the ows_service_type from the metadata XML
+      - ows_title
+      - ows_abstract
+      - ows_keywordlist
+      - ows_extent
 
-- char * msMetadataGetServiceMetadata(map->web.metadata)
- - read map->web.metadata
- - return ISO 19119:2005 XML
+  - char * msMetadataGetServiceMetadata(map->web.metadata)
+   - read map->web.metadata
+   - return ISO 19119:2005 XML
 
 Backwards Compatibility Issues
 ------------------------------------------------------------------------------
-
+  
 There are no compatibility issues with existing mapfiles.  This enhancement
 will work as follows:
-
+  
 * if MAP.LAYER.METADATA/ows_metadata_path is defined, parse metadata and
   set OWS metadata values accorindingly
 * else, use normal OWS metadata handling

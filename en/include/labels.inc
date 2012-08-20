@@ -127,7 +127,7 @@
 	outputformat                   :ref:`OUTPUTFORMAT <outputformat>`
 	pdf                            :ref:`PDF Output <pdf>`
 	pgeo                           :ref:`ESRI Personal Geodatabase (MDB) <pgeo>`
-	php                            :ref:`PHP MapScript <php>`
+	php                            :ref:`PHP MapScript <php_mapscript>`
 	php_example                    :ref:`By Example <php_example>`
 	php_install                    :ref:`PHP MapScript Installation <php_install>`
 	php_install_example_steps      :ref:`Example Steps of a Full Windows Installation <php_install_example_steps>`

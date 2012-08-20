@@ -14,8 +14,8 @@
 :Date: $Date$
 
  .. note::
-   If you are using MapServer 5.6 and older, please refer to the 
-   :ref:`PHP MapScript 5.6 documentation <php5.6>` instead.
+   If you are using MapServer 5.6 and older, please refer 
+   to the :ref:`PHP MapScript 5.6 documentation <php5.6>` instead.
  
  .. note:: If you are migrating your existing application that is
    based on MapServer 5.6 or older, to MapServer 6.0 or beyond,
@@ -199,10 +199,14 @@ void ms_ioresethandlers()
     Resets the default stdin and stdout handlers in place of "buffer"
     based handlers.
  
-void ms_iostripstdoutbuffercontenttype()
+string ms_iostripstdoutbuffercontenttype()
     Strip the Content-type header off the stdout buffer if it has one,
     and if a content type is found it is return. Otherwise return
     false.
+
+void ms_iostripstdoutbuffercontentheaders()
+    Strip all the Content-* headers off the stdout buffer if it has
+    some.
 
 array ms_TokenizeMap(string map_file_name)
     Preparses a mapfile through the MapServer parser and return an 
@@ -251,11 +255,12 @@ Type                Name         Note
 =============== ================ ===============================================
 string          group
 string          keyimage   
-labelObj        label
+labelObj        label            Removed (6.2) - use addLabel, getLabel, ...
 double          maxscaledenom
 hashTableObj    metadata
 double          minscaledenom
 string          name
+int             numlabels        read-only (since 6.2)
 int             numstyles        read-only
 int             status           MS_ON, MS_OFF or MS_DELETE
 string          template
@@ -265,6 +270,12 @@ int             type
 
 Methods
 ...............................................................................
+
+int addLabel( labelObj label)
+    Add a labelObj to the classObj and return its index in the labels
+    array.
+
+    .. versionadded:: 6.2
 
 imageObj createLegendIcon(int width, int height)
     Draw the legend icon and return a new imageObj.
@@ -286,6 +297,14 @@ string getExpressionString()
     Returns the :ref:`expression <expressions>` string for the class
     object.
         
+labelObj getLabel(int index)
+    Return a reference to the labelObj at *index* in the labels array.
+
+    See the labelObj_ section for more details on multiple class
+    labels.
+
+    .. versionadded:: 6.2
+
 int getMetaData(string name)
     Fetch class metadata entry by name.  Returns "" if no entry 
     matches the name.  Note that the search is case sensitive.
@@ -313,6 +332,13 @@ int movestyleup(int index)
     ex class->movestyleup(1) will have the effect of moving style 1
     up to position 0, and the style at position 0 will be moved
     to position 1.
+
+labelObj removeLabel(int index)
+    Remove the labelObj at *index* from the labels array and return a
+    reference to the labelObj.  numlabels is decremented, and the
+    array is updated.
+
+    .. versionadded:: 6.2
 
 int removeMetaData(string name)
     Remove a metadata entry for the class.  Returns MS_SUCCESS/MS_FAILURE.
@@ -473,7 +499,7 @@ Constructor
 
 The grid is always embedded inside a layer object defined as
 a grid (layer->connectiontype = MS_GRATICULE)
-(for more docs : http://trac.osgeo.org/mapserver/wiki/MapServerGrid)
+(for more docs : https://github.com/mapserver/mapserver/wiki/MapServerGrid)
 
 A layer can become a grid layer by adding a grid object to it using :
 ms_newGridObj(layerObj layer)
@@ -667,6 +693,10 @@ Constructor
 
 labelObj are always embedded inside other classes.
 
+.. code-block:: php
+
+    new labelObj()
+
 Members
 ...............................................................................
 
@@ -826,6 +856,7 @@ string          labelitem
 double          labelmaxscaledenom
 double          labelminscaledenom
 string          labelrequires
+string          mask
 int             maxfeatures
 double          maxscaledenom
 hashTableObj    metadata
