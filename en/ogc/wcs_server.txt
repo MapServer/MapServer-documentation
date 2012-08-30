@@ -567,7 +567,9 @@ last version of the WCS standard.
     **ACCEPTLANGUAGES=languages:** This parameter is currently ignored.
     
     **FORMAT=format:** The desired format can now also be set with the 
-    name of the outputformat object defined in the mapfile.
+    name of the outputformat object defined in the mapfile. In the contrast to
+    previous versions of WCS this parameter is optional when the native format 
+    is either specified or can be determined via GDAL.
     
     **MAP=mapfile**
     
@@ -611,6 +613,26 @@ The layer name must be a valid NCName, i.e: must not start with a
 number and can only contain alphanumerical characters. This constraint
 derives of the gml:id property which has to be a NCName, that relates
 to the coverage ID which is itself taken from the layers name.
+
+Specifying coverage specific metadata
+-------------------------------------
+
+For WCS enabled layers in MapServer for WCS 2.0, there are different
+possibilities to declare coverage metadata. In the simplest case, all of
+the required meta-data can be retrieved from the source image.
+
+For some reason this may not be desireable, maybe because the source image does
+not provide these meta-data. Not every input image forma thas geospatial
+metadata attached. In this case, the layer meta-data can be used to provide
+this information.
+
+The convention is, that once (wcs|ows)_extent and one of (wcs|ows)_size and
+(wcs|ows)_resolution is set in the layer meta-data, all the coverage specific
+meta-data will be retrieved from there. Otherwise the source image is queried
+via GDAL, if possible.
+
+The relevant layer meta-data fields are (wcs|ows)_bandcount, (wcs|ows)_imagemode,
+(wcs|ows)_native_format and all `New band related metadata entries`_.
 
 New band related metadata entries
 ---------------------------------
@@ -1188,7 +1210,19 @@ Layer Object Metadata
 **wcs_nativeformat**
 
 - *Description:* (Optional) The current format of the served raster
-   layer. (e.g. "GTiff")
+   layer. (e.g. "GTiff") (used for WCS 1.0)
+
+.. index:: 
+   triple: WCS; METADATA; wcs_native_format
+
+**wcs_native_format**
+
+- *Description:* (Optional) The mime-type of the  current format of the served
+   raster layer. (e.g. "image/tiff") This field is used when coverage metadata
+   is provided by the layer metadata only (when wcs_extent and
+   wcs_size/wcs_resolution are set).  When set, WCS 2.0 GetCoverage requests
+   will use this format when no other format is specified. (The format
+   parameter is optional then)
 
 *Axes Descriptions*
 
