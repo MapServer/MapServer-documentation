@@ -9,7 +9,7 @@
 	arcinfo                        :ref:`ArcInfo <arcinfo>`
 	arcsde                         :ref:`ArcSDE <arcsde>`
 	autotest                       :ref:`Regression Testing <autotest>`
-	background                     :ref:`Tutorial Timeframe <background>`
+	background                     :ref:`Tutorial Timeframe <tutorial_background>`
 	batch_utilities                :ref:`Batch Scripting <batch_utilities>`
 	bugs                           :ref:`Bug Submission <bugs>`
 	cgi                            :ref:`CGI <cgi>`
@@ -196,8 +196,8 @@
 	scalebar_utility               :ref:`scalebar <scalebar_utility>`
 	sdts                           :ref:`SDTS <sdts>`
 	search                         :ref:`search`
-	section1                       :ref:`Section 1: Static Maps and the MapFile <section1>`
-	section2                       :ref:`Section 2: CGI variables and the User Interface <section2>`
+	section1                       :ref:`Section 1: Static Maps and the MapFile <tutorial_section1>`
+	section2                       :ref:`Section 2: CGI variables and the User Interface <tutorial_section2>`
 	shapefiles                     :ref:`ESRI Shapefiles (SHP) <shapefiles>`
 	shp2img                        :ref:`shp2img <shp2img>`
 	shptree                        :ref:`shptree <shptree>`

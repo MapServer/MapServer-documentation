@@ -11,7 +11,9 @@
 :Contact:      jmckenna at gatewaygeomatics.com
 :Author:       Stephan Meissl
 :Contact:      stephan.meissl at eox.at
-:Last Updated: 2012-05-15
+:Author:       Fabian Schindler
+:Contact:      fabian.schindler at eox.at
+:Last Updated: 2012-08-30
 
 .. contents:: Table of Contents
     :depth: 2
@@ -498,15 +500,21 @@ The following KVP request parameters are available in WCS 2.0:
 
     **SUBSET=axis[,crs](low,high):** This parameter subsets the
     coverage on the given axis. This parameter can be given multiple
-    times, once for each axis. The optional sub-parameter can either
-    be an EPSG definition (like EPSG:4326), an URN or an URI or
-    'imageCRS' (which is the default). All crs sub-parameters from all
+    times, but only once for each axis. The optional sub-parameter **crs** can 
+    either be an EPSG definition (like EPSG:4326), an URN or an URI or
+    'imageCRS' (which is the default). All **crs** sub-parameters from all
     **SUBSET** parameters must be equal. (e.g: you cannot subset one
     axis in imageCRS and another in EPSG:4326).
     
+    .. note::
+
+      The syntax of the **crs** sub-parameter is likely to need to be changed 
+      when new specification documents become available (see :ref:`To-do Items 
+      and Known Limitations <wcs_to-do>`).
+    
     **SIZE=axis(value):** This parameter sets the size of the desired
     axis to the desired value (pixels).
-    
+
     **RESOLUTION=axis(value):** This parameter sets the resolution of
     the desired axis to the desired value (pixels/unit).
     
@@ -531,7 +539,7 @@ The following KVP request parameters are available in WCS 2.0:
 
     **MEDIATYPE=mediatype:** This parameter is relevant to GetCoverage
     requests, when multipart XML/image output is desired. It should be
-    set to 'multipart/mixed' (which is currently the only possible
+    set to 'multipart/related' (which is currently the only possible
     value for this parameter).
     
     **INTERPOLATION=intperolation_method:** This defines the
@@ -539,10 +547,17 @@ The following KVP request parameters are available in WCS 2.0:
     are "NEAREST", "BILINEAR" and "AVERAGE".
 
     **RANGESUBSET=band1[,band2[,...]]:** With this parameter, a
-    selection of the bands can be made. Also the bands can be
+    selection of bands can be made. Also the bands can be
     reordered.  The bands can be referred to either by name (which can
     be retrieved using the DescribeCoverage request) or by index
     (starting with '1' for the first band).
+
+    .. note::
+
+      The paramter names **SIZE**, **RESOLUTION**, **OUTPUTCRS=crs:**, 
+      **INTERPOLATION**, and **RANGESUBSET** might need to be changed when new 
+      specification documents become available (see :ref:`To-do Items and 
+      Known Limitations <wcs_to-do>`).
 
 Unchanged KVP parameters
 ''''''''''''''''''''''''
@@ -550,7 +565,7 @@ Unchanged KVP parameters
 The following parameters have not (or just slightly) changed since the 
 last version of the WCS standard.
 
-    **VERSION=version:** For WCS 2.0, this should be set to '2.0.0'.
+    **VERSION=version:** For WCS 2.0, this should be set to '2.0.1'.
     
     **SERVICE=service**
     
@@ -573,33 +588,30 @@ last version of the WCS standard.
     
     **MAP=mapfile**
     
-All other parameter keys are invalid in WCS 2.0 and will therefore 
-produce an exception message.
-
 KVP request examples
 ''''''''''''''''''''
 
 The below sample request outline the new KVP request syntax::
 
   # GetCapabilities
-  http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.0
+  http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.1
     &REQUEST=GetCapabilities
   # DescribeCoverage 2.0
-  http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.0
+  http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.1
     &REQUEST=DescribeCoverage&COVERAGEID=grey
   # GetCoverage 2.0 image/tiff full
-  http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.0
+  http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.1
     &REQUEST=GetCoverage&COVERAGEID=grey&FORMAT=image/tiff
-  # GetCoverage 2.0 multipart/mixed (GML header & image/tiff) full
-  http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.0
+  # GetCoverage 2.0 multipart/related (GML header & image/tiff) full
+  http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.1
     &REQUEST=GetCoverage&COVERAGEID=grey&FORMAT=image/tiff
-    &MEDIATYPE=multipart/mixed
+    &MEDIATYPE=multipart/related
   # GetCoverage 2.0 image/tiff trim x y both
-  http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.0
+  http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.1
     &REQUEST=GetCoverage&COVERAGEID=grey&FORMAT=image/tiff
     &SUBSET=x(10,200)&SUBSET=y(10,200)
   # GetCoverage 2.0 reproject to EPSG 4326
-  http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.0
+  http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.1
     &REQUEST=GetCoverage&COVERAGEID=grey&FORMAT=image/tiff
     &SUBSET=x,http://www.opengis.net/def/crs/EPSG/0/4326(-121.488744,-121.485169)
 
@@ -619,25 +631,25 @@ Specifying coverage specific metadata
 
 For WCS enabled layers in MapServer for WCS 2.0, there are different
 possibilities to declare coverage metadata. In the simplest case, all of
-the required meta-data can be retrieved from the source image.
+the required metadata can be retrieved from the source image.
 
 For some reason this may not be desireable, maybe because the source image does
-not provide these meta-data. Not every input image forma thas geospatial
-metadata attached. In this case, the layer meta-data can be used to provide
+not provide these metadata. Not every input image format has geospatial
+metadata attached. In this case, the layer metadata can be used to provide
 this information.
 
 The convention is, that once (wcs|ows)_extent and one of (wcs|ows)_size and
-(wcs|ows)_resolution is set in the layer meta-data, all the coverage specific
-meta-data will be retrieved from there. Otherwise the source image is queried
+(wcs|ows)_resolution is set in the layer metadata, all the coverage specific
+metadata will be retrieved from there. Otherwise the source image is queried
 via GDAL, if possible.
 
-The relevant layer meta-data fields are (wcs|ows)_bandcount, (wcs|ows)_imagemode,
-(wcs|ows)_native_format and all `New band related metadata entries`_.
+The relevant layer metadata fields are (wcs|ows)_bandcount, (wcs|ows)_imagemode,
+(wcs|ows)_native_format, and all `New band related metadata entries`_.
 
 New band related metadata entries
 ---------------------------------
 
-In this section new WCS 2.0.0 specific layer metadata entries are 
+In this section new WCS 2.0 specific layer metadata entries are 
 discussed.
 
 The following layer metadata fields can be used to return a more
@@ -788,22 +800,29 @@ This is an example GetCapabilities request:
 .. code-block:: xml
 
   <?xml version="1.0" encoding="UTF-8"?>
-  <ows:GetCapabilities service="WCS"> 
+  <wcs:GetCapabilities
+    xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+    xsi:schemaLocation="http://www.opengis.net/wcs/2.0
+      http://schemas.opengis.net/wcs/2.0/wcsAll.xsd"
+    xmlns="http://www.opengis.net/wcs/2.0"
+    xmlns:wcs='http://www.opengis.net/wcs/2.0'
+    xmlns:ows="http://www.opengis.net/ows/2.0"
+    service="WCS"> 
     <ows:AcceptVersions>
-      <ows:Version>2.0.0</ows:Version>
+      <ows:Version>2.0.1</ows:Version>
     </ows:AcceptVersions>
-    <ows:updatesequence>2010-12-21</ows:updatesequence>
     <ows:Sections>
       <ows:Section>OperationsMetadata</ows:Section>
       <ows:Section>ServiceIdentification</ows:Section>
     </ows:Sections>
-  </ows:GetCapabilities>
-
+  </wcs:GetCapabilities>
+  
 This is an example DescribeCoverage request, which is only valid for 
 WCS 2.0:
 
 .. code-block:: xml
 
+  <?xml version="1.0" encoding="UTF-8"?>
   <wcs:DescribeCoverage 
     xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
     xsi:schemaLocation="http://www.opengis.net/wcs/2.0
@@ -811,8 +830,8 @@ WCS 2.0:
     xmlns="http://www.opengis.net/wcs/2.0"
     xmlns:wcs="http://www.opengis.net/wcs/2.0"
     service="WCS"
-    version="2.0.0">
-    <wcs:CoverageID>SOME_ID</wcs:CoverageID>
+    version="2.0.1">
+    <wcs:CoverageId>SOME_ID</wcs:CoverageId>
   </wcs:DescribeCoverage>
 
 This example demonstrates the usage of a WCS 2.0 POST-XML GetCoverage 
@@ -828,23 +847,23 @@ request:
     xmlns="http://www.opengis.net/wcs/2.0"
     xmlns:wcs="http://www.opengis.net/wcs/2.0"
     service="WCS"
-    version="2.0.0">
-    <wcs:Format>image/tiff</wcs:Format>
-    <wcs:Mediatype>multipart/mixed</wcs:Mediatype>
-    <wcs:Resolution dimension="x">0.01</wcs:Resolution>
-    <wcs:Size dimension="y">50</wcs:Size>
-    <wcs:CoverageID>SOME_ID</wcs:CoverageID>
+    version="2.0.1">
+    <wcs:CoverageId>SOME_ID</wcs:CoverageId>
     <wcs:DimensionTrim>
       <wcs:Dimension crs="http://www.opengis.net/def/crs/EPSG/0/4326">x
       </wcs:Dimension>
-      <wcs:TrimHigh>17.25</wcs:TrimHigh>
       <wcs:TrimLow>16.5</wcs:TrimLow>
+      <wcs:TrimHigh>17.25</wcs:TrimHigh>
     </wcs:DimensionTrim>
     <wcs:DimensionTrim>
       <wcs:Dimension crs="http://www.opengis.net/def/crs/EPSG/0/4326">y
       </wcs:Dimension>
       <wcs:TrimLow>47.9</wcs:TrimLow>
     </wcs:DimensionTrim>
+    <wcs:format>image/tiff</wcs:format>
+    <wcs:mediaType>multipart/related</wcs:mediaType>
+    <wcs:Resolution dimension="x">0.01</wcs:Resolution>
+    <wcs:Size dimension="y">50</wcs:Size>
   </wcs:GetCoverage>
 
 Please refer to the `WCS 2.0 Specification - XML/POST Protocol Binding
@@ -1379,10 +1398,11 @@ WCS 2.0 Application Profile - Earth Observation (EO-WCS)
 ========================================================
 
 OGC is currently discussing the adoption of an Earth Observation 
-(EO) Application Profile for WCS 2.0 (EO-WCS). A draft will be 
-available soon for a public RFC period. For an implementation please 
-refer to the Open Source project `EOxServer`_ which already implements 
-this proposed EO-WCS based on MapServer.
+(EO) Application Profile for WCS 2.0 (EO-WCS) (see `public RFC on EO-WCS`_). 
+For an implementation please refer to the Open Source project `EOxServer`_ 
+which already implements this proposed EO-WCS based on MapServer.
+
+.. _wcs_to-do:
 
 To-do Items and Known Limitations
 =================================
@@ -1412,8 +1432,8 @@ To-do Items and Known Limitations
 .. _`WCS 1.0.0 specification`: https://portal.opengeospatial.org/files/?artifact_id=3837
 .. _`WCS 1.1.1c1 specification`: http://portal.opengeospatial.org/files/?artifact_id=22560
 .. _`OGC'c WCS Standard page`: http://www.opengeospatial.org/standards/wcs
-.. _`GML 3.2.1 Application Schema Coverages`: http://portal.opengeospatial.org/files/?artifact_id=41438
-.. _`WCS 2.0 Specification - Core`: http://portal.opengeospatial.org/files/?artifact_id=41437
+.. _`GML 3.2.1 Application Schema Coverages`: http://portal.opengeospatial.org/files/?artifact_id=48553
+.. _`WCS 2.0 Specification - Core`: http://portal.opengeospatial.org/files/?artifact_id=48428
 .. _`WCS 2.0 Specification - KVP Protocol Binding Extension`: http://portal.opengeospatial.org/files/?artifact_id=41439
 .. _`WCS 2.0 Specification - XML/POST Protocol Binding Extension`: http://portal.opengeospatial.org/files/?artifact_id=41440
 .. _`WCS 2.0 Schemas`: http://schemas.opengis.net/wcs/2.0/
@@ -1422,7 +1442,8 @@ To-do Items and Known Limitations
 .. _`MapServer for Windows (MS4W)`: http://www.maptools.org/ms4w/index.phtml
 .. _`WCS 2.0 tests in msautotest`: http://trac.osgeo.org/mapserver/browser/trunk/msautotest/wxs/wcs_simple.map
 .. _`MS RFC 67`: http://mapserver.org/development/rfc/ms-rfc-67.html
-.. _`EOxServer`: http://www.eoxserver.org
+.. _`public RFC on EO-WCS`: http://www.opengeospatial.org/standards/requests/81
+.. _`EOxServer`: http://eoxserver.org
 .. _`WCS DescribeCoverage live example`: http://demo.mapserver.org/cgi-bin/wcs?SERVICE=wcs&VERSION=1.0.0&REQUEST=DescribeCoverage&COVERAGE=modis
 .. _`WCS GetCapabilities live example`: http://demo.mapserver.org/cgi-bin/wcs?SERVICE=wcs&VERSION=1.0.0&REQUEST=GetCapabilities
 .. _`WCS GetCoverage live example`:  http://demo.mapserver.org/cgi-bin/wcs?SERVICE=wcs&VERSION=1.0.0&REQUEST=GetCoverage&COVERAGE=modis-001&CRS=EPSG:26915&BBOX=159707,4597395,1400707,5501395&WIDTH=400&HEIGHT=300&FORMAT=GEOTIFF_RGB

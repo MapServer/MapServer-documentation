@@ -338,6 +338,7 @@ class MapFileLexer(RegexLexer):
     tokens = {
         'root': [
             (r'\s+', Text),
+            (r'\[.*?\]', Name.Other),
             (r'[{}\[\]();,-.]+', Punctuation),
             (r'#.*', Comment),
             (r'(AND|OR|NOT|EQ|GT|LT|GE|LE|NE|IN|IEQ)\b', Operator.Word),
