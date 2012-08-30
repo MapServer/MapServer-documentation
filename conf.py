@@ -292,7 +292,7 @@ builtins = (r'(ANNOTATION|'
             r'CHART|CIRCLE|CL|CR|CSV|MYSQL|'
             r'POSTGRESQL|DEFAULT|DD|ELLIPSE|EMBED|FALSE|FEET|FOLLOW|'
             r'GIANT|HATCH|HILITE|INCHES|KILOMETERS|LARGE|LC|'
-            r'LEFT|LINE|LL|LR|MEDIUM|METERS|MILES|MITER|MULTIPLE|NONE|'
+            r'LEFT|LENGTH|LINE|LL|LR|MEDIUM|METERS|MILES|MITER|MULTIPLE|NONE|'
             r'NORMAL|OFF|OGR|ON|ONE-TO-ONE|ONE-TO-MANY|ORACLESPATIAL|'
             r'PERCENTAGES|PIXMAP|PIXELS|POINT|POLYGON|POSTGIS|MYGIS|'
             r'PLUGIN|QUERY|RASTER|RIGHT|ROUND|SDE|SELECTED|SIMPLE|SINGLE|'
@@ -337,6 +337,7 @@ class MapFileLexer(RegexLexer):
     tokens = {
         'root': [
             (r'\s+', Text),
+            (r'\[.*?\]', Name.Other),
             (r'[{}\[\]();,-.]+', Punctuation),
             (r'#.*', Comment),
             (r'(AND|OR|NOT|EQ|GT|LT|GE|LE|NE|IN|IEQ)\b', Operator.Word),
