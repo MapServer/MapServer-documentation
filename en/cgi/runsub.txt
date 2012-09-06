@@ -44,6 +44,9 @@ developed. You could then set up a layer like so:
     LAYER 
         NAME 'covertypes' 
         ... 
+        VALIDATION
+            "ctype" "[a-z]+"
+        END
         CLASSITEM 'type' 
         CLASS # highlighted presentation 
             EXPRESSION '%ctype%' 
@@ -110,15 +113,14 @@ form.
 
 You should also define validation expressions on these variables to guard
 against unintentional SQL being submitted to postgis. Within the layer
-metadata you'd do the following:
+you'd do the following:
 
 .. code-block:: mapfile
 
-    METADATA
-        'multimedia_validation_pattern' '^yes|no$'
-        'sound_validation_pattern' '^yes|no$'
-        'nseats_validation_pattern' '^[0-9]{1,2}$'
-        '... more metadata ...'
+    VALIDATION
+        'multimedia' '^yes|no$'
+        'sound' '^yes|no$'
+        'nseats' '^[0-9]{1,2}$'
     END
 
 The validation strings are regular expressions that are applied against the
@@ -158,8 +160,8 @@ VALIDATION
 -----------------------------------------------------------------------------
 
 Because runtime substitution affects potentially sensitive areas of
-your mapfile such as database columns and filenames, it is *STRONGLY*
-recommended that you use pattern validation.
+your mapfile such as database columns and filenames, it is
+mandatory that you use pattern validation (since version 6.0)
 
 Pattern validation uses regular expressions, which are strings that
 describe how to compare strings to patterns. The exact functionality
@@ -182,7 +184,7 @@ the `LAYER` definition. This is only slightly different than the older
       'parcelid'      '^[0-9]{5,8)$'
 
       # %taxid% must be two capital letters and six digits
-      taxid         '^[A-Z]{2}[0-9]{6}$'
+      'taxid'         '^[A-Z]{2}[0-9]{6}$'
     END
 
 Magic values
