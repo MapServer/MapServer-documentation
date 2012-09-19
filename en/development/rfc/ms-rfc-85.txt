@@ -1,0 +1,159 @@
+.. _rfc85:
+
+=========================================================================
+MS RFC 85: Vector Contour Rendering (CONNECTIONTYPE CONTOUR)
+=========================================================================
+
+:Date:  2012/09/18
+:Author: Alan Boudreault
+:Contact: aboudreault at mapgears.com
+:Last Edited: $Date$
+:Status: Draft
+:Version: MapServer 6.4
+:Id: $Id$
+
+1. Overview
+-----------
+
+This is a proposal to add the ability to compute and render contour layers on the fly in
+MapServer from a raster source. The source is one band of raster data, which represents a digital elevation
+model (DEM). More info about DEMs at: http://en.wikipedia.org/wiki/Digital_elevation_model
+
+Contours can already be rendered today using a standard vector layer but this
+requires an extra processing step with gdal_contour to pre-generate the contours from the raster source. Plus this also implies some overhead for the gdal_contour files management, etc.
+
+
+2. The proposed solution
+------------------------
+
+This RFC proposes the addition of a new type of layer in MapServer:
+CONNECTIONTYPE CONTOUR. The new type is a hybrid layer, which has a raster data
+source as input and vector features as output. Initially, only the line
+representation of those vector features will be supported. 
+
+Since the internal layer is of type vector, queries will be supported and operate on the vectors (not on the raw raster source). In the future we might
+see a need to add a query mode that queries the raster source, but this is not included in this phase of work.
+
+To render a contour layer, we need to define a layer in the mapfile with the
+following options:
+
+ * Set the layer TYPE to LINE.
+ * Set CONNECTIONTYPE to CONTOUR.
+ * Set the DATA to the raster file that contains the elevation band.
+ * Specify the band to use as elevation using PROCESSING "BANDS", same as
+   regular raster.
+ * Specify one or more classes and styles to render the line features.
+
+PROCESSING settings:
+
+ These options should be specified at layer level:
+
+ * CONTOUR_INTERVAL: elevation interval between contours
+ * CONTOUR_LEVELS: comma-separated list of one or more 'fixed levels' to extract
+ * CONTOUR_ITEM: provides a name for the item (attribute) in which to put the
+   elevation. (optional)
+
+  You can also provide explicit min/max scaledenom in the CONTOUR_iNTERVAL or CONTOUR_LEVELS values if you wish to use scale-dependent contour spacing. This is done by adding an optional "miscaledenom,maxscaledenom:" prefix to the value or list of values. See the example below.
+
+Example of a simple layer definition:
+
+::
+
+  LAYER NAME "my_contour_layer"
+    TYPE LINE
+    STATUS DEFAULT
+    CONNECTIONTYPE CONTOUR
+    DATA /mnt/data/raster/grib/dem.grib
+    PROCESSING "BANDS=1"
+    PROCESSING "CONTOUR_ITEM=elevation"     
+    PROCESSING "CONTOUR_INTERVAL=10"
+    CLASS
+      STYLE
+        WIDTH 2
+        COLOR 255 0 0
+      END
+    END
+
+
+Example of a layer definition with scale-dependent contour ranges:
+
+::
+
+  LAYER NAME "my_contour_layer"
+    TYPE LINE
+    STATUS DEFAULT
+    CONNECTIONTYPE CONTOUR
+    DATA /mnt/data/raster/grib/dem.grib
+    PROCESSING "BANDS=1"
+    PROCESSING "CONTOUR_ITEM=elevation"     
+    PROCESSING "CONTOUR_INTERVAL=0,25000:5" # interval of 5 for scales of 25000 or less
+    PROCESSING "CONTOUR_INTERVAL=25000,500000:10" # interval of 10 for scales in the 25000 to 500000 range
+    PROCESSING "CONTOUR_LEVELS=500000,0:10,25,50,100" # explicit list of levels for scales of 500000 and up
+    LABELITEM "elevation"
+    CLASS
+      STYLE
+        WIDTH 2
+        COLOR 255 0 0
+      END
+      LABEL
+        ...
+      END
+    END
+
+  
+3. Implementation Details
+-------------------------
+
+Internally, a CONTOUR layer will have its own renderer/driver code. It's an
+hybrid layer because it reads the raster source and creates a vector dataset from
+it. It uses the internal GDAL function GDALContourGenerate(). All other
+functions behave like a vector layer. The layer can be drawn as a normal line
+layer using whichShape, GetShape etc.
+
+Basic internal draw process of a CONTOUR layer:
+
+ 1. whichShape() is called: the raster data source is read using the internal
+    GDAL functions, an ogr dataset is stored in the internal layer structure.
+
+ 2. getShape() is  called: loop through the ogr dataset  and return the shapeObj
+ (Line).
+
+ 3. MapServer draws its line feature as any other vector layer.
+
+3.1 Files affected
+------------------
+
+The following files will be modified/created by this RFC:
+
+::
+
+  mapserver.h/mapfile.c (Connection type CONTOUR support in the mapfile)
+  mapcontour.c (new file for the CONTOUR renderer)
+  maplayer.c (new layer type handling, virtual tables init etc.)
+  maplexer.l (add additional CONTOUR keyword)
+
+3.2 MapScript
+-------------
+
+No issue for any MapScript bindings. The CONTOUR layer is handled/rendered internally as
+any other layer.
+
+3.4 Backwards Compatibilty Issues
+---------------------------------
+
+This change provides a new functionality with no backwards compatibility issues being considered.
+
+4. Tests
+--------
+
+msautotest will be modified to add some tests related to that new layer type
+rendering and queries.
+
+5. Bug ID
+---------
+
+
+6. Voting history
+-----------------
+
+None
