@@ -131,7 +131,43 @@ Basic internal draw process of a CONTOUR layer:
 More info about GDAlContourGenerate algorithm at:
 http://www.gdal.org/gdal__alg_8h.html#aceaf98ad40f159cbfb626988c054c085
 
-3.1 Files affected
+3.1 OGR Input driver
+----------------------
+
+Once the raster source will be processed with gdal raster/contour functions, a
+OGR DataSource will be stored internally using the "Memory" driver. Since
+mapserver has already an OGR input-driver, it will be used to avoid unnecessary
+code duplication and maintenance. A layerObj with connectiontype=MS_OGR will be
+used internally to render/query the vector features.
+
+A OGR Datasource using the "Memory" driver cannot be reopened and can only be
+created. The msOGRLayerOpen() function will try to open the dataset. In this
+case, our datasource is already openned. To solve this minor issue, the
+connection pooling API will be used.
+
+3.2 Resample and Reprojection
+-----------------------------
+
+The raster resample and layer reprojection will be supported. It will be
+done in one of the two ways:
+
+ * In GDAL functions during the raster processing. (resample + reprojection)
+ * In MapServer, like any other vector layer. (reprojection) 
+
+3.3 Labeling
+------------
+
+Since the layer is a line vector layer internally, the labeling is not affected
+and will be rendered as normal.
+
+3.4 Tile boundaries 
+-------------------
+
+After some review of the GDALContourGenerate algorithm, it has been determined
+that the tile boundaries of the line should match properly. So this shouldn't be
+an issue but will have to be tested.
+
+3.5 Files affected
 ------------------
 
 The following files will be modified/created by this RFC:
@@ -143,13 +179,13 @@ The following files will be modified/created by this RFC:
   maplayer.c (new layer type handling, virtual tables init etc.)
   maplexer.l (add additional CONTOUR keyword)
 
-3.2 MapScript
+3.6 MapScript
 -------------
 
 No issue for any MapScript bindings. The CONTOUR layer is handled/rendered internally as
 any other layer.
 
-3.4 Backwards Compatibilty Issues
+3.7 Backwards Compatibilty Issues
 ---------------------------------
 
 This change provides a new functionality with no backwards compatibility issues being considered.
