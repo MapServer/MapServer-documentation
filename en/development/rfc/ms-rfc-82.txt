@@ -1,107 +1,63 @@
 .. _rfc82:
 
-==============================================================================
+=========================================================
 MS RFC 82: Support for Enhanced Layer Metadata Management
-==============================================================================
+=========================================================
 
 :Date: 2012/01/24
 :Authors: Tom Kralidis (tomkralidis at hotmail.com)
-:Last Edited: 2012/01/24
+:Last Edited: 2012/09/23
 :Status:  Proposed
 :Version: MapServer 6.2
 :Id: $Id:$
 
 Overview
-------------------------------------------------------------------------------
+--------
 
 OGC Web Services (OWS) have the ability to advertise content metadata
 associated with a given resource (WMS Layer, WFS FeatureType, WCS Coverage,
 SOS ObservationOffering), both inline to the Capabilities document and as
 a reference to a given URL (i.e. ISO metadata XML document).
 
-MapServer supports both inline (e.g. wms_title, wms_abstract) and URL based 
-(e.g. wms_metadataurl_href), metadata advertising for OWS Capabilities.  While
-this offers the flexibility of managing metadata for mapfiles in an arbitrary
-fashion, there is often duplication of metadata between metadata XML and mapfile
-directives when XML metadata exists for a given dataset.
+MapServer supports both inline (e.g. ``wms_title``, ``wms_abstract``) and URL based 
+(e.g. ``wms_metadataurl_href``) metadata advertising for OWS Capabilities.
 
-As well, in the case that a given dataset does not have associated formal XML
-metadata, Capabilities XML references to metadata (i.e. WMS MetadataURL) are not
+Currently, if a given dataset does not have associated formal XML
+metadata, Capabilities XML references to metadata (i.e. WMS ``MetadataURL``) are not
 available, even though between the LAYER.METADATA/ows_* values and the layer's
 spatial properties enough information can be processed to generate a useful XML
 metadata document.  The existence of formal XML metadata in MapServer OGC
 services Capabilities XML provides value to Catalogue services which harvest
 metadata to support discovery.
 
-It is proposed that MapServer be enhanced with the following capabilities:
+It is proposed that MapServer be enhanced to support the generation of XML
+metadata documents from a given layer's METADATA and spatial properties.
 
-* support of direct handling of XML metadata documents to advertise
-  OWS Capabilities metadata automaticall
-* support of generating XML metadata documents from a given layer's METADATA
-  properties, as well its spatial properties
-
-Advantages of this enhancement:
-
-* allow for updating of metadata XML without the need to edit the mapfile
-* smaller mapfiles
-* dynamic publishing of metadata for OWS services
+This enhancement provides dynamic publishing of XML metadata for OWS
+services for cases where XML metadata does not exist for a given resource.
 
 Technical Solution
 ------------------
-
-Case 1: Dataset has XML Metadata
-================================
-
-Users will have the ability to refer to a single geospatial metadata document
-in lieu of ows_* metadata, in order to provide all of their OWS metadata, i.e.:
-
-::
-
-  LAYER
-    METADATA
-      "ows_metadata_path" "/path/to/metadata.xml"
-      "ows_metadata_format" "ISO19115:2003"
-      ...
-    END
-  ...
-  END
-
-For inline metadata there will be no need to fill in
-"ows_title", "ows_abstract", etc., as this will be dynamically driven from the
-metadata XML document.
-
-For metadata document advertisement, this will result in the following XML
-(e.g. WMS Capabilities metadata):
-
-::
-
-  <Layer>
-    <Name>roads</Name>
-    <Title>(derived from XML metadata)</Title>
-    <Abstract>(derived from XML metadata)</Abstract>
-    ...
-    <MetadataURL type="TC211">
-     <Format>text/xml</Format>
-     <OnlineResource xlink:type="simple" xlink:href="http://host/cgi-bin/mapserv?request=GetLayerMetadata&layer=foo"/>
-   </MetadataURL> 
-   ...
-  </Layer>
-
-MapServer will provide a GetLayerMetadata operation which will operate
-independent of any OWS, and will read the file
-as defined in MAP.LAYER.METADATA/ows_metadata_path, returning the content as the
-the HTTP response (with 'text/xml' as the MIME type).
-
-Case 2: Dataset does not have XML Metadata
-==========================================
 
 MapServer will have the ability to generate a metadata XML document
 dynamically from LAYER.METADATA/ows_* directives and the given layer's
 spatial properties.
 
-MapServer will also provide support for outputting a service metadata document
+MapServer will also provide support for output of a service metadata document
 formatted as ISO 19119:2005 based on WEB.METADATA ows_* directives.
 This is an alternative service description that supports the INSPIRE initiative.
+
+This functionality will be made available through a MapServer specific HTTP
+request called ``GetMetadata`` with the following parameters:
+
+* layer: layer NAME
+* outputschema: MIME type of outputschema.  Possible values:
+ * http://www.isotc211.org/2005/gmd (ISO 19139:2007 [default])
+ * http://www.opengis.net/cat/csw/2.0.2 (Dublin Core)
+ * http://www.opengis.net/cat/csw/csdgm (FGDC CSDGM)
+
+Calling ``GetMetadata`` with no arguments will return an ISO metadata
+document of the service metadata.
 
 Implementation Details
 ======================
@@ -110,46 +66,35 @@ mapmetadata.c
 
 .. code-block:: c
 
-  - char * msMetadataGetLayerMetadata(layer.metadata)
-   - if MAP.LAYER.METADATA/ows_metadata_path
-    - read value of metadata_file (MAP.LAYER.METADATA/ows_metadata_path)
-     - returns char * of content
-   - else
-    - generate metadata XML based on LAYER.METADATA/ows_* and layer's spatial
-      properties
-   - calling function will write to HTTP response
-     (if we have similar "read file, return a char *" type functions, use those instead)
+  char * msMetadataGetLayerMetadata(layer)
+    if MAP.LAYER.METADATA/ows_metadataurl_href
+      return HTTP 301 redirect to MAP.LAYER.METADATA/ows_metadataurl_href
+    else
+      generate metadata XML based on LAYER metadata spatial properties
 
-  - layerObj msMetadataParseMetadata(metadata_format, metadata_file, ows_service_type)
-   - libxml2 required
-   - metadata format support: ISO 19115:2003 is initially proposed; others can be
-     added
-   - if MAP.LAYER.METADATA/ows_metadata_path
-    - read file (given format)
-     - parse and set layer->metadata as per the ows_service_type from the metadata XML
-      - ows_title
-      - ows_abstract
-      - ows_keywordlist
-      - ows_extent
+  char * msMetadataGetServiceMetadata(map->web.metadata)
+    read map->web.metadata
+    return ISO 19119:2005 XML
 
-  - char * msMetadataGetServiceMetadata(map->web.metadata)
-   - read map->web.metadata
-   - return ISO 19119:2005 XML
+Downstream OGC web service code then implements:
+
+.. code-block:: c
+  if !LAYER.METADATA.ows_metadataurl_href
+    set ows_metadataurl_href to http://host/mapserv?request=GetMetadata&layer=foo
+    set ows_metadataurl_format to "text/xml"
+    set ows_metadataurl_type to "TC211"
+
 
 Backwards Compatibility Issues
-------------------------------------------------------------------------------
+------------------------------
 
-There are no compatibility issues with existing mapfiles.  This enhancement
-will work as follows:
-
-* if MAP.LAYER.METADATA/ows_metadata_path is defined, parse metadata and
-  set OWS metadata values accorindingly
-* else, use normal OWS metadata handling
+There are no compatibility issues with existing mapfiles.
 
 Affected Files
-------------------------------------------------------------------------------
+--------------
 
 * mapmetadata.c (new)
+* mapows.c
 * mapwms.c
 * mapwfs.c
 * mapwfs11.c
@@ -162,7 +107,8 @@ Affected Files
 Ticket Id
 ------------------------------------------------------------------------------
 
-* http://trac.osgeo.org/mapserver/ticket/TODOxxxx
+* http://github.com/mapserver/mapserver/issues/XXXX
 
 Voting History
 ------------------------------------------------------------------------------
+
