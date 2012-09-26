@@ -1,37 +1,51 @@
 .. _mssql:
 
+.. index::
+   single: Microsoft SQL Server 2008
+
 ***************************************************
 MSSQL
 ***************************************************
 
 :Author: Tamas Szekeres
 :Contact: szekerest at gmail.com
-:Last Updated: 2010-10-01
+:Author: Jeff McKenna
+:Contact: jmckenna at gatewaygeomatics.com
+:Last Updated: 2012-09-26
 
 .. contents::
-    :depth: 3
+    :depth: 4
     :backlinks: top
 
 
 Introduction
 ============
 
-Microsoft SQL Server 2008+ supports storing spatial data by using the built in geometry/geography data 
-types. MapServer supports a driver to access these tables containing spatial columns, which is 
-compiled as a plugin (msplugin_mssql2008.dll).
+Microsoft SQL Server 2008+ supports storing spatial data by using the
+built-in geometry/geography data types. MapServer can connect to MSSQL through either: 
+1) an OGR connectiontype, or 2) a driver that accesses these tables containing spatial 
+columns, which is compiled as a plugin ("msplugin_mssql2008.dll").
 
-Creating spatial data tables in MSSQL 2008
+Creating Spatial Data Tables in MSSQL 2008
 ==========================================
 
-There are several ways to create spatial data tables in MSSQL 2008. Having an existing data you can 
-easily upload that to an MSSQL table by using the `ogr2ogr <http://www.gdal.org/ogr2ogr>`__ commandline 
-tool and the OGR's `MSSQL Spatial driver <http://www.gdal.org/ogr/drv_mssqlspatial.html>`__ 
+There are several ways to create spatial data tables in MSSQL
+2008. You can easily upload existing data to an MSSQL
+table by using the `ogr2ogr <http://www.gdal.org/ogr2ogr>`__
+commandline tool and the OGR's `MSSQL Spatial driver
+<http://www.gdal.org/ogr/drv_mssqlspatial.html>`__  Here is an example that uploads 
+a shapefile (province.shp) into an MSSQL 2008 instance:
+
+::
+
+  ogr2ogr -f MSSQLSpatial -a_srs EPSG:4326 "MSSQL:server=.\SQLEXPRESS;database=geo;trusted_connection=yes" province.shp
 
 Connecting to Spatial Data in MSSQL 2008
 ========================================
 
-In order to connect to the MSSQL 2008 spatial database you should set up a valid connection string to
-the database like the following examples:
+In order to connect to the MSSQL 2008 spatial database you should set
+up a valid connection string to the database like the following
+examples:
 
 ::
 
@@ -39,19 +53,92 @@ the database like the following examples:
 
 ::
 
-  Server=55.55.55.55,1433;uid=a_user;pwd=a_password;database=a_database;Integrated Security=True
+  Server=55.55.55.55,1433;uid=a_user;pwd=a_password;database=a_database;
+         Integrated Security=True
 
 ::
 
-  Server=55.55.55.55\SQLEXPRESS,1433;uid=a_user;pwd=a_password;database=a_database;Integrated Security=True
+  Server=55.55.55.55\SQLEXPRESS,1433;uid=a_user;pwd=a_password;
+         database=a_database;Integrated Security=True
+  
+OPTION 1: Connect Through OGR
+-----------------------------
+
+GDAL/OGR (and therefore MapServer) can read spatial tables in MSSQL 2008 through the 
+`MSSQLSpatial driver <http://www.gdal.org/ogr/drv_mssqlspatial.html>`__.
+
+Verify Local Support for MSSQLSpatial
+*************************************
+
+Use the command :ogrinfo --formats" to verify that your local GDAL is built with support for MSSQL; 
+the response should contain "MSSQLSpatial" such as:
+
+::
+
+  Supported Formats:
+    -> "OCI" (read/write)
+    -> "ESRI Shapefile" (read/write)
+    -> "MapInfo File" (read/write)
+    ...
+    -> "MSSQLSpatial" (read/write)
+    ...
+    
+Test OGR Connection Parameters
+******************************
+
+Use the ogrinfo commandline utility to test your connection through the MSSQLSpatial driver, such as:
+
+::
+
+  ogrinfo "MSSQL:server=.\SQLEXPRESS;database=geo;trusted_connection=yes" province -summary
+  
+Create MapServer Layer using CONNECTIONTYPE OGR
+***********************************************
+
+Your layer should contain a CONNECTIONTYPE OGR statement, as well as a CONNECTION.
+The connection should also contact a "tables=" parameter, and also the name of the
+geometry column in brackets.  You do not need to specify the DATA parameter unless you 
+define an sql select statement starting with the 'WHERE' keyword.  For example:
+
+.. code-block:: mapfile
+
+  LAYER
+    NAME "provinces"
+    TYPE POLYGON
+    STATUS ON
+    ####
+    CONNECTIONTYPE OGR
+    CONNECTION "MSSQL:server=.\SQLEXPRESS;uid=xx;pwd=xxx;database=geo;trusted_connection=yes;tables=province(ogr_geometry)"
+    ####
+    PROJECTION
+      "init=epsg:4326"
+    END
+    CLASS
+      NAME "Land"
+      STYLE
+        COLOR 240 240 240
+        OUTLINECOLOR 199 199 199
+      END
+    END
+    PROCESSING 'CLOSE_CONNECTION=DEFER'
+  END # layer
+  
+
+.. NOTE::
+   The usual CONNECTIONTYPE terms 'using unique' and 'using srid' are not meaningful 
+   for the OGR driver in this case, as these parameters are automatically retrieved 
+   from the 'geometry_columns' metadata table.
+
+OPTION 2: Connect Through MapServer Plugin
+------------------------------------------
 
 Create MapServer Layer
-----------------------
+**********************
 
-Once the connection can be established to the server the layer can be configured to access MSSQL2008 
-as follows:
+Once the connection can be established to the server the layer can be
+configured to access MSSQL2008 as follows:
 
-::
+.. code-block:: mapfile
 
   LAYER
     NAME "rivers_mssql_spatial"
@@ -64,85 +151,101 @@ as follows:
     ...
   END 
 
-The DATA parameter is used to perform the SQL select statement to access your table in MSSQL. 
-The geometry column is required in the select statement; in the above example the ogr_geometry 
-column is the geometry column in the rivers table. The table should also have an unique column 
-(ogr_fid) which is provided for random access to the features in the feature query operations.
+The DATA parameter is used to perform the SQL select statement to
+access your table in MSSQL.  The geometry column is required in the
+select statement; in the above example the ogr_geometry column is the
+geometry column in the rivers table. The table should also have an
+unique column (ogr_fid) which is provided for random access to the
+features in the feature query operations.
 
-The DATA section should also contain the spatial reference id (SRID) of the features in the data table
-The SRID is used when specifying the search shapes during the intersect operations which should match 
-with the SRID of the features otherwise no features are returned in a particular query.
-if you omit specifying the SRID value in the DATA section the diver will use SRID=0 when defining 
-the search shapes.
+The DATA section should also contain the spatial reference id (SRID)
+of the features in the data table The SRID is used when specifying the
+search shapes during the intersect operations which should match with
+the SRID of the features otherwise no features are returned in a
+particular query.  if you omit specifying the SRID value in the DATA
+section the diver will use SRID=0 when defining the search shapes.
 
-Selecting the type of the geometry column
------------------------------------------
+Selecting the Type of the Geometry Column
+*****************************************
 
-For the geometry columns MSSQL supports 2 data types: "geometry" and "geography". 
-By default the driver considers the type of the geometry column is "geometry". 
-In case if the type of the geometry column is "geography" we must specify the 
-data type in the DATA section explicitly, like:
-
-::
+For the geometry columns MSSQL supports 2 data types: "geometry" and
+"geography".  By default the driver considers the type of the geometry
+column is "geometry".  In case if the type of the geometry column is
+"geography" we must specify the data type in the DATA section
+explicitly, like::
 
   DATA "ogr_geometry(geography) from rivers USING UNIQUE ogr_fid USING SRID=4326"
 
-The expected location on the plugin dll
----------------------------------------
+Expected Location of the MSSQL Plugin
+*************************************
 
-On Windows platforms the DLLs needed by the program are searched for in the following order:
+On Windows platforms the DLLs needed by the program are searched for
+in the following order:
 
 1) The directory from which the application loaded.
    
 2) The current directory.
 
-3) The system directory. Use the `GetSystemDirectory <http://msdn.microsoft.com/en-us/library/ms724373.aspx>`__ 
-   function to get the path of this directory.
+3) The system directory. Use the `GetSystemDirectory
+   <http://msdn.microsoft.com/en-us/library/ms724373.aspx>`__ function
+   to get the path of this directory.
    
 4) The 16-bit system directory.
 
-5) The Windows directory. Use the `GetWindowsDirectory <http://msdn.microsoft.com/en-us/library/ms724454.aspx>`__ 
-   function to get the path of this directory.
+5) The Windows directory. Use the `GetWindowsDirectory
+   <http://msdn.microsoft.com/en-us/library/ms724454.aspx>`__ function
+   to get the path of this directory.
    
 6) The directories that are listed in the PATH environment variable.
- 
 
-Using spatial indexes
+Binaries Containing the MSSQL Plugin
+************************************
+
+Currently the following binary distributions contain
+msplugin_mssql2008.dll:
+
+- `MapServer and GDAL binary and SDK packages <http://vbkto.dyndns.org/sdk/>`__
+- `MS4W distributions <http://www.maptools.org/ms4w/>`__
+
+Using Spatial Indexes
 ---------------------
 
-In order to speed up the access to the features a spatial index should be created to the 
-geometry column which could easily be done with the OGR MSSQL Spatial driver like:
+In order to speed up the access to the features a spatial index should
+be created to the geometry column which could easily be done with the
+OGR MSSQL Spatial driver like::
 
-::
-
-  ogrinfo -sql "create spatial index on rivers" "MSSQL:server=.\MSSQLSERVER2008;database=Maps;Integrated Security=true"
+  ogrinfo -sql "create spatial index on rivers"
+               "MSSQL:server=.\MSSQLSERVER2008;database=Maps;
+                Integrated Security=true"
   
-In general we can safely rely on the query optimizer to select the most appropriate index in the sql 
-query operations. In some cases - however - we should force the optimizer to use the spatial index 
-by specifying the index hint in the DATA section like:
+In general we can safely rely on the query optimizer to select the
+most appropriate index in the sql query operations. In some cases -
+however - we should force the optimizer to use the spatial index by
+specifying the index hint in the DATA section like::
 
-::
-
-  DATA "ogr_geometry from rivers using index ogr_geometry_sidx USING UNIQUE ogr_fid USING SRID=4326"
+  DATA "ogr_geometry from rivers using index ogr_geometry_sidx
+        USING UNIQUE ogr_fid USING SRID=4326"
 
 Layer Processing Options
 ------------------------
 
-We can control the behaviour of the MSSQL driver by using the following PROCESSING options:
+We can control the behaviour of the MSSQL driver by using the
+following PROCESSING options:
 
-    - **CLOSE_CONNECTION=DEFER** - This is where you can enable connection pooling for certain 
-      layer types. Connection pooling will allow MapServer to share the handle to an open database 
-      or layer connection throughout a single map draw process.
+.. index::
+   triple: LAYER; PROCESSING; CLOSE_CONNECTION
+
+- **CLOSE_CONNECTION=DEFER** - This is where you can enable connection
+  pooling for certain layer types. Connection pooling will allow
+  MapServer to share the handle to an open database or layer
+  connection throughout a single map draw process.
       
-Obtaining binaries containing the MSSQL plugin dll
-==================================================
+.. index::
+   triple: LAYER; PROCESSING; MSSQL_READ_WKB
 
-Currently the following binary distributions contain msplugin_mssql2008.dll
-
-- `MapServer and GDAL binary and SDK packages <http://vbkto.dyndns.org/sdk/>`__
-- `MS4W distributions <http://www.maptools.org/ms4w/>`__
+- **MSSQL_READ_WKB=TRUE** - Uses WKB (Well Known Binary) format
+  instead of native format when fetching geometries.
       
-
 More Information
 =================
 
