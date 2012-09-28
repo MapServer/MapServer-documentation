@@ -1,3 +1,8 @@
+**2012-09-06 - MapServer 6.2.0 beta3 is released**
+
+MapServer 6.2.0-beta3 has been released.  See :ref:`the changelog <changelog-6-2-0-beta3>`
+for more details and head to :ref:`download` to obtain a copy.
+
 **2012-08-01 - MapServer 6.2.0 beta2 is released**
 
 MapServer 6.2.0-beta2 has been released.  See :ref:`the changelog <changelog-6-2-0-beta2>`
