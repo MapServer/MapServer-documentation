@@ -53,20 +53,43 @@ This is an additional service description that supports the INSPIRE initiative.
 This functionality will be made available through a MapServer specific HTTP
 operation called ``GetMetadata`` with the following parameters:
 
-* ``layer``: layer NAME
-* ``outputschema``: response schema of metadata.  Possible values:
+* ``layer``: layer NAME.  Optional parameter.  If ``layer`` is not specified,
+  then an ISO metadata document of the service metadata is returned.  If an
+  invalid ``layer`` parameter specified, an ``ows:ExceptionReport`` is
+  returned
+* ``outputschema``: response schema of metadata.  Optional parameter.
+  Possible values:
 
   * http://www.isotc211.org/2005/gmd (ISO 19139:2007 [default])
   * http://www.opengis.net/cat/csw/2.0.2 (Dublin Core)
   * http://www.opengis.net/cat/csw/csdgm (FGDC CSDGM)
 
-Calling ``GetMetadata`` with no arguments will return an ISO metadata
+  If an invalid ``outputschema`` parameter specified, an
+  ``ows:ExceptionReport`` is returned
+
+Calling ``GetMetadata`` with no parameters will return an ISO metadata
 document of the service metadata.
 
 The initial implementation will cover the ISO metadata standards, and will
 allow for additional metadata formats to be implemented in the future.  In
 particular, this RFC provides a building block to support the INSPIRE metadata
 format requirements.
+
+Examples
+========
+
+Requesting service metadata:
+
+::
+
+  http://my.host.com/cgi-bin/mapserv?request=GetMetadata
+
+Requesting specific layer metadata:
+
+::
+
+  http://my.host.com/cgi-bin/mapserv?request=GetMetadata&layer=foo
+
 
 Implementation Details
 ======================
@@ -116,6 +139,22 @@ Downstream OGC web service code then implements:
     set ows_metadataurl_href to http://host/mapserv?request=GetMetadata&layer=foo
     set ows_metadataurl_format to "text/xml"
     set ows_metadataurl_type to "TC211"
+
+
+Testing
+-------
+
+The ``msautotest/wxs`` suite will be extended with test cases exemplifying
+the expected behaviour of ``GetMetadata``.
+
+
+Documentation
+-------------
+
+Documentation will be updated by adding ``ogc/mapmetadata.txt``
+to ``ogc/index.txt``.  As well, ``wms_server.txt``, ``wfs_server.txt``,
+``wcs_server.txt``, ``sos_server.txt`` will be updated to explain default
+output if ``ows_metadataurl_href`` is not set.
 
 
 Backwards Compatibility Issues
