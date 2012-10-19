@@ -1,3 +1,4 @@
+
 args=("$@")
 REPO=${args[0]}
 BRANCH=${args[1]}
@@ -8,16 +9,22 @@ TEMPBRANCH="$BRANCH-$RANDOM"
 mkdir -p $BUILDDIR
 
 #LOCATION="/osgeo/mapserver.org"
-LANGUAGES="en de es fr"
+LANGUAGES="en de es fr it zh_cn"
 PDF_LANGUAGES="en"
 cd $REPO
 
 git checkout $BRANCH
 git pull origin $BRANCH | grep "up-to-date"
 
+PDFFILEDATE=`date -r $OUTPUT_LOCATION/en/MapServer.pdf +%F`
+SYSTEMDATE=`date +%F`
+
 if test $? -eq 0; then
-   echo "repo not updated, no use building"
-   exit
+   #build PDF at least once a day
+   if [ $PDFFILEDATE == $SYSTEMDATE ]; then
+     echo "repo not updated, no use building"
+     exit
+   fi
 fi
 
 git checkout -b $TEMPBRANCH
@@ -25,7 +32,8 @@ git checkout -b $TEMPBRANCH
 # Copy all untranslated files in language dir and
 for lang in $LANGUAGES;
 do 
-    if [ $lang != "en" ]; then
+   if [ ! -d $lang ] ; then continue; fi 
+   if [ $lang != "en" ]; then
 	cd $REPO/en
 	IFS=$'\n'
 	for file in `find .`;
