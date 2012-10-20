@@ -13,11 +13,11 @@ LANGUAGES="en de es fr it zh_cn"
 PDF_LANGUAGES="en"
 cd $REPO
 
-git checkout $BRANCH
-git pull origin $BRANCH | grep "up-to-date"
-
 PDFFILEDATE=`date -r $OUTPUT_LOCATION/en/MapServer.pdf +%F`
 SYSTEMDATE=`date +%F`
+
+git checkout $BRANCH
+git pull origin $BRANCH | grep "up-to-date"
 
 if test $? -eq 0; then
    #build PDF at least once a day
