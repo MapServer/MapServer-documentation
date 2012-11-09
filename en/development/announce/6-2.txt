@@ -7,10 +7,6 @@
 :Authors: Project Steering Committee
 :Released: 2012-11-14
 
-.. contents:: Table of Contents
-    :depth: 3
-    :backlinks: top
-
 The MapServer Team is pleased to announce the long awaited release of MapServer 6.2.0
 after an extensive beta phase.
 
@@ -23,6 +19,8 @@ Major New Features in MapServer 6.2
 
 Tiling Solution: Mapcache
 =========================
+
+TODO: Thomas
 
 WFS-T: TinyOWS
 ==============
@@ -46,21 +44,117 @@ multicolor complex markers. SVG symbols are defined very classically by
 Multiple Font Support
 ======================
 
+No single truetype font contains all the glyphs of all the scripts of the world. When
+rendering worldwide maps, it is thus needed to be able to specify multiple font files
+from which to extract glyphs from. You can now give the LABEL's FONT a comma separated
+list of fontset keys to try from, for each glyph to render MapServer will test each font
+in turn until the requested glyph is found.
+
+.. code-block:: mapfile
+
+  LABEL
+    TYPE TRUETYPE
+    FONT "vera,arialuni,cjk,khmer"
+    ...
+  END
+
+.. seealso::
+
+   see also: `test mapfile <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/label-multifont.map>`_
+   and `resulting image <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/expected/label-multifont.png>`_
+
 Mask Layers
-=============
+===========
+
+Mask layers are used to "mask out" part of a given layer, to only represent data that
+intersect features from another layer. This can be typically used on land parcels, to
+only display a base satellite image on the areas covered by the parcels of a specific
+owner/customer.
+
+Two layers are used in combination to activate this feature. The first layer is used
+to render the features that will be used as a mask. It will typically use a FILTER to
+only render a select number of features:
+
+.. code-block:: mapfile
+
+   layer
+      name "countries”
+      status off
+      class
+         expression (“[FIPS]” = “EZ”)
+         style
+            color 0 0 0
+         end
+      end
+   end
+
+Note two things:
+
+- The layer is set to STATUS OFF, as we do not want it rendered on the final map
+  itself. In some use cases this might be set to STATUS ON.
+- We have setup an EXPRESSION to only render the country who's code is "EZ". In
+  a parcel scenario, this would typically be a list of parcels or the id of a 
+  parcel owner.
+
+The second layer is the layer that will be masked:
+
+.. code-block:: mapfile
+
+   layer
+      status on
+      name ”naturalearth”
+      mask “countries”
+      type raster
+   end
+
+With these two layers, our "naturalearth" raster layer will only be rendered
+on the pixels that intersect the "EZ" country from our countries layer.
+
+This masking feature can be used on all the renderers that work on pixel data,
+i.e. not for the pdf or svg renderers. In the case where the masked layer contains
+labels, only the labels who's anchor falls inside the mask will be renderered. The
+actual label text may itself overlap outside of the masked area.
+
+.. seealso::
+
+   see also: `test mapfile <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/mask.map>`_
+   and `resulting image <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/expected/mask.png>`_
 
 Precise Symbol Placement
 =========================
-Anchorpoint, Polaroffset
+
+Traditionally, MapServer centers a marker symbol on the point it should be rendered
+to. ANCHORPOINT is a new SYMBOL level keyword that describes where the given symbol
+should be anchored.
+
+.. code-block:: mapfile
+
+  SYMBOL
+    NAME foo
+    TYPE TRUETYPE
+    ANCHORPOINT 0 0 #will anchor the symbol on it's top-left
+    ANCHORPOINT 0.5 0.5 #default, will center the symbol
+    ANCHORPOINT 1 1 #will anchor the symbol on it's bottom right
+    ...
+  END
+
+.. seealso::
+
+   see also: `test mapfile <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/marker_anchorpoint.map>`_
+   and `resulting image <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/expected/marker_anchorpoint.png>`_
 
 Complex Multi-Symbol Symbology
 ==============================
+
+TODO: Thomas
 
 Vector Fields
 =============
 
 Label Leader Offsetting
 =======================
+
+TODO: Thomas
 
 INSPIRE View Services
 =====================
@@ -71,8 +165,12 @@ Minor New Features in MapServer 6.2
 WMS Dimension Support
 =====================
 
+TODO: Thomas
+
 Stable Hatching
 ===============
+
+TODO: Thomas
 
 XMP Metadata Support
 ====================
@@ -86,8 +184,12 @@ Support for Generating Geospatial PDFs
 Initial Gap Support for Line Patterns
 =====================================
 
+TODO: Thomas
+
 General Speedups and Memory Usage Optimizations
 ===============================================
+
+TODO: Thomas
 - postgis time
 - postgis memory allocs
 - labelcache speedups
@@ -100,19 +202,20 @@ Noteworthy Changes Which Could Affect Exisiting Applications
 
 Build Procedure
 ===============
+
+TODO: Thomas
 libtool, shared library, make install
 
 GD support is now optional and disabled by default
 ==================================================
 
+TODO: Thomas
+
 
 ANNOTATION Layers are deprecated
 ================================
 
-
-  * :ref:`MS RFC 54 <rfc54>`: Rendering Interface API
-  * :ref:`MS RFC 64 <rfc64>`: MapServer Expression Parser Overhaul
-  * :ref:`MS RFC 65 <rfc65>`: Single-pass Query Changes for 6.0
+TODO: Thomas
 
 Support for GDAL older than 1.5.0 has been dropped
 ==================================================
@@ -122,6 +225,7 @@ Migration Guide
 
 Aside from the build procedure changes detailed above, there are no backwards
 compatibility issues we are aware of.
+
 Source Code Download
 --------------------
 
