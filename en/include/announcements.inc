@@ -4,6 +4,11 @@ MapServer 6.2.0 has been released. See :ref:`the release announcement <announce-
 for more details, :ref:`the changelog since RC1 <changelog-6-2-0-beta4>` and head
 to :ref:`download` to obtain a copy.
 
+**2012-10-10 - MapServer 6.2.0 RC1 is released**
+
+MapServer 6.2.0-RC1 has been released.  See :ref:`the changelog <changelog-6-2-0-rc1>`
+for more details and head to :ref:`download` to obtain a copy.
+
 **2012-09-27 - MapServer 6.2.0 beta4 is released**
 
 MapServer 6.2.0-beta4 has been released.  See :ref:`the changelog <changelog-6-2-0-beta4>`
