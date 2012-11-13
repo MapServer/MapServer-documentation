@@ -17,13 +17,21 @@ in this document.
 Major New Features in MapServer 6.2
 -----------------------------------
 
-Tiling Solution: Mapcache
-=========================
-
-TODO: Thomas
-
 WFS-T: TinyOWS
 ==============
+
+Tiling Solution: Mapcache 1.0
+=============================
+
+MapCache is a high performance tiling server, that runs in native code either as a FastCGI,
+an Apache module, or an Nginx module. It supports a wide variety of protocols (WMTS, TMS,
+WMS, VirtualEarth, KML, ...) and storage backends (Disk, SQlite, Memcache, GeoTIFF files, 
+BerkeleyBD, ...), and provides options for dynamically responding to client requests by
+assembling cached tiles.
+
+.. seealso::
+
+   :ref:`MapCache documentation <mapcache>`
 
 
 SVG Symbology
@@ -60,7 +68,7 @@ in turn until the requested glyph is found.
 
 .. seealso::
 
-   see also: `test mapfile <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/label-multifont.map>`_
+   `test mapfile <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/label-multifont.map>`_
    and `resulting image <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/expected/label-multifont.png>`_
 
 Mask Layers
@@ -78,10 +86,10 @@ only render a select number of features:
 .. code-block:: mapfile
 
    layer
-      name "countries”
+      name "countries"
       status off
       class
-         expression (“[FIPS]” = “EZ”)
+         expression ("[FIPS]" = "EZ")
          style
             color 0 0 0
          end
@@ -102,8 +110,8 @@ The second layer is the layer that will be masked:
 
    layer
       status on
-      name ”naturalearth”
-      mask “countries”
+      name "naturalearth"
+      mask "countries"
       type raster
    end
 
@@ -117,7 +125,7 @@ actual label text may itself overlap outside of the masked area.
 
 .. seealso::
 
-   see also: `test mapfile <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/mask.map>`_
+   `test mapfile <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/mask.map>`_
    and `resulting image <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/expected/mask.png>`_
 
 Precise Symbol Placement
@@ -130,7 +138,7 @@ should be anchored.
 .. code-block:: mapfile
 
   SYMBOL
-    NAME foo
+    NAME "foo"
     TYPE TRUETYPE
     ANCHORPOINT 0 0 #will anchor the symbol on it's top-left
     ANCHORPOINT 0.5 0.5 #default, will center the symbol
@@ -138,87 +146,179 @@ should be anchored.
     ...
   END
 
+.. figure:: ../../images/anchorpoint.png
+   :align: center
+
 .. seealso::
 
-   see also: `test mapfile <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/marker_anchorpoint.map>`_
+   `test mapfile <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/marker_anchorpoint.map>`_
    and `resulting image <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/expected/marker_anchorpoint.png>`_
 
-Complex Multi-Symbol Symbology
-==============================
+Complex Multi Label/Symbol Symbology
+====================================
 
-TODO: Thomas
+Some cartographic representations require juxtaposing multiple symbols and/or labels
+in order to obtain a complex final symbol. Typically such needs can arise in the
+meteorological field when creating forecast maps, resulting in this kind of symbology.
+
+.. figure:: ../../images/multilabel.png
+   :align: center
+
+In order to render these kind of symbols while avoiding collisions with neighbouring
+symbols, MapServer `CLASS` elements now support multiple `LABEL` children, and the
+`LABEL` element supports an `EXPRESSION` filter determining whether the label 
+should be displayed or not. Inside a `LABEL`, a new `FORCE GROUP` parameter determines
+if the current label is allowed to intersect other labels from the same feature or not,
+and multiple `STYLE` blocks can be used to render graphic symbols instead of
+or alongside the text. Note that this new feature will in practice make heavy use of
+attribute binding to control symbol sizes and orientations.
+
+.. seealso::
+
+   `test mapfile <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/multilabel.map>`_
 
 Vector Fields
 =============
 
+MapServer can render vector fields based off data from GDAL supported raster
+formats containing `u` and `v` bands.
+
+.. figure:: ../../images/uv.png
+   :align: center
+
+In order to support rendering arrowheads, the `STYLE` object now supports a
+`POLAROFFSET r theta` entry, where the offset is given in polar coordinates
+(i.e distance and bearing) rather than cartesian coordinates as for plain
+`OFFSET`.
+
+.. seealso::
+
+   the :ref:`UVRASTER RFC <rfc78>`, the `test uvraster mapfile <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/uvraster.map>`_
+   and the `resulting uvraster test image <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/expected/uvraster.png>`_
+
+
 Label Leader Offsetting
 =======================
 
-TODO: Thomas
+For densely labelled maps, MapServer now supports offseting a label with respect to 
+it's original anchorpoint if the original location resulted in a collision with an
+already present label. An optional line can also be rendered to link the rendered
+text to it's original feature location.
+
+.. figure:: ../../images/label-leaders.jpg
+   :align: center
+
+In order to be able to offset complex symbols as defined previously, `LABEL` leaders
+are defined at the `CLASS` level in their own `LEADER` block:
+
+.. code-block:: mapfile
+
+   class
+      ...
+      leader
+         maxdistance 30
+         gridstep 5
+         style
+            color 0 0 0
+            width 1
+         end
+      end
+      label
+         ...
+      end
+   end
+
+The configuration sets what is the maximum distance a label can be offsetted from its
+original location, and the density of the grid where possible label positions are 
+sampled when testing for collisions. The optional `STYLE` block is used to render
+the line drawn from the feature to the offsetted label position.
+
+.. seealso::
+
+   `test mapfile <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/labels-leader.map>`_
 
 INSPIRE View Services
 =====================
 
+MapServer 6.2 is INSPIRE View Service compliant. You can find out more on :ref:`the dedicated INSPIRE documentation <inspire_view_service>`.
+
 Minor New Features in MapServer 6.2
 -----------------------------------
 
-WMS Dimension Support
-=====================
+* **WMS Dimension Support**
 
-TODO: Thomas
+  MapServer's WMS server now supports ELEVATION and DIM_* dimensions in addition to the 
+  already existing TIME support. Head over to the :ref:`WMS dimension documentation <wms_dimension>`
+  for more info.
 
-Stable Hatching
-===============
+* **Stable Hatching**
 
-TODO: Thomas
+  MapServer's `HATCH` symbol will now create hatches that are contiguous across adjacent
+  features and across different tiles.
 
-XMP Metadata Support
-====================
+* **XMP Metadata Support**
 
-Support for Named Grouped Layers
-================================
+  :ref:`RFC <rfc76>` and :ref:`documentation <xmp_metadata>`
 
-Support for Generating Geospatial PDFs
-======================================
+* **Support for Named Grouped Layers**
 
-Initial Gap Support for Line Patterns
-=====================================
+* **Support for Generating Geospatial PDFs**
 
-TODO: Thomas
+* **Initial Gap Support for Line Patterns**
 
-General Speedups and Memory Usage Optimizations
-===============================================
+  The line pattern used to style lines can now be precisely offseted with respect to the
+  start of the line feature, allowing stable combinations of dashed patterns
+   
+  .. seealso::
 
-TODO: Thomas
-- postgis time
-- postgis memory allocs
-- labelcache speedups
-- unlocked proj.4 calls in multithreaded scenarios
+     `test mapfile <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/line_pattern_offset.map>`_
+     and `resulting image <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/expected/line_pattern_offset.png>`_
 
+* **General Speedups and Memory Usage Optimizations**
+
+  * Queries sent to postgis backend have been optimized to exercise eventual indexes that
+    might have been set on the time column.
+  * The Postgis driver cuts down on the dynamic memory allocations necessary for simple features.
+  * The labelcache rendering phase has been sped up and consumes less memory.
+  * If using proj version 4.8 or newer, MapServer will no longer use a thread lock before entering
+    proj functions.
 
 
 Noteworthy Changes Which Could Affect Exisiting Applications
 ----------------------------------------------------------------------
 
-Build Procedure
-===============
+* **Unix Build Procedure**
 
-TODO: Thomas
-libtool, shared library, make install
+  * The configure script now accepts the traditional `--prefix` argument to determine where the
+    libraries and exectuables should be installed.
 
-GD support is now optional and disabled by default
-==================================================
+  * Running `make install` as a priviledged user is now **required** after a successful
+    compilation, and the previous method of copying the `mapserv` binary from the source
+    directory to the webserver's cgi-bin directory is highly discouradged. Instead, copy or
+    symlink the installed binary from $prefix/bin.
 
-TODO: Thomas
+  * The libmapserver library is now built as a shared library by default, instead of being
+    statically linked in the mapserv, shp2img or mapscript libraries.
+    
+
+* **GD support is now optional and disabled by default**
+
+  The GD library is now an optional dependency and isn't enabled by default. If `--with-gd` is 
+  not supplied to ./configure, `GD/*` outputformats will fall back to native AGG rendering.
 
 
-ANNOTATION Layers are deprecated
-================================
+* **ANNOTATION Layers are deprecated**
+  
+  Annotation layers are deprecated in 6.2 and will probably be removed in a future version.
+  Identical functionality can be obtained by adding `LABEL` level `STYLE` blocks, and do not
+  require loading the datasets twice in two different layers as was the case with ANNOTATION
+  layers.
 
-TODO: Thomas
+  .. note::
 
-Support for GDAL older than 1.5.0 has been dropped
-==================================================
+     MultiLabel Symbology and Offseted labels are not supported on ANNOTATION layers.
+
+* **Support for GDAL older than 1.5.0 has been dropped**
 
 Migration Guide
 ---------------
