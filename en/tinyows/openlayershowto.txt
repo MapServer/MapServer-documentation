@@ -14,10 +14,9 @@ Sample: WFS-T with TinyOWS and OpenLayers
 
 .. code-block:: bash
 
- $ createdb -U postgres tinyows
- $ createlang -U postgres plpgsql tinyows
- $ psql -U postgres -d tinyows < `pg_config --sharedir`/contrib/postgis-1.5/postgis.sql
- $ psql -U postgres -d tinyows < `pg_config --sharedir`/contrib/postgis-1.5/spatial_ref_sys.sql
+ createdb -U postgres tinyows
+ psql -U postgres -d tinyows < `pg_config --sharedir`/contrib/postgis-2.0/postgis.sql
+ psql -U postgres -d tinyows < `pg_config --sharedir`/contrib/postgis-2.0/spatial_ref_sys.sql
 
 
 
@@ -25,10 +24,10 @@ Sample: WFS-T with TinyOWS and OpenLayers
 
 .. code-block:: bash
 
- $ wget ftp://ftp.intevation.de/freegis/frida/frida-1.0.1-shp.tar.gz
- $ tar xvzf frida-1.0.1-shp.tar.gz
- $ cd frida-1.0.1-shp
- $ shp2pgsql -s 31467 -W LATIN1 -I gruenflaechen.shp frida | psql -U postgres -d tinyows
+ wget ftp://ftp.intevation.de/freegis/frida/frida-1.0.1-shp.tar.gz
+ tar xvzf frida-1.0.1-shp.tar.gz
+ cd frida-1.0.1-shp
+ shp2pgsql -g geom -s 31467 -W LATIN1 -I gruenflaechen.shp frida | psql -U postgres -d tinyows
 
 
 
@@ -37,19 +36,24 @@ Sample: WFS-T with TinyOWS and OpenLayers
 .. code-block:: xml
 
   <tinyows online_resource="http://127.0.0.1/cgi-bin/tinyows"
-         schema_dir="/usr/local/tinyows/schema/">
+           schema_dir="/usr/local/share/tinyows/schema/">
+
   <pg host="127.0.0.1" user="postgres" password="postgres" dbname="tinyows" port="5432"/>
+
   <metadata name="TinyOWS Server"
             title="TinyOWS Server - WFS-T Frida Service" />
+
   <contact name="TinyOWS Server"
            site="http://www.tinyows.org/"
            email="tinyows-users@lists.maptools.org" />
+
   <layer retrievable="1"
          writable="1"
          ns_prefix="tows"
          ns_uri="http://www.tinyows.org/"
          name="frida"
          title="Frida Parks" />
+
   </tinyows>
 
 
@@ -59,28 +63,38 @@ Sample: WFS-T with TinyOWS and OpenLayers
 .. code-block:: bash
 
   ./YOUR_CGI-BIN_PATH/tinyows --check
-  Config File:	 OK
-  PG Connection:	 OK
+  TinyOWS version:   1.1.0
+  FCGI support:      Yes
+  Config File Path:  /etc/tinyows.xml (TinyOWS XML)
+  PostGIS Version:   2.0.1
+  PostGIS dsn:       host=127.0.0.1 user=postgres password=postgres dbname=tinyows port=5432 
+  Output Encoding:   UTF-8
+  Database Encoding: UTF8
+  Schema dir:        /usr/local/share/tinyows/schema/
+  Display bbox:      Yes
+  Estimated extent:  No
+  Check schema:      Yes
+  Check valid geoms: Yes
   Available layers:
-   - public.frida  -> 31467 RW
+   - public.frida (31467) -> tows:frida [RW]
 
 
 5) Install OpenLayers 
 
 .. code-block:: bash
 
-  $ wget http://openlayers.org/download/OpenLayers-2.9.tar.gz
-  $ tar xvzf OpenLayers-2.9.tar.gz
-  $ mv OpenLayers-2.9  /YOUR/SERVER/HTDOCS/
+  wget http://openlayers.org/download/OpenLayers-2.12.tar.gz
+  tar xvzf OpenLayers-2.12.tar.gz
+  sudo mv OpenLayers-2.12  /YOUR/SERVER/HTDOCS/
 
 
 6) Install the OpenLayers proxy (you need the Python interpreter to make it work)
 
 .. code-block:: bash
 
-  $ cp OpenLayers-2.9/examples/proxy.cgi  /YOUR/SERVER/CGI-BIN/
+  sudo cp OpenLayers-2.12/examples/proxy.cgi  /YOUR/SERVER/CGI-BIN/
 
-7) Add localhost (or your server IP) to proxy allowedHosts (/YOUR/SERVER/CGI-BIN/proxy.cgi)
+7) Add your server IP to proxy allowedHosts in (/YOUR/SERVER/CGI-BIN/proxy.cgi)
  
 .. code-block:: bash
 
@@ -88,7 +102,7 @@ Sample: WFS-T with TinyOWS and OpenLayers
  
 
 
-8) Create a new file at OpenLayers-2.9/examples/tinyows_wfs-t.html 
+8) Create a new file at OpenLayers-2.12/examples/tinyows.html 
 
 
 .. code-block:: html
@@ -165,7 +179,7 @@ Sample: WFS-T with TinyOWS and OpenLayers
             background-position: 0px 1px;
         }
     </style>
-    <script src="tinyows_wfs-t.js"></script>
+    <script src="tinyows.js"></script>
     </head>
     <body onload="init()">
         <h1 id="title">WFS Transaction Example, (TinyOWS ans OpenLayers)</h1>
@@ -191,7 +205,7 @@ Sample: WFS-T with TinyOWS and OpenLayers
                 editing and use the mouse for map navigation.
             </p>
             <p>
-                See the <a href="tinyows_wfs-t.js" target="_blank">
+                See the <a href="tinyows.js" target="_blank">
                 wfs-protocol-transactions.js source</a> to see how this is done.
             </p>        
         </div>
@@ -199,7 +213,8 @@ Sample: WFS-T with TinyOWS and OpenLayers
   </html>
 
 
-9) Create a new file at OpenLayers-2.9/examples/tinyows_wfs-t.js
+9) Create a new file at OpenLayers-2.12/examples/tinyows.js (and replace all 127.0.0.1 adresses by your IP server if necessary)
+
 
 .. code-block:: javascript
 
@@ -270,7 +285,7 @@ Sample: WFS-T with TinyOWS and OpenLayers
             url: "http://127.0.0.1/cgi-bin/tinyows",
             featureNS :  "http://www.tinyows.org/",
             featureType: "frida",
-            geometryName: "the_geom",
+            geometryName: "geom",
             schema: "http://127.0.0.1/cgi-bin/tinyows?service=wfs&request=DescribeFeatureType&version=1.1.0&typename=tows:frida"
         })
     }); 
@@ -309,12 +324,3 @@ Sample: WFS-T with TinyOWS and OpenLayers
     map.addControl(panel);
     map.zoomToMaxExtent();
   }
-
-
-10) You should obtain an image similar to the one below. Note the
-    editor icons in the upper right corner. These icons allow you to
-    add and edit features in the database from your web browser. Live version is at
-    http://tinyows.org/tracdocs/demo/OpenLayers-2.9/examples/tinyows_wfs-t.html
-
-.. image:: ../images/tinyOWS-WFS-T.png
-

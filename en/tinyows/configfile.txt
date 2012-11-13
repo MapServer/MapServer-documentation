@@ -18,7 +18,7 @@ An example ``config.xml`` file is in the demo directory:
 .. code-block:: xml
 
  <tinyows online_resource="http://127.0.0.1/cgi-bin/tinyows"
-         schema_dir="/usr/local/tinyows/schema/">
+          schema_dir="/usr/local/tinyows/schema/">
 
   <pg host="127.0.0.1" user="postgres" password="postgres" dbname="tinyows_demo" port="5432"/>
 
@@ -88,12 +88,12 @@ online_resource      mandatory            URL where the service is located, e.g:
 schema_dir           mandatory            Path where TinyOWS schema dir is located e.g: ``/usr/local/tinyows/schema/``
 log                  optional             Path where TinyOWS logs input requests. e.g: ``/var/log/tinyows.log``. This file must be writable by the user that owns the TinyOWS process.
 log_level            optional    0        Bit field value to indicate what to log: 1: ERROR, 2: EVENT, 4: HTTP QUERY, 8: SQL. e.g: 15 to log all.
-degree_precision     optional    6        Indicate how many digits of decimal precision when positions are in latitude/longitude. 
-meter_precision      optional    0        Indicate how many digits of decimal precision to use when positions are in  meters.
+degree_precision     optional    6        Indicate how many digits of decimal precision when coordinates are express in latitude/longitude. 
+meter_precision      optional    0        Indicate how many digits of decimal precision to use when coordinates are projected (so meter unit).
 display_bbox         optional    1        Flag to indicate if bounding box should be computed for WFS GML ``GetFeature`` output. It's mandatory in WFS specification. But as it's time consuming it could be interesting to be able to deactivate it.
-estimated_extent     optional    0        Flag to indicate if TinyOWS should use estimated_extent (faster but less accurate).
+estimated_extent     optional    0        Flag to indicate if TinyOWS should use estimated_extent (faster but slightly less accurate).
 check_schema         optional    1        Flag to indicate if input data must be checked against schema before to be executed. Caution, schema validation is an important part of security. Disable this attribute at your peril.
-check_valid_geom     optional    1        Flag to indicate if geometry OGC SFS 1.1 validation should be done prior to execute a transaction.
+check_valid_geom     optional    1        Flag to indicate if OGC SFS 1.1 geometry validation should be done prior to execute a transaction.
 encoding             optional    UTF-8    Output encoding. Other values could be ISO-8859-1 for instance. No encoding conversion is done on data; this attribute is declarative.
 expose_pk            optional    0        Flag to indicate if TinyOWS should expose PK in schema (and so require them in Transaction query).
 wfs_default_version  optional             String version to indicate WFS default version, 1.0.0 or 1.1.0 for instance.
@@ -237,18 +237,18 @@ Attribute            Required?   Default  Inherits? Description
 ns_prefix            mandatory            Yes       Layer's Namespace Prefix used in WFS 
 ns_uri               mandatory            Yes       Layer's Namespace URI used in WFS
 name                 mandatory            No        Layer's Name
-title                mandatory            No        Layer's Title
+title                optional             No        Layer's Title
 retrievable          optional    false    Yes       If true, layer is retrievable on WFS ``GetFeature`` request 
 writable             optional    false    Yes       If true, layer is editable with WFS Transaction request
+schema               optional    'public' Yes       PostgreSQL Schema name.
 table                optional             No        PostgreSQL table name (default is to use layer's name).
-schema               optional    'public' No        PostgreSQL Schema name.
 abstract             optional             No        Abstract text
-keywords             optional             No        Keywords (comma separated list)
+keywords             optional             Yes       Keywords (comma separated list)
 srid                 optional             Yes       Comma separated list of output SRID  
 geobbox              optional             Yes       WGS-84 bbox of max extent: East,West,North,South
-include_items        optional             No        Comma separated list of columns to retrieve
-exclude_items        optional             No        Comma separated list of columns to not retrieve
-pkey                 optional             No        Column name to use as a Primary Key, when there's no PostgreSQL one (e.g usefull to use with VIEW)
+include_items        optional             Yes       Comma separated list of columns to retrieve (only)
+exclude_items        optional             Yes       Comma separated list of columns to not retrieve
+pkey                 optional             Yes       Column name to use as a Primary Key, when there's no PostgreSQL one (e.g usefull to use with VIEW)
 ==================== =========   ======== ========= ============
 
 
@@ -271,23 +271,24 @@ pkey                 optional             No        Column name to use as a Prim
 Nested Layers
 +++++++++++++
 
-Layer entities could be nested, properties in this case are inherited.
+Layer entities could be nested, properties in this case are inherited. 
+A Layer without title is then considered as a 'virtual' layer.
+
 
 .. code-block:: xml
 
  <tinyows>
   ...
-      <layer retrievable="1"
-         writable="1"
-         ns_prefix="tows"
-         ns_uri="http://www.tinyows.org/"
-         name="root"  >
+      <layer name="root"
+             retrievable="1" writable="1"
+             ns_prefix="tows"
+             ns_uri="http://www.tinyows.org/"
+             schema="my_db_schema">
 
-           <layer name="foo" title="foo"/>
-           <layer name="bar" title="bar"/>
+           <layer name="foo" title="foo" />
+           <layer name="bar" title="bar" />
   
       </layer>
      
   ...
  </tinyows>
-
