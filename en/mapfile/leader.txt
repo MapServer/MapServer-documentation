@@ -1,0 +1,206 @@
+.. index::
+   single: LEADER
+    
+.. _leader:
+
+*****************************************************************************
+ LEADER
+*****************************************************************************
+
+.. index:: Leader
+
+.. contents:: Table of Contents
+    :depth: 2
+    :backlinks: top
+
+Description
+===========
+
+Since version 6.2, MapServer has the ability to draw label lines to features
+where space is an issue for the label (often when the label text is larger
+than the polygon being labelled).  This feature was added through :ref:`rfc81`.
+
+Supported Layer Types
+=====================
+
+POLYGON
+
+Mapfile Parameters
+==================
+
+.. index::
+   pair: LEADER; GRIDSTEP
+    
+GRIDSTEP [integer]
+    Specifies the number of pixels between positions that are tested for 
+    a label line.  You might start with a value of 5, and increase depending
+    on performance (see example below).
+  
+.. index::
+   pair: LEADER; MAXDISTANCE
+    
+MAXDISTANCE [integer]
+    Specifies the maximum distance in pixels from the normal label location that
+    a leader line can be drawn.  You might start with a value of 30, and increase 
+    depending on the resulting placement (see example below).
+    
+:ref:`STYLE`
+    Signals the start of a :ref:`STYLE` object.  Use this to style the leader
+    line.
+
+Mapfile Snippet
+===============
+
+.. code-block:: mapfile
+
+  LAYER 
+    NAME "my-labels" 
+    TYPE POLYGON
+    ...
+    CLASS
+      ...
+      LABEL
+       ...
+      END        
+      LEADER
+        GRIDSTEP 5 # number of pixels between positions that are tested
+        MAXDISTANCE 30 # distance in pixels that leader text can be drawn        
+        STYLE # normal line styles are supported
+          COLOR 255 0 0
+          WIDTH 1
+        END
+      END    
+    END
+  END 
+  
+
+.. index::
+   pair: Cluster; Feature attributes
+
+
+Example: World Countries Labels
+===============================
+
+The following example uses a polygon layer to display country labels.
+
+.. note::
+    The data and mapfile for this example are available for download at:
+    http://download.osgeo.org/mapserver/tickets/label-leader.zip (11MB).
+
+Mapfile Example	#1
+------------------
+
+.. code-block:: mapfile
+
+  MAP
+
+  NAME "leader-test"
+  STATUS ON
+  SIZE 800 600
+  SYMBOLSET "../etc/symbols.txt"
+  EXTENT -43 10 83 83
+  UNITS DD
+  SHAPEPATH "../data"
+  IMAGECOLOR 255 255 255
+  FONTSET "../etc/fonts.txt"
+  
+  WEB
+    IMAGEPATH "/ms4w/tmp/ms_tmp/" 
+    IMAGEURL "/ms_tmp/"
+  END
+
+
+  #
+  # Start of layer definitions
+  #
+
+  LAYER 
+    NAME "continents" 
+    TYPE POLYGON
+    STATUS ON 
+    DATA "world_countries-dissolve"
+    LABELITEM "NA2DESC"
+    CLASS
+      NAME "World Countries"
+      STYLE
+        COLOR 200 200 200 
+        OUTLINECOLOR 120 120 120
+      END
+      LABEL
+       COLOR  0 0 0
+       FONT sans
+       TYPE truetype
+       SIZE 8
+       POSITION AUTO      
+       PARTIALS FALSE
+       OUTLINECOLOR 255 255 255  
+       MINFEATURESIZE 2
+       MINDISTANCE 1000
+       BUFFER 5
+      END 
+      ################################
+      # Leader Object
+      ################################        
+      LEADER
+        GRIDSTEP 40
+        MAXDISTANCE 1000        
+        STYLE
+          COLOR 200 100 100
+          WIDTH 2
+        END
+      END    
+    END
+  END 
+
+
+  END # Map File
+  
+Map Image
+---------
+
+.. image:: ../images/leader1.png
+
+Mapfile Example	#2
+------------------
+
+This time use a shorter maximum leader line (MAXDISTANCE) and increase the number of tests
+(GRIDSTEP).
+
+.. code-block:: mapfile
+
+  MAP
+
+  LAYER 
+    ...
+    CLASS
+      ...
+      LABEL
+       ...
+      END 
+      ################################
+      # Leader Object
+      ################################        
+      LEADER
+        GRIDSTEP 10
+        MAXDISTANCE 100      
+        STYLE
+          COLOR 200 100 100
+          WIDTH 2
+        END
+      END    
+    END
+  END 
+
+
+  END # Map File
+  
+Map Image
+---------
+
+.. image:: ../images/leader2.png
+
+
+
+  
+
+
