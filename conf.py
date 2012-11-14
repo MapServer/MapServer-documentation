@@ -184,7 +184,7 @@ latex_logo = './_static/banner-large.png'
 latex_use_parts = False
 
 # Additional stuff for the LaTeX preamble.
-#latex_preamble = ''
+latex_preamble = '\setcounter{tocdepth}{3}'
 
 # Documents to append as an appendix to all manuals.
 #latex_appendices = []
