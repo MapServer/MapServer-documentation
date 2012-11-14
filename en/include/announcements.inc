@@ -1,3 +1,9 @@
+**2012-11-14 - MapServer Suite 12.11 is released**
+
+The first MapServer Suite, numbered 12.11, and containing MapServer 6.2.0, MapCache
+1.0.0 and TinyOWS 1.1.0 has been released. See :ref:`the release announcement <announce-6-2>`
+for more details.
+
 **2012-11-14 - MapServer 6.2.0 is released**
 
 MapServer 6.2.0 has been released. See :ref:`the release announcement <announce-6-2>`
