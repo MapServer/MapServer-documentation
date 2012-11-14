@@ -14,72 +14,55 @@ After the 6.0 release that introduced important changes in key components under 
 of the MapServer core, this 6.2 brings a large number of new features that are summarized
 in this document.
 
+.. contents:: Table of Contents
+    :depth: 3
+    :local:
+    :backlinks: none
+
 Major New Features in MapServer 6.2
 -----------------------------------
 
-WFS-T: TinyOWS 1.1
-==================
-TinyOWS is a lightweight and fast implementation of the OGC WFS-T specification.
-Web Feature Service (WFS) allows to query and to retrieve features.
-The transactional profile (WFS-T) allows then to insert, update or delete such features.
+MapServer Suite
+===============
+This is the first joint release between MapServer 6.2, TinyOWS 1.1, and MapCache 1.0,
+and is the first step towards a fully-fledged MapServer "Suite" integrating these 3
+components. A source code archive containing all 3 components can be found in the
+download links.
 
-From a technical point of view WFS-T is a Web Service API in front of a spatial database.
-TinyOWS is so deeply tighed to PostgreSQL/PostGIS.
+* **WFS-T: TinyOWS 1.1**
+  TinyOWS is a lightweight and fast implementation of the OGC WFS-T specification.
+  Web Feature Service (WFS) allows to query and to retrieve features.
+  The transactional profile (WFS-T) then allows to insert, update or delete such features.
+  
+  From a technical point of view WFS-T is a Web Service API in front of a spatial database.
+  TinyOWS is deeply tied to PostgreSQL/PostGIS.
+  
+  .. seealso::
+  
+     :ref:`TinyOWS documentation <tinyows>`
 
-.. seealso::
+* **Tiling: MapCache 1.0**
 
-   :ref:`TinyOWS documentation <tinyows>`
-
-Tiling Solution: Mapcache 1.0
-=============================
-
-MapCache is a high performance tiling server, that runs in native code either as a FastCGI,
-an Apache module, or an Nginx module. It supports a wide variety of protocols (WMTS, TMS,
-WMS, VirtualEarth, KML, ...) and storage backends (Disk, SQlite, Memcache, GeoTIFF files, 
-BerkeleyBD, ...), and provides options for dynamically responding to client requests by
-assembling cached tiles.
-
-.. seealso::
-
-   :ref:`MapCache documentation <mapcache>`
+  MapCache is a high performance tiling server, that runs in native code either as a FastCGI,
+  an Apache module, or an Nginx module. It supports a wide variety of protocols (WMTS, TMS,
+  WMS, VirtualEarth, KML, ...) and storage backends (Disk, SQlite, Memcache, GeoTIFF files, 
+  BerkeleyBD, ...), and provides options for dynamically responding to client requests by
+  assembling cached tiles.
+  
+  .. seealso::
+  
+     :ref:`MapCache documentation <mapcache>`
 
 
-SVG Symbology
-=============
+INSPIRE View Services
+=====================
 
-Along with the traditional ELLIPSE, VECTOR, PIXMAP and TRUETYPE symbols, MapServer 6.2
-now supports SVG symbols directly, opening up new symbology usages with scalable and 
-multicolor complex markers. SVG symbols are defined very classically by
-
-.. code-block:: mapfile
-
-  SYMBOL
-    NAME "my-svg-symbol"
-    TYPE SVG
-    IMAGE "/path/to/svgfile.svg"
-  END
-
-Multiple Font Support
-======================
-
-No single truetype font contains all the glyphs of all the scripts of the world. When
-rendering worldwide maps, it is thus needed to be able to specify multiple font files
-from which to extract glyphs from. You can now give the LABEL's FONT a comma separated
-list of fontset keys to try from, for each glyph to render MapServer will test each font
-in turn until the requested glyph is found.
-
-.. code-block:: mapfile
-
-  LABEL
-    TYPE TRUETYPE
-    FONT "vera,arialuni,cjk,khmer"
-    ...
-  END
+MapServer 6.2 is :ref:`inspire_view_service` compliant, i.e. supports the 
+provision of an INSPIRE View Service compliant :ref:`WMS_server`.
 
 .. seealso::
 
-   `test mapfile <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/label-multifont.map>`_
-   and `resulting image <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/expected/label-multifont.png>`_
+    :ref:`INSPIRE View Service documentation <inspire_view_service>`
 
 Mask Layers
 ===========
@@ -169,7 +152,7 @@ Complex Multi Label/Symbol Symbology
 
 Some cartographic representations require juxtaposing multiple symbols and/or labels
 in order to obtain a complex final symbol. Typically such needs can arise in the
-meteorological field when creating forecast maps, resulting in this kind of symbology.
+meteorological field when creating observation maps, resulting in this kind of symbology:
 
 .. figure:: ../../images/multilabel.png
    :align: center
@@ -243,19 +226,52 @@ original location, and the density of the grid where possible label positions ar
 sampled when testing for collisions. The optional `STYLE` block is used to render
 the line drawn from the feature to the offsetted label position.
 
+Note that computing the positions of offsetted labels is computationally heavy and may
+increase rendering times. To mitigate this, you can either apply this offsetting
+to a select class of features, and/or diminish the the leader maxdistance, and/or
+augment the leader gridstep.
+
 .. seealso::
 
    `test mapfile <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/labels-leader.map>`_
 
-INSPIRE View Services
-=====================
+SVG Symbology
+=============
 
-MapServer 6.2 is :ref:`inspire_view_service` compliant, i.e. supports the 
-provision of an INSPIRE View Service compliant :ref:`WMS_server`.
+Along with the traditional ELLIPSE, VECTOR, PIXMAP and TRUETYPE symbols, MapServer 6.2
+now supports SVG symbols directly, opening up new symbology usages with scalable and 
+multicolor complex markers. SVG symbols are defined very classically by
+
+.. code-block:: mapfile
+
+  SYMBOL
+    NAME "my-svg-symbol"
+    TYPE SVG
+    IMAGE "/path/to/svgfile.svg"
+  END
+
+Multiple Font Support
+======================
+
+No single truetype font contains all the glyphs of all the scripts of the world. When
+rendering worldwide maps, it is thus needed to be able to specify multiple font files
+from which to extract glyphs from. You can now give the LABEL's FONT a comma separated
+list of fontset keys to try from, for each glyph to render MapServer will test each font
+in turn until the requested glyph is found.
+
+.. code-block:: mapfile
+
+  LABEL
+    TYPE TRUETYPE
+    FONT "vera,arialuni,cjk,khmer"
+    ...
+  END
 
 .. seealso::
 
-    :ref:`INSPIRE View Service documentation <inspire_view_service>`
+   `test mapfile <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/label-multifont.map>`_
+   and `resulting image <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/expected/label-multifont.png>`_
+
 
 Minor New Features in MapServer 6.2
 -----------------------------------
@@ -324,6 +340,20 @@ Noteworthy Changes Which Could Affect Exisiting Applications
 
   * The libmapserver library is now built as a shared library by default, instead of being
     statically linked in the mapserv, shp2img or mapscript libraries.
+
+  * Installing multiple intances (with different capabilities for now, or for multiple
+    versions in the future) can/must be done by specifying different `--prefix` entries
+    for each instance, e.g.:
+
+    .. code-block:: bash
+
+       $ ./configure --without-gd --prefix=/opt/ms-62-nogd
+       $ make && sudo make install
+       $ ln -s /opt/ms-62-nogd/bin/mapserv /usr/lib/cgi-bin/mapserv
+       $ make clean
+       $ ./configure --with-gd --prefix=/opt/ms-62-gd
+       $ make && sudo make install
+       $ ln -s /opt/ms-62-gd/bin/mapserv /usr/lib/cgi-bin/mapserv-62-gd
     
 
 * **GD support is now optional and disabled by default**
@@ -358,9 +388,19 @@ The source for this release can be downloaded at:
 
     http://mapserver.org/download.html
 
-    or
+or:
+
+- for MapServer 6.2.0:
     
     http://download.osgeo.org/mapserver/mapserver-6.2.0.tar.gz
+
+- for TinyOWS 1.1.0:
+    
+    http://download.osgeo.org/mapserver/mapserver-6.2.0.tar.gz
+
+- for MapCache 1.0.0:
+    
+    http://download.osgeo.org/mapserver/mapcache-1.0.0.tar.gz
 
 Binary Distributions
 --------------------
@@ -368,7 +408,7 @@ Binary Distributions
 - ``MS4W`` users can upgrade to this MapServer 6.2.0 release by following instructions at:
   http://www.maptools.org/ms4w/index.phtml?page=TODO
 
-- ``Ubuntu`` binaries for hardy, lucid, maverick and natty are also built and available 
+- ``Ubuntu`` binaries for lucid, precise and quantal are also built and available 
   in the unstable PPA of UbuntuGIS. See details and instructions at:
   http://trac.osgeo.org/ubuntugis/
 
@@ -377,8 +417,13 @@ Binary Distributions
 The other binary distributions listed in the download page should also be updated 
 with binaries for the new release shortly.
 
+Thanks
+------
 
-Finally, thank you to all of the users, developers, and supporters of MapServer.  Enjoy!
+The MapServer team would like to thank Météo-France for funding a number of the new 
+features present in this release.
+
+Finally, thank you to all of the users, developers, and supporters of MapServer. Enjoy!
 
 *The MapServer Team*
 
