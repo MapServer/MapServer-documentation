@@ -11,8 +11,8 @@ The MapServer Team is pleased to announce the long awaited release of MapServer 
 after an extensive beta phase.
 
 After the 6.0 release that introduced important changes in key components under the hood
-of the MapServer core, this 6.2 brings a large number of new features that are summarized
-in this document.
+of the MapServer core, this 6.2 release brings a large number of new features that are 
+summarized in this document.
 
 .. contents:: Table of Contents
     :depth: 3
@@ -29,12 +29,20 @@ and is the first step towards a fully-fledged MapServer "Suite" integrating thes
 components. A source code archive containing all 3 components can be found in the
 download links.
 
+* **MapServer CGI and MapScript 6.2.0**
+  The MapServer web mapping engine that has been at the core of the project since the
+  beginning.
+
+  .. seealso::
+
+     :ref:`MapServer Documentation <documentation>`
+
 * **WFS-T: TinyOWS 1.1**
   TinyOWS is a lightweight and fast implementation of the OGC WFS-T specification.
-  Web Feature Service (WFS) allows to query and to retrieve features.
-  The transactional profile (WFS-T) then allows to insert, update or delete such features.
+  Web Feature Service (WFS) allows to query and to retrieve features, and the 
+  transactional profile (WFS-T) then allows to insert, update or delete such features.
   
-  From a technical point of view WFS-T is a Web Service API in front of a spatial database.
+  From a technical point of view WFS-T is a Web Service API in front of a spatial database;
   TinyOWS is deeply tied to PostgreSQL/PostGIS.
   
   .. seealso::
@@ -233,7 +241,9 @@ augment the leader gridstep.
 
 .. seealso::
 
-   `test mapfile <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/labels-leader.map>`_
+   View a `test mapfile <https://github.com/mapserver/msautotest/blob/branch-6-2/renderers/labels-leader.map>`_
+   or head to the :ref:`LEADER object documentation <leader>` to download sample data with
+   mapfile
 
 SVG Symbology
 =============
@@ -354,7 +364,10 @@ Noteworthy Changes Which Could Affect Exisiting Applications
        $ ./configure --with-gd --prefix=/opt/ms-62-gd
        $ make && sudo make install
        $ ln -s /opt/ms-62-gd/bin/mapserv /usr/lib/cgi-bin/mapserv-62-gd
-    
+   
+ * PHP Mapscript builds are now enabled by configuring with `--with-php[=/path/to/php-config]`
+ * Python Mapscript builds are now enabled by configuring with `--enable-python-mapscript`
+   and eventually `--with-python=/path/to/bin/python` for non-standard python installs
 
 * **GD support is now optional and disabled by default**
 
@@ -378,8 +391,19 @@ Noteworthy Changes Which Could Affect Exisiting Applications
 Migration Guide
 ---------------
 
-Aside from the build procedure changes detailed above, there are no backwards
-compatibility issues we are aware of.
+* **CGI**: Aside from the build procedure changes detailed above, there are no backwards
+  compatibility issues we are aware of.
+* **MapScript**:
+  There is at least one incompatibility that has been encountered with
+  MapScript vs the support for multiple label objects in a `class`. In 6.0 and
+  older, `label` was an immutable member of the `class` object, and a single label
+  was always allocated as part of the `classObj`. In 6.2, there is no label
+  allocated in the class object by default and your MapScript code (python,
+  etc.) has to create new label objects and add them to the class object. Three
+  new methods were added to the `classObj` in MapScript to handle this: ``getLabel``,
+  ``addLabel``, ``removeLabel``. Existing scripts need to be updated or risk silent
+  failures as SWIG MapScript (at least in python) does not complain on invalid
+  access to the label member of the classObj.
 
 Source Code Download
 --------------------
@@ -396,19 +420,24 @@ or:
 
 - for TinyOWS 1.1.0:
     
-    http://www.tinyows.org/release/tinyows-1.1.0.tar.bz2
+    http://download.osgeo.org/mapserver/tinyows-1.1.0.tar.bz2
 
 - for MapCache 1.0.0:
     
     http://download.osgeo.org/mapserver/mapcache-1.0.0.tar.gz
+
+- for MapServer Suite 12.11 (all three components in a single archive):
+    
+    http://download.osgeo.org/mapserver/mapserver-suite-12.11.tar.gz
+
 
 Binary Distributions
 --------------------
 
 Binary distributions will be available in the coming days:
 
-- ``MS4W`` users can upgrade to this MapServer 6.2.0 release by following instructions at:
-  http://www.maptools.org/ms4w/index.phtml?page=TODO
+- ``MS4W`` users will soon be able to upgrade to this MapServer 6.2.0 release:
+  http://www.maptools.org/ms4w/
 
 - ``Ubuntu`` binaries for lucid, precise and quantal are also built and available 
   in the unstable PPA of UbuntuGIS. See details and instructions at:
@@ -416,14 +445,18 @@ Binary distributions will be available in the coming days:
 
 - ``RHEL and CentOS 5.6`` TODO
 
+- OpenSUSE rpm binaries are available from Open Build Service (Application:Geo)
+  `official repository <https://build.opensuse.org/package/show?package=mapserver&project=Application%3AGeo>`_.
+  There is also a `One-Click Installer <http://software.opensuse.org/package/mapserver>`_.
+
 The other binary distributions listed in the download page should also be updated 
 with binaries for the new release shortly.
 
 Thanks
 ------
 
-The MapServer team would like to thank `Météo-France <http://en.wikipedia.org/wiki/Météo-France>`_ for funding a number of the new 
-features present in this release.
+The MapServer team would like to thank `Météo-France <http://en.wikipedia.org/wiki/Météo-France>`_
+for funding a number of the new features present in this release.
 
 Finally, thank you to all of the users, developers, and supporters of MapServer. Enjoy!
 

@@ -67,27 +67,27 @@ Examples are worth a thousand words here...
    LAYER
      ..
      SCALETOKEN
-       NAME "foobar"
+       NAME "priority"
        VALUES
-         "1000" "1000"
-         "10000" "10000"
-         "1000000" "1000000"
+         "0" "1"
+         "1000" "2"
+         "10000" "3"
        END
      END
-     DATA "the_geom from mytable_%foobar%"  #data comes from a specific table
-     DATA "/path/to/roads_%foobar%.shp"  #data comes from a specific shapefile
-     DATA "the_geom_%foobar% from roads" #data comes from a specific column in the table
-     DATA "the_geom_%foobar% from (select * from roads where priority > %foobar%) as foo" #data is filtered
+     DATA "the_geom from mytable_%priority%"  #data comes from a specific table
+     DATA "/path/to/roads_%priority%.shp"  #data comes from a specific shapefile
+     DATA "the_geom_%priority% from roads" #data comes from a specific column in the table
+     DATA "the_geom_%priority% from (select * from roads where priority > %priority%) as foo" #data is filtered
      CLASS
        ...
      END
    END
 
-In the previous examples, %foobar% would be replaced by:
+In the previous examples, %priority% would be replaced by:
 
-- 1000 for scales under 5500
-- 10000 for scales between 5500 and 505000
-- 100000  for scales over 505000
+- 1 for scales under 1,000
+- 2 for scales between 1,000 and 10,000
+- 3 for scales over 10,000
 
 2.2 Example 2
 --------------
@@ -99,9 +99,9 @@ In the previous examples, %foobar% would be replaced by:
      SCALETOKEN
        NAME "table"
        VALUES
-         "1000" "roads"
-         "10000" "roads_gen_1"
-         "1000000" "roads_gen_0"
+         "0" "roads"
+         "1000" "roads_gen_1"
+         "10000" "roads_gen_0"
        END
      END
      DATA "the_geom from %table%"  #data comes from a specific table
@@ -121,9 +121,9 @@ In the previous examples, %foobar% would be replaced by:
      SCALETOKEN
        NAME "filter"
        VALUES
-         "1000" ""
-         "10000" "where type in ('motorway','trunk','primary')"
-         "1000000" "where type='motorway'"
+         "0" ""
+         "1000" "where type in ('motorway','trunk','primary')"
+         "10000" "where type='motorway'"
        END
      END
      DATA "the_geom from (select * from roads %filter%) as foo"
@@ -139,9 +139,11 @@ In the previous examples, %foobar% would be replaced by:
   discussion
 - Multiple tokens can be used for a single layer, e.g for applying a filter
   *and* hitting generalized tables.
-- Scale dependant substitutions would only apply on the layer's DATA. Applying
-  it to other elements might make sense, but is more involved in terms of
-  impact to the code.
+- Scale dependant substitutions would apply to the layer's DATA, TILEINDEX,
+  TILEITEM, FILTERITEM and FILTER. Applying it to other elements might make
+  sense, but is more involved in terms of impact to the code. Scale-dependant
+  substitutions on FILTER may be incompatible with filters set through
+  MapServer's WFS filter handling.
 - Bug 3150_ discusses the need for such a substitution, but is much more
   limited in scope.
 - It might be desirable to provide SCALETOKEN entries at the MAP level (and 
@@ -158,35 +160,42 @@ In the previous examples, %foobar% would be replaced by:
 
 - layerObj gets a new member containing the scale dependant tokens
   applicable.
-- the actual struct to use to represent a given token is TBD:
+- the actual struct to use to represent a given token:
 
 .. code-block:: c
 
-   struct {
-      char* name;
-      hashtableObj values;
-   } scaletoken;
-
-.. code-block:: c
-
-   struct{
-      double scale;
-      char* value;
-   } scaletokeentry;
+   typedef struct {
+     double minscale;
+     double maxscale;
+     char* value;
+   } scaleTokenEntryObj;
    
-   struct {
-      char* name;
-      scaletokenentry* entries;
-      int numentries;
-   } scaletoken;
+   typedef struct {
+     char* name;
+     char* default_value;
+     int n_entries;
+     scaleTokenEntryObj* tokens;
+   } scaleTokenObj;
 
-- in msLayerOpen(), replace tokens inside layerObj->data. TBD:
-  
-  - add layerObj->processeddata to contain the substituted data, and modify
-    drivers to use layerObj->processeddata instead of layerObj->data
-  - or, keep using layerObj->data, but a keep a copy of the original to be
-    replaced when calling msLayerClose().
+   struct layerObj {
+      ...
+      scaleTokenObj* tokens;
+      int numscaletokens;
+      ...
 
+      char* orig_data;
+      char* orig_tileindex;
+      char* orig_tileitem;
+      ... etc ...
+   }
+
+- in msLayerOpen(), replace tokens inside layerObj->data, layerObj->tileindex,
+  etc... The original layerObj->data is stored beforehand in layerObj->orig_data,
+  and is restored in msLayerClose()
+
+- For the special case of layerObj->filter, msLoadExpressionString is called on
+  the substituted text in order to update the expressionObj. Likewise, it is 
+  called in msLayerClose() when the original filter is restored.
 
 3.2 Files affected
 ------------------
@@ -197,9 +206,6 @@ The following files will be modified/created by this RFC:
 - maplayer.c: call to token replacements inside msLayerOpen(), eventually
   msLayerClose(). Add function to appply the substitutions depending on
   current scale..
-- mapshape.c, mappostgis.c, mapogr.c.... : eventually use
-  layerObj->processeddata instead of layerObj->data (depending on implementation
-  choices)
 - maplexer.l: keywords
 
 
