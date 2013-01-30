@@ -73,9 +73,7 @@ Attribute name are completely lower case.  Multiple words are
 packed together like *outlinecolor*.
 
 Note that because of the way that mapscript is generated many confusing,
-meaningless, and even dangerous attributes are creeping into objects.  See
-outputFormatObj.refcount for example.  Until we get a grip on the structure
-members we are exposing to SWIG this problem will continue to grow.
+meaningless, and even dangerous attributes might be exposed by objects.
 
 fooObj Methods
 --------------
@@ -85,7 +83,7 @@ method(type mandatory_parameter [, type optional_parameter=default]) : type
     arguments, the method's actions, and returned values.  Optional
     parameters and their default values are enclosed in brackets.
 
-Class method names are camel case with a leading lower case character
+might be exposed byClass method names are camel case with a leading lower case character
 like *getExpressionString*.
 
 -----------------------------------------------------------------------------
@@ -1654,6 +1652,9 @@ outputformatlist : outputFormatObj[]
 
     .. note:: Currently only available for C#. A proper typemaps
        should be implemented for the other languages.
+    
+    .. note:: As of 6.2 other languages can use the getoutputFormat(idx)
+       and getNumoutputformats() functions to iterate over the format array.
    
 querymap : queryMapObj immutable
     **TODO** should this be exposed to mapscript?
@@ -1930,6 +1931,16 @@ selectOutputFormat( string imagetype ) : void
     *imagetype*.  Built-in formats are "PNG", "PNG24", "JPEG", "GIF",
     "GTIFF".
 
+getNumoutputformats() : int
+    Returns the number of output formats currently configured on the map
+    object. Can be used to iterate over the list of output formats
+    with the getOutputFormat(idx) method (see below). 
+
+getOutputFormat(int i): outputFormatObj
+    Returns the output format at the specified *i* index from the output formats array
+    or null if *i* is beyond the array bounds. The number of outpuFormats
+    can be retrieved by calling *getNumoutputformats*.
+
 setConfigOption( string key, string value ) : void
     Set the indicated key configuration option to the indicated value.  
     Equivalent to including a CONFIG keyword in a map file. 
@@ -2117,8 +2128,8 @@ new outputFormatObj( string driver [, string name=driver ] ) : outputFormatObj_
     Create new instance.  If *name* is not provided, the value of *driver*
     is used as a name.
     
-getOption( string key [, string value="" ] ) : string
-    Return the format option at *key* or *value* if *key* is not a valid
+getOption( string key [, string defaultvalue="" ] ) : string
+    Return the format option at *key* or *defaultvalue* if *key* is not a valid
     hash index.
 
 setExtension( string extension ) : void
@@ -2133,6 +2144,15 @@ setMimetype( string mimetype ) : void
 setOption( string key, string value ) : void
     Set the format option at *key* to *value*.  Format options are mostly 
     driver specific.  
+
+getNumformatoptions(): int
+    Returns the number of option values set on this format. Can be used to iterate
+    over the options array in conjunction with *getOptionAt*
+
+getOptionAt(int idx): string
+    Returns the option at idx or null if the index is beyond the array bounds.
+    The option is returned as the original KEY=VALUE string.
+    The number of available options can be obtained by calling *getNumformatoptions*.
 
 validate() : int
     Checks some internal consistency issues, and returns MS_TRUE if things
