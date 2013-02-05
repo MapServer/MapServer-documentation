@@ -1,0 +1,103 @@
+.. _rfc89:
+
+=========================================================================
+MS RFC 89: Layer Geomtransforms
+=========================================================================
+
+:Date:  2013/02/05
+:Author: Alan Boudreault
+:Contact: aboudreault at mapgears.com
+:Last Edited: $Date$
+:Status: Draft
+:Version: MapServer 6.4
+:Id: $Id$
+
+1. Overview
+-----------
+
+MapServer 6.0 introduced the concept of geometry expressions within a styleObj-geomtransform. For
+example, one could write:
+
+::
+
+  STYLE
+    GEOMTRANSFORM (buffer([shape], -5)
+    ...
+  END
+
+This would cause a buffer operation to be run on the shape before being rendered
+with a given style. However, if we want to work with the transformed shape and
+apply multiple styles, the performance of the rendering will be signicantly
+affected since the geom transform have to be done on each style. There are some
+other cases a layer geom transform would be useful. In example, if we want to
+simplify our lines.
+
+This is a proposal to add a the ability to set a geomtransform at the layer
+level. For more information about the geomtransform implemented for the style
+object: see http://mapserver.org/development/rfc/ms-rfc-48.html.
+
+2. The proposed solution
+------------------------
+
+This RFC proposes the addition of a new layer option: GEOMTRANSFORM. The
+functionnality is mostly the same than the the style geomtransform, except that
+not *all* the parameters will be implemented. Unless we really see a need for
+the following transformations at the layer level, they *wont* be implemented:
+bbox, start, end, vertices. All other parameters will be accepted (EXPRESSIONS).
+
+To set a geomtransform to a layer, you just need to add this option in the mapfile:
+
+::
+
+  LAYER NAME "my_layer"
+    TYPE LINE
+    STATUS DEFAULT
+    DATA "lines.shp"
+    GEOMTRANSFORM (simplify([shape], 10))    
+    CLASS
+      STYLE
+        WIDTH 2
+        COLOR 255 0 0
+      END
+    END
+
+
+3. New Geomtransform Parameters
+-------------------------------
+
+3 new parameters will be added as a geomtransform parameter:
+
+- simplify: Simplify using GEOS.
+- simplifypt: SimplifyPreserveTopology using GEOS.
+- generalize: Custom implementation of the following algorithm: http://trac.osgeo.org/gdal/ticket/966
+
+Those parameters will be available through the style geomtransform as
+well. Here is an example of the simplifypt geomtransform (the blue line is the
+original shape and the red one the transformed shape):
+
+ .. image:: ../../images/simplifypt.png
+
+
+4. MapScript
+-------------
+
+No issue for any MapScript bindings. The geomtransform is handled internally and
+does not affect anything.
+
+6. Backwards Compatibilty Issues
+---------------------------------
+
+This change provides a new functionality with no backwards compatibility issues being considered.
+
+7. Tests
+--------
+
+msautotest will be modified to add some tests of this new functionnality.
+
+8. Bug ID
+---------
+
+9. Voting history
+-----------------
+
+None
