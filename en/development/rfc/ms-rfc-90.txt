@@ -1,0 +1,172 @@
+.. _rfc90:
+
+==================================================================
+  MS RFC 90: Enable/Disable Layers in OGC Web Services by IP Lists
+==================================================================
+
+:Date: 2013/02/14
+:Author: Tamas Szekeres
+:Contact: szekerest at gmail.com
+:Status: Draft
+:Version: MapServer 6.3-dev
+
+1. Overview 
+-----------
+
+This RFC provides the option to enable or disable OWS layers by IP lists. The aim is to let 
+the admin to define list of users, identified through their IPs to allow or deny access to 
+one or more specific WxS layers.
+
+
+2. Proposed Solution
+--------------------
+
+This addition will provide 2 more parameters in the WEB/METADATA section of the mapfile and/or in
+the METADATA section of every single layer.
+
+ - **ows_allowed_ip_list**: contains the list of the allowed ip addresses or ranges
+ - **ows_denied_ip_list**: contains the list of the denied ip addresses or ranges
+ 
+These parameters support both a list of addresses from a file, or the ability to provide the 
+values directly in the mapfile, in the cases where there are only a couple of IPs or ranges to be specified.
+
+When setting the IP list inline, we can use spaces as separators, like:
+
+::
+
+  LAYER
+    METADATA
+      "ows_allowed_ip_list" "123.45.67.89 11.22.33.44"
+    END
+  END
+
+
+Or we can specify a file containing the list of the IP addresses (IPs and ranges in the file are separated 
+by spaces or newlines)
+
+::
+
+  LAYER
+    METADATA
+      "ows_allowed_ip_list" "file:/path/to/list_of_ips.txt"
+    END
+  END
+
+  
+We can also specify IP ranges using the `CIDR notation <http://en.wikipedia.org/wiki/CIDR_notation>`_ , like: "192.168.1.0/24"
+
+The setting of ows_enable_request (added in :ref:`MS RFC 67 <rfc67>`) will also be taken into account.
+Disabled requests cannot be re-enabled by IP lists, however we can restrict the access to a subset of layes
+by IP lists within the enabled OGC web services. 
+
+We will also be able to use the corresponcing service specific settings (like wms_allowed_ip_list 
+or wfs_allowed_ip_list)
+
+This addition will support using both ipv4 and ipv6 IP addresses.
+
+3. Disable the stock CGI operations
+-----------------------------------
+
+We also require to prevent the clients to work around the IP restrictions by using the stock CGI operations 
+(mode=...). For this reason we add a new parameter to the WEB section of the mapfile (**ms_disable_modes**) to
+control which modes should be refused. 
+When using OGC Web services we don't require to specify modes by the URL, so we'll be able to disable all 
+modes by using the following setting:
+
+::
+
+  WEB
+    METADATA
+      "ms_disable_modes"  "*"
+    END
+  END	
+
+
+This will dispatch only those requests where explicit mode is not set by URL. We'll also be able to disable 
+the modes selectively, as follows:
+
+::
+
+  WEB
+    METADATA
+      "ms_disable_modes" "MAP BROWSE LEGEND"
+	END
+  END
+
+To retain the backwards compatibility, if we don't specify the **ms_disable_modes** none all of the modes
+are enabled and dispatched.
+
+Currently we can specify the following modes to be disabled:
+
+ - BROWSE
+ - ZOOMIN
+ - ZOOMOUT
+ - MAP
+ - LEGEND
+ - LEGENDICON
+ - REFERENCE
+ - SCALEBAR
+ - COORDINATE
+ - QUERY
+ - NQUERY
+ - ITEMQUERY
+ - ITEMNQUERY
+ - FEATUREQUERY
+ - FEATURENQUERY
+ - ITEMFEATUREQUERY
+ - ITEMFEATURENQUERY
+ - INDEXQUERY
+ - TILE
+ - OWS
+ - WFS
+
+Given the mode specified by URL is disabled, MapServer will provide the following error message:
+
+  "The specified mode ... is not supported by the current map configuration"
+ 
+
+4. Implementation Details
+-------------------------
+
+This change will utilize the mechanism established in :ref:`MS RFC 67 <rfc67>`, which makes the implementation 
+fairly straightforward. Most of the functionality is provided by adding a new fuction (msOWSIpDisabled) 
+to mapows.c, which checks whether a particular IP is disabled by the metadata.
+The msOWSIpDisabled() function is invoked from msOWSRequestIsEnabled and msOWSRequestLayersEnabled
+to prevent from adding the disabled layer to the enables_layers list.
+
+The setting ms_disable_modes will be implemented by adding a new function msCGIModeDisabled() 
+(in mapservutil.c) which will be invoked in msCGISetMode() to check whether the specified mode 
+is disabled or not. The list of the available can be found in the modeStrings array.
+
+
+5. Files Affected
+-----------------
+
+ - mapows.c: Implement and call msOWSIpDisabled() method
+ - mapservutil.c: Implement and call msCGIModeDisabled()
+
+
+6. Bug ID
+----------
+
+https://github.com/mapserver/mapserver/issues/4588
+
+7. Backwards compatibility issues
+---------------------------------
+
+None expected, new functionality.
+
+
+8. Sponsorship
+--------------
+
+Developed for Faunalia (http://www.faunalia.it) with funding from Regione Toscana -
+Settore SISTEMA INFORMATIVO TERRITORIALE ED AMBIENTALE". For the project: "Sviluppo
+strumenti software per il trattamento di dati geografici basati su QuantumGIS e
+Postgis (CIG 0494241492)"
+
+
+9. Voting history
+-----------------
+
+TBD.
