@@ -7,8 +7,10 @@ MS RFC 89: Layer Geomtransforms
 :Date:  2013/02/05
 :Author: Alan Boudreault
 :Contact: aboudreault at mapgears.com
+:Author: Daniel Morissette
+:Contact: dmorissette at mapgears.com
 :Last Edited: $Date$
-:Status: Draft
+:Status: Voted
 :Version: MapServer 6.4
 :Id: $Id$
 
@@ -53,7 +55,7 @@ To set a geomtransform to a layer, you just need to add this option in the mapfi
     TYPE LINE
     STATUS DEFAULT
     DATA "lines.shp"
-    GEOMTRANSFORM (simplify([shape], 10))    
+    GEOMTRANSFORM (simplify([shape], 10))
     CLASS
       STYLE
         WIDTH 2
@@ -67,7 +69,62 @@ To set a geomtransform to a layer, you just need to add this option in the mapfi
   completely independent. Both can be used in your layer/class
   definitions and they will be applied properly.
 
-2.1 Vector formats supported
+2.1 Unit Coordinates
+--------------------
+
+There is a particularity between STYLE and LAYER GEOMTRANSFORM. STYLE-level
+GEOMTRANSFORM receives a shape in pixel coordinates, whereas the LAYER-level
+GEOMTRANSFORM will receive the raw shape in ground coordinates (meters, degrees,
+etc.). The argument to methods such as simplify() must be in the same units as
+the coordinates of the shapes at that point of the rendering workflow,
+i.e. pixels at the STYLE-level and in ground units at the LAYER-level.
+
+::
+
+  LAYER NAME "my_layer"
+    TYPE LINE
+    STATUS DEFAULT
+    DATA "lines.shp"
+    GEOMTRANSFORM (simplify([shape], 10))  ## 10 ground units
+    CLASS
+      STYLE
+        GEOMTRANSFORM (buffer([shape], 5)  ## 5 pixels
+        WIDTH 2
+        COLOR 255 0 0
+      END
+    END
+  END
+
+It is also not possible at all to deal with values in ground units at the style
+level because we do not have information about map cellsize at that level in the
+code
+
+2.2 Pixel value at Layer level
+-------------------------------------------------
+
+In cases where we want to pass a pixel value at the layer level, a
+[map_cellsize] variable will be available.
+
+::
+
+  LAYER NAME "my_layer"
+    TYPE LINE
+    STATUS DEFAULT
+    DATA "lines.shp"
+    # 10 * [map_cellsize] == 10 pixels converted to ground units
+    GEOMTRANSFORM (simplify([shape], [map_cellsize]*10))
+  ... 
+
+To get this variable working in the math expression parser, the [map_cellsize]
+has to be converted into the layer ground unit. This is automatically done in
+the code. Here's the workflow used internally for that conversion:
+
+ 1. If the Layer UNITS is specified, use it.
+ 2. Else, try to get the Layer Projection Unit.
+ 3. Otherwise, that means that the layer is in the same projection/unit of the map, there is no conversion to do.
+
+
+2.3 Vector formats supported
 -------------------------------
 
 All vector formats will be supported. This also include all formats of OGR
@@ -110,7 +167,9 @@ msautotest will be modified to add some tests of this new functionnality.
 7. Bug ID
 ---------
 
+ * https://github.com/mapserver/mapserver/issues/4592
+
 8. Voting history
 -----------------
 
-None
++1 from Jeff, Olivier, Stephen, Michael, Umberto and Steve.
