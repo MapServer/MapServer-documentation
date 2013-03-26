@@ -36,7 +36,7 @@ source_suffix = '.txt'
 source_encoding = 'utf-8'
 
 # The master toctree document.
-master_doc = 'documentation'
+master_doc = 'index'
 
 # General information about the project.
 project = u'MapServer'
@@ -101,7 +101,7 @@ html_style = 'sphinx.css'
 html_title = "MapServer " + release + " documentation"
 
 # A shorter title for the navigation bar.  Default is the same as html_title.
-html_short_title = "Documentation"
+html_short_title = "Home"
 
 # The name of an image file (relative to this directory) to place at the top
 # of the sidebar.
