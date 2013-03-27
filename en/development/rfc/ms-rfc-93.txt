@@ -19,14 +19,52 @@ MS RFC 93: UTF Grid Support
 1. Overview
 -------------
 
+UTFGrid is a open solution for specifying raster interaction data. The goal being to provide highly scalable user
+interaction with raster maps. The objective of this RFC is to enable MapServer to produce UTFGrid output. 
 
 2. Proposed solution
 --------------------
 
+This work would add the ability to write UTFGrids (JSON) as output from a normal map draw operation, that is, via 
+CGI mode=map or WMS GetMap requests.
 
-2.1 Rendering UTF Grid
------------------------
+2.1 Rendering the UTFGrid
+-------------------------
 
+New UTF render that would utilize the AGG library using an unsigned int32 canvas to encode feature IDs as their
+literal UTF-8 respresentation. Feature IDs (starting at 0) would be assigned sequentially as features are renderd  
+and a reference to the feature's key would be maintained as part of the rendering process. The list of feature keys 
+will be searched first to avoid duplication. It is certainly reasonable to define a key for feature that respresents a
+thematic property, for example population age class, which would result far smaller output than keys that are unique 
+to each feature. A layers key item is defined by the new UTFITEM attribute.
+
+The UTFRenderer will draw points, lines and polygons based loosely on the underlying style definition.
+
+  - Polygons: solid fill.
+  - Lines: solid line with width. Patterns are not applied.
+  - Points: rectangle based on the bounding box of the symbol will be used.
+
+Labels can be rendered using their parent feature id (derived via features UTFITEM) where the labels bounding box is
+drawn to the map. This is an optional capability which can be enabled through the output format:
+
+::
+  OUTPUTFORMAT
+    NAME 'myUTFGrid'
+    DRIVER UTFGRID
+    FORMATOPTION 'ATTACHMENT=myUTFGrid.js' 
+    FORMATOPTION 'labels=true'
+  END
+
+2.2 Exposing Feature Properties
+-----------------------------
+
+A new layer element (UTFDATA) would be added to allow the creation of simple JSON templates using MapServer
+expression syntax identical to what is used with classObj->text class text syntax.
+
+Examples:
+
+    UTFDATA "{name:'[name]', country:[country_code], area:[area]}"
+    UTFDATA ("{name:'" + escape([name], JSON) + "', area:'" + commify([area]) + "'}")
 
 2.4 Discussion
 --------------
@@ -38,10 +76,10 @@ TODO (bulleted list of topics)
 -------------------------
 
 
-3.2 Overview
+3.1 Overview
 ------------
 
-- there are no new keywords with minor structure changes (expressionObj)
+- there is a single new keyword, UTFDATA that exists at the layer-level
 - ...
 
 3.2 Files affected
@@ -49,13 +87,19 @@ TODO (bulleted list of topics)
 
 The following files will be modified by this RFC:
 
-- mapserver.h: Add new output format defines, etc... 
-- mapstring.h: 
+- mapserver.h: Add new output format defines, extend layerObj, etc... 
+- mapfile.c/mapfile.h: Add new keywords: UTFITEM and UTFDATA.
+- mapstring.h: Add a new function to encode a string for using in JSON output.
+- mapoutput.c: Add appropriate entries for new UTFGRID driver.
+
+The following files will be added by this RFC:
+
+- maputfgrid.c/maputfgrid.h: Implementation of the new UTFGrid renderer.
 
 3.3 MapScript
 -------------
 
-The UTCDATA parameter is hashObj and methods already exist to 
+PHP MapScript will need get/set methods added to the layer class. Swig-based MapScript should need no changes.
 
 3.4 Backwards Compatibilty Issues
 ---------------------------------
@@ -75,13 +119,20 @@ None anticipated.
 No impacts on core performance are anticipated.
 
 
-6. Bug ID
+6. Documentation needs
+-----------------------
+
+The layer object documentation will need to be updated to reflect the new parameters. The output section will need some
+additions to talk about configuration options associated with the new output format.
+
+
+7. Bug ID
 ---------
 
 None assigned.
 
 
-7. Voting history
+8. Voting history
 -----------------
 
 None
