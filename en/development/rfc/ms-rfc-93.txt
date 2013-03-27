@@ -31,7 +31,7 @@ CGI mode=map or WMS GetMap requests.
 2.1 Rendering the UTFGrid
 -------------------------
 
-New UTF render that would utilize the AGG library using an unsigned int32 canvas to encode feature IDs as their
+New UTFGrid renderer that would utilize the AGG library using an unsigned int32 canvas to encode feature IDs as their
 literal UTF-8 respresentation. Feature IDs (starting at 0) would be assigned sequentially as features are renderd  
 and a reference to the feature's key would be maintained as part of the rendering process. The list of feature keys 
 will be searched first to avoid duplication. It is certainly reasonable to define a key for feature that respresents a
@@ -66,15 +66,24 @@ JSON file will be a bit larger.
 
 A new layer element (UTFDATA) would be added to allow the creation of simple JSON templates using MapServer
 expression syntax identical to what is used with classObj->text class text syntax. UTFDATA would be of type
-expressionObj. The data should expose the UTFITEM values so that keys and data can be connected.
+expressionObj. If UTFITEMs is set the UTFDATA should expose those so that keys and data can be connected.
+
+If a UTFITEM is not set the sequential id (based on rendering order) will be used. This value can be referenced in
+the UTFDATA expression using the special tag !!sid!!.
 
 Examples:
 
 ::
+
     UTFITEM "fid"
     UTFDATA "{id:'[fid]', name:'[name]', country:[country_code], area:[area]}"
       or
     UTFDATA ("{fid:'" + [fid] "', name:'" + escape([name], JSON) + "', area:'" + commify(tostring([area],'%.2f')) + "'}")
+
+::
+    
+  # no UTFITEM    
+  UTFDATA "{id:!!sid!!, name:'[name]', country:[country_code], area:[area]}"
 
 If no UTFDATA is provided no data beyond the UTFITEM values will be exposed and sometimes this is all that
 is required.
