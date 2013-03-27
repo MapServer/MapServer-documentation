@@ -54,25 +54,39 @@ drawn to the map. This is an optional capability which can be enabled through th
     DRIVER UTFGRID
     FORMATOPTION 'ATTACHMENT=myUTFGrid.js' 
     FORMATOPTION 'labels=true'
+    FORMATOPTION 'duplicates=false'
   END
+
+It may be desireable NOT to remove duplicate feature id/key pairs since that process could be expensive depending
+on the number of features in the map. The format option duplicates=false can be used to skip this step. The resulting
+JSON file will be a bit larger.
 
 2.2 Exposing Feature Properties
 -----------------------------
 
 A new layer element (UTFDATA) would be added to allow the creation of simple JSON templates using MapServer
-expression syntax identical to what is used with classObj->text class text syntax.
+expression syntax identical to what is used with classObj->text class text syntax. UTFDATA would be of type
+expressionObj. The data should expose the UTFITEM values so that keys and data can be connected.
 
 Examples:
 
 ::
+    UTFITEM "fid"
+    UTFDATA "{id:'[fid]', name:'[name]', country:[country_code], area:[area]}"
+      or
+    UTFDATA ("{fid:'" + [fid] "', name:'" + escape([name], JSON) + "', area:'" + commify(tostring([area],'%.2f')) + "'}")
 
-    UTFDATA "{name:'[name]', country:[country_code], area:[area]}"
-    UTFDATA ("{name:'" + escape([name], JSON) + "', area:'" + commify([area]) + "'}")
+If no UTFDATA is provided no data beyond the UTFITEM values will be exposed and sometimes this is all that
+is required.
 
 2.4 Discussion
 --------------
 
-TODO (bulleted list of topics)
+It feels awkward to add output format specific attributes like UTFDATA and UTFITEM. Metadata would work for
+the UTFITEM since it's just a string. That said UTFDATA is more complex base type and is subject to additional 
+pre-processing (e.g. token building, parsing) so using a metadata key would be very inefficient. If there were
+other needs for a structure with similar components (e.g. item name, expression) maybe something more generic
+could be proposed.
 
 
 3. Implementation Details
