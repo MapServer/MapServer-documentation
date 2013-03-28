@@ -135,7 +135,21 @@ be populated with the filter string contents.
 
 msLayerNextShape(): Evaluation of the common syntax (e.g. pure-MapServer) filter can happen here rather than within the driver
 code. The OGR, Shapefile and Tiled Shapefile drivers all do this now and would need to be changed. The filter would only be
-executed if the filter's native_string is NULL.
+executed if the filter's native_string is NULL (this is checked in msEvalExpression().
+
+::
+
+  do {
+    rv = layer->vtable->LayerNextShape(layer, shape);
+    if(rv != MS_SUCCESS) return rv;
+
+    filter_passed = MS_TRUE;  /* By default accept ANY shape */
+    if(layer->numitems > 0 && layer->iteminfo) {
+      filter_passed = msEvalExpression(layer, shape, &(layer->filter), layer->filteritemindex);
+    }
+
+    if(!filter_passed) msFreeShape(shape);
+  } while(!filter_passed);
 
 msLayerSupportsCommonFilters(): This function can be removed from the layer API in favor of checking the filter->native_string
 after a call to msXXXLayerTranslateFilter().
