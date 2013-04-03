@@ -29,10 +29,76 @@ MapServer 6.2 to 6.4 Migration
   #4604 #4608
 
 
-MapServer 6.0 to 6.2 Migration
+Mapserver 6.0 to 6.2 Migration
 ==============================
 
-None
+This section documents the changes that must be made to MapServer 
+applications when migrating from version 6.0.x (or earlier versions) 
+to 6.2 (i.e. backwards incompatibilities), as well as information
+on some of the new features.
+
+--------------------
+Build system changes
+--------------------
+
+If you are building MapServer from source, then the following may be of interest to you:
+
+* Use of libtool: In version 6.2, the Unix/Linux build scripts and Makefiles were converted to use libtool. One impact of this change is that the 'mapserv' file in the main source tree is a libtool wrapper script and not the actual binary. To use 'mapserv' you actually have to use 'make install' and then point to the installed binary. More info is available in the Compiling on Unix document at http://mapserver.org/trunk/installation/unix.html#installation
+
+* The --with-php configure option has been changed to point directly to the php-config script instead of to the directory where the PHP headers are located.
+
+-----------
+CGI Changes
+-----------
+
+* Changing MIN/MAXSCALE or MIN/MAXSCALEDENOM via URL is no longer supported.
+* The syntax for changing a LABEL with CGI commands has changed along with the
+  ability to support multiple labels
+  The previous syntax ...&map.layer[0].class[0]=label+color+255+0+0+end&... is
+  replaced with ...&map.layer[0].class[0].label[0]=color+255+0+0&...
+  Note that cgi label modifications are/were broken in 6.2.0 and fixed in 6.2.1
+
+-----------------
+Rendering changes
+-----------------
+
+* STYLE->GAP interpretation
+  Starting in 6.2, STYLE->GAP specifies the gap between the symbols
+  using the centre to centre distance.
+  In earlier versions of Mapserver, GAP was used as the approximate
+  distance between the symbol boundaries.
+  See ticket #3867 for more information.
+
+  In order to get the same effect with 6.2 as with 6.0, STYLE->GAP
+  must be increased with the size of the symbol.
+
+* Removal of one pixel gap between symbols
+  In earlier versions of Mapserver, an extra gap of one pixel was
+  added between the symbols (in addition to the gap specified in
+  STYLE->GAP).  This has been discontinued in 6.2.
+  See ticket #3868 for more information.
+
+  In order to get the same effect with 6.2 as with 6.0, STYLE->GAP
+  must be increased with one pixel.
+
+* STYLE->INITIALGAP introduced
+  Support for more powerful line styling has been provided with the
+  introduction of STYLE->INITIALGAP.  See ticket #3879 and the
+  documentation for more information.
+
+* SYMBOL->ANCHORPOINT introduced
+  A symbol anchorpoint has been introduced to facilitate precise
+  positioning of symbols.  See ticket #4066 and the documentation for
+  more information.
+
+* Change in vector symbol size calculation.
+  In 6.2, vector symbol coordinates are shifted to get rid of
+  negative x and y coordinate values.
+  See ticket #4116 for more information.
+
+  In order to get the shifting effect that could be obtained using
+  negative coordinate values, SYMBOL->ANCHORPOINT should be used
+  instead.
 
 MapServer 5.6 to 6.0 Migration
 ==============================
@@ -201,6 +267,21 @@ are evaluated in OGC WCS services. Previous versions used "wms_*"
 prefixed entries as fallback which is dropped in version 6.0 in favor of
 forcing explicit decisions.
 
+-------------------------------------------------------
+Mapfile Changes - OGC requests - DUMP parameter removed
+-------------------------------------------------------
+
+The DUMP LAYER parameter has been removed.  To enable output of
+geometries in WMS getfeatureinfo requests - GML
+(INFO_FORMAT=application/vnd.ogc.gml), LAYER METADATA is used
+instead::
+
+   METADATA
+     gml_geometries "geom"
+     gml_geom_type "polygon"
+     ...
+   END
+
 --------------------------------------------------------
 Mapfile Changes - Ability to escape single/double quotes
 --------------------------------------------------------
@@ -208,7 +289,7 @@ Mapfile Changes - Ability to escape single/double quotes
 We can now escape single and double quotes in strings and logical
 expressions. Examples:
 
-::
+:: 
 
   NAME "RO\"AD" # double quote inside a a double quote delimited string
   NAME 'RO\'AD' # single quote inside a a single quote delimited string
@@ -218,10 +299,10 @@ NOTE: The escape character (backslash) will only work if the
 following character is ", ' or \.
 
 For Windows users: if you have a path string delimited by single/double
-quotes that ends with \, you will have to escape the last backslash.
+quotes that ends with \, you will have to escape the last backslash. 
 
 ::
-
+  
   SHAPEPATH "C:\ms4w\shapefiles\"
   # should be modified to...
   SHAPEPATH "C:\ms4w\shapefiles\\"
@@ -771,7 +852,7 @@ release. Features might be headed for deprecation because:
 Users of these features should be prepared for these upcoming changes
 and start adapting their mapfiles in consequence. If you have strong 
 and motivated objections as to the removal of one or more of these
-features please open a discussion in the usual MapServer  communication
+features please open a discussion in the usual Mapserver communication
 channels. 
  
 Cartoline symbols: these were a hack to overcome GD weaknesses, and their
