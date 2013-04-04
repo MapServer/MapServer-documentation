@@ -13,35 +13,78 @@ MS RFC 95: Support for lists in expression parser
 1. Overview
 -----------
 
+We have a relatively low hanging performance speedup related to expressions
+when doing class filtering. The context relates to when there's the need to
+apply a given :ref:`class` to multiple attribute values.
+
+Currently, to apply a single class to multiple values of an attribute, you can
+either use regular expressions, or use the IN operator, like this:
+
+.. code-block:: mapfile
+
+  LAYER
+    ...
+    CLASSITEM "type"
+    CLASS
+      EXPRESSION /primary|secondary|tertiary/ #regular expression on CLASSITEM
+      EXPRESSION ("[type]" IN "primary,secondary,tertiary") #"complex" parser expression
+      ...
+    END
+  END
+
+Both methods require quite a bit of overhead, either in the regex system calls,
+or by using quite a few mallocs when going through the IN parser operation.
+
 
 2. Proposed solution
 --------------------
+
+We can cut down on this overhead by adding a "list" expression type, denoted by
+the { } delimiters, where the previous layer definition becomes:
+
+.. code-block:: mapfile
+
+  LAYER
+    ...
+    CLASSITEM "type"
+    CLASS
+      EXPRESSION {primary,secondary,tertiary}
+      ...
+    END
+  END
+
+In that case, the expression parsing is a simple string lookup inside
+msEvalExpression() instead of having to go down into the system regex or the
+parser.
 
 
 3. Implementation Details
 -------------------------
 
+The modifications to the code are fairly straightforward:
 
-3.2 Files affected
-------------------
+* support for the {} delimiters in the lexer (maplexer.l)
+* new expression type MS_LIST in mapserver.h
+* support for finding an attribute value in the given list in msEvalExpression()
+  in maputil.c
+* loading, saving and copy the expression in mapfile.c and mapcopy.c
+* setters and getters in mapscript (not addressed in initial implementation, use
+  classObj.updateFromString("EXPRESSION {foo,bar,baz}")
 
 
-3.3 MapScript
--------------
-
-
-3.4 Backwards Compatibilty Issues
+4. Backwards Compatibilty Issues
 ---------------------------------
 
+None, new functionality
 
-
-4. Tips when migrating from autotools habits
---------------------------------------------
 
 
 5. Performance implications
 ---------------------------
-None
+
+The expression parser had already been sped up in 6.0 with the use of precompiled
+expressions, this goes one step further for the specific case where a given :ref:`class`
+should match multiple attribute values
 
 6. Bug ID
 ---------
