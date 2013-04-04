@@ -15,26 +15,27 @@ Kml Output
 Introduction
 -------------------------------------------------------------------------------
 
-This purpose of this docuement is to describethe KML/KMZ output support in 
-MapServer 6.0.
+This purpose of this docuement is to describethe KML/KMZ output
+support in MapServer 6.0.
 
-The main goal of the KML driver is to generate KML output used mainly by Google 
-Earth application.
+The main goal of the KML driver is to generate KML output used mainly
+by Google Earth application.
 
 
 General Functionnality
 -------------------------------------------------------------------------------
 
-Kml support is provided by using a kml or kmz  image type in the map file. Output 
-can then be generated using MapServer cgi (example mode=map) or through a WMS request.
+Kml support is provided by using a kml or kmz image type in the map
+file. Output can then be generated using MapServer cgi (example
+mode=map) or through a WMS request.
 
 
 
 Output format
 -------------------------------------------------------------------------------
 
-The default name of the output format is kml or kmz, and this name can be used to set 
-the imagetype parameter in the map file.
+The default name of the output format is kml or kmz, and this name can
+be used to set the imagetype parameter in the map file.
 
 The format can also be defined in the map file:
 
@@ -66,20 +67,27 @@ Build
 - On windows: there is a flag KML in nmake.opt
 - On Linux: --with-kml
 - AGG driver is necessary for the kml driver
-- To be able to get kmz support, MapServer needs to be build aginst GDAL 1.8
+- To be able to get kmz support, MapServer needs to be build aginst
+  GDAL 1.8
 
 Limiting the number of features
 -------------------------------------------------------------------------------
-The number of vector features drawn by default is set to 1000 per layer. To control the number of features, users can set:
+The number of vector features drawn by default is set to 1000 per
+layer. To control the number of features, users can set:
 
-- layer level metadata that only applies to the layer: "maxfeaturestodraw" "100"
-- map level metada that applies to all layers: "maxfeaturestodraw" "100"
-- output format option that applies to all layers:  FORMATOPTION "maxfeaturestodraw=100"
+- layer level metadata that only applies to the layer:
+  "maxfeaturestodraw" "100"
+- map level metada that applies to all layers: "maxfeaturestodraw"
+  "100"
+- output format option that applies to all layers: FORMATOPTION
+  "maxfeaturestodraw=100"
 
 Map
 -------------------------------------------------------------------------------
 
-In terms for Kml object, the MapServer KML output will produce a <Document> element to include all the layers that are part of the MapServer map file. Features supported for the Document are:
+In terms for Kml object, the MapServer KML output will produce a
+<Document> element to include all the layers that are part of the
+MapServer map file. Features supported for the Document are:
 
 
 +------------------+-----------+------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
@@ -145,9 +153,21 @@ Supported Folder elements are:
 | RegionMetadataExtendedData                                  | No        |                                                                                                                                                                                        |
 +-------------------------------------------------------------+-----------+----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------+
 
-Each element in the Layer will be inside a Kml <Placemark> element. As described in the Kml reference : « A Placemark is a Feature with associated Geometry. In Google Earth, a Placemark appears as a list item in the Places panel. A Placemark with a Point has an icon associated with it that marks a point on the Earth in the 3D viewer. (In the Google Earth 3D viewer, a Point Placemark is the only object you can click or roll over. Other Geometry objects do not have an icon in the 3D viewer. To give the user something to click in the 3D viewer, you would need to create a MultiGeometry object that contains both a Point and the other Geometry object.) »
+Each element in the Layer will be inside a Kml <Placemark> element. As
+described in the Kml reference : "A Placemark is a Feature with
+associated Geometry. In Google Earth, a Placemark appears as a list
+item in the Places panel. A Placemark with a Point has an icon
+associated with it that marks a point on the Earth in the 3D
+viewer. (In the Google Earth 3D viewer, a Point Placemark is the only
+object you can click or roll over. Other Geometry objects do not have
+an icon in the 3D viewer. To give the user something to click in the
+3D viewer, you would need to create a MultiGeometry object that
+contains both a Point and the other Geometry object.)"
 
-For Polygon and Line layers, when a feature is associated with a label, a MultiGeometry element containing a point geometry and the geometry of the feature is created. The point feature will be located in the middle of the polygon or line
+For Polygon and Line layers, when a feature is associated with a
+label, a MultiGeometry element containing a point geometry and the
+geometry of the feature is created. The point feature will be located
+in the middle of the polygon or line
 
 ::
 
@@ -219,15 +239,35 @@ General notes on layers
 
 
 - Labelcache is turned off on each layer
-- Projection block should be set. If not set It will be assumed that the data is in lat/lon projection (a debug message will be sent to the user: Debug Message 1)
-- Possible to output vector layers as raster using metadata:  "KML_OUTPUTASRASTER" "true"
-- The user  can use the KML_FOLDER_DSIPLAY layer or map level metedata to choose a setting. Possible values are 'check' (default), 'radioFolder', 'checkOffOnly', 'checkHideChildren'.
-- The user can use metadata KML/OWS_DESCRIPTION or KML/OWS_INCLUDE_ITEMS to define the description attached to each feature. If  KML/OWS_DESCRIPTION are defined, the <description> tag of the Placemark will be used. If KML/OWS_INCLUDE_ITEMS, the <ExtendedData> tag will be used.
-- The user can use the metadata KML_NAME_ITEM to indicate the field name to be used a a name tag for each feature.
-- The user can use metadata KML_ALTITUDEMODE to specify how altitude components in the <coordinates> element are interpreted. Possible values are: absolute, relativeToGround, clampToGround. http://code.google.com/apis/kml/documentation/kmlreference.html#altitudemode
-- The user can use metedata KML_EXTRUDE to specify whether to connect the LinearRing to the ground. http://code.google.com/apis/kml/documentation/kmlreference.html#tessellate
-- The user can use metedata KML_TESSELLATE to specify whether to allow the LinearRing to follow the terrain. http://code.google.com/apis/kml/documentation/kmlreference.html#extrude
-- The user can specify an attribute to be used as the elevation value using a layer level metedata: 'kml_elevation_attribute' '<Name of attribute>'. The value will be used as the z value when the coordinates are written.
+- Projection block should be set. If not set It will be assumed that
+  the data is in lat/lon projection (a debug message will be sent to
+  the user: Debug Message 1)
+- Possible to output vector layers as raster using metadata:
+  "KML_OUTPUTASRASTER" "true"
+- The user can use the KML_FOLDER_DSIPLAY layer or map level metedata
+  to choose a setting. Possible values are 'check' (default),
+  'radioFolder', 'checkOffOnly', 'checkHideChildren'.
+- The user can use metadata KML/OWS_DESCRIPTION or
+  KML/OWS_INCLUDE_ITEMS to define the description attached to each
+  feature. If KML/OWS_DESCRIPTION are defined, the <description> tag
+  of the Placemark will be used. If KML/OWS_INCLUDE_ITEMS, the
+  <ExtendedData> tag will be used.
+- The user can use the metadata KML_NAME_ITEM to indicate the field
+  name to be used a a name tag for each feature.
+- The user can use metadata KML_ALTITUDEMODE to specify how altitude
+  components in the <coordinates> element are interpreted. Possible
+  values are: absolute, relativeToGround,
+  clampToGround. http://code.google.com/apis/kml/documentation/kmlreference.html#altitudemode
+- The user can use metedata KML_EXTRUDE to specify whether to connect
+  the LinearRing to the
+  ground. http://code.google.com/apis/kml/documentation/kmlreference.html#tessellate
+- The user can use metedata KML_TESSELLATE to specify whether to allow
+  the LinearRing to follow the
+  terrain. http://code.google.com/apis/kml/documentation/kmlreference.html#extrude
+- The user can specify an attribute to be used as the elevation value
+  using a layer level metedata: 'kml_elevation_attribute' '<Name of
+  attribute>'. The value will be used as the z value when the
+  coordinates are written.
 
 
 Point Layers
@@ -235,7 +275,8 @@ Point Layers
 
 - Each layer will be inside a Folder element. 
 - Each feature will be represented by a Placemark.
-- The  Geometry element for a Point layer would  be represented as a Point geometry element in Kml. Supported elements are:
+- The Geometry element for a Point layer would be represented as a
+  Point geometry element in Kml. Supported elements are:
 
 
 Line Layers
@@ -243,33 +284,47 @@ Line Layers
 
 - Each layer will be inside a Folder element. 
 - Each feature in the layer would be represented by a Placemark.
-- If a label is attached to the line, the  Geometry element would  be represented as a MultiGeometry that includes a LineString element and a Point element representing the position of the label. If no label is attached to a feature, the Geometry element will be a LineString.
+- If a label is attached to the line, the Geometry element would be
+  represented as a MultiGeometry that includes a LineString element
+  and a Point element representing the position of the label. If no
+  label is attached to a feature, the Geometry element will be a
+  LineString.
 
 Polygon Layers
 ~~~~~~~~~~~~~~
 
 - Each layer will be inside a Folder element. 
 - Each feature will be represented by a Placemark.
-- If a label is attached to the polygon, the Geometry element would  be represented as a MultiGeometry that includes a Polygon element and a Point element representing the position of the label. 
+- If a label is attached to the polygon, the Geometry element would be
+  represented as a MultiGeometry that includes a Polygon element and a
+  Point element representing the position of the label.
 
 Raster Layers
 ~~~~~~~~~~~~~
 
 - Each layer will be inside a Folder element. 
-- A GroundOverlay feature is created for the layer, that includes  an href link to the raster image generated and LatLongBox for the extents (map extents).
-- The href is generated using the imagepath and imageurl settings in the map file.
-
+- A GroundOverlay feature is created for the layer, that includes an
+  href link to the raster image generated and LatLongBox for the
+  extents (map extents).
+- The href is generated using the imagepath and imageurl settings in
+  the map file.
 
 
 Styling
 -------------------------------------------------------------------------------
 
-As described in Section 4,  all different styles from the layers will be stored at the Document level and referenced from the folders using a styleUrl.
+As described in Section 4, all different styles from the layers will
+be stored at the Document level and referenced from the folders using
+a styleUrl.
 
 Point Layers
 ~~~~~~~~~~~~
 
-Point layers will be styled using the IconStyle styling element of kml. An image representing the symbol will be created and referenced from the IconStyle object.  If a label is attached to the point, a LabelStyle element will also be used. The LabelStyle will have the color parameter set.
+Point layers will be styled using the IconStyle styling element of
+kml. An image representing the symbol will be created and referenced
+from the IconStyle object.  If a label is attached to the point, a
+LabelStyle element will also be used. The LabelStyle will have the
+color parameter set.
 
 ::
 
@@ -288,13 +343,20 @@ Point layers will be styled using the IconStyle styling element of kml. An image
 Line Layers
 ~~~~~~~~~~~
 
-Line layers will be styled using the LineStyle styling element of kml. Color and width parameters of the LineStyle will be used.  If a label is attached to the layer, a LabelStyle element will also be used.
+Line layers will be styled using the LineStyle styling element of
+kml. Color and width parameters of the LineStyle will be used.  If a
+label is attached to the layer, a LabelStyle element will also be
+used.
 
 
 Polygon Layers
 ~~~~~~~~~~~~~~
 
-Polygon layers will be styled using the PolyStyle styling element of kml. Color parameter of the PolyStyle will be used. If an outline is defined in the map file, an addition LineStyle will be used.  If a label is attached to the layer, a LabelStyle element will also be used.
+Polygon layers will be styled using the PolyStyle styling element of
+kml. Color parameter of the PolyStyle will be used. If an outline is
+defined in the map file, an addition LineStyle will be used.  If a
+label is attached to the layer, a LabelStyle element will also be
+used.
 
 
 Attributes
@@ -310,14 +372,24 @@ As described in section on Layers,  two ways of defining the description:
 Coordinate system
 -------------------------------------------------------------------------------
 
-The map level projection should be set to epsg:4326. If not set, the driver will automatically set it. Layers are expected to have projection block if their projection is different from epsg:4326.
+The map level projection should be set to epsg:4326. If not set, the
+driver will automatically set it. Layers are expected to have
+projection block if their projection is different from epsg:4326.
 
 
 Warning and Error Messages
 -------------------------------------------------------------------------------
 
-- When the projection of the map file is not set or is different from a a lat/lon projection, the driver automatically sets the projection to espg:4326. If the map is is debug mode, the following message is sent: « "KmlRenderer::checkProjection: Mapfile projection set to epsg:4326 »
-- If imagepath and imageurl are not set in the web object, the following message is sent in debug mode: « KmlRenderer::startNewLayer: imagepath and imageurl should be set in the web object »
+- When the projection of the map file is not set or is different from
+  a a lat/lon projection, the driver automatically sets the projection
+  to espg:4326. If the map is is debug mode, the following message is
+  sent: "KmlRenderer::checkProjection: Mapfile projection set to
+  epsg:4326"
+
+- If imagepath and imageurl are not set in the web object, the
+  following message is sent in debug mode:
+  "KmlRenderer::startNewLayer: imagepath and imageurl should be set
+  in the web object"
 
 
 
