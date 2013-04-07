@@ -15,6 +15,31 @@ MS RFC 96: Time Dimension Support in MapCache Tilesets
 1. Overview
 -----------
 
+This RFC proposes to add time dimension support in MapCache. This 
+allows MapCache to answer WMTS and WMS requests including in the 
+TIME parameter both timestamps or time intervals.
+
+One of the motivating use cases is to efficiently serve potentially 
+big archives of Earth Observation data via WMTS and WMS. Only one 
+layer per sensor or satellite needs to be configured and single 
+acquisitions can still be selected using the time of acquisition in 
+the TIME parameter::
+
+  ...&TIME=2010-07-22T10:16:01Z&...
+
+.. image:: ../../images/mapcache-time-point.png
+ 
+In the same way it is also possible to view all acquisitions within 
+a given time interval::
+
+  ...&TIME=2010-07/2010-08&...
+
+.. image:: ../../images/mapcache-time-interval.png
+
+For service providers it is additionally important to be able to add 
+new acquisitions to the cache as they become available at the 
+configured source without the need to restart the web server.
+
 
 2. Proposed solution
 --------------------
@@ -130,9 +155,7 @@ two formats:
   
 The format for <timestamp> respects ISO 8601:2000 “extended” format: up to 14
 digits specifying century, year, month, day, hour, minute, and seconds with
-non-numeric characters to separate each piece:
-
-  ::
+non-numeric characters to separate each piece::
 
   ccyy-mm-ddThh:mm:ssZ
 
@@ -196,8 +219,8 @@ doing so is recommended), for example:
 
   The OGC WMTS spec does not allow intervals to be specified for the TIME
   dimension. MapCache will however interpret intervals in its KVP interface,
-  however these cannot be supported by the REST interface (due to the presence
-  of ``/``s which are ambiguous.
+  but these cannot be supported by the REST interface (due to the presence
+  of '/'s which are ambiguous).
 
 
 2.4 Handling Incomplete Tilesets for a given Timestamp
