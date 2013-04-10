@@ -37,40 +37,43 @@ do
    if [ "$lang" == "fr" ]; then
      warn=".. warning::
 
-Attention: cette page de documentation n'est pas a jour. Nous vous conseillons **fortement**
-de naviguer vers la version anglaise de cette page.
+   Cette page de documentation n'est pas a jour, avec au moins @DAYS@ jours de
+   retard sur la version originale. Nous vous conseillons **fortement** de
+   naviguer vers la version anglaise de cette page.
 
 "
    elif [ "$lang" == "de" ]; then
    warn=".. warning::
 
-Achtung: cette page de documentation n'est pas a jour. Nous vous conseillons **fortement**
-de naviguer vers la version anglaise de cette page.
+   Diese Übersetzung ist seid mindestens @DAYS@ Tagen nicht aktualisiert
+   verglichen mit der originalen Version. Wir empfehlen dringend stattdessen die
+   originale Englische Seite zu verwenden.
+
 
    "
    elif [ "$lang" == "it" ]; then
    warn=".. warning::
 
-outdated!
+   outdated by @DAYS@ days !
 
    "
 
    elif [ "$lang" == "es" ]; then
    warn=".. warning::
 
-outdated!
+   outdated by @DAYS@ days !
 
    "
    elif [ "$lang" == "zh_cn" ]; then
    warn=".. warning::
 
-outdated!
+   outdated by @DAYS@ days !
 
    "
    else
    warn=".. warning::
 
-outdated!
+   outdated by @DAYS@ days !
 
    "
    fi
@@ -92,8 +95,9 @@ outdated!
            orig_mtime=`cd $REPO && git log -1 --pretty=format:"%at" -- "en/$file"`
            trans_mtime=`cd $REPO && git log -1 --pretty=format:"%at" -- "$lang/$file"`
            if [[ $trans_mtime -lt $orig_mtime ]]; then
+              let days="($orig_mtime - $trans_mtime)/86400 + 1"
               tmpfile="/tmp/foo-$RANDOM"
-              echo $warn > $tmpfile
+              echo $warn | sed "s/@DAYS@/$days/" > $tmpfile
               cat "../$lang/$file" >> "$tmpfile"
               mv "$tmpfile" "../$lang/$file"
            fi
