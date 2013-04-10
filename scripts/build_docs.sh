@@ -83,6 +83,7 @@ do
 	do
      file_dirname=`dirname "$file"`
      if [ ! -e "../$lang/$file" ]; then
+       #echo "$file does not exist in $lang, copying from en"
        if [ -f "$file" ]; then
          mkdir -p "../$lang/$file_dirname"
          cp "$file" "../$lang/$file_dirname"
@@ -95,11 +96,14 @@ do
            orig_mtime=`cd $REPO && git log -1 --pretty=format:"%at" -- "en/$file"`
            trans_mtime=`cd $REPO && git log -1 --pretty=format:"%at" -- "$lang/$file"`
            if [[ $trans_mtime -lt $orig_mtime ]]; then
-              let days="($orig_mtime - $trans_mtime)/86400 + 1"
-              tmpfile="/tmp/foo-$RANDOM"
-              echo $warn | sed "s/@DAYS@/$days/" > $tmpfile
-              cat "../$lang/$file" >> "$tmpfile"
-              mv "$tmpfile" "../$lang/$file"
+             let days="($orig_mtime - $trans_mtime)/86400"
+             if [[ $days -ge 7 ]]; then
+               #leave a 7 day grace period before adding the warning
+               tmpfile="/tmp/foo-$RANDOM"
+               echo $warn | sed "s/@DAYS@/$days/" > $tmpfile
+               cat "../$lang/$file" >> "$tmpfile"
+               mv "$tmpfile" "../$lang/$file"
+             fi
            fi
          fi
        fi
@@ -111,7 +115,7 @@ do
 done
 
 cd $BUILDDIR
-make html
+make TARGET=mapserverorg html
 make latex
 make epub
 
