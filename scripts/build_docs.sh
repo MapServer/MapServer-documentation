@@ -44,37 +44,33 @@ de naviguer vers la version anglaise de cette page.
    elif [ "$lang" == "de" ]; then
    warn=".. warning::
 
-Achtung baby!: cette page de documentation n'est pas a jour. Nous vous conseillons **fortement**
+Achtung: cette page de documentation n'est pas a jour. Nous vous conseillons **fortement**
 de naviguer vers la version anglaise de cette page.
 
    "
    elif [ "$lang" == "it" ]; then
    warn=".. warning::
 
-Pericoloso!: cette page de documentation n'est pas a jour. Nous vous conseillons **fortement**
-de naviguer vers la version anglaise de cette page.
+outdated!
 
    "
 
    elif [ "$lang" == "es" ]; then
    warn=".. warning::
 
-Ole!: cette page de documentation n'est pas a jour. Nous vous conseillons **fortement**
-de naviguer vers la version anglaise de cette page.
+outdated!
 
    "
    elif [ "$lang" == "zh_cn" ]; then
    warn=".. warning::
 
-Ching chong!: cette page de documentation n'est pas a jour. Nous vous conseillons **fortement**
-de naviguer vers la version anglaise de cette page.
+outdated!
 
    "
    else
    warn=".. warning::
 
-No translation!: cette page de documentation n'est pas a jour. Nous vous conseillons **fortement**
-de naviguer vers la version anglaise de cette page.
+outdated!
 
    "
    fi
