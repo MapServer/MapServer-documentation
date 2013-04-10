@@ -130,4 +130,5 @@ done
 
 cp -fr $BUILDDIR/build/html/* $OUTPUT_LOCATION/
 cp $BUILDDIR/build/epub/en/MapServer.epub $OUTPUT_LOCATION/en/MapServer.epub
-
+cd $REPO
+rm -rf $BUILDDIR
