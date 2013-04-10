@@ -7,7 +7,7 @@ BUILDDIR="/tmp/ms-$BRANCH-$RANDOM-build"
 
 
 #LOCATION="/osgeo/mapserver.org"
-LANGUAGES="en de fr"
+LANGUAGES="en de fr es it zh_cn"
 PDF_LANGUAGES="en"
 
 cd "$REPO"
