@@ -1,0 +1,150 @@
+.. _rfc98:
+
+=========================================================================
+MS RFC 98: Label/Text Rendering Overhaul
+=========================================================================
+
+:Date:  2013/06
+:Author: Thomas Bonfort
+:Contact: thomas.bonfort@gmail.com
+:Status: Pre-Draft
+:Version: MapServer 7.0
+
+1. The current situation
+========================
+
+1.1 Text rendering pipeline
+---------------------------
+
+When a feature needs to be labelled, the following (simplified) steps are undertaken:
+
+- the string eventually goes through iconv to be converted to utf8
+- the string goes through fribidi to reorder the glyphs from "logical order" to "visual order",
+  to support languages that are written from right to left. e.g. supposing capital letters are
+  arabic letters, the text which is stored in the feature as ``this is some ARABIC text`` is
+  transformed into ``this is some CIBARA text`` in order to be fed transparently to the
+  renderers that currently layout glyphs from left to right
+- the string goes through line breaking, which is currently broken for RTL
+  scripts for line breaking as we render (for ``arabic \n text``)
+
+  ::
+
+    TXET
+    CIBARA
+
+  instead of the required
+
+  ::
+
+    CIBARA
+    TXET
+
+- the string goes through alignment, which is currently hacky and unprecise (thanks
+  to yours faithfully) as we (try to) achieve alignment by padding with spaces instead
+  of using precise offsets per line
+
+- the string is then passed to the renderers as-is, who are responsible for the whole
+  laying out of each glyph
+
+1.2 Limitations
+---------------
+
+While the current situation is simple to understand, and works reasonable well for latin
+languages, it has a number of shortcomings that this RFC aims to resolve:
+
+- All the renderers are duplicating layout logic:
+
+  - splitting the utf8 string into individual glyphs
+  - looking up a given glyph inside a font file
+  - laying out a glyph with respect to the previous one (this includes spacing between
+    subsequent characters, or determining how many pixels should be vertically added
+    when a linebreak is encountered)
+
+- While latin languages have a 1-to-1 mapping between string characters and font glyphs,
+  this is not the case for complex languages, where ligature glyphs need to be inserted
+  depending on context (see the `wikipedia complex text layout page
+  <http://en.wikipedia.org/wiki/Complex_text_layout>`_ for a more complete explanation).
+  While this is partly taken care of for us by fribidi for arabic (which has a shaping
+  algorithm that inserts ligatures for us), we currently fail hard for other complex
+  text languages.
+
+- We don't support double spacing or line spacing at all, and our text alignment
+  (center, right) is imprecise, as implementation for these would need to be added
+  to each individual renderer.
+
+
+2. Proposed Overhaul
+====================
+
+In short, instead of passing a string of text and a starting position to the renderers,
+we pass a list of glyphs (i.e. a glyph is a specific entry inside a specific font file)
+along with their precise positioning, very similarly to what we do currently when
+rendering ``FOLLOW`` labels, as is already outlined in `bug 3611
+<https://github.com/mapserver/mapserver/issues/3611>`_ . The actual shaping and layout
+happens in a single mapserver function, and the renderers just dumbly place glyphs where
+they are told to.
+
+2.1 Architecture Implications
+-----------------------------
+
+Architecturaly, this modification is significant, as the whole label rendering chain
+needs to be refactored in order to take a list of positionned glyphs into account instead
+of just plain text strings.
+
+2.1.1 Dependencies (WIP)
+........................
+
+- Freetype becomes a central mapserver dependency, as we need the information about glyph
+  sizes at a higher level than currently (where freetype is a dependency of the individual
+  renderers). We also need a single central glyph cache to be used across harfbuzz and the
+  renderers. ``fontsetObj`` will likely need to be extended to be more than a simple
+  filename hashtable. 
+- Investigate wether we should keep fribidi (which has some thread safety issues) or start
+  using ICU for handling unicode and bidi.
+- Bring in Harfbuzz to support complex script shaping (to simplify: the tool that will
+  insert ligatures between characters)
+
+Note that the icu, bidi and harfbuzz dependencies should remain optional and will be
+disablable at compile time.
+
+2.1.2 Transforming a string of text into a list of positionned glyphs
+.....................................................................
+
+This step will be added to mapserver, and consists in coordinating the outputs from freetype,
+the bidi algorithm, harfbuzz, line-breaking, text alignment, and in the future text and line
+spacing. This step could be in most part implemented transparently through pango, however
+pango is hard to support accross platforms, and, to my knowledge, has a hard dependency on
+fontconfig which is incompatible with our fontset approach.
+
+(lots to be added here in the future)
+
+2.1.3 Handling glyphs at rendering phase
+........................................
+
+The labelcache and the renderers will need to be updated to work with a list of glyphs.
+Changes here are extensive but should remain conceptually simple. Individual renderers are
+substantially simplified.
+
+2.2 Backwards Compatibility
+---------------------------
+
+- At a high (mapfile) level, none expected.
+- Some mapscript APIs may change or may need to be wrapped. (TBD)
+- Some subtle but widespread changes in character placement.
+
+
+2.3 Performance Implications
+----------------------------
+
+Potentially numerous:
+
+- Exisiting performance on latin only text will need to be kept to
+  the current level, by detecting and shortcutting these cases. If done correctly we may
+  actually be able to speed up latin text rendering marginally.
+
+- For other scripts, the cost of going through harfbuzz **will** come with a performance
+  penalty.
+
+- (To be expanded)
+
+
