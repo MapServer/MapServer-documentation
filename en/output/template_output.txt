@@ -33,6 +33,23 @@ definition in a single file instead of the standard header/template/footer.
     flexibility and customization of the output, at the cost of
     additional complexity and configuration.
 
+.. note::
+
+   In order for template-driven output to work, layers that are to
+   be output need to have the `TEMPLATE` key word included::
+
+     TEMPLATE "dummy"
+
+.. note::
+
+   In order for template-driven output to work through WFS, the format
+   needs to be listed in wfs_getfeature_formatlist in the `WEB`
+   `METATDATA` section or the `LAYER` `METATDATA` section (the geojson
+   format from the example below)::
+
+     "wfs_getfeature_formatlist" "gml,geojson"
+
+
 .. index::
    pair: Template-driven output; OUTPUTFORMAT
 
@@ -58,7 +75,7 @@ Examples:
   OUTPUTFORMAT
     NAME "geojson"
     DRIVER "TEMPLATE"
-    FORMATOPTION "FILE=myTemplate.json"
+    FORMATOPTION "FILE=myTemplate.js"
   END
 
   OUTPUTFORMAT
@@ -73,7 +90,11 @@ MapServer template files, the file must containt the magic string
 ‘mapserver template’ in the first line of the file, usually within a comment,
 but this line is not output to the client.
 
-Note that both the MIMETYPE and FORMATOPTION "ATTACHMENT=..." parameters are
+.. note::
+   Valid suffixes for the template file are:
+   .xml, .wml, .html, .htm, .svg, .kml, .gml, .js, .tmpl.
+
+The MIMETYPE and FORMATOPTION "ATTACHMENT=..." parameters are
 very useful for controlling how a web browser handles the output file.
 
 .. index::
@@ -191,9 +212,11 @@ A specific GML3 example:
   </MapServerUserMeetings>
   [resultset]
 
-A GeoJSON example:
+A GeoJSON example.
 
-::
+Could be called using ...&layer=mums&mode=nquery&qformat=geojson
+
+Or by adding &outputformat=geojson to a WFS getfeature request::
 
   // mapserver template
   [resultset layer=mums] 
