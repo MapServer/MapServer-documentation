@@ -1,0 +1,80 @@
+.. _rfc99:
+
+=========================================================================
+MS RFC 99: Remove support for GD renderer
+=========================================================================
+
+:Date:  2013/06
+:Author: Thomas Bonfort
+:Contact: thomas.bonfort@gmail.com
+:Status: Draft
+:Version: MapServer 7.0
+
+1. Summary
+========================
+
+Keeping support for the GD rendering library is preventing MapServer from
+moving onto a more feature-full and maintainable text/labeling pipeline. This RFC
+proposes that we remove support for the GD renderer in the upcoming 7.0 release,
+unless there are some use-cases only covered by GD that have been overlooked,
+and/or someone is sufficiently interested to fund the high maintenance
+overhead.
+
+
+1.1 History
+---------------------------
+
+- The GD library was initially the only renderer supported by MapServer for producing
+  bitmap images (i.e. for png, jpeg and gif outputformats).
+- At the cost of major code duplication, support for SVG, PDF and SWF were later added.
+- In 2007, again at the cost of another major code duplication, AGG support was added,
+  with some non-trivial issues when trying to work along with GD's proprietary internal
+  pixel reprensentation.
+- In 2011, for the 6.0 release, a major rewrite of the rendering engine occured in order
+  to cut down on the maintainance issues that had arised due to the previous code duplications.
+  Already at that time dropping support for GD was discussed, but was finally kept for
+  8bit modes only at the cost of a higher worload on the maintainers.
+  At the same time, AGG became a central component inside the mapserver library, and was
+  used for some rendering tasks not supported by other renderers.
+- In 2012, for the 6.2 release, support for GD became optional and could be disabled at
+  compile time.
+
+1.2 Current GD limitations
+--------------------------
+
+In the process of supporting advanced text/label rendering implied by the overhaul of
+:ref:`rfc98`, the limitations of the GD api have shown to be a showstopper for moving forwards.
+Keeping support for GD would require either maintaining the current text rendering pipeline
+alongside the new one (at the cost of maintenance nightmares), or a non-trivial overhead
+to fit in with the :ref:`rfc98` proposed architecture (while still not being able to support
+complex text shaping).
+
+As a vector rasterizer, while being marginally faster, the GD rendering quality is far
+from what is expected from a map renderer.
+
+1.3 Current GD strenghts
+------------------------
+
+GD image buffers have a lower memory overhead, given they work with 8bit pixels instead
+of 32bit ones.
+
+
+2. GD support removal
+=====================
+
+Aside from preventing :ref:`rfc98` to happen, support for GD is already himpering development
+due to the overhead required during maintenance and renderering enhancements. Current
+activity on the issue tracker and mailing lists show that it is not being used actively.
+The major 7.0 release is a good time to remove GD support entirely, enabling us to move
+onto a maintainable and extensible text rendering pipeline, and allowing us to greatly
+simplify future maintenance.
+
+2.1 Backwards compatibilty
+--------------------------
+
+- GD outputformats configured in mapfiles will silently be mapped to AGG/PNG8, i.e AGG
+  rendered images quantized down to 256 color pngs, as is done currently when GD support
+  has beend disabled. The final resulting images will differ.
+- Memory overhead for users still using the GD renderer will augment.
+
+
