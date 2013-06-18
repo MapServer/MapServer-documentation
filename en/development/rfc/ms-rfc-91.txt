@@ -18,45 +18,75 @@ Layer filters are driver specific expressions that are used within MapServer in 
   1) to define feature subsets for rendering (indpendent of classes)
   2) to define feature subsets for selected query operations
 
-The first use case generally applies to drivers that don't support some sort expression language (e.g. SQL). While supported
-for PostGIS and Oracle Spatial there is little reason to use filters since the necessary SQL is better expressed in the
-layer data statement. For non-RDMS drivers filters are defined either by a item/value combination or a using MapServer's 
-standard expression syntax.
+The first use case generally applies to drivers that don't support some sort expression language (e.g. SQL). While 
+supported for PostGIS and Oracle Spatial there is little reason to use filters since the necessary SQL is better expressed 
+in the layer data statement. For non-RDMS drivers filters are defined either by a item/value combination or a using 
+MapServer's standard expression syntax.
 
-The second use case applies to all drivers where filters are defined using driver specific syntax to extract features from a
-data source. This leads to a number of issues:
+The second use case applies to all drivers where filters are defined using driver specific syntax to extract features from 
+a data source. This leads to a number of issues:
 
   - confusion and inconsistencies in mapfile syntax
   - lack of portabilty of filters between drivers
   - performance limitations because only the simplest filters are easy to represent and secure
 
-Futhermore, the above two use cases are mutually e which again can lead to user confusion. Existing query operations that
-rely on filters (by attribute, by operator) cache the existing filter before defining and applying a new one. While
-this limitation could be addressed independently it becomes a much more manageable task when using a standardized filter
-definition.
+Futhermore, the above two use cases are mutually excluseive which again can lead to user confusion. Existing query 
+operations that rely on filters (by attribute, by operator) cache the existing filter before defining and applying a new one.
+While this limitation could be addressed independently it becomes a much more manageable task when using a 
+standardized filter definition.
 
 
 2. Proposed solution
 --------------------
 
-This SLA proposed standardizing filter definitions using the common expresion syntax implemented as part of RFC XX. Drivers
-capable of handling complex expressions will translate MapServer expressions to an internal representation which should
-lead to *very* significant performance improvements. Drivers that don't have that capability would apply filtering to features
-much the same way as the native MapServer shapefile and tiled shapefiles already do (via msXXXLayerNextShape())
+This SLA proposed standardizing filter definitions using the common expresion syntax implemented as part of RFC XX. 
+Driverscapable of handling complex expressions will translate MapServer expressions to an internal representation which 
+should lead to *very* significant performance improvements. Drivers that don't have that capability would apply filtering 
+to features much the same way as the native MapServer shapefile and tiled shapefiles already do (via msXXXLayerNextShape())
 
 2.1 Driver Filter Translation
 -----------------------------
 
 Drivers that support complex expressions (e.g. PostGIS and Oracle Spatial) will need to implement a new layer API function
 (propose msXXXLayerTranslateFilter()) to translate a MapServer common expression to a native representation. MapServer
-exressions consist of a series of tokens that are from from left to right. It should be possible then to  
+exressions consist of a series of tokens that are from from left to right. It should be possible then to conver these tokens
+to a native representation of that the driver will handle independently of MapServer-- typically some flavor of SQL.
 
 2.2 Filter Merging
 ------------------
 
-TODO
+Filter merging is the process of creating one expression from two and it will only be needed with MapServer query functions 
+that utilize filters as part of their stock processing, specifically msQueryByFilter() and msQueryByAttributes(). If an existing 
+filter exists it will be merged with the *new* filter. The existing filter will be cached as it always has been. Because this 
+operation is will result in a filter expressed using the *common* syntax this operation can be done in a general way:
 
-2.3 Discussion
+  expressionObj *msMergeFilters(expressionObj *filter1, expressionObj *filter2)
+
+The resulting filter will then be translated to native representation if applicable later.
+
+NOTE: It is not possible to merge a native filter with a filter given in common syntax. This really shouldn't happen very 
+often since filters aren't as useful for those drivers that already support SQL in the data definition.
+
+2.3 Filter Merging Examples
+----------------------------
+
+Case 1: FILTERITEM and FILTER "string" (or case-insensitive)
+
+  New FILTER becomes a logical expression: (([FILTERITEM] = "string") AND (new filter))
+
+Case 2: FILTERITEM and FILTER /string/ (or case-insensitive)
+
+  New FILTER becomes a logical expression: (([FILTERITEM] ~ "string") AND (new filter))
+
+Case 3: FILTER (string) with no FILTERITEM
+
+  New FILTER becomes a logical expression: ((string) AND (new filter))
+
+Case 4: FILTER "native string"
+
+  Not supported...
+
+2.4 Discussion
 --------------
 
 TODO (bulleted list of topics)
@@ -65,14 +95,23 @@ TODO (bulleted list of topics)
 3. Implementation Details
 -------------------------
 
-3.1 Overview
+3.1 Summary of Current Behaviour (by driver)
+---------------------------------------
+
+- shapefile: supports FILTERITEM and FILTERs -> string, regular, logical expression
+- OGR: supports FILTERTITEM and FILTERs -> string, regular, logical expressions and native (starting with "WHERE ")
+- PostGIS: supports FILTER -> native SQL snippet
+- Oracle Spatial: supports FILTERITEM and FILTERs -> string and native (constructs native)
+- SDE: supports FITLER -> native SQL snippet
+- MS SQL Server: supports FITLER -> native SQL snippet
+
+3.2 Overview
 ------------
 
 - there are no new keywords with minor structure changes (expressionObj)
 - there are no changes to the MapScript API
-- drivers that support complex expressions (e.g. PostGIS, Oracle, SQL Server) 
-  need to implement a translation funcion to construct a partial "WHERE" clause
-  from a set of expression/filter tokens
+- drivers that support complex expressions (e.g. PostGIS, Oracle, SDE, MS SQL Server, OGR) need to implement a translation 
+funcion to construct a partial "WHERE" clause from a set of expression/filter tokens
 - ... 
 
 3.2 Files affected
@@ -80,9 +119,40 @@ TODO (bulleted list of topics)
 
 The following files will be modified by this RFC:
 
-- mapquery.c
+- mapserver.h: extend expressionObj to contain a native_string (char *). This will hold a the native expression of the filter.
+- mapquery.c: call merging function in msQueryByAttribute() and msQueryByFilter(), call translation function in all query functions.
+- mapdraw.c: call translation function in drawing functions (maybe just in msPrepareImage()?)
 - maplayer.c: changes/additions to layer API function
 - mapshape.c, mappostgis.c, mapogr.c.... : changes/additions to driver functions
+
+Notes:
+
+Drivers: This can be implemented incrementally within drivers. At a minimum all drivers *must* implement the 
+msXXXLayerTranslateFilter() and the function should at least detect the case where a native filter is already supplied
+(for backwards compatability). For relational databases this is the case where the filter is a plain old string expression.
+For OGR this is where the plain old string expression starts with "WHERE ". In these cases the new native_string should
+be populated with the filter string contents.
+
+msLayerNextShape(): Evaluation of the common syntax (e.g. pure-MapServer) filter can happen here rather than within the driver
+code. The OGR, Shapefile and Tiled Shapefile drivers all do this now and would need to be changed. The filter would only be
+executed if the filter's native_string is NULL (this is checked in msEvalExpression().
+
+::
+
+  do {
+    rv = layer->vtable->LayerNextShape(layer, shape);
+    if(rv != MS_SUCCESS) return rv;
+
+    filter_passed = MS_TRUE;  /* By default accept ANY shape */
+    if(layer->numitems > 0 && layer->iteminfo) {
+      filter_passed = msEvalExpression(layer, shape, &(layer->filter), layer->filteritemindex);
+    }
+
+    if(!filter_passed) msFreeShape(shape);
+  } while(!filter_passed);
+
+msLayerSupportsCommonFilters(): This function can be removed from the layer API in favor of checking the filter->native_string
+after a call to msXXXLayerTranslateFilter().
 
 3.3 MapScript
 -------------
@@ -92,20 +162,25 @@ No changes necessary.
 3.4 Backwards Compatibilty Issues
 ---------------------------------
 
-By respecting a pre-defined FILTER...
+By respecting a pre-defined FILTER with attribute and OGC filter queries it's possible that users could get confused and/or
+have to re-architect certain aspects of an application. For example, they may have actually already build filter merging into their
+process.
 
 
 4. Security implications
 ------------------------
 
-TODO
+This RFC should make things more robust in this regard by forcing expressions through multiple levels of translation. The process
+for WFS getFeature filters would be OGC Filter (XML) => MapServer common expression => native expression. All token conversion
+for attribute bindings, string and date literals will be escaped using whatever mechanism the driver provides. For example, PostGIS
+provides msPostGISEscapeSQLParam().
+
 
 5. Performance implications
 ---------------------------
 
-The token replacement is only done in msLayerOpen(), the performance impact
-should be negligeable as this happens only once per rendered layer. Performance
-will improve greatly in some cases where operations are offloaded to the 
+The token replacement is only done in msLayerOpen(), the performance impact should be negligeable as this happens 
+only once per rendered layer. Performance will improve greatly in some cases where operations are offloaded to the 
 database - less network traffic, more efficient algorithms.
 
 

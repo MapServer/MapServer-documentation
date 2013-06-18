@@ -51,6 +51,7 @@
 	fontset                        :ref:`FONTSET <fontset>`
 	format_types                   :ref:`Data Format Types <format_types>`
 	genindex                       :ref:`genindex`
+        git                            :ref:`GitHub <git>`	
 	gloss                          :ref:`Glossary <gloss>`
 	gml                            :ref:`GML <gml>`
 	gpx                            :ref:`GPS Exchange Format (GPX) <gpx>`

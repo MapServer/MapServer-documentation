@@ -67,7 +67,7 @@ Examples are worth a thousand words here...
    LAYER
      ..
      SCALETOKEN
-       NAME "priority"
+       NAME "%priority%"
        VALUES
          "0" "1"
          "1000" "2"
@@ -83,11 +83,35 @@ Examples are worth a thousand words here...
      END
    END
 
-In the previous examples, %priority% would be replaced by:
+In the previous example, %priority% would be replaced by:
 
-- 1 for scales under 1,000
-- 2 for scales between 1,000 and 10,000
-- 3 for scales over 10,000
+- "1" for scales under 1,000 , giving:
+
+  .. code-block:: mapfile
+
+     DATA "the_geom from mytable_1"
+     DATA "/path/to/roads_1.shp"
+     DATA "the_geom_1 from roads"
+     DATA "the_geom_1 from (select * from roads where priority > 1) as foo"
+
+- "2" for scales between 1,000 and 10,000
+
+  .. code-block:: mapfile
+
+     DATA "the_geom from mytable_2"
+     DATA "/path/to/roads_2.shp"
+     DATA "the_geom_2 from roads"
+     DATA "the_geom_2 from (select * from roads where priority > 2) as foo"
+
+- "3" for scales over 10,000
+
+  .. code-block:: mapfile
+
+     DATA "the_geom from mytable_3"
+     DATA "/path/to/roads_3.shp"
+     DATA "the_geom_3 from roads"
+     DATA "the_geom_3 from (select * from roads where priority > 3) as foo"
+
 
 2.2 Example 2
 --------------
@@ -97,7 +121,7 @@ In the previous examples, %priority% would be replaced by:
    LAYER
      ..
      SCALETOKEN
-       NAME "table"
+       NAME "%table%"
        VALUES
          "0" "roads"
          "1000" "roads_gen_1"
@@ -111,6 +135,29 @@ In the previous examples, %priority% would be replaced by:
      END
    END
 
+In the previous example, %table% would be replaced by:
+
+- "roads" for scales under 1,000 , giving:
+
+  .. code-block:: mapfile
+
+     DATA "the_geom from roads" 
+     DATA "/path/to/roads.shp"
+
+- "roads_gen_1" for scales between 1,000 and 10,000
+
+  .. code-block:: mapfile
+
+     DATA "the_geom from roads_gen_1"
+     DATA "/path/to/roads_gen_1.shp"
+
+- "roads_gen_0" for scales over 10,000
+
+  .. code-block:: mapfile
+
+     DATA "the_geom from roads_gen_0"
+     DATA "/path/to/roads_gen_0.shp"
+
 2.3 Example 3
 --------------
 
@@ -119,7 +166,7 @@ In the previous examples, %priority% would be replaced by:
    LAYER
      ..
      SCALETOKEN
-       NAME "filter"
+       NAME "%filter%"
        VALUES
          "0" ""
          "1000" "where type in ('motorway','trunk','primary')"
@@ -132,13 +179,38 @@ In the previous examples, %priority% would be replaced by:
      END
    END
 
+In the previous example, %filter% would be replaced by:
+
+- nothing for scales under 1,000 , giving:
+
+  .. code-block:: mapfile
+
+     DATA "the_geom from (select * from roads) as foo"
+
+- "where type in ('motorway','trunk','primary')" for scales between 1,000 and 10,000
+
+  .. code-block:: mapfile
+
+     DATA "the_geom from (select * from roads where type in ('motorway','trunk','primary')) as foo"
+
+- "where type='motorway'" for scales over 10,000
+
+  .. code-block:: mapfile
+
+     DATA "the_geom from (select * from roads where type='motorway') as foo"
+
 2.4 Discussion
 ---------------
 
-- The name of the mapfile keywords to use (SCALETOKEN, VALUES) is up for
-  discussion
 - Multiple tokens can be used for a single layer, e.g for applying a filter
   *and* hitting generalized tables.
+- Inside the VALUES block, the first scale entry **must** be "0", and entries
+  **must** be in ascending order.
+- The examples use the "%keyname%" notation in order to mimic MapServer's 
+  existing url runtime substitutions. The "%...%" notation is not enforced, the
+  code does a simple string replacement. (i.e. "priority" or "#table#" are
+  valid VALUES, provided the "priority" or "#table#" substrings appear in the
+  DATA statements.
 - Scale dependant substitutions would apply to the layer's DATA, TILEINDEX,
   TILEITEM, FILTERITEM and FILTER. Applying it to other elements might make
   sense, but is more involved in terms of impact to the code. Scale-dependant
@@ -148,7 +220,8 @@ In the previous examples, %priority% would be replaced by:
   limited in scope.
 - It might be desirable to provide SCALETOKEN entries at the MAP level (and 
   not only LAYER level) in case the token has the vocation of being replaced
-  in multiple layers.
+  in multiple layers. MAP level SCALETOKEN will not be present in the initial
+  implementation.
 - Provide a default token to use when scale is irrelevant (queries...)
 
 3. Implementation Details
@@ -189,13 +262,13 @@ In the previous examples, %priority% would be replaced by:
       ... etc ...
    }
 
-- in msLayerOpen(), replace tokens inside layerObj->data, layerObj->tileindex,
-  etc... The original layerObj->data is stored beforehand in layerObj->orig_data,
-  and is restored in msLayerClose()
+- in ``msLayerOpen()``, replace tokens inside ``layerObj->data``, ``layerObj->tileindex``,
+  etc... The original ``layerObj->data`` is stored beforehand in ``layerObj->orig_data``,
+  and is restored in ``msLayerClose()``
 
-- For the special case of layerObj->filter, msLoadExpressionString is called on
+- For the special case of ``layerObj->filter``, ``msLoadExpressionString()`` is called on
   the substituted text in order to update the expressionObj. Likewise, it is 
-  called in msLayerClose() when the original filter is restored.
+  called in ``msLayerClose()`` when the original filter is restored.
 
 3.2 Files affected
 ------------------
@@ -203,10 +276,11 @@ In the previous examples, %priority% would be replaced by:
 The following files will be modified/created by this RFC:
 
 - mapserver.h/mapfile.c: layerObj members, mapfile keywords
+- mapcopy.c/mapfile.c: copy functions, write-to-file functions
 - maplayer.c: call to token replacements inside msLayerOpen(), eventually
   msLayerClose(). Add function to appply the substitutions depending on
   current scale..
-- maplexer.l: keywords
+- maplexer.l: parser keywords
 
 
 3.3 MapScript

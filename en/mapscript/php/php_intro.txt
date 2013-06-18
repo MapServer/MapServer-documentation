@@ -1,0 +1,94 @@
+.. _php_mapscriptintro:
+
+Introduction
+*************
+
+This is a `PHP <http://www.php.net/>`_ module that makes MapServer's
+MapScript functionalities available in a PHP Dynamically Loadable
+Library. In simple terms, this module will allow you to use the
+powerful PHP scripting language to dynamically create and modify map
+images in MapServer.
+
+Versions Supported
+------------------
+
+PHP 5.2.0 or more recent is required; since MapServer 6.0, support for
+PHP 4, PHP 5.0 and PHP 5.1 have been dropped. PHP MapScript was
+originally developed for PHP 3.0.14, and after MapServer 3.5 support
+for PHP 3 was dropped.
+
+The module has been tested and used on Linux, Solaris, \*BSD, and Windows.
+
+ .. note::
+   If you are using MapServer 5.6 and older, please refer 
+   to the :ref:`PHP MapScript 5.6 documentation <php5.6>` instead.
+ 
+ .. note:: If you are migrating your existing application that is
+   based on MapServer 5.6 or older, to MapServer 6.0 or beyond,
+   please read the :ref:`PHP MapScript Migration Guide
+   <php_migration_guide>` for important changes.
+
+How to Get More Information on PHP MapScript
+--------------------------------------------
+
+- For installation questions regarding the PHP MapScript module, see  
+  :ref:`php_install`.
+- The `MapServer Wiki`_ has information on this module, that was
+  contributed by users.
+- New PHP MapScript users should read the :ref:`php_example` document.
+- The project's home is the `PHP/MapScript page`_ on MapTools.org.  
+- Also, see the :ref:`mapscript`, and the :ref:`mapfile` sections of
+  this site.
+- Refer to the main `PHP site`_ for their official documentation.
+
+.. _`MapServer Wiki`: http://trac.osgeo.org/mapserver/wiki/PHPMapScript
+.. _`PHP/MapScript page`: http://www.maptools.org/php_mapscript/
+.. _`PHP site`: http://www.php.net
+
+Memory Management
+------------------
+
+Normally, you should not have to worry about the memory management
+because php has a garbage collector and will free resources for
+you. If you write only small scripts that don't do a lot of
+processing, it's not worth to care about that. Everything will be
+freed at the end of the script.
+
+However, it may be useful to free resources during the execution if
+the script executes many tasks. To do so, you'll have to call the
+**free()** method of the mapscript objects and unset the php
+variables. The purpose of the free methods is to break the circular
+references between an object and its properties to allow the zend
+engine to free the resources.
+
+Here's an example of a script that doesn't free things during the
+execution:
+
+.. code-block:: php
+
+    $map = new mapObj("mapfile.map");
+    $of = $map->outputformat;
+    echo $map->extent->minx." - ".$map->extent->miny." - ".
+                     $map->extent->maxx." - ".$map->extent->maxy."\n";
+    echo "Outputformat name: $of->name\n";
+    unset($of);
+    unset($map); // Even if we unset the php variables, resources
+                 // wont be freed.  Resources will be only freed
+                 // at the end of the script
+
+and the same script that frees resources as soon as it can
+
+.. code-block:: php
+
+    $map = new mapObj("mapfile.map");
+    $of = $map->outputformat;
+    echo $map->extent->minx." - ".$map->extent->miny." - ".
+                     $map->extent->maxx." - ".$map->extent->maxy."\n";
+    echo "Outputformat name: $of->name\n";
+    unset($of);
+    $map->free(); // break the circular references
+    // at this place, the outputformat ($of) and the rect object
+    // ($map->extent) resources are freed
+    unset($map);
+    // the map object is immediately freed after the unset (before the
+    // end of the script)
