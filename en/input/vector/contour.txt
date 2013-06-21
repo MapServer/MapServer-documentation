@@ -93,3 +93,36 @@ Example of a layer definition with scale-dependent contour ranges:
       END
     END
 
+2.1 Data cellsize 
+------------------
+
+The data produced by the gdal contour algorithm are generally in high
+resolution. A lot of point are used to generated contours with precision. You
+might want to generalize/simplify the line in some cases (ie. Shape
+Smoothing). The `[data_cellsize]` attribute binding represents the cellsize of
+the extend fetched from the raster file. This is different than the map
+cellsize.
+
+In the following example, I generalize my shape with a tolerance of 25% of the
+data cellsize to produce smooth contours at all scales:
+
+::
+
+  LAYER
+    NAME "MyContourLayer"
+    STATUS DEFAULT
+    DATA "wind.tif"
+    TYPE LINE
+    CONNECTIONTYPE CONTOUR
+    PROJECTION AUTO END
+    PROCESSING "BANDS=1"
+    PROCESSING "CONTOUR_ITEM=elevation"
+    PROCESSING "CONTOUR_INTERVAL=0,0:1"
+    GEOMTRANSFORM (smoothsia(generalize([shape], 0.25*[data_cellsize])))    
+    CLASS
+      EXPRESSION ([elevation] >= 0)
+      STYLE
+        COLOR 0 0 255
+      END # STYLE
+    END # CLASS
+  END # LAYER
