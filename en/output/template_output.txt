@@ -33,6 +33,23 @@ definition in a single file instead of the standard header/template/footer.
     flexibility and customization of the output, at the cost of
     additional complexity and configuration.
 
+.. note::
+
+   In order for template-driven output to work, layers that are to
+   be output need to have the `TEMPLATE` key word included::
+
+     TEMPLATE "dummy"
+
+.. note::
+
+   In order for template-driven output to work through WFS, the format
+   needs to be listed in wfs_getfeature_formatlist in the `WEB`
+   `METATDATA` section or the `LAYER` `METATDATA` section (the geojson
+   format from the example below)::
+
+     "wfs_getfeature_formatlist" "gml,geojson"
+
+
 .. index::
    pair: Template-driven output; OUTPUTFORMAT
 
@@ -58,7 +75,7 @@ Examples:
   OUTPUTFORMAT
     NAME "geojson"
     DRIVER "TEMPLATE"
-    FORMATOPTION "FILE=myTemplate.json"
+    FORMATOPTION "FILE=myTemplate.js"
   END
 
   OUTPUTFORMAT
@@ -67,13 +84,17 @@ Examples:
     FORMATOPTION "FILE=myTemplate.xml"
   END
 
-The template file to be used is determined by the "FILE=..." FORMATOPTION.
+The template file to be used is determined by the "FILE=..." `FORMATOPTION`.
 The template filename is relative to the mapfile's path. As is standard with
 MapServer template files, the file must containt the magic string
 ‘mapserver template’ in the first line of the file, usually within a comment,
 but this line is not output to the client.
 
-Note that both the MIMETYPE and FORMATOPTION "ATTACHMENT=..." parameters are
+.. note::
+   Valid suffixes for the template file are:
+   .xml, .wml, .html, .htm, .svg, .kml, .gml, .js, .tmpl.
+
+The MIMETYPE and FORMATOPTION "ATTACHMENT=..." parameters are
 very useful for controlling how a web browser handles the output file.
 
 .. index::
@@ -191,9 +212,11 @@ A specific GML3 example:
   </MapServerUserMeetings>
   [resultset]
 
-A GeoJSON example:
+A GeoJSON example.
 
-::
+Could be called using ...&layer=mums&mode=nquery&qformat=geojson
+
+Or by adding &outputformat=geojson to a WFS getfeature request::
 
   // mapserver template
   [resultset layer=mums] 
@@ -203,7 +226,7 @@ A GeoJSON example:
       [feature trimlast=","]
       {
         "type": "Feature",
-        "id": "[id]",
+        "id": "[myuniqueid]",
         "geometry": {
           "type": "PointLineString",
           "coordinates": [
@@ -331,3 +354,14 @@ with holes, and also that a point placemark is included with each feature using
   [/resultset]
   </Document>
   </kml> 
+
+.. warning::
+
+   For templates (:ref:`Template`), there are a number of reserved
+   words.  If you have want to expose an attribute with a name that is
+   equal to a reserved word, you can not use the shorthand
+   [attribute_name], but will have to use construct [item
+   name=attribute_name] instead.  For example, in a template, [id] is
+   a system generated unique session id (see :ref:`Template`).  So if
+   you have an attribute named "id" that you want to expose, you will
+   either have to rename it or use the construct [item name=id].
