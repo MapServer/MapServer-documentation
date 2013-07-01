@@ -26,7 +26,11 @@ it is desirable to have support for tile index with rasters of heterogenous SRS.
 
 In the case where a tile index has tiles with mixed SRS, a new keyword, TILESRS
 "field_name", must be added in a LAYER block to specify that the field
-"field_name" contains the SRS of each tile.
+"field_name" contains the SRS of each tile. The value of that field must be a
+SRS expressed as WKT, PROJ.4 string, or EPSG:xxxx code (actually any string that
+is parsed by OSRSetFromUserInput()). If, for a tile, the field is empty, an
+attempt will be made to fetch the SRS from the tile raster directly with
+GDALGetProjectionRef().
 
 .. code-block:: mapfile
 
@@ -43,7 +47,7 @@ In the case where a tile index has tiles with mixed SRS, a new keyword, TILESRS
         END
     END
 
-However, it is absolutely necesserary that the geometry (extent) of each tile
+Note that it is absolutely necesserary that the geometry (extent) of each tile
 is expressed in a common SRS (the one declared in the PROJECTION block of the
 LAYER block), so that spatial queries in the tileindex can work.
 
