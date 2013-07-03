@@ -38,7 +38,6 @@ GDALGetProjectionRef().
         NAME "tile_index_mixed_srs_26711"
         TYPE RASTER
         STATUS ON
-        DUMP TRUE
         TILEINDEX "tile_index_mixed_srs_26711.shp"
         TILEITEM "location"
         TILESRS "src_srs"
@@ -79,14 +78,13 @@ msRasterQueryByRect() from maprasterquery.c.
 * mapfile.c : deal with layerObj.tilesrs and TILESRS
 * mapfile.dtd : deal with TILESRS
 * mapfile.h : add TILESRS constant
-* maplayer.c : deal with layerObj.orig_tilesrs
 * maplexer.c : regenerated from maplexer.l
 * maplexer.l : deal with TILESRS
 * mapogr.cpp : generates error if TILESRS is used in a vector layer (unsupported)
 * mapraster.c : core of changes to deal with layerObj.tilesrs; code rafactoring
 * mapraster.h : new file to declare common functions between mapraster.c and maprasterquery.c
 * maprasterquery.c : refactored to share common code with mapraster.c
-* mapserver.h :  add tilesrs and orig_tilesrs member in layerObj struct
+* mapserver.h :  add tilesrs member in layerObj struct
 * mapshape.c : generates error if TILESRS is used in a vector layer (unsupported).
   add capability to get projection info from .prj file when PROJECTION = AUTO
 
@@ -126,6 +124,13 @@ available.
 Another related fix/enhancement is to be able to guess the SRS of a shapefile,
 from its associated .prj file, when PROJECTION AUTO is specified in its LAYER
 definition.
+
+Note: This brings a similar functionnality for (raster) tile index layer and
+shapefile layers, to what was proposed in :ref:`rfc37`, but with a different
+implementation. The implementation for that PROJECTION AUTO mechanism follows
+what already works for raster layers with a single raster, and just tries to
+resolve layer->projection to an actual projection when
+layer->projection.args[0] == "auto", before doing any reprojection.
 
 3.6 Restrictions
 ................
@@ -190,7 +195,6 @@ Example for a shapefile tileindex :
         NAME "tile_index_mixed_srs_26711"
         TYPE RASTER
         STATUS ON
-        DUMP TRUE
         TILEINDEX "tile_index_mixed_srs_26711.shp"
         TILEITEM "location"
         TILESRS "src_srs"
@@ -220,7 +224,6 @@ Example for a PostGIS layer tileindex :
         NAME "index_26711_tileindex"
         TYPE POLYGON
         STATUS OFF
-        DUMP FALSE
         CONNECTIONTYPE OGR
         CONNECTION "pg:dbname=autotest,index_26711"
         PROJECTION
@@ -232,7 +235,6 @@ Example for a PostGIS layer tileindex :
         NAME "index_26711"
         TYPE RASTER
         STATUS ON
-        DUMP TRUE
         TILEINDEX "index_26711_tileindex"
         TILEITEM "location"
         TILESRS "src_srs"
