@@ -10,7 +10,7 @@
 :Author:        HostGIS 
 :Revision: $Revision$
 :Date: $Date$
-:Last Updated: 2007/08/03
+:Last Updated: 2013/07/04
 
 .. contents:: Table of Contents
     :depth: 2
@@ -28,8 +28,8 @@ layer. Therefore, you don't need to create separate layers for each piece of
 imagery or each county's road data; make a tileindex and let MapServer piece
 the mosaic together on the fly.
 
-Making a tileindex is easy using 'gdaltindex' for GDAL data sources (rasters)
-and 'ogrtindex' for OGR data sources (vectors). You just run them, specifying
+Making a tileindex is easy using `gdaltindex`_ for GDAL data sources (rasters)
+and `ogrtindex`_ for OGR data sources (vectors). You just run them, specifying
 the index file to create and the list of data sources to add to the index.
 
 .. index::
@@ -73,7 +73,8 @@ Using a tileindex as a layer is best explained by an example:
         TILEITEM "LOCATION"
     END 
 
-There are two items of note here: TILEINDEX and TILEITEM. TILEINDEX is simply
+There are two items of note here: :ref:`TILEINDEX <tileindex_keyword>` and
+:ref:`TILEITEM <tileitem>`. TILEINDEX is simply
 the path to the index file, and TILEITEM specifies the field in the shapefile
 which contains the filenames referenced by the index. The TILEITEM will
 usually be "LOCATION" unless you specified the *-tileindex* option when
@@ -114,3 +115,54 @@ blocks; and if you're showing cities and counties, go for county-sized blocks.
 
 You'll just have to experiment with it and see what works best for your use
 cases.
+
+.. _tileindex_mixed_srs:
+
+Tileindexes with tiles in different projections
+-----------------------------------------------
+
+Starting with MapServer 6.4, a raster tileindex can contain rasters in
+different projections. Such tileindex can be generated with `gdaltindex`_ (GDAL
+2.0 or later), with the -t_srs and -src_srs_name options. The -t_srs instructs
+gdaltindex to write the envelope of each raster tile into a common target
+projection, so that the geometries written in the tile index are consistant.
+This common projection must be the projection of the raster layer.
+
+::
+
+    gdaltindex -t_srs EPSG:4326 -src_srs_name src_srs imagery.shp imagery/*.tif
+
+The corresponding LAYER definition will need to specify the
+:ref:`TILESRS <tilesrs>` keyword with the value of the -src_srs_name option.
+
+e.g:
+
+.. code-block:: mapfile
+
+    LAYER
+        NAME "My Imagery"
+        STATUS ON
+        TYPE RASTER
+        TILEINDEX "imagery.shp"
+        TILEITEM "LOCATION"
+        TILESRS "src_srs"
+        PROJECTION
+            AUTO
+            # or :
+            # "+init=EPSG:4326"
+        END
+    END 
+
+MapServer will then be able to proceed to on-the-fly mosaicing and reprojection.
+
+For layers that must be exposed as WCS layers, a few metadata fields
+("wcs_extent", "wcs_size", "wcs_resolution") must be specified in the LAYER
+definition, so as to define a "virtual dataset" coverage (see :ref:`wcs_server`).
+The GDAL wcs_virtds_params.py sample script can help generating those metadata
+fields.
+
+Note: this support of tileindex with mixed projections is only available for
+raster layers for now.
+
+.. _`gdaltindex`: http://www.gdal.org/gdaltindex.html
+.. _`ogrtindex`: http://www.gdal.org/ogrtindex.html
