@@ -7,7 +7,7 @@ MS RFC 100: Support for tile index with mixed SRS in raster layers
 :Date:  2013/07
 :Author: Even Rouault
 :Contact: even dot rouault at mines-paris dot org
-:Status: Draft
+:Status: Implemented
 :Version: MapServer 6.4
 
 1. Overview
@@ -26,7 +26,11 @@ it is desirable to have support for tile index with rasters of heterogenous SRS.
 
 In the case where a tile index has tiles with mixed SRS, a new keyword, TILESRS
 "field_name", must be added in a LAYER block to specify that the field
-"field_name" contains the SRS of each tile.
+"field_name" contains the SRS of each tile. The value of that field must be a
+SRS expressed as WKT, PROJ.4 string, or EPSG:xxxx code (actually any string that
+is parsed by OSRSetFromUserInput()). If, for a tile, the field is empty, an
+attempt will be made to fetch the SRS from the tile raster directly with
+GDALGetProjectionRef().
 
 .. code-block:: mapfile
 
@@ -34,7 +38,6 @@ In the case where a tile index has tiles with mixed SRS, a new keyword, TILESRS
         NAME "tile_index_mixed_srs_26711"
         TYPE RASTER
         STATUS ON
-        DUMP TRUE
         TILEINDEX "tile_index_mixed_srs_26711.shp"
         TILEITEM "location"
         TILESRS "src_srs"
@@ -43,7 +46,7 @@ In the case where a tile index has tiles with mixed SRS, a new keyword, TILESRS
         END
     END
 
-However, it is absolutely necesserary that the geometry (extent) of each tile
+Note that it is absolutely necesserary that the geometry (extent) of each tile
 is expressed in a common SRS (the one declared in the PROJECTION block of the
 LAYER block), so that spatial queries in the tileindex can work.
 
@@ -75,14 +78,13 @@ msRasterQueryByRect() from maprasterquery.c.
 * mapfile.c : deal with layerObj.tilesrs and TILESRS
 * mapfile.dtd : deal with TILESRS
 * mapfile.h : add TILESRS constant
-* maplayer.c : deal with layerObj.orig_tilesrs
 * maplexer.c : regenerated from maplexer.l
 * maplexer.l : deal with TILESRS
 * mapogr.cpp : generates error if TILESRS is used in a vector layer (unsupported)
 * mapraster.c : core of changes to deal with layerObj.tilesrs; code rafactoring
 * mapraster.h : new file to declare common functions between mapraster.c and maprasterquery.c
 * maprasterquery.c : refactored to share common code with mapraster.c
-* mapserver.h :  add tilesrs and orig_tilesrs member in layerObj struct
+* mapserver.h :  add tilesrs member in layerObj struct
 * mapshape.c : generates error if TILESRS is used in a vector layer (unsupported).
   add capability to get projection info from .prj file when PROJECTION = AUTO
 
@@ -122,6 +124,13 @@ available.
 Another related fix/enhancement is to be able to guess the SRS of a shapefile,
 from its associated .prj file, when PROJECTION AUTO is specified in its LAYER
 definition.
+
+Note: This brings a similar functionnality for (raster) tile index layer and
+shapefile layers, to what was proposed in :ref:`rfc37`, but with a different
+implementation. The implementation for that PROJECTION AUTO mechanism follows
+what already works for raster layers with a single raster, and just tries to
+resolve layer->projection to an actual projection when
+layer->projection.args[0] == "auto", before doing any reprojection.
 
 3.6 Restrictions
 ................
@@ -186,7 +195,6 @@ Example for a shapefile tileindex :
         NAME "tile_index_mixed_srs_26711"
         TYPE RASTER
         STATUS ON
-        DUMP TRUE
         TILEINDEX "tile_index_mixed_srs_26711.shp"
         TILEITEM "location"
         TILESRS "src_srs"
@@ -216,7 +224,6 @@ Example for a PostGIS layer tileindex :
         NAME "index_26711_tileindex"
         TYPE POLYGON
         STATUS OFF
-        DUMP FALSE
         CONNECTIONTYPE OGR
         CONNECTION "pg:dbname=autotest,index_26711"
         PROJECTION
@@ -228,7 +235,6 @@ Example for a PostGIS layer tileindex :
         NAME "index_26711"
         TYPE RASTER
         STATUS ON
-        DUMP TRUE
         TILEINDEX "index_26711_tileindex"
         TILEITEM "location"
         TILESRS "src_srs"
@@ -249,7 +255,8 @@ Example for a PostGIS layer tileindex :
 6. Voting history
 -----------------
 
-TBD
+Vote passed with +1 from ThomasB, StephenW, MichaelS, TamasS, StephanM, 
+DanielM, JeffM and SteveL
 
 
-.. _`pull4681`: https://github.com/mapserver/mapserver/pull/4681
+.. _`pull4697`: https://github.com/mapserver/mapserver/pull/4697
