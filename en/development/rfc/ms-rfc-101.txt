@@ -44,10 +44,10 @@ for motorways, major roads and minor roads.
 --------------------------
 
 Support for content dependant legends will be supported for WMS
-GetLegendGraphic calls, when the client includes the (non-standard) BBOX,
-SRS/CRS and EXTENT parameters (i.e. like for a GetMap request) in the request
-URL. If these parameters are not present, the classical legend rendering will
-occur.
+GetLegendGraphic calls on POINT, LINE and POLYGON layers, when the client
+includes the (non-standard) BBOX, SRS/CRS and EXTENT parameters (i.e. like for
+a GetMap request) in the request URL. If these parameters are not present, the
+classical legend rendering will occur.
 
   ::
 
@@ -73,6 +73,9 @@ occur.
 - msDrawLegend/msDrawLegenIcon get passed a new parameter that corresponds to
   the hit-test result and will draw the map's legend icons or not depending if
   they are activated in the hit-test or not.
+- mode=maplegend and mode=maplegendicon are added to the traditional mapserver
+  cgi. The mapserverObj struct gets an added map_hittest member that is used by
+  the legend templating code to produce content dependant html legends.
 
 2.3 Quirks and Backwards Incompatibility Issues
 -----------------------------------------------
@@ -102,16 +105,17 @@ occur.
   GetLegendGraphic response will be undefined if the client has included a
   LAYERS parameter in the URL that does not coincide with the LAYER parameter.
 
-- Support for mode=legend calls (i.e. not WMS) is not supported for the time
-  being. Implementation for such support should not pose any major
-  difficulties.
 
 2.4 Performance impacts, mapscripts
 -----------------------------------
 
-- No performance impacts
+- No performance impacts (aside from the fact that content dependant legend
+  rendering will be obviously slower than traditional legend rendering)
 - No user visible mapscript impacts (the mapscript code itself will need a few
   tweaks when calling the msDrawLegend() and msDrawLegenIcon() functions.
+- The result of a hittest will not be available to mapscripts. Work in this
+  direction may be accomplished in the longer run once the APIs and hittest
+  structs have stabilized.
 
 3. Miscellaneous
 ================
@@ -119,7 +123,8 @@ occur.
 3.1 Issue Tracking ID
 ---------------------
 
-TBD
+https://github.com/mapserver/mapserver/issues/4713
+
 
 3.2 Voting History
 ------------------
