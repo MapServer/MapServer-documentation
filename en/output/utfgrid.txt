@@ -1,0 +1,83 @@
+.. _utfgrid:
+
+*****************************************************************************
+ UTFGrid Output 
+*****************************************************************************
+
+:Author:  Francois Desjarlais
+:Contact: fdesjarlais1 at gmail.com
+:Revision: $Revision$
+:Date: $Date$
+:Last Updated: 2013/08/06
+
+.. contents:: Table of Contents
+    :depth: 2
+    :backlinks: top
+
+Introduction
+============
+
+UTFGrid is a new output who will soon be released. This howto details the new functionalities
+that this adds to map creation. This howto assumes you already now the basics of mapfile 
+syntax. If not, you should probably be reading :ref:`the mapfile syntax <mapfile>.
+
+Functionnality
+==============
+
+UTFGrid output will allow greater interactions with maps by allowing data to be exposed via an
+invisible UTF-8 characters grid.
+
+Build
+=====
+
+* Iconv is necessary for the UTFGrid driver.
+* AGG driver is also necessary for this driver.
+
+Setting the OutputFormat
+========================
+
+This added in the mapfile will allow mapserver to use the UTFGrid output. In this 
+case, the output generated will be a grid with each pixels corresponding to a 4x4 
+pixels square in the original image. Also, it won't allow duplicates which means different
+shapes with the same IDs will be considered as a single shape.
+
+.. code-block:: mapfile
+
+  OUTPUTFORMAT
+    NAME "utfgrid"
+    DRIVER UTFGRID
+    MIMETYPE "application/json"
+    EXTENSION "json"
+    FORMATOPTION "UTFRESOLUTION=4"
+    FORMATOPTION "DUPLICATES=false"
+  END
+
+If no FORMATOPTIONs are set, defaults values will be used. Defaults values 
+are: 4 for UTFRESOLUTION, true for DUPLICATES.
+
+Exposing Feature Properties
+===========================
+
+To use UTFGrid, two new LAYER items were added. These two items allow the user
+to choose which data will be exposed. To use them, add these to your layer in the
+mapfile.
+
+Exemple:
+
+.. code-block:: mapfile
+
+  UTFITEM   "id"
+  UTFDATA   "{\"id\":\"[id]\",\"name\":\"[name]\"}"
+ 
+Both items can be used separetly. If a UTFITEM is not set the sequential 
+id(based on rendering order) will be used as the grid keys. Using the UTFITEM won't
+duplicates. If no UTFDATA is set no data beyond the UTFITEM will be exposed.
+
+Notes
+======
+
+* UTFGrids can be set on multiple layers but only one UTFGrid can be rendered at a time. If 
+  you wish to add multiples UTFGrid, with for example OpenLayers, you need to add new layer
+  for each of them.
+* Due to upcoming changes to text rendering UTFGrid driver doesn't support Truetype
+  symbols rendering and will ignore them.
