@@ -7,7 +7,7 @@ MS RFC 89: Layer Geomtransforms
 :Date:  2013/02/05
 :Author: Alan Boudreault
 :Contact: aboudreault at mapgears.com
-:Status: Draft
+:Status: Adopted and Implemented
 :Version: MapServer 6.4
 
 1. Overview
@@ -51,7 +51,7 @@ To set a geomtransform to a layer, you just need to add this option in the mapfi
     TYPE LINE
     STATUS DEFAULT
     DATA "lines.shp"
-    GEOMTRANSFORM (simplify([shape], 10))    
+    GEOMTRANSFORM (simplify([shape], 10))
     CLASS
       STYLE
         WIDTH 2
@@ -59,14 +59,84 @@ To set a geomtransform to a layer, you just need to add this option in the mapfi
       END
     END
 
+.. note::
+
+  Note that the layer geomtransform and the style geomtransform are
+  completely independent. Both can be used in your layer/class
+  definitions and they will be applied properly.
+
+2.1 Implementation Details
+---------------------------
+
+Layer geomtransform would support all query requests. The logic of the
+geomtransform will be done in msLayerNextShape() and msLayerGetShape()
+functions. This would allow a user to interact with transformed
+features. ie. mapscript, WFS.
+
+2.2 Unit Coordinates
+--------------------
+
+There is a particularity between STYLE and LAYER GEOMTRANSFORM. STYLE-level
+GEOMTRANSFORM receives a shape in pixel coordinates, whereas the LAYER-level
+GEOMTRANSFORM will receive the raw shape in ground coordinates (meters, degrees,
+etc.). The argument to methods such as simplify() must be in the same units as
+the coordinates of the shapes at that point of the rendering workflow,
+i.e. pixels at the STYLE-level and in ground units at the LAYER-level.
+
+::
+
+  LAYER NAME "my_layer"
+    TYPE LINE
+    STATUS DEFAULT
+    DATA "lines.shp"
+    GEOMTRANSFORM (simplify([shape], 10))  ## 10 ground units
+    CLASS
+      STYLE
+        GEOMTRANSFORM (buffer([shape], 5)  ## 5 pixels
+        WIDTH 2
+        COLOR 255 0 0
+      END
+    END
+  END
+
+It is also not possible at all to deal with values in ground units at the style
+level because we do not have information about map cellsize at that level in the
+code
+
+2.3 Pixel value at Layer level
+-------------------------------------------------
+
+In cases where we want to pass a pixel value at the layer level, a
+[map_cellsize] variable will be available.
+
+::
+
+  LAYER NAME "my_layer"
+    TYPE LINE
+    STATUS DEFAULT
+    DATA "lines.shp"
+    # 10 * [map_cellsize] == 10 pixels converted to ground units
+    GEOMTRANSFORM (simplify([shape], [map_cellsize]*10))
+  ... 
+
+To get this variable working in the math expression parser, the [map_cellsize]
+has to be converted into the layer ground unit. If you choose to use [map_cellsize]
+in your GEOMTRANSFORM expression, you must explicitly set the UNITS option in 
+the layer. 
+
+2.4 Vector formats supported
+-------------------------------
+
+All vector formats will be supported. This also include all formats of OGR
+(CONNECTIONTYPE OGR).
 
 3. New Geomtransform Parameters
 -------------------------------
 
 3 new parameters will be added as a geomtransform parameter:
 
-- simplify: Simplify using GEOS.
-- simplifypt: SimplifyPreserveTopology using GEOS.
+- simplify: Simplify using GEOS. More info: `GEOS Simplify <http://geos.refractions.net/ro/doxygen_docs/html/classgeos_1_1simplify_1_1DouglasPeuckerLineSimplifier.html>`_
+- simplifypt: SimplifyPreserveTopology using GEOS. More info: `GEOS SimplifyPreserveTopology <http://geos.refractions.net/ro/doxygen_docs/html/classgeos_1_1simplify_1_1TopologyPreservingSimplifier.html>`_
 - generalize: Custom implementation of the following algorithm: http://trac.osgeo.org/gdal/ticket/966
 
 Those parameters will be available through the style geomtransform as
@@ -79,23 +149,27 @@ original shape and the red one the transformed shape):
 4. MapScript
 -------------
 
-No issue for any MapScript bindings. The geomtransform is handled internally and
-does not affect anything.
+The ability to get/set the layer-level geomtransform will be added to
+mapscript. The geomtransform is handled internally and does not affect anything
+else.
 
-6. Backwards Compatibilty Issues
+5. Backwards Compatibilty Issues
 ---------------------------------
 
-This change provides a new functionality with no backwards compatibility issues being considered.
+This change provides a new functionality with no backwards
+compatibility issues being considered.
 
-7. Tests
+6. Tests
 --------
 
 msautotest will be modified to add some tests of this new functionnality.
 
-8. Bug ID
+7. Bug ID
 ---------
 
-9. Voting history
+ * https://github.com/mapserver/mapserver/issues/4592
+
+8. Voting history
 -----------------
 
-None
++1 from Jeff, Olivier, Stephen, Michael, Umberto and Steve.
