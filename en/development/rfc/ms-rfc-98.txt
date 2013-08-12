@@ -93,21 +93,43 @@ Architecturaly, this modification is significant, as the whole label rendering c
 needs to be refactored in order to take a list of positionned glyphs into account instead
 of just plain text strings.
 
-2.1.1 Dependencies (WIP)
-........................
+2.1.1 Dependencies
+..................
 
 - Freetype becomes a central mapserver dependency, as we need the information about glyph
   sizes at a higher level than currently (where freetype is a dependency of the individual
   renderers). We also need a single central glyph cache to be used across harfbuzz and the
   renderers. ``fontsetObj`` will likely need to be extended to be more than a simple
   filename hashtable. 
-- Investigate wether we should keep fribidi (which has some thread safety issues) or start
-  using ICU for handling unicode and bidi.
+- Fribidi (which has some thread safety issues) is kept as the library that handles the 
+  bidi algorithm for us. We do not use it for shaping anymore.
 - Bring in Harfbuzz to support complex script shaping (to simplify: the tool that will
-  insert ligatures between characters)
+  insert ligatures between characters). Harfbuzz algorithms will be applied on text strings
+  that have been determined to not be latin (i.e. the slowdown induced by harfbuzz is limited
+  to those languages that actually require shaping).
+- UTHash (http://troydhanson.github.io/uthash/) is a header only hashtable
+  implementation that works with arbitrary keys and values, and is used for
+  accessing cached fonts and glyphs. Given some performance testing, we might
+  want to replace our own hashtable implementation with this one some day.
 
-Note that the icu, bidi and harfbuzz dependencies should remain optional and will be
-disablable at compile time.
+Note that the Fribidi and Harfbuzz dependencies will remain optional and can be
+disablable at compile time for those only treating latin scripts. Harfbuzz and Fribidi will
+need to be enabled or disabled together.
+
+2.1.2 Font and Glyph cache
+...........................
+(fontcache.c)
+A global (thread protected if needed) glpyh and font cache will 
+ensure that cached glyphs are reusable across
+multiple requests for the fastcgi case, but in turn requires some
+thread-level protection and probably some pruning in order for it to
+remain of reasonable size. Some APIs have changed in order to have the
+fontcache accessible.
+The fontcache contains caches for:
+
+- font faces (i.e. the representation of of a truetype file)
+- glyphs (i.e. the metrics of an individual glyph at a given size)
+
 
 2.1.2 Transforming a string of text into a list of positionned glyphs
 .....................................................................
@@ -118,7 +140,91 @@ spacing. This step could be in most part implemented transparently through pango
 pango is hard to support accross platforms, and, to my knowledge, has a hard dependency on
 fontconfig which is incompatible with our fontset approach.
 
-(lots to be added here in the future)
+Text is represented by a "textPathObj" which is basically a list of
+positioned glyphs. (e.g the word "Label" at size 10 for an arial font
+is represented by arial font's glyph "L" at position (x,y)= (0,0),
+glyph "a" at position (10,0) , "b" at (18,0), etc...). Multiline text
+is handled transparently by having glyphs positioned at different y
+values. A textPath can be either "absolute" (i.e. the glyph positions
+are in absolute image coordinates, used to position glyphs for angle
+follow labels), or "relative", in which case they must be offset by
+their labeling point.
+
+All the shaping happens in textlayout.c,
+who's principal role is to take a string of text as input, and return
+a list of positioned glyphs as output. The input string goes through
+multiple steps, and is plit into multiple run. Each run will have a
+distinct line number, bidi direction, and script "language".
+
+As an example, we'll be working with the input unicode string "this is
+some text in english, ARABIC and JAPANESE". Capital letters are used
+to denote non latin glyphs, also note that ARABIC is stored in logical
+(=reading) order, whereas it would be rendered as CIBARA.
+
+- iconv encoding conversion to convert the string to unicode
+  
+::
+
+    run1 = "this is some text in english, ARABIC and JAPANESE", line=0
+
+- line wrapping: break on wrap character, break long lines on spaces
+
+::
+ 
+    run1 = "this is some text in english,", line=0
+    run2 = "ARABIC and JAPANESE", line=1
+
+- bidi levels, each run has a single bidi direction (i.e. left-to-right or right-to-left)
+
+::
+
+    run1 = "this is some text in english,", line=0, direction=LTR
+    run2 = "ARABIC" line=1, direction=RTL
+    run3 = " and JAPANESE", line=1, direction = LTR
+
+- script detection is applied to enable language dependant shaping,
+  and also to refine which fonts will be used (more on that later)
+
+::
+
+    run1 = "this is some text in english,", line=0, direction=LTR, script=latin
+    run2 = "ARABIC" line=1, direction=RTL, script=arabic
+    run3 = " and " line=1, direction=LTR, script=latin
+    run4 = "JAPANESE" line=1, direction=LTR, script=hiragana
+
+- for each run, we select which font should be used, in order to use
+  the same font inside a given run. :ref:`rfc80` allowed to specify
+  multiple fonts for a LABEL, this has been extended to be able to fine
+  tune which fonts are to be preferably used for a given script:
+
+::
+
+    LABEL "arialuni,arial,cjk,arabic"
+
+can now be written prefixed by a script identifier, i.e.
+
+::
+
+    LABEL "arialuni,en:arial,ja:cjk,ar:arabic"
+
+  This is needed as there is and will be overlap between font glyph
+  coverages, and it should be possible to prioritize which font is used
+  for which language.
+
+- Each run is then fed into harfbuzz, which returns a list of
+  positionned glyphs. The number of returned glyphs is not meant to be
+  identical to the number of glyphs we had in the unicode string, and
+  are ordered from left to right. As a speedup, a run who's script is
+  "latin" is not fed through harfbuzz, but instead uses cached glyph
+  advances.
+
+- The glyphs of each run are reassembled to account for line numbers
+  and run positions (e.g. run 3 is offset down by one line, and placed
+  to the right of run 2)
+
+- Each line is horizontally offseted to account for ALIGN. LABEL ALIGN
+  now stops defaulting to LEFT, so right-to-left runs will be right
+  aligned instead of left as is now.
 
 2.1.3 Handling glyphs at rendering phase
 ........................................
@@ -127,12 +233,50 @@ The labelcache and the renderers will need to be updated to work with a list of 
 Changes here are extensive but should remain conceptually simple. Individual renderers are
 substantially simplified.
 
+Work has been done to trim down the labelcache computations as much as possible:
+
+When inserting features into the labelcache:
+
+- We'll insert a reference to the original labelObj instead of a copy
+  if the labelObj and it's child styleObjs don't contain any bindings.
+  This cuts dow on memory usage when attribute bindings aren't in use.
+- We don't insert features that will never get rendered (e.g. out of
+  scale, too large for their feature (minfeaturesize keyword) )
+
+At the msDrawLabelCache phase:
+
+- We delay computation of the label text bounding box to after we have
+  checked conditions that would cause it not be renderered, i.e.
+  
+  - if they have a MINDISTANCE set and a neighbouring label with
+    identical text has already been rendered
+  - for labels without markers, we first check that the labelpoint
+    doesn't collide with an existing label.
+
+- The Collision detection has been optimized:
+  
+  - We keep a list of rendered labels and loop through those instead of
+    checking the status of all the labels in the labelcache for each
+    member
+  - The bounding metrics for a label has been cut down from a full
+    shapeObj to a struct containing a bounding rect and an optional
+    lineObj. For non rotated labels, there's no information needed more
+    than the bounding box, which makes intersection detection much easier
+    for two labels like this (i.e. the overlapping of these two labels is
+    the same as the overlapping of their bounding boxes, no need to go
+    into further geometric intersection primitives).
+
+  The speedups for these changes are extremely important for cluttered
+  maps, c.f. https://plus.google.com/u/0/118271009221580171800/posts/PrwhFYSkhea
+  (e.g. rendering time goes from 800 to 1 second for 500.000 labels)
+
 2.2 Backwards Compatibility
 ---------------------------
 
 - At a high (mapfile) level, none expected.
 - Some mapscript APIs may change or may need to be wrapped. (TBD)
 - Some subtle but widespread changes in character placement.
+- :ref:`rfc99` is a collateral of most of these changes
 
 
 2.3 Performance Implications
@@ -140,13 +284,25 @@ substantially simplified.
 
 Potentially numerous:
 
-- Exisiting performance on latin only text will need to be kept to
+- Existing performance on latin only text will need to be kept to
   the current level, by detecting and shortcutting these cases. If done correctly we may
   actually be able to speed up latin text rendering marginally.
 
 - For other scripts, the cost of going through harfbuzz **will** come with a performance
   penalty.
 
-- (To be expanded)
 
+3. Miscellaneous
+================
+
+3.1 Issue Tracking ID
+---------------------
+
+https://github.com/mapserver/mapserver/issues/4673
+
+
+3.2 Voting History
+------------------
+
+TBD
 
