@@ -69,7 +69,10 @@ CONNECTION [string]
 
 .. index::
    pair: LAYER; CONNECTIONTYPE
-    
+
+.. index::
+   triple: LAYER; CONNECTIONTYPE; contour
+
 .. index::
    triple: LAYER; CONNECTIONTYPE; local
     
@@ -100,7 +103,7 @@ CONNECTION [string]
 .. index::
    triple: LAYER; CONNECTIONTYPE; wms
     
-CONNECTIONTYPE [local|ogr|oraclespatial|plugin|postgis|sde|union|uvraster|wfs|wms]
+CONNECTIONTYPE [contour|local|ogr|oraclespatial|plugin|postgis|sde|union|uvraster|wfs|wms]
     Type of connection. Default is local. See additional documentation for 
     any other type.
 
@@ -263,6 +266,102 @@ FILTERITEM [attribute]
 FOOTER [filename]
     Template to use *after* a layer's set of results have been sent. 
     Multiresult query modes only.
+
+.. index::
+   pair: LAYER; GEOMTRANSFORM
+
+GEOMTRANSFORM [<expression>]
+    Used to indicate that the current feature will be transformed.
+    Introduced in version 6.4.
+
+    .. index::
+       triple: LAYER; GEOMTRANSFORM; expression
+
+    - *<expression>*: Applies the given expression to the geometry.
+
+      Supported expressions:
+
+      .. index::
+         triple: LAYER; GEOMTRANSFORM; buffer
+
+      - *(buffer([shape],dist))*: Buffer the geometry (`[shape]`)
+        using `dist` pixels as buffer distance. For polygons, a
+        negative `dist` will produce a setback.
+
+      .. index::
+         triple: LAYER; GEOMTRANSFORM; simplify
+
+      - *(simplify([shape],tolerance))*: simplifies a geometry
+        (`[shape]`) using the standard Douglas-Peucker algorithm.
+
+      .. index::
+         triple: LAYER; GEOMTRANSFORM; simplifypt
+
+      - *(simplifypt([shape], tolerance))*: simplifies a geometry
+        (`[shape]`), ensuring that the result is a valid geometry
+        having the same dimension and number of components as the
+        input. `tolerance` must be non-negative.
+
+      .. index::
+         triple: LAYER; GEOMTRANSFORM; generalize
+
+      - *(generalize([shape],tolerance))*: simplifies a geometry
+        (`[shape]`) in way comparable to FME's ThinNoPoint
+        algorithm. See http://trac.osgeo.org/gdal/ticket/966 for more
+        information.
+
+      .. index::
+         triple: LAYER; GEOMTRANSFORM; smoothsia
+
+      - *(smoothsia([shape], smoothing_size, smoothing_iteration, preprocessing))*:
+        will smooth a geometry (`[shape]`) using the SIA algorithm
+
+        .. seealso::
+            :ref:`shape_smoothing`
+
+
+    There is a difference between STYLE and LAYER GEOMTRANSFORM. LAYER-level 
+    will receive ground coordinates (meters, degress, etc) and STYLE-level will
+    receive pixel coordinates. The argument to methods such as simplify() must be
+    in the same units as the coordinates of the shapes at that point of the
+    rendering workflow, i.e. pixels at the STYLE-level and in ground units
+    at the LAYER-level.
+
+    .. code-block:: mapfile
+
+        LAYER NAME "my_layer"
+            TYPE LINE
+            STATUS DEFAULT
+            DATA "lines.shp"
+            GEOMTRANSFORM (simplify([shape], 10))  ## 10 ground units
+            CLASS
+                STYLE
+                    GEOMTRANSFORM (buffer([shape], 5)  ## 5 pixels
+                    WIDTH 2
+                    COLOR 255 0 0
+                END
+            END
+        END
+
+    The [map_cellsize] variable is available if you need to pass a pixel value
+    at the LAYER-level.
+
+    .. code-block:: mapfile
+
+        LAYER NAME "my_layer"
+            TYPE LINE
+            STATUS DEFAULT
+            DATA "lines.shp"
+            UNITS meters
+            # 10 * [map_cellsize] == 10 pixels converted to ground units
+            GEOMTRANSFORM (simplify([shape], [map_cellsize]*10))
+        ...
+
+    To get this variable working in the math expression parser,
+    the [map_cellsize] has to be converted into the layer ground unit.
+    If you choose to use [map_cellsize] in your GEOMTRANSFORM expression,
+    you must explicitly set the UNITS option in the layer.
+
 
 .. index::
    pair: LAYER; GRID
@@ -749,7 +848,9 @@ SYMBOLSCALEDENOM [double]
 
 .. index::
    pair: LAYER; TILEINDEX
-    
+
+.. _TILEINDEX_keyword:
+
 :ref:`TILEINDEX <tileindex>` [filename|layername]
     Name of the tileindex file or layer.  A tileindex is similar to 
     an ArcInfo library index.  The tileindex contains polygon features for 
@@ -769,12 +870,38 @@ SYMBOLSCALEDENOM [double]
         All files in the tileindex should have the same coordinate system, and
         for vector files the same set of attributes in the same order.
 
+    .. note::
+
+        Starting with MapServer 6.4, raster layers can use a tileindex with
+        tiles of different projections. For that, the :ref:`TILESRS <tilesrs>` parameter must
+        be specified.
+
 .. index::
    pair: LAYER; TILEITEM
-    
+
+.. _TILEITEM:
+
 TILEITEM [attribute]
     Item that contains the location of an individual tile, default is 
     "location".
+
+.. index::
+   pair: LAYER; TILESRS
+
+.. _TILESRS:
+
+TILESRS [attribute]
+    Name of the attribute that contains the SRS of an individual tile.
+    That SRS can be expressed in WKT format, as an EPSG:XXXX code or as a
+    PROJ.4 string.
+    If the tileindex contains rasters in different projections, this option
+    must be specified. If the tileindex has been generated with
+    gdaltindex (GDAL >= 2.0), the value of TILESRS is the value of the
+    -src_srs_name option of gdaltindex. See :ref:`tileindex_mixed_srs`
+
+    .. note::
+
+        This option is currently available only on raster layers.
 
 .. index::
    pair: LAYER; TOLERANCE
@@ -946,6 +1073,30 @@ UNITS [dd|feet|inches|kilometers|meters|miles|nauticalmiles|percentages|pixels]
     Units of the layer.  `percentages` (in this case a value between 0
     and 1) was added in MapServer 4.10 and is mostly geared for inline
     features.  `nauticalmiles` was added in MapServer 5.6.
+
+.. index::
+   pair: LAYER; UTFDATA
+    
+UTFDATA[expression]
+    Expression used by UTFGrid driver to expose data in the JSON. It needs to use JSON
+    valid syntax.
+
+    .. code-block:: mapfile
+
+      UTFDATA   "{\"fid\":\"[fid]\",\"name\":\"[name]\"}"
+
+
+.. index::
+   pair: LAYER; UTFITEM
+    
+UTFITEM[string]
+    String that is used by the UTFGrid driver as a key to each shape. When used, 
+    the driver will look for duplicates with the same string amongst rendered shapes 
+    and treats them as one shape instead if there's multiple occurrences.
+
+    .. code-block:: mapfile
+
+      UTFITEM   "{fid}"
 
 .. index::
    pair: LAYER; VALIDATION

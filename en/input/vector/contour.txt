@@ -1,0 +1,134 @@
+.. index::
+   single: contour
+
+.. _contour:
+
+=========================================================================
+Contour
+=========================================================================
+
+1. Overview
+-----------
+
+Mapserver can compute and render a contour layer on the fly from a
+raster source.  The raster source is one band of raster data, which
+represents a digital elevation model (DEM).  More info about DEMs at:
+http://en.wikipedia.org/wiki/Digital_elevation_model
+
+2. How it works
+------------------------
+
+.. index::
+   pair: CONNECTIONTYPE; contour
+
+CONNECTIONTYPE CONTOUR. The new type is a hybrid layer, which has a raster data
+source as input and vector features as output. Initially, only the line
+representation of those vector features will be supported. 
+
+Since the internal layer is of type vector, queries will be supported and
+operate on the vectors (not on the raw raster source). In the future we might
+see a need to add a query mode that queries the raster source, but this is not
+included in this phase of work.
+
+To render a contour layer, we need to define a layer in the mapfile with the
+following options:
+
+ * Set the layer TYPE to LINE.
+ * Set CONNECTIONTYPE to CONTOUR.
+ * Set the DATA to the raster file that contains the elevation band.
+ * Specify the band to use as elevation using PROCESSING "BANDS", same as
+   regular raster.
+ * Specify one or more classes and styles to render the line features.
+
+PROCESSING settings:
+
+ These options should be specified at layer level:
+
+ * CONTOUR_INTERVAL: elevation interval between contours
+ * CONTOUR_LEVELS: comma-separated list of one or more 'fixed levels' to extract
+ * CONTOUR_ITEM: provides a name for the item (attribute) in which to put the
+   elevation. (optional)
+
+  You can also provide explicit min/max scaledenom in the CONTOUR_iNTERVAL or
+  CONTOUR_LEVELS values if you wish to use scale-dependent contour spacing. This
+  is done by adding an optional "miscaledenom,maxscaledenom:" prefix to the
+  value or list of values. See the example below.
+
+Example of a simple layer definition:
+
+::
+
+  LAYER NAME "my_contour_layer"
+    TYPE LINE
+    STATUS DEFAULT
+    CONNECTIONTYPE CONTOUR
+    DATA /mnt/data/raster/grib/dem.grib
+    PROCESSING "BANDS=1"
+    PROCESSING "CONTOUR_ITEM=elevation"     
+    PROCESSING "CONTOUR_INTERVAL=10"
+    CLASS
+      STYLE
+        WIDTH 2
+        COLOR 255 0 0
+      END
+    END
+
+
+Example of a layer definition with scale-dependent contour ranges:
+
+::
+
+  LAYER NAME "my_contour_layer"
+    TYPE LINE
+    STATUS DEFAULT
+    CONNECTIONTYPE CONTOUR
+    DATA /mnt/data/raster/grib/dem.grib
+    PROCESSING "BANDS=1"
+    PROCESSING "CONTOUR_ITEM=elevation"     
+    PROCESSING "CONTOUR_INTERVAL=0,25000:5" # interval of 5 for scales of 25000 or less
+    PROCESSING "CONTOUR_INTERVAL=25000,500000:10" # interval of 10 for scales in the 25000 to 500000 range
+    PROCESSING "CONTOUR_LEVELS=500000,0:10,25,50,100" # explicit list of levels for scales of 500000 and up
+    LABELITEM "elevation"
+    CLASS
+      STYLE
+        WIDTH 2
+        COLOR 255 0 0
+      END
+      LABEL
+        ...
+      END
+    END
+
+2.1 Data cellsize 
+------------------
+
+The data produced by the gdal contour algorithm are generally in high
+resolution. A lot of point are used to generated contours with precision. You
+might want to generalize/simplify the line in some cases (ie. Shape
+Smoothing). The `[data_cellsize]` attribute binding represents the cellsize of
+the extend fetched from the raster file. This is different than the map
+cellsize.
+
+In the following example, I generalize my shape with a tolerance of 25% of the
+data cellsize to produce smooth contours at all scales:
+
+::
+
+  LAYER
+    NAME "MyContourLayer"
+    STATUS DEFAULT
+    DATA "wind.tif"
+    TYPE LINE
+    CONNECTIONTYPE CONTOUR
+    PROJECTION AUTO END
+    PROCESSING "BANDS=1"
+    PROCESSING "CONTOUR_ITEM=elevation"
+    PROCESSING "CONTOUR_INTERVAL=0,0:1"
+    GEOMTRANSFORM (smoothsia(generalize([shape], 0.25*[data_cellsize])))    
+    CLASS
+      EXPRESSION ([elevation] >= 0)
+      STYLE
+        COLOR 0 0 255
+      END # STYLE
+    END # CLASS
+  END # LAYER
