@@ -1,3 +1,9 @@
+**2013-09-06 - MapServer 6.4.0-rc1 is released**
+
+The first release candidate for MapServer 6.4 has been released.
+See :ref:`the changelog <changelog-6-4-rc1>` for the full list of 
+changes from beta2 and head to :ref:`download` to obtain a copy.
+
 **2013-08-21 - MapServer 6.4.0-beta2 is released**
 
 The second beta for MapServer 6.4 has been released.
