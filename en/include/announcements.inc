@@ -1,3 +1,10 @@
+**2013-09-17 - MapServer 6.4.0 is released**
+
+MapServer 6.4.0 has been released. Major changes since 6.2 can be found in the
+in :ref:`the 6.4 announcement <announce-6-4>`. For
+the small list of changes since RC1, see :ref:`the final changelog <changelog-6-4-0>`,
+then head to :ref:`download` to obtain a copy.
+
 **2013-09-06 - MapServer 6.4.0-rc1 is released**
 
 The first release candidate for MapServer 6.4 has been released.
