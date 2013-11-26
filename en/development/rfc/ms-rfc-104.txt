@@ -12,7 +12,7 @@ MS RFC 104: Support of Geomtransform JavaScript Plugin
 
 .. warning::
     This feature is experimental and backwards compatibility may be broken in
-    the not-so-short term. It is the evolution of the :ref:`rfc102`.
+    the not-so-short term as the functionality evolves. It is the evolution of the :ref:`rfc102`.
 
 1. Overview
 -----------
@@ -29,8 +29,8 @@ and/or its attributes.
 This RFC proposes the addition of a GEOMTRANSFORM javascript plugin. It will
 allow us to modify the geometry programmatically through javascript. This is
 similar to the built-in geomtransform (buffer, centroid, etc.), but allows you
-to do your own logic using javascript. Additionally, you will be able to modify
-a geometry based on its attributes.
+to implement your own logic using javascript. Additionally, you will be able to modify
+a geometry based on its attributes values.
 
 3. Implementation Details
 -------------------------
@@ -44,7 +44,8 @@ will be exposed for the purpose:
 * pointObj
 
 Hovewer, only a limited set of their properties will be available in JavaScript
-(for the moment).
+(for the moment). The geomtransform looks for a function named `geomtransform`
+and calls it.
 
 3.1 Internal Implementation Details
 ....................................
@@ -53,8 +54,11 @@ Hovewer, only a limited set of their properties will be available in JavaScript
 * Upgrade v8 binding to use v8 3.20. (Synched with NodeJS, future possibility?)
 * Expose shapeObj, lineObj and pointObj to v8:
  * The objects will be exposed the same way we expose objects in nodejs. (future possibility?)
- * The objects will have a constructor, so a "new pointObj()" will be possible. This is also mandatory to create a new geometry.
-* Modify the Javascript to use pre-determined functions for style and geomtransform rather than coding in the global scope.
+ * The objects will have a constructor, so a "new pointObj()" will be
+  possible. This is also mandatory to create a new geometry.
+
+ * Modify the internal to use pre-determined function names for styleitem and
+   geomtransform rather than coding in the global scope.
 
 3.2 Mapfile and JavaScript Examples
 ...................................
@@ -96,12 +100,11 @@ javascript:
 3.3 Modifying the geometry in Styleitem Javascript
 ..................................................
 
-You can use styleitem javascript in addition of the geomstransform
-javascript. However, this adds a some overhead since two javascript scripts are
-executed. For this reason, you will be able to modify the geometry in the
-styleitem also and don't use geomtransform. The difference is that don't return
-a new geometry, we modify the existing one. We might have some limitations using
-this though. (ie. not sure if we can return another type of geometry).
+You can use styleitem javascript in combination with the geomtransform
+javascript. However, this adds some overhead since two javascript scripts are
+executed for each shape. For this reason, it will also be possible to modify the geometry in the
+styleitem javascript method without having to use geomtransform. The difference in the styleitem javascript case is that instead of returning a new geometry, we modify the existing one. There might be some limitations with using
+this method though. (ie. not sure if it is safe to return another type of geometry in this case).
 
 Here is an example:
 
@@ -110,15 +113,16 @@ javascript:
 .. code-block:: javascript
 
    function styleitem(shape) {
-     clone_shape = shape.clone();
-     shape.cleanGeometry();
-     shape.add(new lineObj());
+     new_shape = new shapeObj(); // constructor
+     new_shape.add(new lineObj());
 
      new_point = new pointObj();
      new_point.x = shape.line(0).point(0).x;
      new_point.y = shape.line(0).point(0).y+30000; // vertical translation in meters
-     shape.line(0).add(new_point);
+     new_shape.line(0).add(new_point);
 
+     shape.setGeometry(new_shape);
+     
      return "STYLE SYMBOL 'star' COLOR 255 0 0  SIZE 10 END"; // or compute your style..
    }
 
@@ -131,7 +135,7 @@ javascript:
 3.5 Backwards Compatibility Issues
 .................................
 
-New functionality, but affects a little bit the :ref:`rfc102` (We don't return values in the global scope).
+New functionality, but affects a little bit the :ref:`rfc102` (We don't return values in the global scope any more).
 
 3.6 MapScript changes
 .....................
@@ -146,4 +150,3 @@ New mapscript bindings.
 
 5. Voting history
 -----------------
-
