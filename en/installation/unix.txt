@@ -11,12 +11,23 @@
 :Contact: jdoyon at nrcan.gc.ca
 :Author: Howard Butler
 :Contact: hobu.inc at gmail.com
-:Revision: $Revision$
-:Date: $Date$
+:Author: Thomas Bonfort
+:Contact: thomas.bonfort at gmail.com
+:Date: 2013/08
 
 .. contents:: Table of Contents
     :depth: 2
     :backlinks: top
+
+
+.. warning::
+
+   The compilation instructions given in this document are outdated and do not
+   reflect the switch to cmake that happened in version 6.4. For the flags
+   and options to pass to cmake at configuration time, please refer to the 
+   `INSTALL.CMAKE <https://github.com/mapserver/mapserver/blob/master/INSTALL.CMAKE>`
+   file packaged at the root of the source directory:
+
 
 
 =============================================================================
@@ -27,7 +38,10 @@ The University of Minnesota's MapServer is an open-source and freely
 available map rendering engine for the web. Due to its open-source nature, 
 it can be compiled on a wide variety of platforms and operating systems. 
 We will focus on how to obtain, compile and install MapServer on UNIX-like 
-platforms. 
+platforms.
+
+Detailed configuration options are maintained in the `INSTALL.CMAKE <https://github.com/mapserver/mapserver/blob/master/INSTALL.CMAKE>`
+file packaged at the root of the source directory:
 
 You might also check the `MapServerCompilation <http://trac.osgeo.org/mapserver/wiki/MapServerCompilation>`__
 wiki page for additional information.
@@ -49,15 +63,22 @@ You can also get the latest MapServer source code from :ref:`git`.
   your system by default.  1.2.12 is the current release with security patches, although
   versions all the way back to 1.2.7 should work.
 
-* `freetype <http://www.freetype.org/>`__: Version 2.x or above is required by GD.
+* `freetype <http://www.freetype.org/>`__: Version 2.x or above is required.
 
-* `GD <http://www.libgd.org/>`__: libgd is used by MapServer for 
-  rendering images.  Version 2.0.28 or greater required. Version 2.0.29 or 
-  later is required to use curved (following) labels, and version 2.0.34
-  is required for antialiasing (1 pixel wide lines/outlines). 
+* `libjpeg <http://www.ijg.org/>`__: libjpeg allows MapServer to render 
+  images in JPEG format.  A sufficient version should be installed by 
+  default on your system.  Version 6b is the current version and dates back to 
+  1998.
 
+  .. warning::
+        
+        Direct JPEG support is deprecated in MapServer 5.8+, and you should 
+        now depend on GDAL for raster read support in MapServer. JPEG support
+        is however still required for producing (i.e. writing) images.
+  
 * `zlib <http://www.gzip.org/zlib/>`__: Zlib should be on your system by 
-  default.  1.2.1 is the current release with security patches. 
+  default.  1.2.1 is the current release with security patches. Though not
+  used directly by mapserver, it's a mandatory dependency of libpng.
 
 -----------------------------------------------------------------------------
  Highly Recommended Libraries
@@ -66,6 +87,7 @@ You can also get the latest MapServer source code from :ref:`git`.
 
 * `libproj <http://trac.osgeo.org/proj/>`__: libproj provides projection 
   support for MapServer.  Version 4.4.6 or greater is required.
+
 * `libcurl <http://curl.haxx.se/libcurl/>`__: libcurl is the foundation of 
   OGC (WFS/WMS/WCS) client and server support.  Version 7.10 or greater is 
   required. Installing libcurl::
@@ -76,15 +98,6 @@ You can also get the latest MapServer source code from :ref:`git`.
   different vector formats.  
 * `GDAL <http://www.gdal.org/>`__: GDAL provides access to at least 
   42 different raster formats.
-* `AGG <http://antigrain.com>`__: AGG (Anti-Grain Geometry) is an optional
-  dependency to enable high quality antialiased output for vector data.
-  Currently versions 2.4 and 2.5 are identical feature-wise, and only vary in
-  their license (2.4 is BSD, 2.5 is GPL)
-  
-  .. note::
-  
-        MapServer 5.6+ embeds AGG in its source tree and you do not need to 
-        install it separately.
 
 -----------------------------------------------------------------------------
  Optional External Libraries
@@ -105,16 +118,6 @@ You can also get the latest MapServer source code from :ref:`git`.
   .. warning::
         
         Direct GeoTIFF support is deprecated in MapServer 5.8+, and you should 
-        now depend on GDAL for raster read support in MapServer.
-  
-* `libjpeg <http://www.ijg.org/>`__: libjpeg allows MapServer to render 
-  images in JPEG format.  A sufficient version should be installed by 
-  default on your system.  Version 6b is the current version and dates back to 
-  1998.
-
-  .. warning::
-        
-        Direct JPEG support is deprecated in MapServer 5.8+, and you should 
         now depend on GDAL for raster read support in MapServer.
   
 * `GEOS <http://trac.osgeo.org/geos/>`__: GEOS allows MapServer to do 
@@ -141,44 +144,29 @@ You can also get the latest MapServer source code from :ref:`git`.
   the use of PostGIS geometries within the PostgreSQL database.  Ideally, 
   your client library matches the database you are querying from.  
   
-* `pdflib (lite) <http://www.pdflib.com/products/pdflib-family/pdflib-lite/>`__: 
-  PDFlib Lite is the Open Source version of PDFlib that allows MapServer 
-  to produce PDF output.  Version 4.0.3 or greater is required.
-
-  .. note::
-
-     PDF output is supported through Cairo in recent versions of
-     MapServer .
-  
-* `libming <http://www.libming.org>`__: libming provides Macromedia 
-  Flash output to MapServer.  Version 0.2a is required. Later versions are 
-  not known to work.
-
-  .. note::
-
-     SWF (flash) support was dropped in MapServer  version 6.
-
 * `libgif-dev <http://sourceforge.net/projects/giflib/>`__: giflib is
-  one of the default renderers, but can be disabled with the
-  "--without-gif" configure option.
+  is used for reading GIF files used as PIXMAP symbols.
 
 * `FastCGI <http://www.fastcgi.com>`__: FastCGI is a popular protocol for
   interfacing MapServer with various web servers.  You will need to install
-  the development package if you use the "--with-fastcgi" configure option.
+  the development package.
   More details on how to use this feature in MapServer is here :ref:`fastcgi`.
   On Ubuntu, that would be::
 
       $ apt-get -y install libfcgi-dev
 
 * `cairo (svg, pdf) support <http://cairographics.org/>`__: This library is required
-  when using the "--with-cairo" configure option.  If you're on an ubuntu system, it
+  to produce PDF and SVG outputs.  If you're on an ubuntu system, it
   can be installed with "apt-get install -y libcairo2-dev"
 
 * `kml support <http://mapserver.org/output/kml_output.html>`__: This renderer is
-  controlled with the "--with-kml" parameter.
+  has no external dependency.
 
-* opengl: This renderer is highly experimental, and is controlled with the
-  "--with-opengl[=DIR] " parameter, where DIR is OpenGL's install dir.
+* `GD <http://www.libgd.org/>`__: libgd is used by MapServer for 
+  rendering images.  Version 2.0.28 or greater required. Version 2.0.29 or 
+  later is required to use curved (following) labels, and version 2.0.34
+  is required for antialiasing (1 pixel wide lines/outlines). 
+
 
 
 -----------------------------------------------------------------------------
@@ -190,11 +178,21 @@ You can also get the latest MapServer source code from :ref:`git`.
   Using this feature requires installing the libsvg-cairo library available here:
   http://cairographics.org/snapshots/ .  You will need to compile and install cairo,
   libsvg, and libsvg-cairo.
+* SVG support can be enabled either through the unmaintained libsvg /
+  libsvg-cairo combo, or through librsvg at the cost of more dependencies. Use
+  librsvg if your distro provides a package for it, or fall back to libsvgcairo
+  if the cost of compiling the librsvg dependencies is too important.
 
 
 =============================================================================
  libgd
 =============================================================================
+
+.. warning::
+
+  It is not recommended to enable the GD renderer unless you know what you are
+  doing. It suffers from major rendering limitations, and will be completely
+  removed in version 7.0
 
 There are a number of issues that you should be aware of when using GD in 
 combination with MapServer.  
@@ -213,6 +211,7 @@ following command:
 ::
 
     $ gdlib-config --version
+
 
 -----------------------------------------------------------------------------
  libiconv
