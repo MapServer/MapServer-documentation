@@ -7,7 +7,7 @@ BUILDDIR="/tmp/ms-$BRANCH-$RANDOM-build"
 
 
 #LOCATION="/osgeo/mapserver.org"
-LANGUAGES="en de fr es it zh_cn"
+LANGUAGES="en de es it zh_cn"
 PDF_LANGUAGES="en"
 
 cd "$REPO"
@@ -34,15 +34,7 @@ do
    if [ $lang != "en" ]; then
 	cd $BUILDDIR/en
    
-   if [ "$lang" == "fr" ]; then
-     warn=".. warning::
-
-   Cette page de documentation n'est pas a jour, avec au moins @DAYS@ jours de
-   retard sur la version originale. Nous vous conseillons **fortement** de
-   naviguer vers la version anglaise de cette page.
-
-"
-   elif [ "$lang" == "de" ]; then
+   if [ "$lang" == "de" ]; then
    warn=".. warning::
 
    Diese Übersetzung ist seid mindestens @DAYS@ Tagen nicht aktualisiert
@@ -115,6 +107,7 @@ do
 done
 
 cd $BUILDDIR
+make compile_messages
 make TARGET=mapserverorg html
 make latex
 make epub
