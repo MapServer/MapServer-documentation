@@ -29,7 +29,7 @@ GitHub Notes
 ------------
 
 * Documentation files are stored in the /docs sub-project on GitHub at: https://github.com/mapserver/docs
-* Always submit pull requests on the latest branch (such as branch-6-2), not 
+* Always submit pull requests on the latest branch (such as branch-6-4), not 
   on master 
 * See GitHub's `help guidelines <https://help.github.com/articles/set-up-git/>`__ to 
   install Git locally
@@ -39,7 +39,7 @@ GitHub Notes
    
     ::
    
-      git clone -b branch-6-2 git@github.com:mapserver/docs.git mapserver-docs-git-branch-6-2
+      git clone -b branch-6-4 git@github.com:mapserver/docs.git mapserver-docs-git-branch-6-4
       
   * update local files:
   
@@ -103,13 +103,13 @@ Installing and Using Sphinx for rst-html Generation
 
 .. note::
    
-    As of 2010-06-01 the MapServer site requires Sphinx 1.0.  You can browse
+    As of 2013-10-06 the MapServer site requires Sphinx 1.2b3.  You can browse
     the versions of the Sphinx packages `here <http://pypi.python.org/pypi?%3Aaction=index>`__,
     and then install the exact version such as:
         
     ::
         
-        easy_install Sphinx==1.0.7
+        easy_install Sphinx==1.2b3
 
 
 **On Windows:**
@@ -127,7 +127,7 @@ Installing and Using Sphinx for rst-html Generation
 
    .. note::
    
-      Make sure you install Sphinx 1.0 or more recent.  See note above.
+      Make sure you install Sphinx 1.2b3 or more recent.  See note above.
       
 #. inside the /docs directory, execute:
 
@@ -161,7 +161,7 @@ Installing and Using Sphinx for rst-html Generation
        
    .. note::
     
-      Make sure you install Sphinx 1.0 or more recent.  See note above.       
+      Make sure you install Sphinx 1.2b3 or more recent.  See note above.       
 
 #. to process the docs, from the MapServer /docs directory, run:
 
@@ -193,7 +193,7 @@ Installing and Using Sphinx for rst-html Generation
        
    .. note::
    
-      Make sure you install Sphinx 1.0 or more recent.  See note above.        
+      Make sure you install Sphinx 1.2b3 or more recent.  See note above.        
 
 # install MacTex from http://www.tug.org/mactex/2009/ if you want to build pdfs
 
@@ -201,11 +201,15 @@ Installing and Using Sphinx for rst-html Generation
 
    ::
 
+       make compile_messages
+
        make html
 
    or
 
    ::
+
+       make compile_messages
 
        make latex
 
@@ -218,6 +222,19 @@ Installing and Using Sphinx for rst-html Generation
 
 How translations are handled
 ----------------------------
+
+Nowadays, MapServer have two coexisting systems to manage translations process.
+Both rely on Sphinx software.
+
+The first one was the answer to the absence of internationalization support in 
+first days of the Sphinx software. The second use the new system of  
+`internationalization`_ and is currently only used for the French translation.
+
+The "old" way for translations
+..............................
+
+Although we think that nowadays the new system is better, we do not wanted to enforce 
+every language community to change their habits.
 
 
 * All translations are organized in subdirectories in MapServer /docs directory
@@ -261,6 +278,125 @@ How translations are handled
 The build script will then process the subdirectories *en* and *de*. If they
 are not accessible, an error message will be returned.
 
+The standard internationalization system (i18n) for translations
+................................................................
+
+
+
+
+**Initial translation process for a new language**
+
+It follows steps below:
+
+
+* Generate pot file from original English documentation using Sphinx (except 
+  if already here)
+
+   ::
+
+      make gettext
+
+* copy new version of *.pot files from _build/gettext/en to translated/pot
+
+   ::
+
+      make gettext_copy
+
+
+* Copy *.pot file => *.po file (a *.po file is the same as *.pot, only 
+  extension change and if you translate three languages, you will get 
+  three *.po file and each of them will be into a language dir)
+
+   ::
+
+      make generate_po_from_tmpl -e TRANSLATIONI18N=fr
+
+* translate your *.po file(s)
+
+  You can do it with software like PoEdit but we may switch to Transifex, 
+  an hosted translation service to make contribution more easy, follow 
+  translation advance and have a review process for translation.
+
+* compile *.po to *.mo (sphinx need *.mo file to make substitution from 
+  original version to the language translated)
+
+   ::
+
+      make compile_messages -e TRANSLATIONI18N=fr
+
+* Generate doc for the language
+
+
+You just need to set in the file `Makefile` or make.bat depending on your OS
+the following parameter before building the documentation:
+
+   ::
+
+      TRANSLATIONI18N=fr
+
+
+
+**Structure of the i18n files in the docs root directory**
+
+The structure you need to make all the transaltion process is like below (an 
+excerpt to give you the main required structure)
+
+   ::
+
+      
+      translated/
+      ├── fr
+      │   ├── about.po
+      │   ├── announcements_all.po
+      │   ├── cgi.po
+      │   ├── community.po
+      │   ├── copyright.po
+      │   ├── development.po
+      │   ├── documentation.po
+      │   └── LC_MESSAGES
+      │       ├── about.mo
+      │       ├── announcements_all.mo
+      │       ├── cgi.mo
+      │       ├── community.mo
+      │       ├── copyright.mo
+      │       ├── development.mo
+      │       └── documentation.mo
+      └── pot
+          ├── about.pot
+          ├── announcements_all.pot
+          ├── cgi.pot
+          ├── community.pot
+          ├── copyright.pot
+          ├── development.pot
+          └── documentation.pot
+
+Moreover, you only need to commit the *.pot and *.po files.
+Be cautious, you must have an LC_MESSAGES directory to receive *.mo files.
+To keep this directory in Git, it's recommended to create and empty file into 
+it.
+
+**The usual workflow for already existing translation**
+
+The previous process we explain is only for the language creation.
+After, the workflow consists of:
+
+* translating po files for your language,
+* generating the .mo files
+* building again
+
+Sometimes, when a change occurs in the main english documentation, you will 
+need to generate again the pot files. Then, you will have to merge your 
+translated files with the new pot files using for example the command line 
+utility (from gettext) below :
+
+   ::
+      
+      msgmerge translated/fr/index.po build/gettext/en/index.pot -U -N
+
+-U mean update po file with pot file and -N mean don't use fuzzy but exact match
+
+The process for this part may change: with a lot of contributors for 
+translation, a tool like Transifex can fit better.
 
 
 Reference Labels
@@ -287,3 +423,5 @@ from the docs directory like when you are building the html or latex versions
 .. _`setuptools`: http://pypi.python.org/pypi/setuptools#windows
 .. _`Python 2.X`: http://www.python.org/
 .. _`ISO3166-1 alpha-2 country codes`: http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+.. _`internationalization`: http://sphinx-doc.org/latest/intl.html
+
