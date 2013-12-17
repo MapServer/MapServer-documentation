@@ -1,10 +1,10 @@
 .. index::
    single: STYLEITEM Javascript
 
-.. _styleitem:
+.. _styleitemjs:
 
 *****************************************************************************
- STYLEITEM Javascript 
+ STYLEITEM Javascript
 *****************************************************************************
 
 :Author:        Charles-Éric Bourget
@@ -21,9 +21,9 @@
 
 Introduction
 ---------------------------------------------
-Using STYLEITEM this way makes it possible to style 
-features programmatically rather than with the standard 
-MapServer expressions. 
+Using STYLEITEM this way makes it possible to style
+features programmatically rather than with the standard
+MapServer expressions.
 
 Usage
 ---------------------------------------------
@@ -55,23 +55,24 @@ The path can also be absolute.
     END
   END
 
-The javascript plugin has to return one of these two options:
+The javascript plugin has to implement a function named **styleitem** that will
+be automatically called. This function has to return one of these two options:
 
 - a STYLE definition (Plain String)
 - a CLASS definition with one or multiple styles (Plain String)
 
 .. note::
-  Features are parsed one at a time and each one makes a call 
-  to the javascript plugin. That means the STYLE or CLASS 
+  Features are parsed one at a time and each one makes a call
+  to the javascript plugin. That means the STYLE or CLASS
   returned is applied to that specific feature only. Therefore,
-  a CLASS block should not contain an EXPRESSION definition 
-  and the corresponding LAYER should not contain a CLASSITEM 
+  a CLASS block should not contain an EXPRESSION definition
+  and the corresponding LAYER should not contain a CLASSITEM
   definition.
 
 .. note::
   Declaring an empty CLASS is mandatory
 
-Access to the feature attributes is made through the 
+Access to the feature attributes is made through the
 ``shape.attributes`` javascript object.
 
 The following javascript functions are available:
@@ -81,7 +82,7 @@ The following javascript functions are available:
 - print(str1, str2, ..., str)
     print some text in MapServer logs
 - require(path_to_lib1, path_to_lib2, ..., path_to_lib)
-    include one or more javascript lib  
+    include one or more javascript lib
 
 Example 1. Single STYLE definition
 ---------------------------------------------
@@ -89,44 +90,48 @@ This example returns a single STYLE definition ...
 
 .. code-block:: javascript
 
-  //Make symbol size 14 or 7
-  var size = shape.attributes.NAME.length > 10 ? 14:7;
-      
-  var style = "STYLE SIZE " + size + " SYMBOL 'circle'";
+  function styleitem() {
+    //Make symbol size 14 or 7
+    var size = shape.attributes.NAME.length > 10 ? 14:7;
 
-  var red = Math.random()*255;
-  var green = Math.random()*255;
-  var blue = Math.random()*255;    
-  style += "COLOR " + red + " " + green + " " + blue + " END";
+    var style = "STYLE SIZE " + size + " SYMBOL 'circle'";
 
-  //Return style to MapServer
-  style;
+    var red = Math.random()*255;
+    var green = Math.random()*255;
+    var blue = Math.random()*255;
+    style += "COLOR " + red + " " + green + " " + blue + " END";
+
+    //Return style to MapServer
+    return style;
+  }
 
 Example 2. CLASS with multiple STYLE definitions
 ---------------------------------------------
-This example returns a single CLASS with multiple 
+This example returns a single CLASS with multiple
 STYLE definitions ...
 
 .. code-block:: javascript
 
-  var cls = "CLASS";
+  function styleitem() {
+    var cls = "CLASS";
 
-  //Make symbol size 14 or 7
-  var size = shape.attributes.NAME.length > 10 ? 14:7;
-      
-  var style1 = "STYLE SIZE " + size + " SYMBOL 'circle'";
-  var style2 = "STYLE SIZE " + size + " SYMBOL 'cross'";
+    //Make symbol size 14 or 7
+    var size = shape.attributes.NAME.length > 10 ? 14:7;
 
-  var red = Math.random()*255;
-  var green = Math.random()*255;
-  var blue = Math.random()*255;    
-  style1 += "COLOR " + red + " " + green + " " + blue + " END";
-  style2 += "COLOR " + red + " " + green + " " + blue + " END"; 
+    var style1 = "STYLE SIZE " + size + " SYMBOL 'circle'";
+    var style2 = "STYLE SIZE " + size + " SYMBOL 'cross'";
 
-  cls += " " + style1 + " " + style2 + " END";
+    var red = Math.random()*255;
+    var green = Math.random()*255;
+    var blue = Math.random()*255;
+    style1 += "COLOR " + red + " " + green + " " + blue + " END";
+    style2 += "COLOR " + red + " " + green + " " + blue + " END";
 
-  //Return class to MapServer
-  cls;
+    cls += " " + style1 + " " + style2 + " END";
+
+    //Return class to MapServer
+    return cls;
+  }
 
 Example 3. Printing logs in MapServer logs
 ---------------------------------------------
@@ -149,18 +154,20 @@ MapServer logs.
 
 .. code-block:: javascript
 
-  //Print some logs in MapServer logs
-  alert("Processing feature " + shape.attributes.NAME)
+  function styleitem() {
+    //Print some logs in MapServer logs
+    alert("Processing feature " + shape.attributes.NAME)
 
-  //Make symbol size 14 or 7
-  var size = shape.attributes.NAME.length > 10 ? 14:7;
-      
-  var style = "STYLE SIZE " + size + " SYMBOL 'circle'";
+    //Make symbol size 14 or 7
+    var size = shape.attributes.NAME.length > 10 ? 14:7;
 
-  var red = Math.random()*255;
-  var green = Math.random()*255;
-  var blue = Math.random()*255;    
-  style += "COLOR " + red + " " + green + " " + blue + " END";
+    var style = "STYLE SIZE " + size + " SYMBOL 'circle'";
 
-  //Return style to MapServer
-  style;
+    var red = Math.random()*255;
+    var green = Math.random()*255;
+    var blue = Math.random()*255;
+    style += "COLOR " + red + " " + green + " " + blue + " END";
+
+    //Return style to MapServer
+    return style;
+  }
