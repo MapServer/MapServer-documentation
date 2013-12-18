@@ -270,7 +270,7 @@ FOOTER [filename]
 .. index::
    pair: LAYER; GEOMTRANSFORM
 
-GEOMTRANSFORM [<expression>]
+GEOMTRANSFORM [<expression>|<Javascript file>]
     Used to indicate that the current feature will be transformed.
     Introduced in version 6.4.
 
@@ -320,14 +320,15 @@ GEOMTRANSFORM [<expression>]
             :ref:`shape_smoothing`
 
 
-    There is a difference between STYLE and LAYER GEOMTRANSFORM. LAYER-level 
-    will receive ground coordinates (meters, degress, etc) and STYLE-level will
-    receive pixel coordinates. The argument to methods such as simplify() must be
-    in the same units as the coordinates of the shapes at that point of the
-    rendering workflow, i.e. pixels at the STYLE-level and in ground units
-    at the LAYER-level.
+      There is a difference between STYLE and LAYER
+      GEOMTRANSFORM. LAYER-level will receive ground coordinates
+      (meters, degress, etc) and STYLE-level will receive pixel
+      coordinates. The argument to methods such as simplify() must be
+      in the same units as the coordinates of the shapes at that point
+      of the rendering workflow, i.e. pixels at the STYLE-level and in
+      ground units at the LAYER-level.
 
-    .. code-block:: mapfile
+      .. code-block:: mapfile
 
         LAYER NAME "my_layer"
             TYPE LINE
@@ -343,10 +344,10 @@ GEOMTRANSFORM [<expression>]
             END
         END
 
-    The [map_cellsize] variable is available if you need to pass a pixel value
-    at the LAYER-level.
+      The [map_cellsize] variable is available if you need to pass a pixel value
+      at the LAYER-level.
 
-    .. code-block:: mapfile
+      .. code-block:: mapfile
 
         LAYER NAME "my_layer"
             TYPE LINE
@@ -357,11 +358,36 @@ GEOMTRANSFORM [<expression>]
             GEOMTRANSFORM (simplify([shape], [map_cellsize]*10))
         ...
 
-    To get this variable working in the math expression parser,
-    the [map_cellsize] has to be converted into the layer ground unit.
-    If you choose to use [map_cellsize] in your GEOMTRANSFORM expression,
-    you must explicitly set the UNITS option in the layer.
+      To get this variable working in the math expression parser,
+      the [map_cellsize] has to be converted into the layer ground unit.
+      If you choose to use [map_cellsize] in your GEOMTRANSFORM expression,
+      you must explicitly set the UNITS option in the layer.
 
+    .. index::
+       triple: LAYER; GEOMTRANSFORM; Javascript
+
+    - *<Javascript file>*: A Javascript file that returns a new
+      geometry.  See :ref:`geomtransformjs`.
+
+      .. code-block:: mapfile
+
+        LAYER
+          ...
+          GEOMTRANSFORM "javascript://transform.js" # relative path
+        END
+
+      or
+
+      .. code-block:: mapfile
+      
+        LAYER
+          ...
+          GEOMTRANSFORM "javascript:///home/user/transform.js" # absolute path
+        END
+
+      .. versionadded:: 6.6
+
+      .. note:: Requires :ref:`v8_support`.
 
 .. index::
    pair: LAYER; GRID
@@ -797,43 +823,83 @@ STATUS [on|off|default]
 .. index::
    pair: LAYER; STYLEITEM
     
-STYLEITEM [<attribute>|auto]
-    Item to use for feature specific styling. The style information may be 
-    represented by a separate attribute (style string) attached to the feature.
-    MapServer supports the following style string representations:
+STYLEITEM [<attribute>|auto|<javascript file>]
+    Styling based on attributes or generated with Javascript
+
+    .. index::
+       triple: LAYER; STYLEITEM; attribute
+
+    - *<attribute>*: Item to use for feature specific styling. The
+      style information may be represented by a separate attribute
+      (style string) attached to the feature.  MapServer supports the
+      following style string representations:
     
-    - **MapServer STYLE definition** - The style string can be represented as a 
-      MapServer :ref:`STYLE` block according to the following example:
+      - **MapServer STYLE definition** - The style string can be
+        represented as a MapServer :ref:`STYLE` block according to the
+        following example:
     
-      .. code-block:: mapfile
+        .. code-block:: mapfile
 
           STYLE BACKGROUNDCOLOR 128 0 0 COLOR 0 0 208 END
 
-    - **MapServer CLASS definition** - By specifying the entire :ref:`CLASS` 
-      instead of a single style allows to use further options (like setting 
-      expressions, label attributes, multiple styles) on a per feature basis.
+      - **MapServer CLASS definition** - By specifying the entire
+        :ref:`CLASS` instead of a single style allows to use further
+        options (like setting expressions, label attributes, multiple
+        styles) on a per feature basis.
 
-    - **OGR Style String** - MapServer support rendering the OGR style
-      string format according to the `OGR - Feature Style
-      Specification`_ documentation.  Currently only a few data
-      sources support storing the styles along with the features (like
-      MapInfo, AutoCAD DXF, Microstation DGN), however those styles
-      can easily be transferred to many other data sources as a
-      separate attribute by using the `ogr2ogr`_ command line tool as
-      follows::
+      - **OGR Style String** - MapServer support rendering the OGR
+        style string format according to the `OGR - Feature Style
+        Specification`_ documentation.  Currently only a few data
+        sources support storing the styles along with the features
+        (like MapInfo, AutoCAD DXF, Microstation DGN), however those
+        styles can easily be transferred to many other data sources as
+        a separate attribute by using the `ogr2ogr`_ command line tool
+        as follows::
 
           ogr2ogr -sql "select *, OGR_STYLE from srclayer" "dstlayer" "srclayer"      
-      
     .. index::
        triple: LAYER; STYLEITEM; AUTO
     
-    The value: `AUTO` can be used for automatic styling.
+    - *AUTO*: The value: `AUTO` can be used for automatic styling.
 
-    - Automatic styling can be provided by the driver. Currently, only
-      the OGR driver supports automatic styling.
+      - Automatic styling can be provided by the driver. Currently,
+        only the OGR driver supports automatic styling.
 
-    - When used for a :ref:`union`, the styles from the source layers
-      will be used.
+      - When used for a :ref:`union`, the styles from the source
+        layers will be used.
+
+    .. index::
+       triple: LAYER; STYLEITEM; Javascript
+    
+
+    - *<Javascript file>*: A Javascript file that returns a new string
+      containing either a :ref:`STYLE` definition or a :ref:`CLASS`
+      definition with one or multiple styles.  See :ref:`styleitemjs`.
+
+      .. code-block:: mapfile
+
+        LAYER
+          ...
+          STYLEITEM "javascript://myscript.js" # relative path
+          CLASS
+          END
+        END
+
+      or
+
+      .. code-block:: mapfile
+      
+        LAYER
+          ...
+          STYLEITEM "javascript:///home/user/myscript.js" # absolute path
+          CLASS
+          END
+        END
+
+      .. versionadded:: 6.6
+
+      .. note:: Requires :ref:`v8_support`.
+
 
 .. index::
    pair: LAYER; SYMBOLSCALEDENOM
