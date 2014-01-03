@@ -14,6 +14,10 @@ Changelogs for each specific version can be found here:
 
 Head to :ref:`download` to obtain copies.
 
+**2014-01-03 - MapCache 1.2.1 is released**
+
+MapCache 1.2.1 has been released. Head to :ref:`download` to obtain a copy.
+
 **2013-09-17 - MapServer 6.4.0 is released**
 
 MapServer 6.4.0 has been released. Major changes since 6.2 can be found in the
