@@ -22,29 +22,51 @@ directory of the project
 Commandline options
 ================================================================================
 
+Options are available in a short or long version (i.e. -c or --config).
+
 ::
 
-   -c [file] : path to the mapcache.xml configuration file that contains the
-               tilesets that need to be seeded.
-   -t [tileset]: name of the tileset that must be seeded
-   -g [grid]: name of the grid that must be seeded (the selected
-              tileset must reference the given grid)
-   -z minzoom,maxzoom: (optional) start and end zoom levels that must be seeded.
-   -e minx,miny,maxx,maxy: (optional) bounding box of the area to seed
-   -o (timestamp|now): (optional) only seed tiles that are older than the given value.
-                       The value can either be the string "now", or a date formatted
-                       like year/month/day hour:minute, eg: "2011/01/31 20:45".
-                       (note that a full timestamp should be quoted).
-   -n nthreads: number of parallel threads that should be used to request
-                tiles from the wms source. The default is 1, but can be set higher
-                if the WMS server can withstand parallel requests (as a rule of thumb,
-                the value chosen here should never be much higher than the number
-                of cpus on the wms server)
-   -q: don't print progress messages to the standard output
-   -v: print verbose debugging info (if compiled in)
-   -D "DIMENSION=VALUE": used to specify which dimension to use if the tileset supports
-                         dimensions. Can be used multiple times to set multiple 
-                         dimensions, e.g. -D "DIM1=VAL1" -D "DIM2=VAL2"
+   -c | --config [file] : path to the mapcache.xml configuration file that contains the
+                          tilesets that need to be seeded.
+   -D | --dimension "DIMENSION=VALUE": used to specify which dimension to use if the tileset
+                                       supports dimensions. Can be used multiple times to set 
+                                       multiple dimensions, e.g. -D "DIM1=VAL1" -D "DIM2=VAL2".
+   -e | --extent minx,miny,maxx,maxy: (optional) bounding box of the area to seed.
+   -f | --force: force tile recreation even if it already exists.
+   -g | --grid [grid]: name of the grid that must be seeded (the selected
+                       tileset must reference the given grid).
+   -h | --help: show help
+   -i | --iteration-mode: either "*drill-down*" or "*level-by-level*". 
+                          Default is to use drill-down for g, WGS84 and GoogleMapsCompatible grids,
+                          and level-by-level for others. Use this flag to override.
+   -m | --mode: the mode to use the seeder : seed, delete or transfer. 
+                Default is seed (*mode: seed*).
+   -M | --metasize: override metatile size while seeding, eg. 8,8. 
+   -n | --nthreads: number of parallel threads that should be used to request
+                    tiles from the wms source. The default is 1, but can be set higher
+                    if the WMS server can withstand parallel requests (as a rule of thumb,
+                    the value chosen here should never be much higher than the number
+                    of cpus on the wms server). 
+                    (note that this option is imcompatible with the -p | --nprocesses option).
+   -o | --older [timestamp|now]: (optional) only seed tiles that are older than the given value.
+                                 The value can either be the string "now", or a date formatted
+                                 like year/month/day hour:minute, eg: "2011/01/31 20:45".
+                                 (note that a full timestamp should be quoted).
+   -p | --nprocesses: number of parallel processes that should be used to request tiles 
+                      from the wms source.
+                      (note that this option is imcompatible with the -n | --nthreads option).
+                      .. note::
+                         When working with multiple processes (-p switch) and sqlite cache backends,
+                         some errors may appear under high concurrency when writing to the sqlite database
+                         (error: SQL logic error or missing database (1)). 
+                         Upgrading to sqlite >= 3.7.15 seems to resolve this issue.
+
+   -q | --quiet: don't print progress messages to the standard output.
+   -t | --tileset [tileset]: name of the tileset that must be seeded.
+   -v | --verbose: print verbose debugging info (if compiled in).
+   -x | --transfer: the tileset to transfer when seeder is use into transfer mode.
+   -z | --zoom minzoom,maxzoom: (optional) start and end zoom levels that must be seeded.
+   
 
 Optional Commandline options when using OGR/GEOS
 ================================================================================
@@ -58,15 +80,17 @@ projection.
 
 ::
 
-   -d [ogr_datasource]: ogr connection to the spatial source. Consult the OGR
-                          documentation for all that is supported. In the simplest case (e.g. a
-                           Shapefile), this is just the full filename of the shapefile
-   -l [ogr_layer]: (optional) for datasources that contain multiple layers (e.g. postgis, with
-                   multiple tables), determines which layer will be used
-   -s [ogr_sql]: OGR sql expression that can be applied (see http://www.gdal.org/ogr/ogr_sql.html )
-   -w [ogr_where]: sql "where" expression to filter out returned values. This would
-                   typically be used to select only the geometry of a given country if the
-                   datasource contains all the world contours
+   -d | --ogr-datasource [ogr_datasource]: ogr connection to the spatial source. 
+                                           Consult the OGR documentation for all that is supported. 
+                                           In the simplest case (e.g. a Shapefile), this is just 
+                                           the full filename of the shapefile.
+   -l | --ogr-layer [ogr_layer]: (optional) for datasources that contain multiple layers 
+                                 (e.g. postgis, with multiple tables), determines 
+                                 which layer will be used.
+   -s | --ogr-sql [ogr_sql]: OGR sql expression that can be applied (see `OGR SQL`_).
+   -w | --ogr-where [ogr_where]: sql "where" expression to filter out returned values. 
+                                 This would typically be used to select only the geometry 
+                                 of a given country if the datasource contains all the world contours.
 
 Important Note
 ================================================================================
@@ -119,4 +143,7 @@ access from web clients):
 ::
    
    ./src/mapcache_seed -c mapcache.xml -t osm -g g -z 0,12 -o now
+
+
+.. _`OGR SQL`: http://www.gdal.org/ogr/ogr_sql.html
 
