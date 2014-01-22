@@ -11,7 +11,9 @@
 :Contact: jdoyon at nrcan.gc.ca
 :Author: Jeff McKenna
 :Contact: jmckenna at gatewaygeomatics.com
-:Last Updated: 2013-05-16
+:Author: Even Rouault
+:Contact: even.rouault at mines-paris.org
+:Last Updated: 2014-01-22
 
 .. contents::
     :depth: 2
@@ -29,6 +31,9 @@ specifications, this interface uses XML over HTTP as it's delivery
 mechanism, and, more precisely, GML (Geography Markup Language), which
 is a subset of XML.
 
+In version 7.0, MapServer supports versions 1.0, 1.1 and 2.0 of the WFS
+specifications.
+
 WFS-Related Information
 -----------------------
 
@@ -45,6 +50,17 @@ of each of them, in order to understand how it all works:
 
 - MapServer `OGC Web Services Workshop package`_. 
 
+For WFS 2.0, the following documents apply :
+
+- The `OGC WFS 2.0 specification`_.
+
+- The `OGC Filter Encoding 2.0 specification`_.
+
+- The `OGC GML 3.2.1 specification`_.
+
+Technical details on the implementation of WFS 2.0 in MapServer are given in
+the :ref:`rfc105`.
+
 Working knowledge of MapServer is of course also required.
 
 Software Requirements
@@ -55,7 +71,7 @@ certain librairies:
 
 - PROJ.4: The reprojection library. Version 4.4.3 or greater is required.
 
-- GDAL/OGR: I/O support libraries. Version 1.1.8 or greater is required.
+- GDAL/OGR: I/O support libraries. Version 1.6.0 or greater is required.
 
 Please see the MapServer :ref:`UNIX Compilation and Installation HowTo
 <unix>` for detailed instructions on compiling mapserver with support
@@ -74,6 +90,8 @@ GetFeature request, such as:
 
 - `GML2 request output`_
 - `GML3 request output`_
+
+With WFS 2.0, the default OUTPUTFORMAT is "application/gml+xml; version=3.2".
 
 For a detailed discussion on the versions supported, see `bug#884`_.
 
@@ -219,7 +237,7 @@ to be advertised in more than one SRS.  Also, there is no default SRS
 that applies to all layers by default.  However, it is possible to
 have every layer in a WFS server advertised in a different SRS.
 
-The OGC WFS 1.1 specification allows more than one SRS to be
+The OGC WFS 1.1 and 2.0 specifications allow more than one SRS to be
 advertised, and one of the SRSs will be advertised as the default SRS
 (the default SRS will be the first in the list specified in the
 `METADATA` `wfs_srs` / `ows_srs`).
@@ -257,11 +275,11 @@ the map level (in web metadata) and never set the `wfs_srs` /
 `ows_srs` metadata at the layer level and things will work fine for
 most cases.
 
-Axis Orientation in WFS 1.1
----------------------------
+Axis Orientation in WFS 1.1 and 2.0
+-----------------------------------
 
 The axis order in previous versions of the WFS specifications was to
-always use easting (x or lon ) and northing (y or lat).  WMS 1.1
+always use easting (x or lon ) and northing (y or lat).  WFS 1.1
 specifies that, depending on the particular SRS, the x axis may or may
 not be oriented West-to-East, and the y axis may or may not be
 oriented South-to-North. The WFS portrayal operation shall account for
@@ -269,6 +287,11 @@ axis order. This affects some of the EPSG codes that were commonly
 used such as ESPG:4326.  The current implementation makes sure that
 coordinates returned to the server for the GetFeature request reflect
 the inverse axis orders for EPSG codes between 4000 and 5000.
+
+Regarding SRS, for WFS 2.0, it will always be reported with the "urn:ogc:def:crs:EPSG::"
+syntax. This should likely also be done for WFS 1.1.0. The "wfs_return_srs_as_urn" web
+metadata item can be set to "true" or "false" to enable or disable this behaviour.
+It defaults to "true" for WFS 2.0 and to "false" for older versions.
 
 Test Your WFS Server
 --------------------
@@ -309,6 +332,10 @@ layers.
 
 http://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=1.0.0&REQUEST=getfeature&TYPENAME=continents&MAXFEATURES=100
 
+For WFS 2.0, the same request would be :
+
+http://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFature&TYPENAMES=continents&COUNT=100
+
 Test with a Real Client
 ***********************
 
@@ -346,23 +373,162 @@ MapServer WFS Extensions
 ************************
 
 **STARTINDEX**
-  In addition to the MAXFEATURES=n keyword, MapServer also supports a
-  STARTINDEX=n keyword in WFS GetFeature requests.  This can be used
-  to skip some features in the result set and in combination with
-  MAXFEATURES provides for the ability to use WFS GetFeature to page
-  through results.  Note that STARTINDEX=1 means start with the first
+  This is standard in WFS 2.0, and also available as a MapServer extension for
+  WFS 1.0 and 1.1.
+  In addition to the MAXFEATURES=n keyword (replaced by COUNT in WFS 2.0),
+  MapServer also supports a STARTINDEX=n keyword in WFS GetFeature requests.
+  This can be used to skip some features in the result set and in combination with
+  MAXFEATURES (or COUNT) provides for the ability to use WFS GetFeature to page
+  through results.  Note that STARTINDEX=0 means start with the first
   feature, skipping none.
 
 **OUTPUTFORMAT**
   Normally OUTPUTFORMAT should be GML2 for WFS 1.0 and either
   "text/xml; subtype=gml/2.1.2" or "text/xml; subtype=gml/3.1.1" for
-  WFS 1.1.  However as an extension to the specification, it is also
+  WFS 1.1. For WFS 2.0, the default is "application/gml+xml; version=3.2",
+  but GML2 and GML3 can also be requested.
+  However as an extension to the specification, it is also
   possible to configure MapServer for a variety of other feature
   output formats.  This is discussed in some detail in the :ref:`OGR
   Output <ogr_output>` document.
 
 .. index:: 
    pair: WFS; Metadata
+
+
+Stored queries (WFS 2.0)
+========================
+
+Stored queries are queries (<wfs:Query>) stored on the server, potentially with parameters
+whose value can be assigned by the client during a GetFeature request.
+
+At WEB.METADATA level, a "wfs_storedqueries" metadata item can be specified with a
+comma seperated list of stored queries ids.
+
+Then for each stored query id, "wfs_[storedqueryid]_inlinedef" must be specified
+with a valid <StoredQueryDescription> as value. As it is not always convenient to
+specify a inline XML content, it is also possible to specify
+"wfs_{storedqueryid}_filedef" whose value is a filename that contains
+the <StoredQueryDescription> XML content.
+
+.. code-block:: mapfile
+
+    "wfs_storedqueries"           "bboxstoredquery"
+    "wfs_bboxstoredquery_filedef" "/data/bboxstoredquery.xml"
+
+with /data/bboxstoredquery.xml containing for example :
+
+.. code-block:: xml
+
+    <StoredQueryDescription xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                            xmlns:gml="http://www.opengis.net/gml/3.2"
+                            id="bboxstoredquery">
+        <Title>query title</Title>
+        <Abstract>query abstract</Abstract>
+        <Parameter name="longmin" type="xs:double"/>
+        <Parameter name="latmin" type="xs:double"/>
+        <Parameter name="longmax" type="xs:double"/>
+        <Parameter name="latmax" type="xs:double"/>
+        <QueryExpressionText isPrivate="false" 
+                            language="urn:ogc:def:queryLanguage:OGC-WFS::WFS_QueryExpression"
+                            xmlns:ms="http://mapserver.gis.umn.edu/mapserver"
+                            returnFeatureTypes="ms:firstLayer ms:secondLayer">
+            <Query xmlns:fes="http://www.opengis.net/fes/2.0" typeNames="ms:firstLayer">
+                <fes:Filter>
+                    <fes:BBOX>
+                        <gml:Envelope srsName="urn:ogc:def:crs:EPSG::4326">
+                            <gml:lowerCorner>${latmin} ${longmin}</gml:lowerCorner>
+                            <gml:upperCorner>${latmax} ${longmax}</gml:upperCorner>
+                        </gml:Envelope>
+                    </fes:BBOX>
+                </fes:Filter>
+            </Query>
+            <Query xmlns:fes="http://www.opengis.net/fes/2.0" typeNames="ms:secondLayer">
+                <fes:Filter>
+                    <fes:BBOX>
+                        <gml:Envelope srsName="urn:ogc:def:crs:EPSG::4326">
+                            <gml:lowerCorner>${latmin} ${longmin}</gml:lowerCorner>
+                            <gml:upperCorner>${latmax} ${longmax}</gml:upperCorner>
+                        </gml:Envelope>
+                    </fes:BBOX>
+                </fes:Filter>
+            </Query>
+        </QueryExpressionText>
+    </StoredQueryDescription>
+
+A corresponding valid GetFeature request can be :
+
+REQUEST=GetFeature&STOREDQUERY_ID=bboxstoredquery&LONGMIN=2&LATMIN=49&LONGMAX=3&LATMAX=50
+
+
+Predefined urn:ogc:def:query:OGC-WFS::GetFeatureById stored query
+-----------------------------------------------------------------
+
+WFS 2.0 defines a mandatory "urn:ogc:def:query:OGC-WFS::GetFeatureById" stored query.
+This query accept a ID parameter whose value must be a feature id.
+
+A valid request is :
+REQUEST=GetFeature&STOREDQUERY_ID=urn:ogc:def:query:OGC-WFS::GetFeatureById&ID=mylayer.3
+
+The definition hardcoded in MapServer is :
+
+.. code-block:: xml
+
+    <StoredQueryDescription id="urn:ogc:def:query:OGC-WFS::GetFeatureById">
+        <Title>Get feature by identifier</Title>
+        <Abstract>Returns the single feature whose value is equal to the specified value of the ID argument</Abstract>
+        <Parameter name="ID" xmlns:xs="http://www.w3.org/2001/XMLSchema" type="xs:string"/>
+        <QueryExpressionText isPrivate="true"
+                            language="urn:ogc:def:queryLanguage:OGC-WFS::WFS_QueryExpression"
+                            returnFeatureTypes="">
+            <Query xmlns:fes="http://www.opengis.net/fes/2.0" typeNames="?">
+                <fes:Filter>
+                    <fes:ResourceId rid="${ID}"/>
+                </fes:Filter>
+            </Query>
+        </QueryExpressionText>
+    </StoredQueryDescription>
+
+Comparing to a more standard stored query description, there are 2 oddities :
+The value of the "returnFeatureTypes" attribute is replaced at runtime by
+the name of the valid WFS layers of the mapfile (when issuing the response document to DescribeStoredQueries
+request). And the value of the typeNames attribute is deduced at runtime from the value
+of the passed ID parameter.
+
+It is possible to override this hardcoded definition by a custom one (for example
+to provide alternate values for other languages) by defining
+"wfs_urn:ogc:def:query:OGC-WFS::GetFeatureById_inlinedef" or "wfs_urn:ogc:def:query:OGC-WFS::GetFeatureById_filedef".
+The value of <QueryExpressionText> attributes and child elements must however be
+strictly identical to the hard-coded definition for correct execution.
+
+A GetFeature using urn:ogc:def:query:OGC-WFS::GetFeatureById seems to be identical
+to a GetFeature with a RESOURCEID parameter, but there is a difference. GetFeatureById
+returns the feature directly as the response :
+
+.. code-block:: xml
+
+    <?xml version='1.0' encoding="UTF-8" ?>
+    <ms:province gml:id="province.977" xmlns:ms="http://mapserver.gis.umn.edu/mapserver"
+                xmlns:gml="http://www.opengis.net/gml/3.2"
+                xmlns:wfs="http://www.opengis.net/wfs/2.0"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:schemaLocation="http://mapserver.gis.umn.edu/mapserver http://localhost/path/to/wfs_simple?myparam=something&amp;SERVICE=WFS&amp;VERSION=2.0.0&amp;REQUEST=DescribeFeatureType&amp;TYPENAME=province&amp;OUTPUTFORMAT=application%2Fgml%2Bxml%3B%20version%3D3.2 http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd">
+    <gml:boundedBy>
+        <gml:Envelope srsName="urn:ogc:def:crs:EPSG::4326">
+        <gml:lowerCorner>47.76789 -61.51051</gml:lowerCorner>
+        <gml:upperCorner>47.79644 -61.45764</gml:upperCorner>
+        </gml:Envelope>
+    </gml:boundedBy>
+    <ms:msGeometry>
+        <gml:Polygon gml:id="province.977.1" srsName="urn:ogc:def:crs:EPSG::4326">
+        <gml:exterior>
+            <gml:LinearRing>
+            <gml:posList srsDimension="2">47.77424 -61.51051 47.78860 -61.50894 47.79644 -61.49272 47.78743 -61.45764 47.76789 -61.45998 47.76961 -61.48350 47.77424 -61.51051 </gml:posList>
+            </gml:LinearRing>
+        </gml:exterior>
+        </gml:Polygon>
+    </ms:msGeometry>
+    </ms:province>
 
 Reference Section
 =================
@@ -426,6 +592,14 @@ Web Object Metadata
 .. index:: 
    triple: WFS; METADATA; wfs_anable_request
 
+**wfs_compute_number_matched**
+  (Optional, WFS 2.0 only) When this metadata item is set to "true", the
+  server will determine the number of features that match the GetFeature request
+  and return it in the 'numberMatched' attribute of the <FeatureCollection> element
+  in the response. Computing that number might take a very long time, so it is
+  strongly encouraged to *NOT* define this item. When it is not defined, the
+  'numberMatched' attribute is set to "unknown".
+
 **wfs_enable_request** (or **ows_enable_request**)
   Space separated list of requests to enable.  The default is none.
   The following requests can be enabled: `GetCapabilities`,
@@ -475,7 +649,8 @@ Web Object Metadata
 **wfs_getcapabilities_version**
   (Optional) Default version to use for GetCapabilities requests that
   do not have a version parameter.  If not set, the latest supported
-  version will be returned.
+  version will be returned. As of MapServer 7.0, this default version is "2.0.0".
+  Valid values are "1.0.0", "1.1.0" and "2.0.0".
 
 .. index:: 
    triple: WFS; METADATA; wfs_keywordlist
@@ -488,12 +663,26 @@ Web Object Metadata
 .. index:: 
    triple: WFS; METADATA; wfs_maxfeatures
 
+**wfs_languages**
+
+- *Description:* (Optional) A comma-separated list of supported languages. For 
+  details please refer to the section :ref:`inspire_dl_multi-language_support`
+  in the INSPIRE Download Service documentation.
+
+.. index:: 
+   triple: WMS; METADATA; wfs_languages
+
 **wfs_maxfeatures**
-  (Optional) The number of elements to be returned by the WFS server.
-  This has priority over the 'maxfeatures' parameter passed by the
-  user. If the not set the current behaviour is not changed.  Sensible
-  values are integers greater than 0.  If 0 is specified, no features
-  will be returned.
+  (Optional) The maximum and default number of elements to be returned by the WFS server.
+  If the user sets the 'maxfeatures' parameter in a GetFeatureRequest, his value
+  will be used, provided it does not exceed wfs_maxfeatures. If wfs_maxfeatures is
+  not specified, the server will return all the features that match the query, without
+  limit, which may make the server busy for a long time when layers with big number of features
+  are served.
+  Sensible values are integers greater than 0.  If 0 is specified, no features
+  will be returned. In WFS 2.0, this item is used to fill the "CountDefault"
+  parameter of the response document to a GetCapabilities request, so that
+  clients are aware of the server limit.
 
 .. index:: 
    triple: WFS; METADATA; wfs_namespace_prefix
@@ -522,6 +711,11 @@ Web Object Metadata
 .. index:: 
    triple: WFS; METADATA; wfs_service_onlineresource
 
+**wfs_return_srs_as_urn**
+  (Optional) Defaults to "true" in WFS 2.0, and "false" in WFS 1.0 and 1.1.
+  When set to "true", SRS in GetFeature response documents will always be
+  reported with the "urn:ogc:def:crs:EPSG::" syntax.
+
 **wfs_service_onlineresource**
   (Optional) Top-level onlineresource URL. MapServer uses the
   onlineresource metadata (if provided) in the following order:
@@ -542,6 +736,18 @@ Web Object Metadata
 
 .. index:: 
    triple: WFS; METADATA; wfs_title
+
+**wfs_[storedqueryid]_inlinedef**
+  (Optional, WFS 2.0) Inline XML content for a stored query listed in wfs_storedqueries.
+  This content must be a valid <StoredQueryDescription> document.
+
+**wfs_[storedqueryid]_filedef**
+  (Optional, WFS 2.0) Name of a file that contains a valid <StoredQueryDescription> document.
+
+**wfs_storedqueries**
+  (Optional, WFS 2.0) A comma separted list of stored queries IDs. The definition
+  of each of those stored queries must be given with wfs_[storedqueryid]_inlinedef or
+  wfs_[storedqueryid]_filedef
 
 **wfs_title**
   (Required) Human readable title to identify server. 
@@ -574,6 +780,14 @@ Layer Object
 
 .. index:: 
    triple: WFS; METADATA; gml_exclude_items
+
+**gml_default_items**
+  (Optional) A comma delimited list of items to put in a GetFeature response
+  document without explicit PROPERTYNAME, or "all". 
+  When a GetFeature request without explicit PROPERTYNAME is processed,
+  MapServer returns all items by default. As of MapServer 7.0, this behaviour
+  can be amended by specifying "gml_default_items" to specify which items (among the optional
+  ones) must be returned.
 
 **gml_exclude_items**
   (Optional) A comma delimited list of items to exclude.  As of
@@ -719,6 +933,21 @@ Layer Object
 
 .. index:: 
    triple: WFS; METADATA; gml_types
+
+**gml_mandatory_items**
+  (Optional) A comma delimited list of items to make mandatory, or keyword
+  "all". 
+  See gml_optional_items.
+
+**gml_optional_items**
+  (Optional) A comma delimited list of items to make optional, or keyword
+  "all". 
+  By default, as of MapServer 7.0, all items are considered as
+  optional (minOccurs="0" in the GML application schema). If "gml_optional_items"
+  is specified, only the listed elements will be optional and other included
+  items will be mandatory.
+  If there are more mandatory items, it might be more convenient to specify
+  "gml_mandatory_items".
 
 **gml_types**
   (Optional) If this field is "auto" then some input feature drivers
@@ -872,3 +1101,6 @@ To-do Items and Known Limitations
 .. _`GML2 request output`: http://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=1.0.0&REQUEST=getfeature&TYPENAME=continents&MAXFEATURES=1&OUTPUTFORMAT=gml2
 .. _`GML3 request output`: http://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=1.0.0&REQUEST=getfeature&TYPENAME=continents&MAXFEATURES=1&OUTPUTFORMAT=gml3
 .. _`bug#884`: http://trac.osgeo.org/mapserver/ticket/884
+.. _`OGC WFS 2.0 specification`: http://portal.opengeospatial.org/files/?artifact_id=39967
+.. _`OGC Filter Encoding 2.0 specification`: http://portal.opengeospatial.org/files/?artifact_id=39968
+.. _`OGC GML 3.2.1 specification`: http://portal.opengeospatial.org/files/?artifact_id=20509
