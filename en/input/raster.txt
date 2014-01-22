@@ -198,9 +198,8 @@ based on which value is closest to the pixel value being classified.
 Supported Formats
 =================
 
-What raster formats are supported by MapServer is largely controlled by
-configuration time options. Some formats are considered to be built-in while
-the remainder are handled by the optional GDAL raster library.
+Since version 6.2, Mapserver raster input support is through the GDAL
+raster library only.
 
 More information on GDAL can be found at http://www.gdal.org, including the
 `supported formats list`_. Some of the advanced MapServer raster features,
@@ -209,92 +208,31 @@ only work with raster formats used through GDAL. GDAL is normally built and
 installed separately from MapServer, and then enabled during the build of
 MapServer using the *--with-gdal* configuration switch.
 
-To find out what is built into a particular MapServer executable, use the -v
-flags to discover what build options are enabled. To find out what GDAL
-formats are available, the "gdalinfo --formats" command may be used. For
-example:
+To find out if GDAL support is built into a particular MapServer
+executable, use the -v flag to discover what build options are
+enabled.  To find out what GDAL formats are available, the "gdalinfo
+--formats" command may be used. For example:
 
 ::
 
     warmerda@gdal2200[124]% mapserv -v
-    MapServer version 4.4.0-beta2 OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG OUTPUT=WBMP 
-    SUPPORTS=PROJ SUPPORTS=FREETYPE SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT 
-    SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER SUPPORTS=FASTCGI 
-    INPUT=EPPL7 INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE DEBUG=MSDEBUG
+    MapServer version 6.2.0 OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG
+    SUPPORTS=PROJ SUPPORTS=GD SUPPORTS=AGG SUPPORTS=FREETYPE
+    SUPPORTS=CAIRO SUPPORTS=OPENGL SUPPORTS=ICONV SUPPORTS=WMS_SERVER
+    SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT
+    SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER SUPPORTS=FASTCGI
+    SUPPORTS=THREADS SUPPORTS=GEOS INPUT=JPEG INPUT=POSTGIS INPUT=OGR
+    INPUT=GDAL INPUT=SHAPEFILE
+
+
     warmerda@gdal2200[18]% gdalinfo --formats
     Supported Formats:
-      GRASS (ro): GRASS Database Rasters (5.7+)
-      GTiff (rw+): GeoTIFF
-      NITF (rw+): National Imagery Transmission Format
-      HFA (rw+): Erdas Imagine Images (.img)
-      SAR_CEOS (ro): CEOS SAR Image
+      VRT (rw+v): Virtual Raster
+      GTiff (rw+vs): GeoTIFF
+      NITF (rw+vs): National Imagery Transmission Format
+      RPFTOC (rovs): Raster Product Format TOC format
+      ECRGTOC (rovs): ECRG TOC format
       ...
-
-The following formats are potential builtins:
-
-.. index::
-   single: TIFF
-
-.. index::
-   single: GeoTIFF
-
-**TIFF/GeoTIFF** 
-   If built with INPUT=TIFF MapServer will have builtin support for reading
-   TIFF or GeoTIFF files. The builtin TIFF support has some limitations with
-   regard to the organization of files that can be read (no tiled, 16bit, RGB,
-   or odd color models). This driver supports world files, or simple builtin
-   GeoTIFF coordinates for georeferencing.
-
-   Full featured TIFF/GeoTIFF support is available through GDAL. Note that
-   only GDAL supports tiled TIFF files and TIFF files with overviews. Tiled
-   TIFF files with overviews pre-built are one of the highest performance ways
-   of serving large raster images.
-
-.. index::
-   single: GIF
-
-**GIF** 
-   If GD is configured with GIF (OUTPUT=GIF) support, then MapServer will also
-   be able to read GIF files for raster layers. The only way to georeference
-   GIF files is with a world file.
-
-   If GD is not configured with GIF support, it may still be available in GDAL.
-
-.. index::
-   single: PNG
-
-**PNG** 
-   If GD is configured with PNG (OUTPUT=PNG) support, then MapServer will also
-   be able to read PNG files for raster layers. The only way to georeference
-   PNG files is with a world file.
-   
-   If GD is not configured with PNG support, it may still be available in
-   GDAL.
-
-.. index::
-   single: JPEG
-
-**JPEG** 
-   If MapServer is built with JPEG (INPUT=JPEG) support then greyscale JPEG
-   files may be rendered in raster layers. RGB files (the more common kind)
-   will not be able to be displayed. Georeferencing is via world files.
-   
-   If MapServer is not built with native JPEG support, GDAL may still support
-   the format. In this case RGB files are also supported (via the RGB color
-   cube mechanism). Georeferencing is still via world file.
-
-.. index::
-   single: Erdas
-
-**Erdas .LAN/.GIS** 
-   If configured with INPUT=EPPL7 (the default) MapServer will support one
-   band eight bit Erdas LAN/GIS files. The .trl file is read for a colormap,
-   and if not found the layer is treated as greyscale. Georeferencing is read
-   from the file.
-
-If MapServer is built with GDAL it is generally better to access all possible
-formats through GDAL rather than via the built-in drivers. The built-in
-drivers are less featureful, and not as well maintained.
 
 .. index::
    pair: Raster; Tile indexing
@@ -320,10 +258,10 @@ hp2.shp should be rectangles representing the footprint of the corresponding
 file. Note that the files do not have to be all the same size, the formats can
 vary and they can even overlap (later files will be drawn over earlier ones).
 
-Starting with MapServer 6.4, the files can have different coordinate system
-(projection). This requires specifying the :ref:`TILESRS <tilesrs>` keyword and generating
-the tileindex with a few additional options. See :ref:`tileindex_mixed_srs`
-
+Starting with MapServer 6.4, the files can have different coordinate
+system (projection). This requires specifying the :ref:`TILESRS
+<tilesrs>` keyword and generating the tileindex with a few additional
+options. See :ref:`tileindex_mixed_srs`.
 
 ::
 
@@ -348,7 +286,6 @@ command, one option is the `gdaltindex`_ program, part of the GDAL utility
 suite. The gdaltindex program will automatically generate a tile index
 shapefile from a list of GDAL supported raster files passed on the command
 line.
-
 
 ::
 
@@ -416,9 +353,8 @@ definitions.
 Traditionally MapServer has been used to produce 8 bit pseudo-colored map
 displays generated from 8bit greyscale or pseudocolored raster data. However,
 if the raster file to be rendered is actually 24bit (a red, green and blue
-band) then additional considerations come into play. Currently rendering of
-24bit imagery is only supported via the GDAL renderer. The built-in PNG, JPEG
-and other drivers do not support 24bit input images.
+band) then additional considerations come into play. Rendering of
+24bit imagery is supported via the GDAL renderer.
 
 If the output is still 8bit pseudo-colored (the `IMAGEMODE` is PC256 in the
 associated `OUTPUTFORMAT` declaration) then the full 24bit RGB colors for input
@@ -993,7 +929,7 @@ Georeference with World Files
 
 World files are a simple mechanism for associating georeferencing
 (world coordinates) information with raster files. ESRI was the first
-company to propagate the use of world files, and they often used with
+company to propagate the use of world files, and they are often used with
 TIFF instead of embedding georeferencing information in the file
 itself.
 
