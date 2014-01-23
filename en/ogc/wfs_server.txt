@@ -372,20 +372,26 @@ Filter Encoding see the :ref:`Filter Encoding HowTo
 MapServer WFS Extensions
 ************************
 
+.. index:: 
+   pair: WFS Server; STARTINDEX
+
 **STARTINDEX**
   This is standard in WFS 2.0, and also available as a MapServer extension for
   WFS 1.0 and 1.1.
-  In addition to the MAXFEATURES=n keyword (replaced by COUNT in WFS 2.0),
-  MapServer also supports a STARTINDEX=n keyword in WFS GetFeature requests.
-  This can be used to skip some features in the result set and in combination with
-  MAXFEATURES (or COUNT) provides for the ability to use WFS GetFeature to page
-  through results.  Note that STARTINDEX=0 means start with the first
-  feature, skipping none.
+  In addition to the MAXFEATURES=n keyword (replaced by COUNT in WFS
+  2.0), MapServer also supports a STARTINDEX=n keyword in WFS
+  GetFeature requests.  This can be used to skip some features in the
+  result set and in combination with MAXFEATURES (or COUNT) provides
+  for the ability to use WFS GetFeature to page through results.  Note
+  that STARTINDEX=0 means start with the first feature, skipping none.
+
+.. index:: 
+   pair: WFS Server; OUTPUTFORMAT
 
 **OUTPUTFORMAT**
   Normally OUTPUTFORMAT should be GML2 for WFS 1.0 and either
   "text/xml; subtype=gml/2.1.2" or "text/xml; subtype=gml/3.1.1" for
-  WFS 1.1. For WFS 2.0, the default is "application/gml+xml; version=3.2",
+  WFS 1.1.  For WFS 2.0, the default is "application/gml+xml; version=3.2",
   but GML2 and GML3 can also be requested.
   However as an extension to the specification, it is also
   possible to configure MapServer for a variety of other feature
@@ -396,27 +402,31 @@ MapServer WFS Extensions
    pair: WFS; Metadata
 
 
+.. index:: 
+   pair: WFS Server; Stored queries
+
 Stored queries (WFS 2.0)
 ========================
 
-Stored queries are queries (<wfs:Query>) stored on the server, potentially with parameters
-whose value can be assigned by the client during a GetFeature request.
+Stored queries are queries (<wfs:Query>) stored on the server,
+potentially with parameters whose value can be assigned by the client
+during a GetFeature request.
 
-At WEB.METADATA level, a "wfs_storedqueries" metadata item can be specified with a
-comma seperated list of stored queries ids.
+At WEB.METADATA level, a "wfs_storedqueries" metadata item can be
+specified with a comma seperated list of stored queries ids.
 
-Then for each stored query id, "wfs_[storedqueryid]_inlinedef" must be specified
-with a valid <StoredQueryDescription> as value. As it is not always convenient to
-specify a inline XML content, it is also possible to specify
-"wfs_{storedqueryid}_filedef" whose value is a filename that contains
-the <StoredQueryDescription> XML content.
+Then for each stored query id, "wfs_[storedqueryid]_inlinedef" must be
+specified with a valid <StoredQueryDescription> as value. As it is not
+always convenient to specify a inline XML content, it is also possible
+to specify "wfs_{storedqueryid}_filedef" whose value is a filename
+that contains the <StoredQueryDescription> XML content.
 
 .. code-block:: mapfile
 
     "wfs_storedqueries"           "bboxstoredquery"
     "wfs_bboxstoredquery_filedef" "/data/bboxstoredquery.xml"
 
-with /data/bboxstoredquery.xml containing for example :
+with /data/bboxstoredquery.xml containing for example:
 
 .. code-block:: xml
 
@@ -456,7 +466,7 @@ with /data/bboxstoredquery.xml containing for example :
         </QueryExpressionText>
     </StoredQueryDescription>
 
-A corresponding valid GetFeature request can be :
+A corresponding valid GetFeature request can be:
 
 REQUEST=GetFeature&STOREDQUERY_ID=bboxstoredquery&LONGMIN=2&LATMIN=49&LONGMAX=3&LATMAX=50
 
@@ -464,69 +474,83 @@ REQUEST=GetFeature&STOREDQUERY_ID=bboxstoredquery&LONGMIN=2&LATMIN=49&LONGMAX=3&
 Predefined urn:ogc:def:query:OGC-WFS::GetFeatureById stored query
 -----------------------------------------------------------------
 
-WFS 2.0 defines a mandatory "urn:ogc:def:query:OGC-WFS::GetFeatureById" stored query.
-This query accept a ID parameter whose value must be a feature id.
+WFS 2.0 defines a mandatory
+"urn:ogc:def:query:OGC-WFS::GetFeatureById" stored query.  This query
+accept a ID parameter whose value must be a feature id.
 
-A valid request is :
+A valid request is:
 REQUEST=GetFeature&STOREDQUERY_ID=urn:ogc:def:query:OGC-WFS::GetFeatureById&ID=mylayer.3
 
-The definition hardcoded in MapServer is :
+The definition hardcoded in MapServer is:
 
 .. code-block:: xml
 
     <StoredQueryDescription id="urn:ogc:def:query:OGC-WFS::GetFeatureById">
-        <Title>Get feature by identifier</Title>
-        <Abstract>Returns the single feature whose value is equal to the specified value of the ID argument</Abstract>
-        <Parameter name="ID" xmlns:xs="http://www.w3.org/2001/XMLSchema" type="xs:string"/>
-        <QueryExpressionText isPrivate="true"
-                            language="urn:ogc:def:queryLanguage:OGC-WFS::WFS_QueryExpression"
-                            returnFeatureTypes="">
-            <Query xmlns:fes="http://www.opengis.net/fes/2.0" typeNames="?">
-                <fes:Filter>
-                    <fes:ResourceId rid="${ID}"/>
-                </fes:Filter>
-            </Query>
-        </QueryExpressionText>
+      <Title>Get feature by identifier</Title>
+      <Abstract>Returns the single feature whose value is equal to the specified value of the ID argument</Abstract>
+      <Parameter name="ID" xmlns:xs="http://www.w3.org/2001/XMLSchema" type="xs:string"/>
+      <QueryExpressionText isPrivate="true"
+            language="urn:ogc:def:queryLanguage:OGC-WFS::WFS_QueryExpression"
+            returnFeatureTypes="">
+        <Query xmlns:fes="http://www.opengis.net/fes/2.0" typeNames="?">
+          <fes:Filter>
+            <fes:ResourceId rid="${ID}"/>
+          </fes:Filter>
+        </Query>
+      </QueryExpressionText>
     </StoredQueryDescription>
 
-Comparing to a more standard stored query description, there are 2 oddities :
-The value of the "returnFeatureTypes" attribute is replaced at runtime by
-the name of the valid WFS layers of the mapfile (when issuing the response document to DescribeStoredQueries
-request). And the value of the typeNames attribute is deduced at runtime from the value
-of the passed ID parameter.
+Comparing to a more standard stored query description, there are 2
+oddities : The value of the "returnFeatureTypes" attribute is replaced
+at runtime by the name of the valid WFS layers of the mapfile (when
+issuing the response document to DescribeStoredQueries request). And
+the value of the typeNames attribute is deduced at runtime from the
+value of the passed ID parameter.
 
-It is possible to override this hardcoded definition by a custom one (for example
-to provide alternate values for other languages) by defining
-"wfs_urn:ogc:def:query:OGC-WFS::GetFeatureById_inlinedef" or "wfs_urn:ogc:def:query:OGC-WFS::GetFeatureById_filedef".
-The value of <QueryExpressionText> attributes and child elements must however be
+It is possible to override this hardcoded definition by a custom one
+(for example to provide alternate values for other languages) by
+defining "wfs_urn:ogc:def:query:OGC-WFS::GetFeatureById_inlinedef" or
+"wfs_urn:ogc:def:query:OGC-WFS::GetFeatureById_filedef".  The value of
+<QueryExpressionText> attributes and child elements must however be
 strictly identical to the hard-coded definition for correct execution.
 
-A GetFeature using urn:ogc:def:query:OGC-WFS::GetFeatureById seems to be identical
-to a GetFeature with a RESOURCEID parameter, but there is a difference. GetFeatureById
-returns the feature directly as the response :
+A GetFeature using urn:ogc:def:query:OGC-WFS::GetFeatureById seems to
+be identical to a GetFeature with a RESOURCEID parameter, but there is
+a difference. GetFeatureById returns the feature directly as the
+response :
 
 .. code-block:: xml
 
     <?xml version='1.0' encoding="UTF-8" ?>
     <ms:province gml:id="province.977" xmlns:ms="http://mapserver.gis.umn.edu/mapserver"
-                xmlns:gml="http://www.opengis.net/gml/3.2"
-                xmlns:wfs="http://www.opengis.net/wfs/2.0"
-                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-                xsi:schemaLocation="http://mapserver.gis.umn.edu/mapserver http://localhost/path/to/wfs_simple?myparam=something&amp;SERVICE=WFS&amp;VERSION=2.0.0&amp;REQUEST=DescribeFeatureType&amp;TYPENAME=province&amp;OUTPUTFORMAT=application%2Fgml%2Bxml%3B%20version%3D3.2 http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd">
+        xmlns:gml="http://www.opengis.net/gml/3.2"
+        xmlns:wfs="http://www.opengis.net/wfs/2.0"
+        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+        xsi:schemaLocation="http://mapserver.gis.umn.edu/mapserver
+          http://localhost/path/to/wfs_simple?myparam=something&amp;
+            SERVICE=WFS&amp;VERSION=2.0.0&amp;REQUEST=DescribeFeatureType&amp;
+            TYPENAME=province&amp;
+            OUTPUTFORMAT=application%2Fgml%2Bxml%3B%20version%3D3.2
+          http://www.opengis.net/wfs/2.0
+          http://schemas.opengis.net/wfs/2.0/wfs.xsd
+          http://www.opengis.net/gml/3.2
+          http://schemas.opengis.net/gml/3.2.1/gml.xsd">
     <gml:boundedBy>
-        <gml:Envelope srsName="urn:ogc:def:crs:EPSG::4326">
-        <gml:lowerCorner>47.76789 -61.51051</gml:lowerCorner>
-        <gml:upperCorner>47.79644 -61.45764</gml:upperCorner>
-        </gml:Envelope>
+      <gml:Envelope srsName="urn:ogc:def:crs:EPSG::4326">
+      <gml:lowerCorner>47.76789 -61.51051</gml:lowerCorner>
+      <gml:upperCorner>47.79644 -61.45764</gml:upperCorner>
+      </gml:Envelope>
     </gml:boundedBy>
     <ms:msGeometry>
-        <gml:Polygon gml:id="province.977.1" srsName="urn:ogc:def:crs:EPSG::4326">
+      <gml:Polygon gml:id="province.977.1" srsName="urn:ogc:def:crs:EPSG::4326">
         <gml:exterior>
-            <gml:LinearRing>
-            <gml:posList srsDimension="2">47.77424 -61.51051 47.78860 -61.50894 47.79644 -61.49272 47.78743 -61.45764 47.76789 -61.45998 47.76961 -61.48350 47.77424 -61.51051 </gml:posList>
-            </gml:LinearRing>
+          <gml:LinearRing>
+          <gml:posList srsDimension="2">47.77424 -61.51051 47.78860 -61.50894
+            47.79644 -61.49272 47.78743 -61.45764 47.76789 -61.45998 47.76961
+            -61.48350 47.77424 -61.51051 </gml:posList>
+          </gml:LinearRing>
         </gml:exterior>
-        </gml:Polygon>
+      </gml:Polygon>
     </ms:msGeometry>
     </ms:province>
 
@@ -590,15 +614,19 @@ Web Object Metadata
   WFS TAG Name: Accessconstraints (WFS 1.0.0, sect. 12.3.3)
 
 .. index:: 
-   triple: WFS; METADATA; wfs_anable_request
+   triple: WFS; METADATA; wfs_compute_number_matched
 
 **wfs_compute_number_matched**
-  (Optional, WFS 2.0 only) When this metadata item is set to "true", the
-  server will determine the number of features that match the GetFeature request
-  and return it in the 'numberMatched' attribute of the <FeatureCollection> element
-  in the response. Computing that number might take a very long time, so it is
-  strongly encouraged to *NOT* define this item. When it is not defined, the
-  'numberMatched' attribute is set to "unknown".
+  (Optional, WFS 2.0 only) When this metadata item is set to "true",
+  the server will determine the number of features that match the
+  GetFeature request and return it in the 'numberMatched' attribute of
+  the <FeatureCollection> element in the response. Computing that
+  number might take a very long time, so it is strongly encouraged to
+  *NOT* define this item. When it is not defined, the 'numberMatched'
+  attribute is set to "unknown".
+
+.. index:: 
+   triple: WFS; METADATA; wfs_anable_request
 
 **wfs_enable_request** (or **ows_enable_request**)
   Space separated list of requests to enable.  The default is none.
@@ -660,8 +688,8 @@ Web Object Metadata
 
   WFS TAG Name: Keyword (WFS 1.0.0, sect. 12.3.3)
 
-.. index:: 
-   triple: WFS; METADATA; wfs_maxfeatures
+.. index::
+   triple: WFS; METADATA; wfs_languages
 
 **wfs_languages**
 
@@ -669,20 +697,21 @@ Web Object Metadata
   details please refer to the section :ref:`inspire_dl_multi-language_support`
   in the INSPIRE Download Service documentation.
 
-.. index:: 
-   triple: WMS; METADATA; wfs_languages
+.. index::
+   triple: WFS; METADATA; wfs_maxfeatures
 
 **wfs_maxfeatures**
-  (Optional) The maximum and default number of elements to be returned by the WFS server.
-  If the user sets the 'maxfeatures' parameter in a GetFeatureRequest, his value
-  will be used, provided it does not exceed wfs_maxfeatures. If wfs_maxfeatures is
-  not specified, the server will return all the features that match the query, without
-  limit, which may make the server busy for a long time when layers with big number of features
-  are served.
-  Sensible values are integers greater than 0.  If 0 is specified, no features
-  will be returned. In WFS 2.0, this item is used to fill the "CountDefault"
-  parameter of the response document to a GetCapabilities request, so that
-  clients are aware of the server limit.
+  (Optional) The maximum and default number of elements to be returned
+  by the WFS server.  If the user sets the 'maxfeatures' parameter in
+  a GetFeatureRequest, his value will be used, provided it does not
+  exceed wfs_maxfeatures. If wfs_maxfeatures is not specified, the
+  server will return all the features that match the query, without
+  limit, which may make the server busy for a long time when layers
+  with big number of features are served.  Sensible values are
+  integers greater than 0.  If 0 is specified, no features will be
+  returned. In WFS 2.0, this item is used to fill the "CountDefault"
+  parameter of the response document to a GetCapabilities request, so
+  that clients are aware of the server limit.
 
 .. index:: 
    triple: WFS; METADATA; wfs_namespace_prefix
@@ -708,13 +737,16 @@ Web Object Metadata
 
   WFS TAG Name: Onlineresource (WFS 1.0.0, sect. 12.3.3)
 
-.. index:: 
-   triple: WFS; METADATA; wfs_service_onlineresource
+.. index::
+   triple: WFS; METADATA; wfs_return_srs_as_urn
 
 **wfs_return_srs_as_urn**
   (Optional) Defaults to "true" in WFS 2.0, and "false" in WFS 1.0 and 1.1.
   When set to "true", SRS in GetFeature response documents will always be
   reported with the "urn:ogc:def:crs:EPSG::" syntax.
+
+.. index:: 
+   triple: WFS; METADATA; wfs_service_onlineresource
 
 **wfs_service_onlineresource**
   (Optional) Top-level onlineresource URL. MapServer uses the
@@ -734,24 +766,34 @@ Web Object Metadata
   (Recommended) The SRS to use for all layers in this server.
   (e.g. EPSG:4326) See the note about the SRS rules in WFS.
 
-.. index:: 
-   triple: WFS; METADATA; wfs_title
-
-**wfs_[storedqueryid]_inlinedef**
-  (Optional, WFS 2.0) Inline XML content for a stored query listed in wfs_storedqueries.
-  This content must be a valid <StoredQueryDescription> document.
-
-**wfs_[storedqueryid]_filedef**
-  (Optional, WFS 2.0) Name of a file that contains a valid <StoredQueryDescription> document.
+.. index::
+   triple: WFS; METADATA; wfs_storedqueries
 
 **wfs_storedqueries**
-  (Optional, WFS 2.0) A comma separted list of stored queries IDs. The definition
-  of each of those stored queries must be given with wfs_[storedqueryid]_inlinedef or
-  wfs_[storedqueryid]_filedef
+  (Optional, WFS 2.0) A comma separted list of stored queries IDs. The
+  definition of each of those stored queries must be given with
+  wfs_[storedqueryid]_inlinedef or wfs_[storedqueryid]_filedef
+
+.. index::
+   triple: WFS; METADATA; wfs_[storedqueryid]_inlinedef
+
+**wfs_[storedqueryid]_inlinedef**
+  (Optional, WFS 2.0) Inline XML content for a stored query listed in
+  wfs_storedqueries.  This content must be a valid
+  <StoredQueryDescription> document.
+
+.. index::
+   triple: WFS; METADATA; wfs_[storedqueryid]_filedef
+
+**wfs_[storedqueryid]_filedef**
+  (Optional, WFS 2.0) Name of a file that contains a valid
+  <StoredQueryDescription> document.
+
+.. index::
+   triple: WFS; METADATA; wfs_title
 
 **wfs_title**
   (Required) Human readable title to identify server. 
-
   WFS TAG Name: Title (WFS 1.0.0, sect. 12.3.3)
 
 .. index:: 
@@ -778,8 +820,8 @@ Layer Object
     "gml_const2_type" "Integer"
     "gml_const2_value" "999"
 
-.. index:: 
-   triple: WFS; METADATA; gml_exclude_items
+.. index::
+   triple: WFS; METADATA; gml_default_items
 
 **gml_default_items**
   (Optional) A comma delimited list of items to put in a GetFeature response
@@ -788,6 +830,9 @@ Layer Object
   MapServer returns all items by default. As of MapServer 7.0, this behaviour
   can be amended by specifying "gml_default_items" to specify which items (among the optional
   ones) must be returned.
+
+.. index::
+   triple: WFS; METADATA; gml_exclude_items
 
 **gml_exclude_items**
   (Optional) A comma delimited list of items to exclude.  As of
@@ -931,23 +976,29 @@ Layer Object
   (Optional) Specifies the width of the indicated field for formats
   where this is significant, such as Shapefiles.
 
-.. index:: 
-   triple: WFS; METADATA; gml_types
+.. index::
+   triple: WFS; METADATA; gml_mandatory_items
 
 **gml_mandatory_items**
   (Optional) A comma delimited list of items to make mandatory, or keyword
   "all". 
   See gml_optional_items.
 
+.. index::
+   triple: WFS; METADATA; gml_optional_items
+
 **gml_optional_items**
-  (Optional) A comma delimited list of items to make optional, or keyword
-  "all". 
+  (Optional) A comma delimited list of items to make optional, or
+  keyword "all".
   By default, as of MapServer 7.0, all items are considered as
-  optional (minOccurs="0" in the GML application schema). If "gml_optional_items"
-  is specified, only the listed elements will be optional and other included
-  items will be mandatory.
-  If there are more mandatory items, it might be more convenient to specify
+  optional (minOccurs="0" in the GML application schema). If
+  "gml_optional_items" is specified, only the listed elements will be
+  optional and other included items will be mandatory.  If there are
+  more mandatory items, it might be more convenient to specify
   "gml_mandatory_items".
+
+.. index:: 
+   triple: WFS; METADATA; gml_types
 
 **gml_types**
   (Optional) If this field is "auto" then some input feature drivers
