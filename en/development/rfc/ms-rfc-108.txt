@@ -203,6 +203,73 @@ Options enabling tiling-compatible output have been added and must be used when
 tiling. Failure to do so **will** result in tiles that are not consistent from
 one another.
 
+2.6 Example mapfile
+-------------------
+
+.. code-block:: mapfile
+
+  map
+    size 1000 500
+    extent -180 -90 180 90
+    name "test heat"
+    imagetype "png"
+
+    web
+      metadata
+        "ows_srs" "epsg:4326  epsg:3857 epsg:900913"
+        "ows_enable_request" "*"
+      end
+    end
+
+    projection
+      "+init=epsg:4326"
+    end
+
+    layer
+      name "heatmap"
+      type raster
+      connectiontype interpolation
+      connection "points"
+      status on
+      processing "RANGE_COLORSPACE=HSL"
+      processing "INTERPOLATION_RADIUS=20"
+      processing "INTERPOLATION_ATTRIBUTE=VAL"
+      processing "COMPUTE_BORDERS=ON"
+      processing "NORMALIZATION=AUTO"
+      offsite 0 0 0
+      class
+        style
+          COLORRANGE  "#0000ff00"  "#0000ffff"
+          DATARANGE 0 32
+        end
+        style
+          COLORRANGE  "#0000ffff"  "#ff0000ff"
+          DATARANGE 32 255
+        end
+      end
+    end
+    
+    symbol
+     name "circle"
+     type ellipse
+     points 1 1 end
+    end
+
+    layer
+        name "points"
+        status on
+        type POINT
+        data "pnts.shp"
+        CLASS
+         STYLE
+          SYMBOL "circle"
+          SIZE 1
+          COLOR 0 0 0
+          OUTLINECOLOR 255 255 255
+         END
+        END
+     end
+  end
 3. Miscellaneous
 ================
 
