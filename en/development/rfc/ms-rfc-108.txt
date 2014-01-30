@@ -13,26 +13,213 @@ MS RFC 108: Dynamic Heatmap/Interpolation Layers
 1. Motivation
 ========================
 
+Heatmaps are a popular method to represent sparse data on a regular raster
+grid, where each pixel on the grid is influenced inversely to its distance to
+each sample of the sparse dataset. They are usually represented with a
+color-ramp where the hue encodes the density of the data sample, optionally
+along with the intensity of an attribute.
+
+.. figure:: ../../images/heatmap-wikipedia.png
+   :align: center
+   
+   Example heatmap (image cc-by-sa wikipedia)
+
+This RFC proposes the addition of a vector to raster processing pipeline that
+will transform an input vector source into a 1-band 8-bit raster that can then
+be styled with mapserver's native raster handling.
 
 2. Proposed Addition
 ====================
 
-2.1 Implementation Details
---------------------------
+Adding a heatmap layer requires the following major changes to the mapserver
+library:
 
-2.2 Backwards Compatibility
+- implementation of an "interpolation" connectiontype for raster layers, where
+  the connection refers to another mapfile layer or group used as the vector
+  datasource - implementation of the actual vector to raster transformation:
+
+  - accumulate vertice in a 1-band floating point bitmap array
+  - apply gaussian filtering to the bitmap, with a configurable radius
+  - apply normalization to scale the bitmap cells to 8bits
+  - create an in-memory GDAL datasource from the 8bit bitmap
+- extend the raster RANGE support to allow for missing features ususally needed
+  for heatmap color ramps:
+
+  - allow multiple ranges (to allow for color ramps with multiple stops)
+  - allow color interpolation in HSL space instead of RGB
+  - account for alpha values in color interpolation
+
+2.1 Vector to raster operations
+-------------------------------
+
+The vector to raster pipeline is called from inside mapserver's high-level
+raster handling when handling a layer with **CONNECTIONTYPE INTERPOLATION**.
+The output of this operation is a handle to a GDAL datasource that can then be
+processed normally by the remainder of the raster handling code.
+
+While a more generic API could be designed for handling this vector-to-raster
+pipeline, the initial implementation will branch off to a heatmap specific
+handler. Reflections on the design of such an API can be delayed until the need
+for other vector-to-raster transformations arises, designing one for the scope
+of this RFC seems like premature over-engineering.
+
+The heatmap vector-to-raster takes the following parameters:
+
+- **CONNECTION "layername"** : reference to the NAME or GROUP of a layer to use
+  as an input vector datasource. NAME takes precedence, followed by the first
+  layer from GROUP who's minscale/maxscale matches the current map scale. The
+  referenced layer should probably a TYPE POINT layer. Other layer types will
+  result in one sample being added for each vertex of the input features.
+- **PROCESSING "INTERPOLATION_RADIUS=10"** : radius in pixels of the gaussian
+  filter to apply to the bitmap array once all features have been accumulated.
+  Higher values result in increased cpu time needed to compute the filtered
+  data. 
+
+.. figure:: ../../images/heatmap-hsl-10.png
+   :align: center
+
+   result with a radius set to 10 pixels
+
+.. figure:: ../../images/heatmap-hsl.png
+   :align: center
+
+   result with a radius set to 20 pixels
+
+- **PROCESSING "INTERPOLATION_ATTRIBUTE=attribute"** : specify which
+  (numerical) attribute from the vector datasource should be used to determine
+  the intensity of the sample. If left unset, the resulting heatmap will
+  represent the spatial density of the vector features.
+
+.. figure:: ../../images/heatmap-hsl-density.png
+   :align: center
+
+   heatmap representing pure feature density, the actual vector points are
+   represented alongside
+
+- **PROCESSING "COMPUTE_BORDERS=ON|OFF"** : The gaussian filter of radius "r"
+  cannot be applied to "r" pixels along the borders of the image. The default
+  is to extend the searchrect of the input datasource to include features "r"
+  pixels outside of the current map extent so that the computed heatmap extends
+  to the full extent of the resulting image. This can be deactivated when
+  tiling if the tiling software applies a metabuffer of "r" pixels to its
+  requests, to avoid the performance overhead of computing this extra
+  information.
+
+- **PROCESSING "NORMALIZATION=AUTO|numeric"** : if set to "AUTO", the created
+  raster band will be scaled such that its intensities range from 0 to 255, in
+  order to fully span the configured color ramp. Such behavior may not be
+  desirable (typically for tiling) as the resulting intensity of a pixel at a
+  given location will vary depending on the extent of the current map
+  request.If set to a numeric value, the samples will be multiplied by the
+  given value. It is up to the user to determine which scaling value to use so
+  the resulting pixels span the full 0-255 range; determining that value is
+  mostly a process of trial and error. Pixels that fall outside the 0-255 range
+  will be clipped to 0 or 255.
+
+.. figure:: ../../images/heatmap-hsl-fix-scale.png
+   :align: center
+
+   fixed scaling applied. compared to the previous images, the greater number
+   of red areas results from the fact that the chosen scaling factor made a
+   large number of pixels overshoot the 255 limit
+
+.. figure:: ../../images/heatmap-hsl-fix-scale2.png
+   :align: center
+
+   lower fixed scaling applied. no pixels have attained the 255 limit
+
+2.2 Raster Color Ramping
+------------------------
+
+The features added in :ref:`rfc6` for vector features, and since extended to
+support raster layers, will be extended in order to support more complex color
+ramps. Note that these additions will apply to all raster classifications, not
+only for heatmap layers.
+
+- **Support for multiple stops** : The actual support for ranges for raster
+  layers is limited to a single COLORRANGE/DATARANGE. We will support multiple
+  ranges in order to allow multiple color stops, and will also account for
+  optional alpha values. The following example creates a ramp ranging from
+  fully transparent blue to blue for values between 0 and 32, then blue to red
+  for values ranging from 32 to 255.
+
+  .. code-block:: mapfile
+
+     class
+       style
+         COLORRANGE  "#0000ff00"  "#0000ffff"
+         DATARANGE 0 32
+       end
+       style
+         COLORRANGE  "#0000ffff"  "#ff0000ff"
+         DATARANGE 32 255
+       end
+     end
+
+  .. note::
+  
+     A single style block will be used for each pixel value. It is up to the
+     user to ensure that the supplied DATARANGEs span 0 to 255 with no overlap,
+     and that the chosen COLORRANGE stops are continous from one stop to the
+     next.
+
+- **PROCESSING RANGE_COLORSPACE=RGB|HSL**: The current RANGE support
+  interpolates colors between stops in RGB space, which usually results in
+  washed out colors. The interpolation can be done in HSL space which usually
+  results in wanted output for heatmaps.
+  
+       
+.. figure:: ../../images/heatmap-rgb.png
+   :align: center
+
+   washed out colors when interpolating in RGB space
+       
+
+
+
+2.3 Backwards Compatibility
 ---------------------------
 
+None expected. The behavior of the range support in RGB space is to extend the
+color interpolation outside the supplied DATARANGE (for DATARANGEs that do not
+span 0-255), whereas the behavior for HSL interpolation is to treat such values
+as NODATA. Given that this behavior hasn't been officially formalized, it might
+be wanted to modify the RGB interpolation so it behaves identically.
 
-2.3 Performance Implications
+2.4 Performance Implications
 ----------------------------
+
+The gaussian filter allocates two temporary float* bitmaps of the size of the
+requested image, optionally expanded in case border interpolation has been
+activated or not. For very large image requests this may result in large
+allocations. The cost of the gaussian filtering is also dependent on the
+chosen radius, 
+
+
+2.5 Compatibility with tiling
+-----------------------------
+
+Options enabling tiling-compatible output have been added and must be used when
+tiling. Failure to do so **will** result in tiles that are not consistent from
+one another.
 
 3. Miscellaneous
 ================
 
-3.1 Issue Tracking ID
+3.1 Open Issues
+---------------
+
+- The INTERPOLATION_ATTRIBUTE is set in a processing option in the raster
+  layer. It would be more intuitive to add it in the vector layer, but how?
+- TODO: There is currently no FILTERing enabled on the vector layer. Such
+  support should be added. However advanced filtering with mapserver
+  epxressions may also be desirable (inside multiple classes), but in that case
+  how do we define/access that value?
+
+3.2 Issue Tracking ID
 ---------------------
 
+https://github.com/mapserver/mapserver/pull/4857
 
 
 3.2 Voting History
