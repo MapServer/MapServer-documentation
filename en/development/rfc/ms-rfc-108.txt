@@ -1,7 +1,7 @@
 .. _rfc108:
 
 =========================================================================
-MS RFC 108: Dynamic Heatmap/Interpolation Layers
+MS RFC 108: Dynamic Heatmap (Kernel Density Estimation) Layers
 =========================================================================
 
 :Date:  2014/01
@@ -17,12 +17,15 @@ Heatmaps are a popular method to represent sparse data on a regular raster
 grid, where each pixel on the grid is influenced inversely to its distance to
 each sample of the sparse dataset. They are usually represented with a
 color-ramp where the hue encodes the density of the data sample, optionally
-along with the intensity of an attribute.
+along with the intensity of an attribute. The "heatmap" term itself is used 
+with varying meanings; in the context of this RFC, we will be using it to
+reference `Kernel Density Estimation <http://en.wikipedia.org/wiki/Multivariate_kernel_density_estimation>`_
+maps.
 
 .. figure:: ../../images/heatmap-wikipedia.png
    :align: center
    
-   Example heatmap (image cc-by-sa wikipedia)
+   Example Kernel Density Estimation Map (image cc-by-sa wikipedia)
 
 This RFC proposes the addition of a vector to raster processing pipeline that
 will transform an input vector source into a 1-band 8-bit raster that can then
@@ -34,7 +37,7 @@ be styled with mapserver's native raster handling.
 Adding a heatmap layer requires the following major changes to the mapserver
 library:
 
-- implementation of an "interpolation" connectiontype for raster layers, where
+- implementation of an "kerneldensity" connectiontype for raster layers, where
   the connection refers to another mapfile layer or group used as the vector
   datasource - implementation of the actual vector to raster transformation:
 
@@ -53,7 +56,7 @@ library:
 -------------------------------
 
 The vector to raster pipeline is called from inside mapserver's high-level
-raster handling when handling a layer with **CONNECTIONTYPE INTERPOLATION**.
+raster handling when handling a layer with **CONNECTIONTYPE KERNELDENSITY**.
 The output of this operation is a handle to a GDAL datasource that can then be
 processed normally by the remainder of the raster handling code.
 
@@ -70,7 +73,7 @@ The heatmap vector-to-raster takes the following parameters:
   layer from GROUP who's minscale/maxscale matches the current map scale. The
   referenced layer should probably a TYPE POINT layer. Other layer types will
   result in one sample being added for each vertex of the input features.
-- **PROCESSING "INTERPOLATION_RADIUS=10"** : radius in pixels of the gaussian
+- **PROCESSING "KERNELDENSITY_RADIUS=10"** : radius in pixels of the gaussian
   filter to apply to the bitmap array once all features have been accumulated.
   Higher values result in increased cpu time needed to compute the filtered
   data. 
@@ -85,7 +88,7 @@ The heatmap vector-to-raster takes the following parameters:
 
    result with a radius set to 20 pixels
 
-- **PROCESSING "INTERPOLATION_ATTRIBUTE=attribute"** : specify which
+- **PROCESSING "KERNELDENSITY_ATTRIBUTE=attribute"** : specify which
   (numerical) attribute from the vector datasource should be used to determine
   the intensity of the sample. If left unset, the resulting heatmap will
   represent the spatial density of the vector features.
@@ -96,20 +99,20 @@ The heatmap vector-to-raster takes the following parameters:
    heatmap representing pure feature density, the actual vector points are
    represented alongside
 
-- **PROCESSING "COMPUTE_BORDERS=ON|OFF"** : The gaussian filter of radius "r"
-  cannot be applied to "r" pixels along the borders of the image. The default
-  is to extend the searchrect of the input datasource to include features "r"
-  pixels outside of the current map extent so that the computed heatmap extends
-  to the full extent of the resulting image. This can be deactivated when
-  tiling if the tiling software applies a metabuffer of "r" pixels to its
-  requests, to avoid the performance overhead of computing this extra
-  information.
+- **PROCESSING "KERNELDENSITY_COMPUTE_BORDERS=ON|OFF"** : A kernel of radius
+  "r" cannot be applied to "r" pixels along the borders of the image.  The
+  default is to extend the searchrect of the input datasource to include
+  features "r" pixels outside of the current map extent so that the computed
+  heatmap extends to the full extent of the resulting image. This can be
+  deactivated when tiling if the tiling software applies a metabuffer of "r"
+  pixels to its requests, to avoid the performance overhead of computing this
+  extra information.
 
-- **PROCESSING "NORMALIZATION=AUTO|numeric"** : if set to "AUTO", the created
-  raster band will be scaled such that its intensities range from 0 to 255, in
-  order to fully span the configured color ramp. Such behavior may not be
-  desirable (typically for tiling) as the resulting intensity of a pixel at a
-  given location will vary depending on the extent of the current map
+- **PROCESSING "KERNELDENSITY_NORMALIZATION=AUTO|numeric"** : if set to "AUTO",
+  the created raster band will be scaled such that its intensities range from 0
+  to 255, in order to fully span the configured color ramp. Such behavior may
+  not be desirable (typically for tiling) as the resulting intensity of a pixel
+  at a given location will vary depending on the extent of the current map
   request.If set to a numeric value, the samples will be multiplied by the
   given value. It is up to the user to determine which scaling value to use so
   the resulting pixels span the full 0-255 range; determining that value is
@@ -190,7 +193,7 @@ be wanted to modify the RGB interpolation so it behaves identically.
 ----------------------------
 
 The gaussian filter allocates two temporary float* bitmaps of the size of the
-requested image, optionally expanded in case border interpolation has been
+requested image, optionally expanded in case border computation has been
 activated or not. For very large image requests this may result in large
 allocations. The cost of the gaussian filtering is also dependent on the
 chosen radius, 
@@ -228,14 +231,14 @@ one another.
     layer
       name "heatmap"
       type raster
-      connectiontype interpolation
+      connectiontype kerneldensity
       connection "points"
       status on
       processing "RANGE_COLORSPACE=HSL"
-      processing "INTERPOLATION_RADIUS=20"
-      processing "INTERPOLATION_ATTRIBUTE=VAL"
-      processing "COMPUTE_BORDERS=ON"
-      processing "NORMALIZATION=AUTO"
+      processing "KERNELDENSITY_RADIUS=20"
+      processing "KERNELDENSITY_ATTRIBUTE=VAL"
+      processing "KERNELDENSITY_COMPUTE_BORDERS=ON"
+      processing "KERNELDENSITY_NORMALIZATION=AUTO"
       offsite 0 0 0
       class
         style
@@ -270,13 +273,14 @@ one another.
         END
      end
   end
+
 3. Miscellaneous
 ================
 
 3.1 Open Issues
 ---------------
 
-- The INTERPOLATION_ATTRIBUTE is set in a processing option in the raster
+- The KERNELDENSITY_ATTRIBUTE is set in a processing option in the raster
   layer. It would be more intuitive to add it in the vector layer, but how?
 - TODO: There is currently no FILTERing enabled on the vector layer. Such
   support should be added. However advanced filtering with mapserver
