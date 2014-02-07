@@ -178,9 +178,15 @@ only for heatmap layers.
    washed out colors when interpolating in RGB space
        
 
+2.3 Scaletoken Additions
+------------------------
 
+In order to easily adapt kernel density parameters depending on the actual
+map scaledenom, the implementation of :ref:`rfc86` will be extended to also
+replace tokens inside PROCESSING keys. See the examples at the end of this RFC
+to see how this can be used in the context of heatmaps.
 
-2.3 Backwards Compatibility
+2.4 Backwards Compatibility
 ---------------------------
 
 None expected. The behavior of the range support in RGB space is to extend the
@@ -189,7 +195,7 @@ span 0-255), whereas the behavior for HSL interpolation is to treat such values
 as NODATA. Given that this behavior hasn't been officially formalized, it might
 be wanted to modify the RGB interpolation so it behaves identically.
 
-2.4 Performance Implications
+2.5 Performance Implications
 ----------------------------
 
 The gaussian filter allocates two temporary float* bitmaps of the size of the
@@ -199,14 +205,14 @@ allocations. The cost of the gaussian filtering is also dependent on the
 chosen radius, 
 
 
-2.5 Compatibility with tiling
+2.6 Compatibility with tiling
 -----------------------------
 
 Options enabling tiling-compatible output have been added and must be used when
 tiling. Failure to do so **will** result in tiles that are not consistent from
 one another.
 
-2.6 Example mapfile
+2.7 Example mapfile
 -------------------
 
 .. code-block:: mapfile
@@ -273,6 +279,28 @@ one another.
         END
      end
   end
+
+With the addition of :ref:`rfc86` PROCESSING scaletokens, the kernel radius
+can be set dynamically depending on the scale. Note that any other PROCESSING
+key can be updated by the same method. In the following example, the kernel
+radius will be of 50 pixels for scales 1/1 to 1/25000000, and of 10 pixels
+for scales 1/25000000 and smaller:
+
+.. code-block:: mapfile
+
+    layer
+      name "heatmap"
+      ...
+      processing "KERNELDENSITY_RADIUS=%radius%"
+      SCALETOKEN
+        NAME "%radius%"
+        VALUES
+          "0" "50"
+          "25000000" "10"
+        END
+      END
+      ...
+    end
 
 3. Miscellaneous
 ================
