@@ -88,17 +88,6 @@ The heatmap vector-to-raster takes the following parameters:
 
    result with a radius set to 20 pixels
 
-- **PROCESSING "KERNELDENSITY_ATTRIBUTE=attribute"** : specify which
-  (numerical) attribute from the vector datasource should be used to determine
-  the intensity of the sample. If left unset, the resulting heatmap will
-  represent the spatial density of the vector features.
-
-.. figure:: ../../images/heatmap-hsl-density.png
-   :align: center
-
-   heatmap representing pure feature density, the actual vector points are
-   represented alongside
-
 - **PROCESSING "KERNELDENSITY_COMPUTE_BORDERS=ON|OFF"** : A kernel of radius
   "r" cannot be applied to "r" pixels along the borders of the image.  The
   default is to extend the searchrect of the input datasource to include
@@ -131,7 +120,27 @@ The heatmap vector-to-raster takes the following parameters:
 
    lower fixed scaling applied. no pixels have attained the 255 limit
 
-2.2 Raster Color Ramping
+2.2 Advanced sample weighting and filtering
+--------------------------------------------
+
+By default, each feature is assigned a weight of 1.0, and the resulting heatmap
+will represent the spatial density of the vector features. If this is not the
+desired behavior, different weights can be applied on a feature by feature
+basis by using regular CLASS/STYLE syntax on the source vector layer. The
+weight used will be read from the SIZE value of the matched STYLE. Standard
+EXPRESSION and MIN/MAXSCALEDENOM apply; if a feature results in no matching
+CLASS and/or STYLE, it is ignored and discarded from the resulting heatmap. The
+examples at the end of this RFC give some examples as to how this can be
+achieved.
+
+.. figure:: ../../images/heatmap-hsl-density.png
+   :align: center
+
+   heatmap representing pure feature density when sample weighting or filtering
+   are not applied, the actual vector points are represented alongside. (Other
+   examples in this RFC are rendered with attribute weighting on each sample)
+
+2.3 Raster Color Ramping
 ------------------------
 
 The features added in :ref:`rfc6` for vector features, and since extended to
@@ -178,7 +187,7 @@ only for heatmap layers.
    washed out colors when interpolating in RGB space
        
 
-2.3 Scaletoken Additions
+2.4 Scaletoken Additions
 ------------------------
 
 In order to easily adapt kernel density parameters depending on the actual
@@ -186,7 +195,7 @@ map scaledenom, the implementation of :ref:`rfc86` will be extended to also
 replace tokens inside PROCESSING keys. See the examples at the end of this RFC
 to see how this can be used in the context of heatmaps.
 
-2.4 Backwards Compatibility
+2.5 Backwards Compatibility
 ---------------------------
 
 None expected. The behavior of the range support in RGB space is to extend the
@@ -195,7 +204,7 @@ span 0-255), whereas the behavior for HSL interpolation is to treat such values
 as NODATA. Given that this behavior hasn't been officially formalized, it might
 be wanted to modify the RGB interpolation so it behaves identically.
 
-2.5 Performance Implications
+2.6 Performance Implications
 ----------------------------
 
 The gaussian filter allocates two temporary float* bitmaps of the size of the
@@ -205,15 +214,15 @@ allocations. The cost of the gaussian filtering is also dependent on the
 chosen radius, 
 
 
-2.6 Compatibility with tiling
+2.7 Compatibility with tiling
 -----------------------------
 
 Options enabling tiling-compatible output have been added and must be used when
 tiling. Failure to do so **will** result in tiles that are not consistent from
 one another.
 
-2.7 Example mapfile
--------------------
+2.8 Example mapfiles
+--------------------
 
 .. code-block:: mapfile
 
@@ -258,25 +267,11 @@ one another.
       end
     end
     
-    symbol
-     name "circle"
-     type ellipse
-     points 1 1 end
-    end
-
     layer
         name "points"
         status on
         type POINT
         data "pnts.shp"
-        CLASS
-         STYLE
-          SYMBOL "circle"
-          SIZE 1
-          COLOR 0 0 0
-          OUTLINECOLOR 255 255 255
-         END
-        END
      end
   end
 
@@ -302,18 +297,69 @@ for scales 1/25000000 and smaller:
       ...
     end
 
+Different weights can be applied by using CLASS->STYLE->SIZE syntax on the
+source vector layer to apply a non default weight to each sample:
+
+- Weight read from a feature attribute:
+
+  .. code-block:: mapfile
+  
+      layer
+        name "points"
+        status on
+        type POINT
+        data "pnts.shp"
+        class
+          style
+            size [attribute]
+          end
+        end
+      end
+
+- Weight read from a non numeric attribute:
+
+  .. code-block:: mapfile
+  
+      layer
+        name "points"
+        status on
+        type POINT
+        data "pnts.shp"
+        classitem "risk"
+        class
+          expression "high"
+          style
+            size 5
+          end
+        end
+        class
+          expression "medium"
+          style
+            size 3
+          end
+        end
+        class
+          expression "low"
+          style
+            size 1
+          end
+        end
+      end
+
 3. Miscellaneous
 ================
 
-3.1 Open Issues
----------------
+3.1 Comments from the review period
+-----------------------------------
 
-- The KERNELDENSITY_ATTRIBUTE is set in a processing option in the raster
-  layer. It would be more intuitive to add it in the vector layer, but how?
-- TODO: There is currently no FILTERing enabled on the vector layer. Such
-  support should be added. However advanced filtering with mapserver
-  epxressions may also be desirable (inside multiple classes), but in that case
-  how do we define/access that value?
+- It was suggested that the color ramp used in the raster layer be defined by a
+  static (png) image of exactly 256 pixels height instead of using
+  CLASS->STYLE->COLORRANGE. This allows for easier visual generation of color
+  ramps using standard image processing software.
+
+- "radius" is the only parameter affecting the filtering kernel used. Providing
+  a means to supply a hand-supplied kernel would be a feasible addition. More 
+  discussion may be needed to determine an appropriate syntax.
 
 3.2 Issue Tracking ID
 ---------------------
