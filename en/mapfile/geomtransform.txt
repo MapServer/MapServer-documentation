@@ -14,15 +14,19 @@
 
   Under construction
 
+.. contents:: Table of Contents
+    :depth: 3
+    :local:
+    :backlinks: top
+
 Geometry transformations return a new geometry.
 The purpose of a geometry transformation can be to achieve special
 effects for symbol rendering and labeling.
 
-Geometry transformation can be done at the `LAYER` level or the
+Geometry transformation is available at the `LAYER` level and the
 `STYLE` level.  At the `LAYER` level (since 6.4), the original vector
-geometry is used.  At the `STYLE` level, pixel coordinates are used.
-
-
+geometry ("real world" coordinates) is used.  At the `STYLE` level,
+pixel coordinates are used.
 
 
 .. index::
@@ -35,6 +39,8 @@ bbox
 `GEOMTRANSFORM bbox` returns the bounding box of the original
 geometry.
 
+Only available for `STYLE` in the `CLASS` context.
+
 .. index::
    pair: GEOMTRANSFORM; buffer
 
@@ -45,14 +51,186 @@ buffer
 `GEOMTRANSFORM buffer` returns the buffer of the original geometry.
 Always a polygon.
 
+Can be used on the `LAYER` level and for `STYLE` in the `CLASS`
+context.
+
 .. index::
    pair: GEOMTRANSFORM; end
 
+.. index::
+   pair: GEOMTRANSFORM; start
+
 ------------------------------------
-end
+`end` and `start`
 ------------------------------------
 
-`GEOMTRANSFORM end` returns the end point of a line.
+* `GEOMTRANSFORM end` returns the end point of a line.
+* `GEOMTRANSFORM start` returns the start point of a line.
+
+The direction of the line at the start / end point is available for
+rendering effects.
+
+Only available for `STYLE` in the `CLASS` context.
+
+.. figure:: ../images/geomtrans-startend.png
+   :height: 200
+   :width: 200
+   :align: center
+
+   Geomtransform start and end usage
+
+Class definitions for the example.
+
+Lower part of the figure::
+
+    CLASS
+      STYLE
+        GEOMTRANSFORM "start"
+        SYMBOL "circlef"
+        COLOR 255 0 0
+        SIZE 20
+      END # STYLE
+      STYLE
+        COLOR 0 0 0
+        WIDTH 4
+      END # STYLE
+      STYLE
+        GEOMTRANSFORM "end"
+        SYMBOL "circlef"
+        COLOR 0 255 0
+        SIZE 20
+      END # STYLE
+    END # CLASS
+
+Upper part of the figure::
+
+    CLASS
+      STYLE
+        COLOR 0 0 0
+        WIDTH 4
+      END # STYLE
+      STYLE
+        GEOMTRANSFORM start
+        SYMBOL "startarrow"
+        COLOR 255 0 0
+        SIZE 20
+        ANGLE auto
+      END # STYLE
+      STYLE
+        GEOMTRANSFORM start
+        SYMBOL "circlef"
+        COLOR 0 0 255
+        SIZE 5
+      END # STYLE
+      STYLE
+        GEOMTRANSFORM "end"
+        SYMBOL "endarrow"
+        COLOR 0 255 0
+        SIZE 20
+        ANGLE auto
+      END # STYLE
+      STYLE
+        GEOMTRANSFORM "end"
+        SYMBOL "circlef"
+        COLOR 0 0 255
+        SIZE 5
+      END # STYLE
+    END # CLASS
+
+The startarrow symbol defintion (endarrow is the same, except for ANCHORPOINT
+(value for endarrow: 1 0.5)::
+
+  SYMBOL
+    NAME "startarrow"
+    TYPE vector
+    FILLED true
+    POINTS
+      0 0.4
+      3 0.4
+      3 0
+      5 0.8
+      3 1.6
+      3 1.2
+      0 1.2
+      0 0.4
+    END # POINTS
+    ANCHORPOINT 0 0.5
+  END # SYMBOL
+
+.. index::
+   pair: GEOMTRANSFORM; labelpnt
+
+.. index::
+   pair: GEOMTRANSFORM; labelpoly
+
+-------------------------------------
+labelpnt and labelpoly ('LABEL' only)
+-------------------------------------
+
+* `GEOMTRANSFORM labelpmt` produces the geographic position the label
+  is attached to.  This corresponds to the center of the label text
+  only if the label is in position `CC`.
+* `GEOMTRANSFORM labelpoly` produces a polygon that covers the label
+  plus a 1 pixel padding.
+
+Only available for `STYLE` in the `LABEL` context.
+
+These transformations can be used to make background rectangles for
+labels and add symbols to the label points.
+      
+
+.. figure:: ../images/geomtrans-label.png
+   :height: 100
+   :width: 200
+   :align: center
+
+   Geomtransform labelpnt and labelpoly
+
+Class definitions for the example::
+
+    CLASS
+      STYLE
+        OUTLINECOLOR 255 255 204
+      END # STYLE
+      LABEL
+        #TYPE truetype
+        #FONT arial
+        #SIZE 20
+        SIZE giant
+        POSITION UC
+        STYLE # shadow
+          GEOMTRANSFORM "labelpoly"
+          COLOR 153 153 153
+          OFFSET 3 3
+        END # Style
+        STYLE
+          GEOMTRANSFORM "labelpoly"
+          COLOR 204 255 204
+        END # Style
+        STYLE
+          GEOMTRANSFORM "labelpoly"
+          OUTLINECOLOR 0 0 255
+          WIDTH 1
+        END # Style
+        STYLE
+          GEOMTRANSFORM "labelpnt"
+	  SYMBOL 'circlef'
+          COLOR 255 0 0
+          SIZE 15
+        END # Style
+      END # Label
+    END # Class
+
+Symbol definition for the `circlef` symbol::
+
+  SYMBOL
+    NAME "circlef"
+    TYPE ellipse
+    FILLED true
+    POINTS
+      1 1
+    END # POINTS
+  END # SYMBOL
 
 
 .. index::
@@ -136,11 +314,48 @@ Example of a simple layer definition::
 
 
 .. index::
-   pair: GEOMTRANSFORM; start
+   pair: GEOMTRANSFORM; vertices
 
 ------------------------------------
-start
+vertices
 ------------------------------------
 
-`GEOMTRANSFORM start` returns the start point of a line.
+`GEOMTRANSFORM vertices` produces the set of vertices of a line (with
+direction information).
 
+Only available for `STYLE` in the `CLASS` context.
+
+.. figure:: ../images/geomtrans-vertices.png
+   :height: 100
+   :width: 200
+   :align: center
+
+   Geomtransform vertices
+
+Class definitions for the example::
+
+    CLASS
+      STYLE
+        COLOR 0 0 0
+        WIDTH 4
+      END # STYLE
+      STYLE
+        GEOMTRANSFORM vertices
+        SYMBOL "vertline"
+        COLOR 0 0 0
+	WIDTH 2
+        SIZE 20
+        ANGLE AUTO
+      END # STYLE
+    END # CLASS
+
+The vertline symbol definition::
+
+  SYMBOL
+    NAME "vertline"
+    TYPE vector
+    POINTS
+      0 0
+      0 1
+    END # POINTS
+  END # SYMBOL
