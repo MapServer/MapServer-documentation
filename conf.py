@@ -259,7 +259,7 @@ epub_identifier = 'http://mapserver.org'
 #epub_exclude_files = []
 
 # Path for sphinx to find *.mo files for translation
-locale_dirs = ['./translated']
+locale_dirs = ['../translated']
 
 from pygments.lexer import RegexLexer, bygroups,combined, include
 from pygments.token import *
