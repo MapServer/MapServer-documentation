@@ -93,6 +93,18 @@ generate_po_from_tmpl:
 	done
 	@echo "*.pot files copy to *.po files. Now you can start your translation.";\
 
+update_po_from_pot:
+	@for lang in $(TRANSLATIONI18N) ;\
+	do \
+		echo "Update po files from pot files for $$lang..."; \
+		for f in `find ./translated/pot/ -name \*.pot -printf "%f\n"`; \
+		do \
+			echo "update po files from pot file for $$f"; \
+			msgmerge ./translated/$$lang/$${f%.*}.po ./translated/pot/$$f -U -N; \
+		done; \
+	done
+	@echo "*.po files updated from *.pot files.";\
+
 html:
 	@for lang in $(LANGUAGES);\
 	do \
