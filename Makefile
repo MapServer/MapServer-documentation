@@ -9,7 +9,7 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
 TRANSLATIONS  = it es zh_cn de
-TRANSLATIONI18N  = de el fr id sq tr
+TRANSLATIONI18N  = el fr id sq tr
 LANGUAGES     = en $(TRANSLATIONS) 
 
 # On mapserver.org we need to write alternate links for the language switcher.
