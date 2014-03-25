@@ -231,7 +231,7 @@ first days of the Sphinx software. The second use the new system of
 `internationalization`_ and is currently only used for the French translation.
 
 The "old" way for translations
-..............................
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 Although we think that nowadays the new system is better, we do not wanted to enforce 
 every language community to change their habits.
@@ -279,12 +279,10 @@ The build script will then process the subdirectories *en* and *de*. If they
 are not accessible, an error message will be returned.
 
 The standard internationalization system (i18n) for translations
-................................................................
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-
-
-
-**Initial translation process for a new language**
+Initial translation process for a new language
+..............................................
 
 It follows steps below:
 
@@ -375,29 +373,81 @@ Be cautious, you must have an LC_MESSAGES directory to receive *.mo files.
 To keep this directory in Git, it's recommended to create and empty file into 
 it.
 
-**The usual workflow for already existing translation**
+.. note:: When adding a new langage, take care of the ISO code used. Famfamfam 
+  flag icons is using ISO Country code, and transifex is using ISO Langage code 
+  which can be different.
 
-The previous process we explain is only for the language creation.
-After, the workflow consists of:
+The usual workflow for already existing translation
+....................................................
 
-* translating po files for your language,
+The previous process we explained is only for the language creation. After, the 
+workflow consists of:
+
+* translating po files for your language via `transifex <https://www.transifex.com/organization/mapserver/dashboard>`_,
+* pull po files from transifex and commit them
 * generating the .mo files
 * building again
+
+Here are the command line:
+
+* Getting po files from transifex (you can use -l flags to filter the langage)::
+
+    tx pull -a 
+  
+* Build mo files from po files::
+
+    make compile_messages  -e TRANSLATIONI18N=fr
+
+* Build html page::
+  
+    make clean html
+    
+See below how to setup your transifex account to use transifex client to push, 
+pull translated files and build html files.
 
 Sometimes, when a change occurs in the main english documentation, you will 
 need to generate again the pot files. Then, you will have to merge your 
 translated files with the new pot files using for example the command line 
-utility (from gettext) below :
+utility (from gettext) below::
 
-   ::
-      
-      msgmerge translated/fr/index.po build/gettext/en/index.pot -U -N
+      make gettext
+      make gettext_copy 	
 
--U mean update po file with pot file and -N mean don't use fuzzy but exact match
+.. we don't merge string anymore: msgmerge translated/fr/index.po build/gettext/en/index.pot -U -N
 
-The process for this part may change: with a lot of contributors for 
-translation, a tool like Transifex can fit better.
+-U mean update po file with pot file and -N mean don't use fuzzy but exact match. 
+Then push po files to transifex (you can use -l flags to filter the langage)::
 
+    tx push -s
+
+Knonw issues:
+ 
+* when downloading po files to local dir, if the file exists it won't be 
+ updated. At this moment we should remove all po files before downloading.
+* when building html doc cache system doesn't allow to update a page with up to 
+ date translation. We should use the clean target with make.
+* This command line throw an error::
+  
+    tx push -s -t
+
+How to use Transifex client to manage translation process
+...........................................................
+
+* Install transifex client::
+
+    sudo apt-get install transifex-client
+
+* Edit ~/.transifexrc and add the appropriate info in there::
+
+    vim ~/.transifexrc
+
+  * With the following content::
+
+     [https://www.transifex.com/]                                                                                                                                                                                                 
+     username = yjacolin
+     token =
+     password = passw0rd!
+     hostname = https://www.transifex.com/
 
 Reference Labels
 ----------------
@@ -406,7 +456,7 @@ Reference Labels
 
 
 Regenerating the reference labels
-..................................
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can regenerate the reference labels by issuing:
 
