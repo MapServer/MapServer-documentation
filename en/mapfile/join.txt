@@ -71,8 +71,8 @@ FOOTER [filename]
 .. index::
    pair: JOIN; FROM
     
-FROM [item]
-    Join item in the dataset.  This is case sensitive.
+FROM [column]
+    Join column in the dataset.  This is case sensitive.
     
 .. index::
    pair: JOIN; HEADER
@@ -100,17 +100,17 @@ TABLE [filename|tablename]
    pair: JOIN; TEMPLATE
     
 TEMPLATE [filename]
-    Template to use with one-to-many joins. The template is processed once 
-    for each record and can only contain substitutions for items in the joined
-    table.  Refer to the column in the joined table in your template like
-    [joinname_columnname], where joinname is the NAME specified for the JOIN
-    object.
+    Template to use with one-to-many joins. The template is processed
+    once for each record and can only contain substitutions for
+    columns in the joined table.  Refer to the column in the joined
+    table in your template like [joinname_columnname], where joinname
+    is the NAME specified for the JOIN object.
 
 .. index::
    pair: JOIN; TO
     
-TO [item]
-    Join item in the table to be joined. This is case sensitive.
+TO [column]
+    Join column in the table to be joined. This is case sensitive.
 
 .. index::
    pair: JOIN; TYPE
@@ -391,3 +391,82 @@ Mapfile Layer
         END # join
       END # layer
 
+Example 5: One-to-many join
+============================================
+
+In a join of type `ONE-TO-MANY`, the `JOIN` object needs to contain a
+`TEMPLATE`.  This `TEMPLATE` is used for each matching record in the
+join table.  Columns in the join table are referenced using
+<join_name>_<join_column_name>.  Columns in the layer table are
+referenced using <column_name>.
+
+For a one-to-many join, the `LAYER` `TEMPLATE` file has to contain a
+reference to the the `JOIN` object, as follows: [join_<join_name>].
+
+In this example, it is assumed that the join table many.dbf contains
+the columns MANYFIELD1 and MANYFIELD2 in addition to the join column
+(IDENT).
+
+Layer object:
+
+.. code-block:: mapfile
+
+  LAYER
+    NAME "joinonetomany"
+    TYPE POLYGON
+    STATUS DEFAULT
+    DATA "prov.shp"
+    CLASS
+      NAME "Province"
+      STYLE
+        OUTLINECOLOR 120 120 120
+        COLOR 255 255 0
+      END # style
+    END # class
+    TEMPLATE "oneToMany.html"
+    HEADER "oneToMany_header.html"
+    FOOTER "oneToMany_footer.html"
+    JOIN
+      NAME "onetomanytest"
+      TABLE "many.dbf"
+      FROM "ID"
+      TO "IDENT"
+      TYPE ONE-TO-MANY
+      TEMPLATE "oneToMany_join.html"
+    END # join
+  END # layer
+
+Template oneToMany_header.html::
+
+  <!-- Mapserver Template -->
+  <html>
+    <head><title>One to Many Join</title></head>
+    <body>
+      <h1>Mapserver output</h1>
+      <table>
+
+Template oneToMany.html::
+
+  <!-- Mapserver Template -->
+        <tr>
+          <td><strong>[ID]</strong></td>
+          <td><table>
+  [join_onetomanytest]
+          </table></td>
+        </tr>
+
+Template oneToMany_join.html::
+
+  <!-- Mapserver Template -->
+            <tr>
+              <td>[NAME]</td>
+              <td>[onetomanytest_MANYFIELD1]</td>
+              <td>[onetomanytest_MANYFIELD2]</td>
+            </tr>
+ 
+Template oneToMany_footer.html::
+
+  <!-- Mapserver Template -->
+      </table>
+    </body>
+  <html>
