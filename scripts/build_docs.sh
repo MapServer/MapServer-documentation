@@ -7,7 +7,7 @@ BUILDDIR="/tmp/ms-$BRANCH-$RANDOM-build"
 
 
 #LOCATION="/osgeo/mapserver.org"
-LANGUAGES="en de es it zh_cn"
+LANGUAGES="en de es it zh_cn fr"
 PDF_LANGUAGES="en"
 
 cd "$REPO"
@@ -46,20 +46,28 @@ do
    elif [ "$lang" == "it" ]; then
    warn=".. warning::
 
-   outdated by @DAYS@ days !
+   outdated by @DAYS@ days!
 
    "
 
    elif [ "$lang" == "es" ]; then
    warn=".. warning::
 
-   outdated by @DAYS@ days !
+   outdated by @DAYS@ days!
+
+   "
+   elif [ "$lang" == "fr" ]; then
+   warn=".. warning::
+
+   La traduction de cette page est en retard de @DAYS@ jours !
+   Contribuez à la traduction est aussi simple que d'utiliser 
+   transifex : https://www.transifex.com/organization/mapserver/dashboard
 
    "
    elif [ "$lang" == "zh_cn" ]; then
    warn=".. warning::
 
-   outdated by @DAYS@ days !
+   outdated by @DAYS@ days!
 
    "
    else
