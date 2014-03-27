@@ -48,9 +48,10 @@ help:
 	@echo "  gettext_copy   to duplicate pot files from gettext dir to translated\pot"
 
 clean:
-	-rm -rf $(BUILDDIR)/*
+	-rm -rf $(BUILDDIR)/* init compile_messages
 
-init:
+
+init: en/*
 	@for lang in $(TRANSLATIONS) ;\
 	do \
 # 		We change the Internal Field Separator (IFS) because to handle filename with special char like space. \
@@ -67,9 +68,11 @@ init:
 #		Copy all no .txt files \
 		yes n | cp -ipR en/* $$lang &> /dev/null; \
 	done
-	@echo "Init finished. Other target can now be build.";\
+	@echo "Init finished. Other target can now be built.";\
+	touch init
 
-compile_messages:
+
+compile_messages: init translated/*/*.po
 	@for lang in $(TRANSLATIONI18N) ;\
 	do \
 		echo "Compiling messages for $$lang..."; \
@@ -80,6 +83,7 @@ compile_messages:
 		done; \
 	done
 	@echo "Messages compiled. Now you can build updated version for html and pdf.";\
+	touch compile_messages
 
 generate_po_from_tmpl:
 	@for lang in $(TRANSLATIONI18N) ;\
@@ -105,7 +109,7 @@ update_po_from_pot:
 	done
 	@echo "*.po files updated from *.pot files.";\
 
-html:
+html: compile_messages
 	@for lang in $(LANGUAGES);\
 	do \
 		mkdir -p $(BUILDDIR)/html/$$lang $(BUILDDIR)/doctrees/$$lang; \
@@ -132,7 +136,7 @@ gettext_copy:
 
 	@echo "Build finished. The pot files pages are in $(BUILDDIR)/gettext/en.";\
 
-singlehtml:
+singlehtml: compile_messages
 	@for lang in $(LANGUAGES);\
 	do \
 		mkdir -p $(BUILDDIR)/singlehtml/$$lang $(BUILDDIR)/doctrees/$$lang; \
@@ -146,7 +150,7 @@ singlehtml:
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/singlehtml/<language>.";\
 
-pickle:
+pickle: compile_messages
 	@for lang in $(LANGUAGES);\
 	do \
 		mkdir -p $(BUILDDIR)/pickle/$$lang $(BUILDDIR)/doctrees/$$lang; \
@@ -162,7 +166,7 @@ pickle:
 
 web: pickle
 
-json:
+json: compile_messages
 	@for lang in $(LANGUAGES);\
 	do \
 		mkdir -p $(BUILDDIR)/json/$$lang $(BUILDDIR)/doctrees/$$lang; \
@@ -176,7 +180,7 @@ json:
 	@echo
 	@echo "Build finished; now you can process the JSON files."
 
-htmlhelp:
+htmlhelp: compile_messages
 	@for lang in $(LANGUAGES);\
 	do \
 		mkdir -p $(BUILDDIR)/htmlhelp/$$lang $(BUILDDIR)/doctrees/$$lang; \
@@ -186,7 +190,7 @@ htmlhelp:
 	@echo "Build finished; now you can run HTML Help Workshop with the" \
 	      ".hhp project file in $(BUILDDIR)/htmlhelp/<language>."
 
-latex:
+latex: compile_messages
 	@for lang in $(LANGUAGES);\
 	do \
 		mkdir -p $(BUILDDIR)/latex/$$lang $(BUILDDIR)/doctrees/$$lang; \
@@ -201,7 +205,7 @@ latex:
 	@echo "Build finished; the LaTeX files are in $(BUILDDIR)/latex/<language>."\
 	@echo "Run \`make all-pdf' or \`make all-ps'"
 
-pdf:
+pdf: compile_messages
 	@for lang in $(LANGUAGES);\
 	do \
 		mkdir -p $(BUILDDIR)/pdf/$$lang $(BUILDDIR)/doctrees/$$lang; \
@@ -216,7 +220,7 @@ pdf:
 	@echo "Build finished; the PDF files are in $(BUILDDIR)/pdf/<language>."\
 	@echo "Run \`make pdf' "
 
-epub:
+epub: compile_messages
 	@for lang in en;\
 	do \
 		mkdir -p $(BUILDDIR)/epub/$$lang $(BUILDDIR)/doctrees/$$lang; \
@@ -226,26 +230,26 @@ epub:
 	@echo "Build finished; the epub files are in $(BUILDDIR)/epub/<language>."\
 	@echo "Run \`make epub' "
 
-all-pdf:
+all-pdf: latex
 	@for lang in $(LANGUAGES);\
 	do \
-		/usr/bin/make -C $(BUILDDIR)/latex/$$lang all-pdf ; \
+		make -C $(BUILDDIR)/latex/$$lang all-pdf ; \
 		if [ -d $(BUILDDIR)/html/$$lang ]; then \
 		mv -f $(BUILDDIR)/latex/$$lang/MapServer.pdf $(BUILDDIR)/html/$$lang ; \
 		fi \
 	done
 	@for lang in $(TRANSLATIONI18N);\
 	do \
-		/usr/bin/make -C $(BUILDDIR)/latex/$$lang all-pdf ; \
+		make -C $(BUILDDIR)/latex/$$lang all-pdf ; \
 		if [ -d $(BUILDDIR)/html/$$lang ]; then \
 		mv -f $(BUILDDIR)/latex/$$lang/MapServer.pdf $(BUILDDIR)/html/$$lang ; \
 		fi \
 	done
 
-all-ps:
+all-ps: latex
 	@for lang in $(LANGUAGES);\
 	do \
-		/usr/bin/make -C $(BUILDDIR)/latex/$$lang all-ps ; \
+		make -C $(BUILDDIR)/latex/$$lang all-ps ; \
 		if [ -d $(BUILDDIR)/html/$$lang ]; then \
 		mv -f $(BUILDDIR)/latex/$$lang/MapServer.pdf $(BUILDDIR)/html/$$lang ; \
 		fi \
@@ -280,3 +284,6 @@ labels:
 	@echo
 	@echo "Label generation complete; look for any errors in the above output " \
 	      "or in $(BUILDDIR)/labels/<language>/labels.txt."
+
+
+all: html all-pdf epub all-ps
