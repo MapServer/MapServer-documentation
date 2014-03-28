@@ -54,7 +54,6 @@ clean:
 init: en/*
 	@set -e; for lang in $(TRANSLATIONS) ;\
 	do \
-# 		We change the Internal Field Separator (IFS) because to handle filename with special char like space. \
 		for file in `cd en; find . -type f -a -regex '.*\.txt$$' -a -not -regex '.*\.svn.*' -printf "%p\n" ; cd ..;`; \
 		do \
 			if [ ! -f $$lang/$$file ]; then  \
