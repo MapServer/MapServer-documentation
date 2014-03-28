@@ -115,8 +115,8 @@ do
 done
 
 cd $BUILDDIR
-make clean
-make compile_messages
+#make clean
+#make compile_messages
 make TARGET=mapserverorg html
 make latex
 make epub
