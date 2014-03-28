@@ -52,7 +52,7 @@ clean:
 
 
 init: en/*
-	@set -e; for lang in $(TRANSLATIONS) ;\
+	for lang in $(TRANSLATIONS) ;\
 	do \
 # 		We change the Internal Field Separator (IFS) because to handle filename with special char like space. \
 		OLDIFS="$$IFS"; \
