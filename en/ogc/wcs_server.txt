@@ -479,6 +479,11 @@ Standard page`_:
 * `WCS 2.0 Specification - Core`_
 * `WCS 2.0 Specification - KVP Protocol Binding Extension`_
 * `WCS 2.0 Specification - XML/POST Protocol Binding Extension`_
+* `WCS 2.0 Specification - Interpolation Extension`_
+* `WCS 2.0 Specification - Range Subsetting Extension`_
+* WCS 2.0 Specification - GeoTIFF Format Extension
+* `WCS 2.0 Specification - CRS Extension`_
+* `WCS 2.0 Specification - Scaling Extension`_
 
 Technical changes from WCS version 1.1.2 include entirely building on
 the `GML 3.2.1 Application Schema Coverages`_ and adoption of `OWS
@@ -508,10 +513,84 @@ The following KVP request parameters are available in WCS 2.0:
     
     .. note::
 
-      The syntax of the **crs** sub-parameter is likely to need to be changed 
-      when new specification documents become available (see :ref:`To-do Items 
-      and Known Limitations <wcs_to-do>`).
+      The syntax of the **crs** sub-parameter is non-standard and deprecated.
+      Please use the *SUBSETTINGCRS* parameter instead.
+
+    .. note::
+
+      Recognized values for the axis sub-parameter are: "x", "xaxis",
+      "x-axis", "x_axis", "long", "long_axis", "long-axis", "lon",
+      "lon_axis", "lon-axis", "y", "yaxis", "y-axis", "y_axis", "lat",
+      "lat_axis" and "lat-axis".
+
+    **SUBSETTINGCRS=crs:** This parameter defines the crs subsetting all 
+    *SUBSETs* are expressed in, and also the output CRS if no *OUTPUTCRS* is 
+    specified.
     
+    **OUTPUTCRS=crs:** This parameter defines in which crs the output 
+    image should be expressed in. 
+
+    **MEDIATYPE=mediatype:** This parameter is relevant to GetCoverage
+    requests, when multipart XML/image output is desired. It should be
+    set to 'multipart/related' (which is currently the only possible
+    value for this parameter).
+
+    **SCALEFACTOR=factor:** With this parameter (a positive float) the size of
+    the output image can be adjusted. All axes are scaled equally.
+
+    **SCALEAXES=axis(value)[,axis(value)]:** With this parameter, an axis 
+    specific scaling can be applied. Any axis not mentioned
+
+    **SCALESIZE=axis(size)[,axis(size)]:** This is similar to the *SCALEAXES* 
+    parameter, but allows an axis specific setting of the absolute pixel size
+    of the returned coverage.
+
+    **SCALEEXTENT=axis(min:max)[,axis(min:max)]:** This parameter is treated
+    like a *SCALESIZE* parameter with "axis(max-min)".
+    
+    **INTERPOLATION=intperolation_method:** This defines the
+    interpolation method used, for rescaled images. Possible values
+    are "NEAREST", "BILINEAR" and "AVERAGE".
+
+    **RANGESUBSET=band1[,band2[,...]]:** With this parameter, a
+    selection of bands can be made. Also the bands can be
+    reordered.  The bands can be referred to either by name (which can
+    be retrieved using the DescribeCoverage request) or by index
+    (starting with '1' for the first band). Also a range of bands can be given:
+    *bandX:bandY*. This also includes the lower and upper bounds. As the name
+    implies, the lower bound must reference the band with the lower index. You 
+    can mix direct references to the bands with intervals. E.g: 
+    *RANGESUBSET=band1,band3:band:5,band7*
+
+
+The following parameters are part of the GeoTIFF extension and are only 
+available for the GeoTIFF outputformat:
+
+    **GEOTIFF:COMPRESSION=compression:** The compression method used for the 
+    returned image. Valid options are: None, PackBits, Deflate, Huffman, LZW 
+    and JPEG.
+
+    **GEOTIFF:JPEG_QUALITY=1-100:** When the compression method JPEG is chosen,
+    this value defines the quality of the algorithm.
+
+    **GEOTIFF:PREDICTOR=None|Horizontal|FloatingPoint:** The predictor value 
+    for the LZW and Deflate compression methods.
+
+    **GEOTIFF:INTERLEAVE=Band|Pixel:** Defines wether the image shall be band 
+    or pixel interleaved.
+
+    **GEOTIFF:TILING=true|false:** Defines if the output image shall be 
+    internally tiled.
+
+    **GEOTIFF:TILEWIDTH=tilewidth**, **GEOTIFF:TILEHEIGHT=tileheight**: Define
+    the size of the internal tiles. Must be positive integer divisible by 16.
+
+
+The following request parameters are not part of the WCS 2.0 Core or any 
+extension thereof, and are kept for backward compatibility. They originate from
+a time where the most vital standard extensions were not specified and the WCS 
+core was not quite useful without. They are deprecated.
+
     **SIZE=axis(value):** This parameter sets the size of the desired
     axis to the desired value (pixels).
 
@@ -527,37 +606,6 @@ The following KVP request parameters are available in WCS 2.0:
       ...&SUBSET=x(0,100)&SIZE=lon(200)&... is not legal although the
       axis names logically refer to the same axis.
 
-    .. note::
-
-      Recognized values for the axis sub-parameter are: "x", "xaxis",
-      "x-axis", "x_axis", "long", "long_axis", "long-axis", "lon",
-      "lon_axis", "lon-axis", "y", "yaxis", "y-axis", "y_axis", "lat",
-      "lat_axis" and "lat-axis".
-
-    **OUTPUTCRS=crs:** This parameter defines in which crs the output 
-    image should be expressed in. 
-
-    **MEDIATYPE=mediatype:** This parameter is relevant to GetCoverage
-    requests, when multipart XML/image output is desired. It should be
-    set to 'multipart/related' (which is currently the only possible
-    value for this parameter).
-    
-    **INTERPOLATION=intperolation_method:** This defines the
-    interpolation method used, for rescaled images. Possible values
-    are "NEAREST", "BILINEAR" and "AVERAGE".
-
-    **RANGESUBSET=band1[,band2[,...]]:** With this parameter, a
-    selection of bands can be made. Also the bands can be
-    reordered.  The bands can be referred to either by name (which can
-    be retrieved using the DescribeCoverage request) or by index
-    (starting with '1' for the first band).
-
-    .. note::
-
-      The paramter names **SIZE**, **RESOLUTION**, **OUTPUTCRS=crs:**, 
-      **INTERPOLATION**, and **RANGESUBSET** might need to be changed when new 
-      specification documents become available (see :ref:`To-do Items and 
-      Known Limitations <wcs_to-do>`).
 
 Unchanged KVP parameters
 ''''''''''''''''''''''''
@@ -614,7 +662,8 @@ The below sample request outline the new KVP request syntax::
   # GetCoverage 2.0 reproject to EPSG 4326
   http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.1
     &REQUEST=GetCoverage&COVERAGEID=grey&FORMAT=image/tiff
-    &SUBSET=x,http://www.opengis.net/def/crs/EPSG/0/4326(-121.488744,-121.485169)
+    &SUBSET=x(-121.488744,-121.485169)
+    &SUBSETTINGCRS=http://www.opengis.net/def/crs/EPSG/0/4326
 
 Please refer to the `WCS 2.0 tests in msautotest`_ for further sample 
 requests.
@@ -847,24 +896,119 @@ request:
       http://schemas.opengis.net/wcs/2.0/wcsAll.xsd"
     xmlns="http://www.opengis.net/wcs/2.0"
     xmlns:wcs="http://www.opengis.net/wcs/2.0"
+    xmlns:wcscrs="http://www.opengis.net/wcs/crs/1.0"
+    xmlns:scal="http://www.opengis.net/wcs/scaling/1.0"
+    xmlns:int="http://www.opengis.net/wcs/interpolation/1.0"
     service="WCS"
     version="2.0.1">
     <wcs:CoverageId>SOME_ID</wcs:CoverageId>
     <wcs:DimensionTrim>
-      <wcs:Dimension crs="http://www.opengis.net/def/crs/EPSG/0/4326">x
-      </wcs:Dimension>
+      <wcs:Dimension>x</wcs:Dimension>
       <wcs:TrimLow>16.5</wcs:TrimLow>
       <wcs:TrimHigh>17.25</wcs:TrimHigh>
     </wcs:DimensionTrim>
     <wcs:DimensionTrim>
-      <wcs:Dimension crs="http://www.opengis.net/def/crs/EPSG/0/4326">y
-      </wcs:Dimension>
+      <wcs:Dimension>y</wcs:Dimension>
       <wcs:TrimLow>47.9</wcs:TrimLow>
     </wcs:DimensionTrim>
     <wcs:format>image/tiff</wcs:format>
     <wcs:mediaType>multipart/related</wcs:mediaType>
-    <wcs:Resolution dimension="x">0.01</wcs:Resolution>
-    <wcs:Size dimension="y">50</wcs:Size>
+    <wcs:Extension>
+      <wcscrs:subsettingCrs>http://www.opengis.net/def/crs/EPSG/0/4326</wcscrs:subsettingCrs>
+      <wcscrs:outputCrs>http://www.opengis.net/def/crs/EPSG/0/32611</wcscrs:outputCrs>
+      <scal:ScaleToSize>
+        <scal:TargetAxisSize>
+          <scal:axis>x</scal:axis>
+          <scal:targetSize>50</scal:targetSize>
+        </scal:TargetAxisSize>
+        <scal:TargetAxisSize>
+          <scal:axis>y</scal:axis>
+          <scal:targetSize>50</scal:targetSize>
+        </scal:TargetAxisSize>
+      </scal:ScaleToSize>
+      <int:Interpolation>
+        <int:globalInterpolation>NEAREST</int:globalInterpolation>
+      </int:Interpolation>
+    </wcs:Extension>
+  </wcs:GetCoverage>
+
+
+These are some other scaling options:
+
+.. code-block:: xml
+
+  <wcs:GetCoverage 
+    xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+    xsi:schemaLocation="http://www.opengis.net/wcs/2.0
+      http://schemas.opengis.net/wcs/2.0/wcsAll.xsd"
+    xmlns="http://www.opengis.net/wcs/2.0"
+    xmlns:wcs="http://www.opengis.net/wcs/2.0"
+    xmlns:scal="http://www.opengis.net/wcs/scaling/1.0"
+    service="WCS"
+    version="2.0.1">
+  
+    <!-- ... -->
+    <wcs:Extension>
+      <scal:ScaleByFactor>
+        <scal:scaleFactor>1.5</scal:scaleFactor>
+      </scal:ScaleByFactor>
+
+      <!-- or -->
+
+      <scal:ScaleAxesByFactor>
+        <scal:ScaleAxis>
+          <scal:axis>x</scal:axis>
+          <scal:scaleFactor>1.5</scal:scaleFactor>
+        </scal:ScaleAxis>
+        <scal:ScaleAxis>
+          <scal:axis>y</scal:axis>
+          <scal:scaleFactor>2.0</scal:scaleFactor>
+        </scal:ScaleAxis>
+      </scal:ScaleAxesByFactor>
+
+      <!-- or -->
+
+      <scal:ScaleToExtent>
+        <scal:TargetAxisExtent>
+          <scal:axis>x</scal:axis>
+          <scal:low>10</scal:low>
+          <scal:high>20</scal:high>
+        </scal:TargetAxisExtent>
+        <scal:TargetAxisExtent>
+          <scal:axis>y</scal:axis>
+          <scal:low>20</scal:low>
+          <scal:high>30</scal:high>
+        </scal:TargetAxisExtent>
+      </scal:ScaleToExtent>
+    </wcs:Extension>
+  </wcs:GetCoverage>
+
+
+GeoTIFF parameters are used as follows:
+
+.. code-block:: xml
+
+ <wcs:GetCoverage 
+    xmlns:xsi='http://www.w3.org/2001/XMLSchema-instance'
+    xsi:schemaLocation="http://www.opengis.net/wcs/2.0
+      http://schemas.opengis.net/wcs/2.0/wcsAll.xsd"
+    xmlns="http://www.opengis.net/wcs/2.0"
+    xmlns:wcs="http://www.opengis.net/wcs/2.0"
+    xmlns:geotiff="http://www.opengis.net/gmlcov/geotiff/1.0"
+    service="WCS"
+    version="2.0.1">
+  
+    <!-- ... -->
+    <wcs:Extension>
+      <geotiff:parameters>
+        <geotiff:compression>LZW</geotiff:compression>
+        <geotiff:predictor>Horizontal</geotiff:predictor>
+        <geotiff:interleave>Band</geotiff:interleave>
+        <geotiff:tiling>yes</geotiff:tiling>
+        <geotiff:tilewidth>256</geotiff:tilewidth>
+        <geotiff:tileheight>256</geotiff:tileheight>
+      </geotiff:parameters>
+    </wcs:Extension>
   </wcs:GetCoverage>
 
 Please refer to the `WCS 2.0 Specification - XML/POST Protocol Binding
@@ -1437,6 +1581,11 @@ To-do Items and Known Limitations
 .. _`WCS 2.0 Specification - Core`: http://portal.opengeospatial.org/files/?artifact_id=48428
 .. _`WCS 2.0 Specification - KVP Protocol Binding Extension`: http://portal.opengeospatial.org/files/?artifact_id=41439
 .. _`WCS 2.0 Specification - XML/POST Protocol Binding Extension`: http://portal.opengeospatial.org/files/?artifact_id=41440
+.. _`WCS 2.0 Specification - Interpolation Extension`: https://portal.opengeospatial.org/files/?artifact_id=54502
+.. _`WCS 2.0 Specification - Range Subsetting Extension`: https://portal.opengeospatial.org/files/?artifact_id=54503
+.. _`WCS 2.0 Specification - GeoTIFF Format Extension`: (link not yet available)
+.. _`WCS 2.0 Specification - CRS Extension`: https://portal.opengeospatial.org/files/?artifact_id=54209
+.. _`WCS 2.0 Specification - Scaling Extension`: https://portal.opengeospatial.org/files/?artifact_id=54504
 .. _`WCS 2.0 Schemas`: http://schemas.opengis.net/wcs/2.0/
 .. _`OWS Common 2.0`: http://portal.opengeospatial.org/files/?artifact_id=38867
 .. _`Open Geospatial Consortium (OGC)`: http://www.opengeospatial.org/
