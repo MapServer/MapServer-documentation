@@ -10,6 +10,9 @@ rm -rf $destdir/mapserver.github.io/*
 cp -r $builddir/* $destdir/mapserver.github.io
 
 cd $destdir/mapserver.github.io
+git config user.email "mapserverbot@mapserver.bot"
+git config user.name "MapServer deploybot"
+
 rm -rf */_sources
 mv en/* .
 rm -rf en
