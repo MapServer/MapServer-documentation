@@ -54,15 +54,20 @@ clean:
 init: en/*
 	@set -e; for lang in $(TRANSLATIONS) ;\
 	do \
-		for file in `cd en; find . -type f -a -regex '.*\.txt$$' -a -not -regex '.*\.svn.*' -printf "%p\n" ; cd ..;`; \
+		for file in `cd en; find . -type f -name '*.txt' ; cd ..;`; \
 		do \
 			if [ ! -f $$lang/$$file ]; then  \
 				mkdir -p `dirname "$$lang/$$file"`; \
 				(echo ".. meta::"; echo "  :ROBOTS: NOINDEX") | cat - "en/$$file" > "$$lang/$$file"; \
 			fi \
 		done; \
-#		Copy all no .txt files \
-		yes n | cp -ipR en/* $$lang &> /dev/null; \
+		for file in `cd en; find . -type f ; cd ..;`; \
+		do \
+			if [ ! -f $$lang/$$file ]; then  \
+				mkdir -p `dirname "$$lang/$$file"`; \
+				cp -p "en/$$file" "$$lang/$$file"; \
+			fi \
+		done; \
 	done
 	@echo "Init finished. Other target can now be built.";\
 	touch init
@@ -72,10 +77,11 @@ compile_messages: init translated/*/*.po
 	@set -e; for lang in $(TRANSLATIONI18N) ;\
 	do \
 		echo "Compiling messages for $$lang..."; \
-		for f in `find ./translated/$$lang -name \*.po -printf "%f\n"`; \
+		for f in `find ./translated/$$lang -type f -name \*.po`; \
 		do \
+		bn=`basename $$f .po`; \
 		echo "Compiling messages for $$f"; \
-		msgfmt ./translated/$$lang/$$f -o ./translated/$$lang/LC_MESSAGES/$${f%.*}.mo; \
+		msgfmt $$f -o ./translated/$$lang/LC_MESSAGES/$$bn.mo; \
 		done; \
 	done
 	@echo "Messages compiled. Now you can build updated version for html and pdf.";\
