@@ -19,7 +19,7 @@ rm -rf en
 ln -s . en
 
 echo "repository for static www.mapserver.org website" > README.md
-echo "www.mapserver.org" > CNAME
+#echo "www.mapserver.org" > CNAME
 
 git add -A
 git commit -m "update with results of commit https://github.com/mapserver/docs/commit/$TRAVIS_COMMIT"
