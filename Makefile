@@ -50,6 +50,25 @@ help:
 clean:
 	-rm -rf $(BUILDDIR)/* init compile_messages
 
+clean-repo: clean
+	@set -e; for lang in $(TRANSLATIONS) ;\
+	do \
+		for file in `find $$lang -type f -a -regex '.*\.*$$' -a -not -regex '.*\.$$' -a -not -regex '.*\.svn.*' -printf "%p\n" ; cd ..;`; \
+		do \
+			echo "Working on "$$file ; \
+#			is file in git? \
+			if [ ! -d "$$file" -a -n "`git status --porcelain $$file`" ]; then  \
+				rm -f "$$file"; \
+#				is dir empty? \
+				ldir=`dirname "$$file" `; \
+				if [ ! -n "`ls -1 $$ldir`" ]; then \
+					echo "Removing empty dir "$$ldir; \
+					rm -rf "$$ldir"; \
+				fi \
+			fi \
+		done ; \
+	done
+	@echo "Clean-repo finished."
 
 init: en/*
 	@set -e; for lang in $(TRANSLATIONS) ;\
