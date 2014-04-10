@@ -12,21 +12,15 @@ TRANSLATIONS  = it es zh_cn
 TRANSLATIONI18N  = de el fr id sq tr
 LANGUAGES     = en $(TRANSLATIONS) 
 
-# On mapserver.org we need to write alternate links for the language switcher.
-# This is triggered by setting TARGET to 'mapserverorg'
-# Unsetting or every other value will cause the standard behaviour.
-#
-#TARGET        = mapserverorg
-
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
-ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees/$$lang $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -A language=$$lang -D language=$$lang -A target=$(TARGET) -A languages='$(LANGUAGES) $(TRANSLATIONI18N)'
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees/$$lang $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -A language=$$lang -D language=$$lang -A languages='$(LANGUAGES) $(TRANSLATIONI18N)'
 
-ALLSPHINXOPTSI18N = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -a -A language=$$lang -D language=$$lang -A target=$(TARGET) -A languages='$(LANGUAGES) $(TRANSLATIONI18N)'
+ALLSPHINXOPTSI18N = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -a -A language=$$lang -D language=$$lang -A languages='$(LANGUAGES) $(TRANSLATIONI18N)'
 
 # Only for Gettext
-I18NSPHINXOPTS   = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -A language=en -D language=en -A target=$(TARGET) -A languages='en'
+I18NSPHINXOPTS   = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -A language=en -D language=en -A languages='en'
 
 .PHONY: help clean html web pickle htmlhelp latex changes linkcheck
 
