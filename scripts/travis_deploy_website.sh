@@ -13,10 +13,7 @@ cd $destdir/mapserver.github.io
 git config user.email "mapserverbot@mapserver.bot"
 git config user.name "MapServer deploybot"
 
-rm -rf */_sources
-mv en/* .
-rm -rf en
-ln -s . en
+rm -rf _sources */_sources
 
 echo "repository for static www.mapserver.org website" > README.md
 #echo "www.mapserver.org" > CNAME

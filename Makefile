@@ -116,7 +116,11 @@ html: compile_messages
 	do \
 		mkdir -p $(BUILDDIR)/html/$$lang $(BUILDDIR)/doctrees/$$lang; \
 		echo "$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/html/$$lang";\
-		$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/html/$$lang;\
+		if [ "$$lang" = "en" ]; then\
+		  $(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/html;\
+	  else\
+		  $(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/html/$$lang;\
+		fi;\
 	done
 	@set -e; for lang in $(TRANSLATIONI18N);\
 	do \
