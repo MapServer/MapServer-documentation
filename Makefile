@@ -12,21 +12,15 @@ TRANSLATIONS  = it es zh_cn
 TRANSLATIONI18N  = de el fr id sq tr
 LANGUAGES     = en $(TRANSLATIONS) 
 
-# On mapserver.org we need to write alternate links for the language switcher.
-# This is triggered by setting TARGET to 'mapserverorg'
-# Unsetting or every other value will cause the standard behaviour.
-#
-#TARGET        = mapserverorg
-
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
-ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees/$$lang $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -A language=$$lang -D language=$$lang -A target=$(TARGET) -A languages='$(LANGUAGES) $(TRANSLATIONI18N)'
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees/$$lang $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -A language=$$lang -D language=$$lang -A languages='$(LANGUAGES) $(TRANSLATIONI18N)'
 
-ALLSPHINXOPTSI18N = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -a -A language=$$lang -D language=$$lang -A target=$(TARGET) -A languages='$(LANGUAGES) $(TRANSLATIONI18N)'
+ALLSPHINXOPTSI18N = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -a -A language=$$lang -D language=$$lang -A languages='$(LANGUAGES) $(TRANSLATIONI18N)'
 
 # Only for Gettext
-I18NSPHINXOPTS   = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -A language=en -D language=en -A target=$(TARGET) -A languages='en'
+I18NSPHINXOPTS   = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -A language=en -D language=en -A languages='en'
 
 .PHONY: help clean html web pickle htmlhelp latex changes linkcheck
 
@@ -73,15 +67,20 @@ clean-repo: clean
 init: en/*
 	@set -e; for lang in $(TRANSLATIONS) ;\
 	do \
-		for file in `cd en; find . -type f -a -regex '.*\.txt$$' -a -not -regex '.*\.svn.*' -printf "%p\n" ; cd ..;`; \
+		for file in `cd en; find . -type f -name '*.txt' ; cd ..;`; \
 		do \
 			if [ ! -f $$lang/$$file ]; then  \
 				mkdir -p `dirname "$$lang/$$file"`; \
 				(echo ".. meta::"; echo "  :ROBOTS: NOINDEX") | cat - "en/$$file" > "$$lang/$$file"; \
 			fi \
 		done; \
-#		Copy all no .txt files \
-		yes n | cp -ipR en/* $$lang &> /dev/null; \
+		for file in `cd en; find . -type f ; cd ..;`; \
+		do \
+			if [ ! -f $$lang/$$file ]; then  \
+				mkdir -p `dirname "$$lang/$$file"`; \
+				cp -p "en/$$file" "$$lang/$$file"; \
+			fi \
+		done; \
 	done
 	@echo "Init finished. Other target can now be built.";\
 	touch init
@@ -91,10 +90,11 @@ compile_messages: init translated/*/*.po
 	@set -e; for lang in $(TRANSLATIONI18N) ;\
 	do \
 		echo "Compiling messages for $$lang..."; \
-		for f in `find ./translated/$$lang -name \*.po -printf "%f\n"`; \
+		for f in `find ./translated/$$lang -type f -name \*.po`; \
 		do \
+		bn=`basename $$f .po`; \
 		echo "Compiling messages for $$f"; \
-		msgfmt ./translated/$$lang/$$f -o ./translated/$$lang/LC_MESSAGES/$${f%.*}.mo; \
+		msgfmt $$f -o ./translated/$$lang/LC_MESSAGES/$$bn.mo; \
 		done; \
 	done
 	@echo "Messages compiled. Now you can build updated version for html and pdf.";\
@@ -129,7 +129,11 @@ html: compile_messages
 	do \
 		mkdir -p $(BUILDDIR)/html/$$lang $(BUILDDIR)/doctrees/$$lang; \
 		echo "$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/html/$$lang";\
-		$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/html/$$lang;\
+		if [ "$$lang" = "en" ]; then\
+		  $(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/html;\
+	  else\
+		  $(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/html/$$lang;\
+		fi;\
 	done
 	@set -e; for lang in $(TRANSLATIONI18N);\
 	do \
