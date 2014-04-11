@@ -7,17 +7,18 @@
 BUILDDIR     = build
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
-PAPER         =
-TRANSLATIONS  = it es zh_cn
-TRANSLATIONI18N  = de el fr id sq tr
-LANGUAGES     = en $(TRANSLATIONS) 
+PAPER         = a4
+TRANSLATIONS_STATIC  = it es zh_cn
+TRANSLATIONS_I18N  = de el fr id sq tr
+LANGUAGES     = en $(TRANSLATIONS_STATIC) $(TRANSLATIONS_I18N)
+BUILD_LANGUAGES = $(TRANSLATIONS_I18N) $(TRANSLATIONS_STATIC)
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
-ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees/$$lang $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -A language=$$lang -D language=$$lang -A languages='$(LANGUAGES) $(TRANSLATIONI18N)'
+ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees/$$lang $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -A language=$$lang -D language=$$lang -A languages='$(LANGUAGES)'
 
-ALLSPHINXOPTSI18N = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -a -A language=$$lang -D language=$$lang -A languages='$(LANGUAGES) $(TRANSLATIONI18N)'
+ALLSPHINXOPTSI18N = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -a -A language=$$lang -D language=$$lang -A languages='$(LANGUAGES)'
 
 # Only for Gettext
 I18NSPHINXOPTS   = $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) -c . -A language=en -D language=en -A languages='en'
@@ -45,7 +46,7 @@ clean:
 	-rm -rf $(BUILDDIR)/* init compile_messages
 
 clean-repo: clean
-	@set -e; for lang in $(TRANSLATIONS) ;\
+	@set -e; for lang in $(TRANSLATIONS_STATIC) ;\
 	do \
 		for file in `find $$lang -type f -a -regex '.*\.*$$' -a -not -regex '.*\.$$' -a -not -regex '.*\.svn.*' -printf "%p\n" ; cd ..;`; \
 		do \
@@ -65,7 +66,7 @@ clean-repo: clean
 	@echo "Clean-repo finished."
 
 init: en/*
-	@set -e; for lang in $(TRANSLATIONS) ;\
+	@set -e; for lang in $(TRANSLATIONS_STATIC) ;\
 	do \
 		for file in `cd en; find . -type f -name '*.txt' ; cd ..;`; \
 		do \
@@ -87,7 +88,7 @@ init: en/*
 
 
 compile_messages: init translated/*/*.po
-	@set -e; for lang in $(TRANSLATIONI18N) ;\
+	@set -e; for lang in $(TRANSLATIONS_I18N) ;\
 	do \
 		echo "Compiling messages for $$lang..."; \
 		for f in `find ./translated/$$lang -type f -name \*.po`; \
@@ -101,7 +102,7 @@ compile_messages: init translated/*/*.po
 	touch compile_messages
 
 generate_po_from_tmpl:
-	@for lang in $(TRANSLATIONI18N) ;\
+	@for lang in $(TRANSLATIONS_I18N) ;\
 	do \
 		echo "Generate po files from pot files for $$lang..."; \
 		for f in `find ./translated/pot/ -name \*.pot -printf "%f\n"`; \
@@ -113,7 +114,7 @@ generate_po_from_tmpl:
 	@echo "*.pot files copy to *.po files. Now you can start your translation.";\
 
 update_po_from_pot:
-	@for lang in $(TRANSLATIONI18N) ;\
+	@for lang in $(TRANSLATIONS_I18N) ;\
 	do \
 		echo "Update po files from pot files for $$lang..."; \
 		for f in `find ./translated/pot/ -name \*.pot -printf "%f\n"`; \
@@ -125,23 +126,22 @@ update_po_from_pot:
 	@echo "*.po files updated from *.pot files.";\
 
 html: compile_messages
-	@set -e; for lang in $(LANGUAGES);\
+	@set -e; \
+	mkdir -p $(BUILDDIR)/html $(BUILDDIR)/doctrees; \
+	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) en $(BUILDDIR)/html; \
+	for lang in $(BUILD_LANGUAGES); \
 	do \
 		mkdir -p $(BUILDDIR)/html/$$lang $(BUILDDIR)/doctrees/$$lang; \
-		echo "$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/html/$$lang";\
-		if [ "$$lang" = "en" ]; then\
-		  $(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/html;\
-	  else\
-		  $(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/html/$$lang;\
-		fi;\
+		if [[ "$(TRANSLATIONS_STATIC)" =~ "$$lang" ]]; then \
+		  mkdir -p $(BUILDDIR)/doctrees/$$lang; \
+			$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/html/$$lang; \
+		else \
+		  if [[ "$(TRANSLATIONS_I18N)" =~ "$$lang" ]]; then \
+				$(SPHINXBUILD) -b html $(ALLSPHINXOPTSI18N) en build/html/$$lang; \
+			fi \
+		fi \
 	done
-	@set -e; for lang in $(TRANSLATIONI18N);\
-	do \
-		echo "$(SPHINXBUILD) -b html $(ALLSPHINXOPTSI18N) en build/html/$$lang";\
-		$(SPHINXBUILD) -b html $(ALLSPHINXOPTSI18N) en build/html/$$lang;\
-	done
-	@echo
-	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html/<language>.";\
+	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html/<language>.";
 
 gettext:
 		mkdir -p $(BUILDDIR)/gettext/en $(BUILDDIR)/doctrees/en; \
@@ -156,7 +156,7 @@ gettext_copy:
 	@echo "Build finished. The pot files pages are in $(BUILDDIR)/gettext/en.";\
 
 singlehtml: compile_messages
-	@set -e; for lang in $(LANGUAGES);\
+	@set -e; for lang in en $(TRANSLATIONS_STATIC);\
 	do \
 		mkdir -p $(BUILDDIR)/singlehtml/$$lang $(BUILDDIR)/doctrees/$$lang; \
 		$(SPHINXBUILD) -b singlehtml $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/singlehtml/$$lang;\
@@ -170,7 +170,7 @@ singlehtml: compile_messages
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/singlehtml/<language>.";\
 
 pickle: compile_messages
-	@set -e; for lang in $(LANGUAGES);\
+	@set -e; for lang in en $(TRANSLATIONS_STATIC);\
 	do \
 		mkdir -p $(BUILDDIR)/pickle/$$lang $(BUILDDIR)/doctrees/$$lang; \
 		$(SPHINXBUILD) -b pickle $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/pickle/$$lang;\
@@ -186,7 +186,7 @@ pickle: compile_messages
 web: pickle
 
 json: compile_messages
-	@set -e; for lang in $(LANGUAGES);\
+	@set -e; for lang in en $(TRANSLATIONS_STATIC);\
 	do \
 		mkdir -p $(BUILDDIR)/json/$$lang $(BUILDDIR)/doctrees/$$lang; \
 		$(SPHINXBUILD) -b json $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/json/$$lang;\
@@ -200,7 +200,7 @@ json: compile_messages
 	@echo "Build finished; now you can process the JSON files."
 
 htmlhelp: compile_messages
-	@set -e; for lang in $(LANGUAGES);\
+	@set -e; for lang in en $(TRANSLATIONS_STATIC);\
 	do \
 		mkdir -p $(BUILDDIR)/htmlhelp/$$lang $(BUILDDIR)/doctrees/$$lang; \
 		$(SPHINXBUILD) -b htmlhelp $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/htmlhelp/$$lang;\
@@ -210,7 +210,7 @@ htmlhelp: compile_messages
 	      ".hhp project file in $(BUILDDIR)/htmlhelp/<language>."
 
 latex: compile_messages
-	@set -e; for lang in $(LANGUAGES);\
+	@set -e; for lang in en $(TRANSLATIONS_STATIC);\
 	do \
 		mkdir -p $(BUILDDIR)/latex/$$lang $(BUILDDIR)/doctrees/$$lang; \
 		$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/latex/$$lang;\
@@ -225,12 +225,14 @@ latex: compile_messages
 	@echo "Run \`make all-pdf' or \`make all-ps'"
 
 pdf: compile_messages
-	@set -e; for lang in $(LANGUAGES);\
+	@set -e;\
+	$(SPHINXBUILD) -b pdf $(ALLSPHINXOPTS) en $(BUILDDIR)/pdf;\
+	for lang in $(TRANSLATIONS_STATIC);\
 	do \
 		mkdir -p $(BUILDDIR)/pdf/$$lang $(BUILDDIR)/doctrees/$$lang; \
 		$(SPHINXBUILD) -b pdf $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/pdf/$$lang;\
 	done
-	@set -e; for lang in $(TRANSLATIONI18N);\
+	@set -e; for lang in $(TRANSLATIONS_I18N);\
 	do \
 		mkdir -p $(BUILDDIR)/pdf/$$lang $(BUILDDIR)/doctrees/$$lang; \
 		$(SPHINXBUILD) -b pdf $(ALLSPHINXOPTSI18N) en $(BUILDDIR)/pdf/$$lang;\
@@ -250,11 +252,16 @@ epub: compile_messages
 	@echo "Run \`make epub' "
 
 all-pdf: latex
-	@set -e; for lang in $(LANGUAGES);\
+	@set -e;
+	make -C $(BUILDDIR)/latex/en all-pdf ; \
+	if [ -d $(BUILDDIR)/html ]; then \
+	  mv -f $(BUILDDIR)/latex/en/MapServer.pdf $(BUILDDIR)/html/ ; \
+	fi
+	for lang in en $(TRANSLATIONS_STATIC);\
 	do \
 		make -C $(BUILDDIR)/latex/$$lang all-pdf ; \
 		if [ -d $(BUILDDIR)/html/$$lang ]; then \
-		mv -f $(BUILDDIR)/latex/$$lang/MapServer.pdf $(BUILDDIR)/html/$$lang ; \
+		  mv -f $(BUILDDIR)/latex/$$lang/MapServer.pdf $(BUILDDIR)/html/$$lang ; \
 		fi \
 	done
 	@set -e; for lang in $(TRANSLATIONI18N);\
