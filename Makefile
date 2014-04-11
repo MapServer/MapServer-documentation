@@ -8,6 +8,7 @@ BUILDDIR     = build
 SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         = a4
+SHELL = /bin/bash
 TRANSLATIONS_STATIC  = it es zh_cn
 TRANSLATIONS_I18N  = de el fr id sq tr
 LANGUAGES     = en $(TRANSLATIONS_STATIC) $(TRANSLATIONS_I18N)
@@ -127,8 +128,10 @@ update_po_from_pot:
 
 html: compile_messages
 	@set -e; \
-	mkdir -p $(BUILDDIR)/html $(BUILDDIR)/doctrees; \
-	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) en $(BUILDDIR)/html; \
+	lang=en; \
+	mkdir -p $(BUILDDIR)/html $(BUILDDIR)/doctrees/$$lang; \
+	echo $(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/html; \
+	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/html; \
 	for lang in $(BUILD_LANGUAGES); \
 	do \
 		mkdir -p $(BUILDDIR)/html/$$lang $(BUILDDIR)/doctrees/$$lang; \
