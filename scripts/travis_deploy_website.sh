@@ -13,6 +13,7 @@ git config user.email "mapserverbot@mapserver.bot"
 git config user.name "MapServer deploybot"
 
 rm -rf _sources */_sources
+rm -rf .doctrees */.doctrees */.buildinfo
 
 git add -A
 git commit -m "update with results of commit https://github.com/mapserver/docs/commit/$TRAVIS_COMMIT"
