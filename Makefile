@@ -213,18 +213,10 @@ htmlhelp: compile_messages
 	      ".hhp project file in $(BUILDDIR)/htmlhelp/<language>."
 
 latex: compile_messages
-	@set -e; for lang in en $(TRANSLATIONS_STATIC);\
-	do \
-		mkdir -p $(BUILDDIR)/latex/$$lang $(BUILDDIR)/doctrees/$$lang; \
-		$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/latex/$$lang;\
-	done
-	@set -e; for lang in $(TRANSLATIONI18N);\
-	do \
-		mkdir -p $(BUILDDIR)/latex/$$lang $(BUILDDIR)/doctrees/$$lang; \
-		$(SPHINXBUILD) -b latex $(ALLSPHINXOPTSI18N) en $(BUILDDIR)/latex/$$lang;\
-	done
-	@echo
-	@echo "Build finished; the LaTeX files are in $(BUILDDIR)/latex/<language>."\
+	@set -e; \
+		mkdir -p $(BUILDDIR)/latex/en $(BUILDDIR)/doctrees/en; \
+		$(SPHINXBUILD) -b latex $(ALLSPHINXOPTS) en $(BUILDDIR)/latex/en;
+	@echo "Build finished; the LaTeX files are in $(BUILDDIR)/latex/<language>."
 	@echo "Run \`make all-pdf' or \`make all-ps'"
 
 pdf: compile_messages
@@ -255,25 +247,8 @@ epub: compile_messages
 	@echo "Run \`make epub' "
 
 all-pdf: latex
-	@set -e;
-	make -C $(BUILDDIR)/latex/en all-pdf ; \
-	if [ -d $(BUILDDIR)/html ]; then \
-	  mv -f $(BUILDDIR)/latex/en/MapServer.pdf $(BUILDDIR)/html/ ; \
-	fi
-	for lang in en $(TRANSLATIONS_STATIC);\
-	do \
-		make -C $(BUILDDIR)/latex/$$lang all-pdf ; \
-		if [ -d $(BUILDDIR)/html/$$lang ]; then \
-		  mv -f $(BUILDDIR)/latex/$$lang/MapServer.pdf $(BUILDDIR)/html/$$lang ; \
-		fi \
-	done
-	@set -e; for lang in $(TRANSLATIONI18N);\
-	do \
-		make -C $(BUILDDIR)/latex/$$lang all-pdf ; \
-		if [ -d $(BUILDDIR)/html/$$lang ]; then \
-		mv -f $(BUILDDIR)/latex/$$lang/MapServer.pdf $(BUILDDIR)/html/$$lang ; \
-		fi \
-	done
+	@set -e; \
+	make -C $(BUILDDIR)/latex/en all-pdf ;
 
 all-ps: latex
 	@set -e; for lang in $(LANGUAGES);\

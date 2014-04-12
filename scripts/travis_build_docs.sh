@@ -1,5 +1,13 @@
 #!/bin/bash
 
+git log -n1 | grep -q "\\[build_pdf\\]"
+
+if [[ $? -eq 0 ]]; then
+  echo "building PDF"
+  sudo aptitude install texlive-latex-extra texlive-fonts-recommended
+  make all-pdf
+fi
+
 git log -n1 | grep -q "\\[build_translations\\]"
 
 if [[ $? -eq 0 ]]; then
