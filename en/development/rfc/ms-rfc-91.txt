@@ -48,9 +48,11 @@ to features much the same way as the native MapServer shapefile and tiled shapef
 -----------------------------
 
 Drivers that support complex expressions (e.g. PostGIS and Oracle Spatial) will need to implement a new layer API function
-(propose msXXXLayerTranslateFilter()) to translate a MapServer common expression to a native representation. MapServer
-exressions consist of a series of tokens that are from from left to right. It should be possible then to conver these tokens
-to a native representation of that the driver will handle independently of MapServer-- typically some flavor of SQL.
+(propose msXXXLayerTranslateFilter(layerObj *layer, expressionObj *filter, char *filteritem)) to translate both simple filters
+amd MapServer logical expressions to a native representation. MapServer logical exressions consist of a series of tokens that 
+are processed from from left to right. It should be possible then to convert these tokens to a native representation of 
+that the driver will handle independently of MapServer-- typically some flavor of SQL.
+
 
 2.2 Filter Merging
 ------------------
@@ -64,8 +66,6 @@ operation is will result in a filter expressed using the *common* syntax this op
 
 The resulting filter will then be translated to native representation if applicable later.
 
-NOTE: It is not possible to merge a native filter with a filter given in common syntax. This really shouldn't happen very 
-often since filters aren't as useful for those drivers that already support SQL in the data definition.
 
 2.3 Filter Merging Examples
 ----------------------------
@@ -82,14 +82,27 @@ Case 3: FILTER (string) with no FILTERITEM
 
   New FILTER becomes a logical expression: ((string) AND (new filter))
 
-Case 4: FILTER "native string"
+In the case where the old filter is already native filter and the translation fails we will leave the old filter in place
+so the driver can at least process that portion and then fall back to MapServer for the new filter.
 
-  Not supported...
+2.4 Query Function Simplification
+---------------------------------
 
-2.4 Discussion
---------------
+The msQueryByAttribute() function can be turned into an alias for the msQueryByFilter() function. They do basically the 
+same thing: define a new filter and execute a query using it. This simplifies the code base. A few functional changes will
+need to be made within msQueryByFilter(), specifically handling the case when only 1 result is returned (mode=itemquery) 
+but that is a simple check at the bottom of the result processing loop.
 
-TODO (bulleted list of topics)
+This does not impact the CGi or MapScript APIs although we could choose to simplify those at a later date.
+
+2.5 Future Enhancements
+-----------------------
+
+Work on this RFC indicates that the linked-list of tokens, while optimal for Bison/Yacc grammars, can be difficult to
+translate in some cases. For example, if a driver needs to add an argument to a function call: buffer([shape], 500) needs
+to translate to buffer(the_geom, 500, 1) if is difficult to know when to output the 1 in complex filter. It may be 
+beneficial rewrite the token handling to use tree storage instead of a list. That change doesn't affect the larger 
+implementation approach, instead it offers an opportunity for more complete translations. Time will tell.
 
 
 3. Implementation Details
@@ -108,11 +121,12 @@ TODO (bulleted list of topics)
 3.2 Overview
 ------------
 
-- there are no new keywords with minor structure changes (expressionObj)
+- limited additions to logial expression syntax are recommended:
+  - spatial operator syntax (e.g. A INTERSECTS B) will be deprecated in favor of a functional notation (e.g. INTERSECTS(A, B) = TRUE). This is more consistent with spatialally enabled SQL syntax and easer to translate.
+  - BEYOND/DWITHIN operators will *only* exist in the functional form, they are useless in logical expressions as they site now
 - there are no changes to the MapScript API
 - drivers that support complex expressions (e.g. PostGIS, Oracle, SDE, MS SQL Server, OGR) need to implement a translation 
 funcion to construct a partial "WHERE" clause from a set of expression/filter tokens
-- ... 
 
 3.2 Files affected
 ------------------
@@ -121,9 +135,12 @@ The following files will be modified by this RFC:
 
 - mapserver.h: extend expressionObj to contain a native_string (char *). This will hold a the native expression of the filter.
 - mapquery.c: call merging function in msQueryByAttribute() and msQueryByFilter(), call translation function in all query functions.
-- mapdraw.c: call translation function in drawing functions (maybe just in msPrepareImage()?)
+- mapdraw.c: call fitler translation function in msDrawVectorLayer()
 - maplayer.c: changes/additions to layer API function
 - mapshape.c, mappostgis.c, mapogr.c.... : changes/additions to driver functions
+- mapparser.y: add function-based versions of spatial operators, add BOOLEAN token type
+- maplexer.l: recognize TRUE/FALSE as boolean tokens (store in token->dblval) in expression context
+- mapogcfilter.c/mapogccommonfilter.c: update expression writing to use functional notation, fix dwithin/beyond processing
 
 Notes:
 
@@ -182,6 +199,9 @@ provides msPostGISEscapeSQLParam().
 The token replacement is only done in msLayerOpen(), the performance impact should be negligeable as this happens 
 only once per rendered layer. Performance will improve greatly in some cases where operations are offloaded to the 
 database - less network traffic, more efficient algorithms.
+
+With WFS-based dwithin/beyond operators we currently apply the distance values as buffers and then hand off to MapServer.
+The suggested changes would remove that step and improve performane in *all* cases.
 
 
 6. Bug ID
