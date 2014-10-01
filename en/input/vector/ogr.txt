@@ -689,32 +689,58 @@ Here is the list of style parameters that are currently supported from OGR data 
 and how they're mapped in MapServer:
 
 Line color
-  The line colour is mapped to CLASS.COLOR 
-    
+    The line colour (PEN.c) is mapped to CLASS.STYLE.COLOR 
+
 Line thickness
-  The line thickness is mapped to CLASS.STYLE.WIDTH. The default will be 1 pixel line (as 
-  it always is with MapServer).
-  
+    The line thickness (PEN.w) is mapped to CLASS.STYLE.WIDTH. The default will be 1 pixel line (as 
+    it always is with MapServer).
+
+Line pattern
+    The line pattern (PEN.p) is mapped to CLASS.STYLE.PATTERN. The default is a solid line.
+
+Line cap and join
+    The line cap (PEN.cap) is mapped to CLASS.STYLE.CAP and the join to CLASS.STYLE.JOIN.
+
+Line offset
+    The line perpendicular offset (PEN.dp) is mapped to CLASS.STYLE.OFFSET 
+
+Line symbol
+    OGR provides MapServer with symbol names (PEN.id), and 
+    if the symbol name returned by OGR to MapServer matches the name of one of 
+    the symbols in your symbolset then this symbol will be used.
+
+Polygon background color
+    Polygon background color (BRUSH.bc) is mapped directly to CLASS.STYLE.BACKGROUNDCOLOR
+
 Polygon fill color
-  Polygon fill color is mapped directly to CLASS.COLOR
-          
-  Note that at this time, transparent polygons are not supported (they're always
-  opaque).
+    Polygon fill color (BRUSH.fc) is mapped directly to CLASS.STYLE.COLOR
 
 Polygon outline
-    If a polygon has an outline color and thickness defined in the data source 
+    If a polygon has an outline color (PEN.c) and thickness defined in the data source 
     then the same rule as for line color and thickness above will apply, except 
-    that the outline color is mapped to CLASS.OUTLINECOLOR 
+    that the outline color is mapped to CLASS.STYLE.OUTLINECOLOR 
+
+Polygon symbols
+    OGR provides MapServer with symbol names (BRUSH.id), and 
+    if the symbol name returned by OGR to MapServer matches the name of one of 
+    the symbols in your symbolset then this symbol will be used.
+
+    Polygon symbol color (BRUSH.fc) is directly mapped to CLASS.STYLE.COLOR.
+    Polygon symbol size (BRUSH.s) is directly mapped to CLASS.STYLE.SIZE.
+    Polygon symbol spacing (note the OGR BRUSH.dx and BRUSH?dy parameters mus be equal) is
+    directly mapped to CLASS.STYLE.GAP.
+    Polygon symbol angle (BRUSH.a) is directly mapped to CLASS.STYLE.ANGLE.
 
 Point symbols
-    Point symbol color is directly mapped to CLASS.COLOR.
-    Point symbol size is directly mapped to CLASS.SIZE.
+    Point symbol color (SYMBOL.c) is directly mapped to CLASS.STYLE.COLOR.
+    Point symbol outline color (SYMBOL.c) is directly mapped to CLASS.STYLE.OUTLINECOLOR.
+    Point symbol size (SYMBOL.s) is directly mapped to CLASS.STYLE.SIZE.
                    
     If your symbolset contains a symbol called "default-marker" then this symbol 
-    will be used, otherwise the default will be CLASS.SYMBOL=0 (i.e. a 1 pixel dot)
+    will be used, otherwise the default will be CLASS.STYLE.SYMBOL=0 (i.e. a 1 pixel dot)
 
     It is also possible (with a bit of work) to control which symbol gets used 
-    in rendering point symbols. OGR provides MapServer with symbol names, and 
+    in rendering point symbols. OGR provides MapServer with symbol names (SYMBOL.id), and 
     if the symbol name returned by OGR to MapServer matches the name of one of 
     the symbols in your symbolset then this symbol will be used.
 
@@ -727,16 +753,21 @@ Point symbols
     created referring to it.
        
 Text labels
-    The text string is mapped to CLASS.TEXT
+    The text string (LABEL.t) is mapped to CLASS.LABEL.TEXT
     
-    Text color is mapped to CLASS.LABEL.COLOR
+    Text color (LABEL.c) is mapped to CLASS.LABEL.COLOR
     
-    Text background color is mapped to CLASS.LABEL.BACKGROUNDCOLOR
+    Text background color (LABEL.b) is mapped to CLASS.LABEL.BACKGROUNDCOLOR
     
-    Text height is mapped to CLASS.LABEL.SIZE
+    Text shadow color (LABEL.h) is mapped to CLASS.LABEL.SHADOWCOLOR
+
+    Text outline color (LABEL.h) is mapped to CLASS.LABEL.OUTLINECOLOR
+
+    Text height (LABEL.s) is mapped to CLASS.LABEL.SIZE
     
-    Text angle is mapped to CLASS.LABEL.ANGLE
+    Text angle (LABEL.a) is mapped to CLASS.LABEL.ANGLE
           
+    Text anchor position (LABEL.p) is mapped to CLASS.LABEL.POSITION
 
     Text font mapping follows the following rules:
 
@@ -756,10 +787,12 @@ Text labels
     2. If TTF fonts are not supported or if all above cases failed, then BITMAP 
        MEDIUM font will be used. 
 
-Transparency
-  If the color parameter from the OGR style contains an alpha value,
-  the value will be used to set the `OPACITY` parameter in the `STYLE`
-  object.
+Starting with MapServer 7.0, multiple OGR tools (i.e. pen, brush, symbols) can
+be supported per feature. The corresponding STYLE object are created in the
+order the OGR tools appear in the OGR FeatureStyle string, i.e. the last one
+in the string is drawn on top of previous ones. This rule is true except if
+the priority level parameters (PEN/BRUSH/SYMBOL.l) of OGR tools is defined, in which case it has
+precedence over the apparition order of the OGR tools.
 
 .. _styleitemauto-label-styles:
 
