@@ -1,3 +1,10 @@
+**2015-02-12 - MapServer 7.0.0-beta1 is released**
+
+The first beta for MapServer 7.0 has been released. The list of
+major changes for this release can be found in the :ref:`7.0 annoucement <announce-7-0>`.
+See :ref:`the changelog <changelog-7-0>`
+for the full list of changes and head to :ref:`download` to obtain a copy.
+
 **2014-01-02 - MapServer 6.4.1, 6.2.2, 6.0.4 and 5.6.9 are released**
 
 Releases for the stable branches of MapServer have been released in order
