@@ -226,7 +226,7 @@
 	tutorial                       :ref:`MapServer Tutorial <tutorial>`
 	unix                           :ref:`Compiling on Unix <unix>`
 	utilities                      :ref:`Utilities <utilities>`
-	variable_sub                   :ref:`Variable Substitution <variable_sub>`
+	variable_sub                   :ref:`Variable Substitution <runsub>`
 	vector                         :ref:`Vector Data <vector>`
 	vector_optimization            :ref:`Vector <vector_optimization>`
 	vim                            :ref:`VIM Syntax <vim>`

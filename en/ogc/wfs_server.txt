@@ -261,6 +261,13 @@ layer in your WFS:
    At the map top-level the `wfs_srs` / `ows_srs` metadata value takes
    precedence over the contents of the :ref:`PROJECTION` block.
 
+.. note::
+   The first advertised `wfs_srs` / `ows_srs` metadata value will be used
+   as the default projection of the bbox requested (unless explicitly set)
+   and will be using in spatial filtering the data for those layer types 
+   that support spatial filtering. If the data is in a different projection, 
+   the spatial filter BBOX will be projected to match the source data.
+
 At the layer level, if both the `wfs_srs` / `ows_srs` metadata and the
 PROJECTION object are set to different values, then the `wfs_srs` /
 `ows_srs` metadata defines the projection to use in advertising this
@@ -573,6 +580,40 @@ mapfile:
 
 Web Object Metadata
 -------------------
+
+.. index:: 
+   triple: WFS; METADATA; ows_allowed_ip_list
+
+.. index:: 
+   triple: WFS; METADATA; wfs_allowed_ip_list
+
+**ows_allowed_ip_list** (or wfs_allowed_ip_list)
+
+- *Description:* (Optional) A list of IP addresses that will be
+  allowed access to the service.
+
+  Example::
+
+    METADATA
+      "ows_allowed_ip_list" "123.45.67.89 11.22.33.44"
+    END
+
+.. index:: 
+   triple: WFS; METADATA; ows_denied_ip_list
+
+.. index:: 
+   triple: WFS; METADATA; wfs_denied_ip_list
+
+**ows_denied_ip_list** (or wfs_denied_ip_list)
+
+- *Description:* (Optional) A list of IP addresses that will be denied
+  access to the service.
+
+  Example::
+
+    METADATA
+      "ows_denied_ip_list" "123.45.67.89 11.22.33.44"
+    END
 
 .. index:: 
    triple: WFS; METADATA; ows_schemas_location
@@ -979,9 +1020,10 @@ Layer Object
 .. index:: 
    triple: WFS; METADATA; gml_[item name]_type
 
-**gml_[item name]_type**
-  (Optional) Specifies the type of the attribute.  Valid values are
-  Integer|Real|Character|Date|Boolean.
+**gml_[item name]_type** (Optional)
+  Specifies the type of the attribute.  Valid values are the OGR data
+  types: Integer|Real|Character|Date|Boolean.  Mapserver translates
+  these to valid GML data types.
 
 .. index:: 
    triple: WFS; METADATA; gml_[item name]_value
@@ -1037,6 +1079,18 @@ Layer Object
 **gml_xml_items**
   (Optional) A comma delimited list of items that should not be
   XML-encoded.
+
+.. index:: 
+   triple: WFS; METADATA; ows_allowed_ip_list
+
+**ows_allowed_ip_list**
+  Same as ows_allowed_ip_list in the Web Object. 
+
+.. index:: 
+   triple: WFS; METADATA; ows_denied_ip_list
+
+**ows_denied_ip_list**
+  Same as ows_denied_ip_list in the Web Object. 
 
 .. index:: 
    triple: WFS; METADATA; wfs_abstract

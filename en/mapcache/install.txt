@@ -10,6 +10,8 @@ Compilation & Installation
 :Contact: aboudreaut at magears.com
 :Author: Jeff McKenna
 :Contact: jmckenna at gatewaygeomatics.com
+:Author: Mathieu Coudert
+:Contact: mathieu.coudert at gmail.com
 
 .. contents:: Table of Contents
     :depth: 3
@@ -66,13 +68,22 @@ functionalities:
   options (for only seeding tiles that intersect a given geographical feature)
 - **sqlite**: *libsqlite3-dev*. For enabling the sqlite backend storages
 - **tiff**: *libtiff4-dev*. For enabling the TIFF backend storages
+- **berkeley db** *libdb4.8-dev* : For enabling the Berkeley DB backend storages 
+
+.. note::
+
+   MapCache now builds with cmake.
 
 For unix users where all packages are in the default locations, the compilation
 process should resume to:
 
 .. code-block:: bash
 
-  $ ./configure
+  $ cd mapcache
+  $ mkdir build
+  $ cd build
+  $ cmake ..
+  $ # follow instructions below if missing a dependency
   $ make
   $ sudo make install
 
@@ -123,6 +134,11 @@ For apache >= 2.4:
       MapCacheAlias /mapcache "/path/to/directory/mapcache.xml"
    </IfModule>
 
+Before you restart, copy the example mapcache.xml file to where you want it:
+
+.. code-block:: bash
+
+   $ cp mapcache.xml /path/to/directory/mapcache.xml
 
 Finally, restart apache to take the modified configuration into account
 
@@ -248,9 +264,6 @@ at http://myserver/mapcache/demo
 CGI/FastCGI Specific Instructions
 ---------------------------------
 
-.. warning:: Fastcgi support is not built in by default, you must explicitely
-   enable it at compile time, see :ref:`FastCGI <fastcgi>`
-
 A binary cgi/fastcgi is located in the mapcache/ subfolder, and is named "mapcache".
 Activating fastcgi for the mapcache program on your web server is not part of
 these instructions, more details may be found on the :ref:`FastCGI <fastcgi>`
@@ -304,283 +317,216 @@ The mapcache service would then be accessible at http://myserver/map.fcgi[/demo]
 Customizing the build, or if something went wrong
 -------------------------------------------------
 
-The configure script will try to locate dependant libraries in default system
-locations, that can be overriden or specified with switches
-(./configure --help should give you a full list).
+Depending on what packages are available in the default locations of your system,
+the "cmake .." step will most probably have failed with messages indicating
+missing dependencies (by default, MapCache has *some* of those). The error message
+that CMake prints out should give you a rather good idea of what steps you should take
+next, depending on wether the failed dependency is a feature you require in your build
+or not.
 
-Apache apxs
-***********
-
-.. code-block:: bash
-
-   --with-apxs=/path/to/apxs
-
-apxs is the apache extension tool that is used for building and installing the
-module to a local apache instance. it should be installed along with a standard
-apache build, or supplied by distros when installing the apache development
-packages.  apxs is sometimes called apxs2 (notably on debian)
-
-
-
-Apr
-***
+mod_mapcache requires apache, libcurl, libjpeg and libpng development headers.
+The cmake script will try to locate them in default system locations, that can be
+overriden or specified with -D switches. For example, if you get a message such as 
+'Could NOT find APR ', you can use a command such as 
+(assuming that apr is at /usr/local/apr) :
 
 .. code-block:: bash
 
-   --with-apr-config=/path/to/apr-config
+  $ cmake -DCMAKE_PREFIX_PATH="/usr/local/apr;" ..
 
-apr-config is sometimes called apr-1-config on some systems. The path to the
-apr libraries is usually determined from the previous apxs utility. you can
-use this switch to override which apr will be used. beware that using a
-different version of apr than the one that is linked to by apache will likely
-cause bugs.
-
-
-
-Apr-Util
-********
+Either if you don't want fcgi you can disable the dependency by rerunning cmake with -DWITH_DEPENDENCY=0, e.g.
 
 .. code-block:: bash
 
-   --with-apu-config=/path/to/apu-config
+  $ cmake .. -DWITH_FCGI=0 
 
-apu-config is sometimes called apu-1-config. 
 
+Options supported by the MapCache cmake builder
+***********************************************
 
-Libcurl
-*******
+Here is a list of supported options that can be enabled/disabled at build.
 
-.. code-block:: bash
+ ::
 
-   --with-curl-config=/path/to/curl-config
+   option(WITH_PIXMAN "Use pixman for SSE optimized image manipulations" ON)
+   option(WITH_SQLITE "Use sqlite as a cache backend" ON)
+   option(WITH_BERKELEY_DB "Use Berkeley DB as a cache backend" OFF)
+   option(WITH_MEMCACHE "Use memcache as a cache backend (requires recent apr-util)" OFF)
+   option(WITH_TIFF "Use TIFFs as a cache backend" OFF)
+   option(WITH_TIFF_WRITE_SUPPORT "Enable (experimental) support for writable TIFF cache backends" OFF)
+   option(WITH_GEOTIFF "Allow GeoTIFF metadata creation for TIFF cache backends" OFF)
+   option(WITH_PCRE "Use PCRE for regex tests" OFF)
+   option(WITH_MAPSERVER "Enable (experimental) support for the mapserver library" OFF)
+   option(WITH_GEOS "Choose if GEOS geometry operations support should be built in" ON)
+   option(WITH_OGR "Choose if OGR/GDAL input vector support should be built in" ON)
+   option(WITH_CGI "Choose if CGI executable should be built" ON)
+   option(WITH_FCGI "Choose if CGI executable should support FastCGI" ON)
+   option(WITH_VERSION_STRING "Show MapCache in server version string" ON)
+   option(WITH_APACHE "Build Apache Module" ON)
 
+ - **Pixman** (*recommended*, from 0.5 onwards)
 
+   .. code-block:: bash
 
-Libpng
-******
+     -DWITH_PIXMAN=[0|1]
 
-.. code-block:: bash
+   Pixman is a pixel manipulation library used to assemble image tiles when
+   responding to non-tiled wms requests. Pixman support is recommended as it is
+   highly optimized and will take advantage of recent processor extensions (mms,
+   sse, ...) to speed up blending and resampling operations. In case the pixman
+   library is not found, Mapcache will fall back to internal pixel operations
+   that are slower.
 
-   --with-png=/path/to/png/prefix
 
-this is the path where the libpng headers and libs can be located.  the
-configure script will be looking for [path]/include/png.h and
-[path]/lib/libpng.so
+ - **Sqlite** (*optional*, from 0.5 onwards)
 
+   .. code-block:: bash
 
+     -DWITH_SQLITE=[0|1]
 
-Libjpeg
-*******
-
-.. code-block:: bash
-
-   --with-jpeg=/path/to/jpeg/prefix
-
-this is the path where the libjpeg headers and libs can be located.  the
-configure script will be looking for [path]/include/jpeg.h and
-[path]/lib/libjpeg.so
-
-
-
-Pixman (recommended)
-********************
-
-.. code-block:: bash
-
-   --with-pixman=[yes|no|/path/to/pkgconfig/pixman.pc]
-
-Pixman is a pixel manipulation library used to assemble image tiles when
-responding to non-tiled wms requests. Pixman support is recommended as it is
-highly optimized and will take advantage of recent processor extensions (mms,
-sse, ...) to speed up blending and resampling operations. In case the pixman
-library is not found, mod-mapcache will fall back to internal pixel operations
-that are slower.
-
-
-
-Sqlite (optional)
-*****************
-
-.. code-block:: bash
-
-   --with-sqlite[=yes|no|/path/to/sqlite-prefix]
-
-Sqlite is used to enable the sqlite and mbtiles cache backend. version 3.5.0 or
-newer is required.
-    
-.. seealso:: :ref:`mapcache_cache_sqlite`
-
-
-
-GDAL/OGR (optional, also requires geos)
-***************************************
-
-.. code-block:: bash
-
-   --with-gdal[=yes|no|/path/to/gdal-config]
-
-Gdal (actually ogr) is used by the seeding utility to allow the seeding of
-tiles only intersecting a given polygon, e.g.  to preseed all the tiles of a
-given country.
-
-
-
-GEOS (optional)
-***************
-
-.. code-block:: bash
-
-   --with-geos=/path/to/geos-config
-
-Along with gdal/ogr, geos is needed by the seeder to test for the intersection
-of tiles with geographical features. A sufficiently recent version of geos (with
-support for prepared geometries) is required (but not enforced by the configure
-script, so you'll end up with compilation errors if a too old geos version is
-used)
-
-
-
-PCRE (optional)
-***************
-
-.. code-block:: bash
-
-   --with-pcre=/path/to/pcre-prefix
-
-Pcre (perl compatible regular expressions) can be used instead of posix regular
-expressions for validating WMS dimensions.  they are more powerfull than posix
-REs (and might be slower). You don't need this if you aren't planning on using
-WMS dimension support with regex validation, or if your validation needs are
-covered by posix REs.
-
-.. seealso:: :ref:`mapcache_dimensions` 
-
-
-
-FastCGI Support (optional)
-**************************
-
-.. code-block:: bash
-
-   --with-fastcgi=/path/to/fastcgi-prefix
-
-MapCache can run as a fastcgi executable. Note that the overhead of fastcgi
-is non-negligeable with respect to the throughput you may obtain with a native
-apache module. The fastcgi build is less tested, and may lag behind
-compared to the apache module version on some minor details, YMMV.
-
-
-
-TIFF Readonly Cache Support (optional)
-**************************************
-
-.. code-block:: bash
-
-   --with-tiff=/path/to/libtiff-prefix
-    
-.. seealso:: :ref:`mapcache_cache_tiff`
-
-
-Debug Mode
-**********
-
-.. code-block:: bash
-
-   --enable-debug
-
-enables some extra tests inside the code, and prints out many more debugging
-messages to the server logs. you should probably not enable this unless you
-want to track down a problem happening inside MapCache.
-
-
-
-Memcached Cache Support (optional)
-**********************************
-
-The memcached cache backend is enabled by default, as it does not depend on
-other external libraries (support is obtained through apr-util). You can
-optionally disable it if you have no need for it.
-
-.. code-block:: bash
-
-   --disable-memcache
-    
-.. seealso:: :ref:`mapcache_cache_memcache`
-
-Apache Module Options
-*********************
-
-You can disable the apache module building if you only plan on using the
-fastcgi executable or the seeder.
-
-.. code-block:: bash
-
-   --disable-module
-
-MapCache adds itself to the version string reported by the apache server. This
-can be disabled with
-
-.. code-block:: bash
-
-   --disable-version-string
-
-Experimental options, use at your own risk
-------------------------------------------
-
-TIFF read/write Cache Support (optional)
-****************************************
-
-TIFF write support (for creating new TIFF files and adding tiles to existing
-TIFF files) is still experimental and disabled by default. There is a risk in
-ending up with corrupt TIFF files if they are placed on a filesystem that does
-not honour file locking, as in that case multiple processes might end up writing
-to the same file. File locking across concurrent threads is also problematic,
-although MapCache tries to detect this situation and apply sufficient locking
-workarounds. To stay on the safe side, write support should for now only be
-enabled on local filesystems, with a prefork mpm or fastcgi MapCache install.
-
-
-.. code-block:: bash
-
-   --enable-tiff-write-support
-    
-.. seealso::
-   :ref:`mapcache_cache_tiff`
-
-
-When writing TIFF files, mapcache can also optionally add georeferencing
-information if compiled with libtiff support. GeoTiff writing does not 
-produce the full tags needed for defining which preojection the grid is
-in, but will only produce those defining the pixel scale and the tiepoints
-(i.e. the equivalent information found in the accompanying .tfw files)
-
-.. code-block:: bash
-
-   --enable-geotiff[=yes|no|/path/to/libgeotiffprefix]
+   Sqlite is used to enable the sqlite and mbtiles cache backend. version 3.5.0 
+   or newer is required.
     
 
-Native MapServer Mode
-*********************
+ - **GDAL** (*optional*, from 0.4 onwards, also requires geos)
 
-MapCache is by default not linked to MapServer in any way, and communicates 
-through the WMS protocol only. For performance reasons, there is a possibility
-to directly use the mapserver C library and avoid an http request and an image
-compression/decompression. This integration is still experimental and should
-be used cautiously
+   .. code-block:: bash
 
+     -DWITH_OGR=[0|1]
 
-.. code-block:: bash
+   Gdal (actually ogr) is used by the seeding utility to allow the seeding of
+   tiles only intersecting a given polygon, e.g.  to preseed all the tiles of a
+   given country.
 
-   --enable-mapserver=/path/to/mapserver-srcdir
+ - **GEOS** (*optional*, from 0.5 onwards)
 
-This will use the libmapserver.so from mapserver's install directory. MapServer
-itself should be compiled with thread-safety enabled, unless you plan use the
-prefork mpm or fastcgi, **and** you do not plan to use the seeder. For thread
-safety on the mapserver side, you might want to have a look at tickets #4041 and
-#4044.
+   .. code-block:: bash
+
+     -DWITH_GEOS=[0|1]
+
+   Along with gdal/ogr, geos is needed by the seeder to test for the intersection
+   of tiles with geographical features. A sufficiently recent version of geos (with
+   support for prepared geometries) is required (but not enforced by the configure
+   script, so you'll end up with compilation errors if a too old geos version is
+   used)
+
+ - **PCRE** (*optional*)
+
+   .. code-block:: bash
+
+     -DWITH_PCRE=[0|1]
+
+   Pcre (perl compatible regular expressions) can be used instead of posix regular
+   expressions for validating WMS dimensions.  they are more powerfull than posix
+   REs (and might be slower). You don't need this if you aren't planning on using
+   WMS dimension support with regex validation, or if your validation needs are
+   covered by posix REs.
+
+   .. seealso:: :ref:`mapcache_dimensions` 
+
+ - **FastCGI Support** (*optional*)
+  
+   .. code-block:: bash
+
+     -DWITH_FCGI=[0|1]
+
+   MapCache can run as a fastcgi executable. Note that the overhead of fastcgi
+   is non-negligeable with respect to the throughput you may obtain with a native
+   apache module. The fastcgi build is less tested, and may lag behind
+   compared to the apache module version on some minor details, YMMV.
+
+ - **TIFF read/write Cache Support** (*optional*)
+
+   Use TIFFs as a cache backend (READONLY) :
+
+   .. code-block:: bash
+
+     -DWITH_TIFF=[0|1]
+   
+   TIFF write support (for creating new TIFF files and adding tiles to existing
+   TIFF files) is still experimental and disabled by default. There is a risk in
+   ending up with corrupt TIFF files if they are placed on a filesystem that does
+   not honour file locking, as in that case multiple processes might end up writing
+   to the same file. File locking across concurrent threads is also problematic,
+   although MapCache tries to detect this situation and apply sufficient locking
+   workarounds. To stay on the safe side, write support should for now only be
+   enabled on local filesystems, with a prefork mpm or fastcgi MapCache install.
+
+   .. code-block:: bash
+
+     -DWITH_TIFF_WRITE_SUPPORT=[0|1]
+    
+   When writing TIFF files, MapCache can also optionally add georeferencing
+   information if compiled with libtiff support. GeoTiff writing does not 
+   produce the full tags needed for defining which preojection the grid is
+   in, but will only produce those defining the pixel scale and the tiepoints
+   (i.e. the equivalent information found in the accompanying .tfw files)
+
+   .. code-block:: bash
+
+     -DWITH_GEOTIFF=[0|1]
+
+   .. seealso:: :ref:`mapcache_cache_tiff`
+
+ - **Memcached Cache Support** (*optional*)
+
+   .. code-block:: bash
+
+     -DWITH_MEMCACHE=[0|1]
+
+   The memcached cache backend is disabled by default. You can optionally enable it as 
+   it does not depend on other external libraries (support is obtained through apr-util).
+    
+   .. seealso:: :ref:`mapcache_cache_memcache`
+
+ - **Apache Module Options** 
+  
+   You can disable the apache module building if you only plan on using the
+   fastcgi executable or the seeder.
+
+   .. code-block:: bash
+
+     -DWITH_APACHE=[0|1]
+
+   MapCache adds itself to the version string reported by the apache server. This
+   can be disabled with
+
+   .. code-block:: bash
+
+     -DWITH_VERSION_STRING=[0|1]
+
+ - **Native MapServer Mode** (*experimental options*)
+
+   MapCache is by default not linked to MapServer in any way, and communicates 
+   through the WMS protocol only. For performance reasons, there is a possibility
+   to directly use the mapserver C library and avoid an http request and an image
+   compression/decompression. This integration is still experimental and should
+   be used cautiously
+
+   .. code-block:: bash
+
+     -DWITH_MAPSERVER=[0|1]
+
+   This will use the libmapserver.so from mapserver's install directory. MapServer
+   itself should be compiled with thread-safety enabled, unless you plan use the
+   prefork mpm or fastcgi, **and** you do not plan to use the seeder. For thread
+   safety on the mapserver side, you might want to have a look at tickets #4041 
+   and #4044.
+
+ - **Debug Mode** (*work in progress*)
+
+   .. note:: 
+      Since the cmake migration, this has to be done.
+
+   It enables some extra tests inside the code, and prints out many more debugging
+   messages to the server logs. you should probably not enable this unless you
+   want to track down a problem happening inside MapCache.
 
 Windows Instructions
 ====================
+
+.. warning:: The following instructions are outdated, Windows builds are now handled 
+             identically to the Unix ones with cmake.
 
 These instructions target a Windows 7 setup with an Apache httpd compiled from 
 source. The Apache MapCache module has been successfully built with with 
