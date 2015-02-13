@@ -1,0 +1,62 @@
+.. _vagrant:
+
+*****************************************************************************
+Vagrant Usage
+*****************************************************************************
+
+:Author:       Stephan Meissl
+:Contact:      stephan.meissl at eox.at
+:Last Updated: 2015/2/13
+
+.. contents:: Table of Contents
+    :depth: 2
+    :backlinks: top
+
+Probably the simplest way to run MapServer regression tests is using
+`Vagrant <https://www.vagrantup.com/>`__ as described below.
+
+Installation and Initial Configuration
+------------------------------------------------------------------------------
+
+Install VirtualBox & Vagrant. The configuration is tested with:
+
+* `Vagrant v1.4.3 <https://www.vagrantup.com/download-archive/v1.4.3.html>`__
+* `VirtualBox 4.3.10 <https://www.virtualbox.org/wiki/Downloads>`__
+
+Install Vagrant add-ons:
+
+* Highly recommended: `vagrant-vbguest` to `check for Virtualbox Guest Additions <https://github.com/dotless-de/vagrant-vbguest>`__
+* Optional: `vagrant-cachier` to `cache yum/apt/etc. packages <https://github.com/fgrehm/vagrant-cachier>`__
+* Optional: `sahara` for `sandboxing <https://github.com/jedi4ever/sahara>`__
+
+::
+
+    vagrant plugin install vagrant-vbguest
+    vagrant plugin install vagrant-cachier
+    vagrant plugin install sahara
+
+Clone MapServer and initialize `msautotest` submodule::
+
+    git clone https://github.com/mapserver/mapserver.git
+    cd mapserver/
+    git submodule init
+    git submodule update
+
+Run Vagrant
+------------------------------------------------------------------------------
+
+To initialize Vagrant simply run the following from the `mapserver`
+directory::
+
+    vagrant up
+    vagrant ssh
+
+You're all set to run the tests as described in :ref:`autotest`.
+
+Troubleshoot Vagrant
+------------------------------------------------------------------------------
+
+* If the provisioning didn't finish during vagrant up or after changes try: `vagrant provision`
+* (Re-)Install virtualbox guest additions in case it complains about not matching versions: `vagrant vbguest -f`
+* Slow performance: Check "Enable IO APIC", uncheck "Extended Features: Enable PAE/NX", and uncheck "Enable Nested Paging" in VirtualBox Manager.
+* Symlinks with VirtualBox 4.1 not working: vi /opt/vagrant/embedded/gems/gems/vagrant-1.3.5/plugins/providers/virtualbox/driver/version_4_1.rb and add those changes: https://github.com/mitchellh/vagrant/commit/387692f9c8fa4031050646e2773b3d2d9b2c994e
