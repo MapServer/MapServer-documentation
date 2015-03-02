@@ -67,11 +67,18 @@ CONNECTION [string]
         See :ref:`vector` for specific connection information for various
         data sources.
 
+    .. seealso::
+        See :ref:`kerneldensity` for specific connection information for kernel 
+        density estimation.
+
 .. index::
    pair: LAYER; CONNECTIONTYPE
 
 .. index::
    triple: LAYER; CONNECTIONTYPE; contour
+
+.. index::
+   triple: LAYER; CONNECTIONTYPE; kerneldensity
 
 .. index::
    triple: LAYER; CONNECTIONTYPE; local
@@ -103,7 +110,7 @@ CONNECTION [string]
 .. index::
    triple: LAYER; CONNECTIONTYPE; wms
     
-CONNECTIONTYPE [contour|local|ogr|oraclespatial|plugin|postgis|sde|union|uvraster|wfs|wms]
+CONNECTIONTYPE [contour|kerneldensity|local|ogr|oraclespatial|plugin|postgis|sde|union|uvraster|wfs|wms]
     Type of connection. Default is local. See additional documentation for 
     any other type.
 
@@ -112,6 +119,10 @@ CONNECTIONTYPE [contour|local|ogr|oraclespatial|plugin|postgis|sde|union|uvraste
         data sources.  See :ref:`union` for combining layers, added in MapServer
         6.0
         
+    .. seealso::
+        See :ref:`kerneldensity` for specific connection information for kernel 
+        density estimation.
+
     .. note::
 
         *mygis* is another connectiontype, but it is deprecated; please
@@ -688,7 +699,52 @@ PROCESSING [string]
       .. code-block:: mapfile
 
           PROCESSING "CLOSE_CONNECTION=DEFER"
-          
+
+    .. index::
+       triple: LAYER; PROCESSING; KERNELDENSITY_RADIUS
+
+    - **Kernel density radius** - radius in pixels of the gaussian filter to 
+      apply to the bitmap array once all features have been accumulated. Higher 
+      values result in increased cpu time needed to compute the filtered data.
+
+      .. code-block:: mapfile
+ 
+           PROCESSING "KERNELDENSITY_RADIUS=10"
+
+    .. index::
+       triple: LAYER; PROCESSING; KERNELDENSITY_COMPUTE_BORDERS
+
+    - **Kernel density compute borders** - A kernel of radius “r” cannot be 
+      applied to “r” pixels along the borders of the image. The default is to 
+      extend the searchrect of the input datasource to include features “r” 
+      pixels outside of the current map extent so that the computed heatmap 
+      extends to the full extent of the resulting image. This can be deactivated 
+      when tiling if the tiling software applies a metabuffer of “r” pixels to 
+      its requests, to avoid the performance overhead of computing this extra 
+      information.
+
+      .. code-block:: mapfile
+
+          PROCESSING "KERNELDENSITY_COMPUTE_BORDERS=ON|OFF"
+     
+    .. index::
+       triple: LAYER; PROCESSING; KERNELDENSITY_NORMALIZATION
+
+    - **Kernel density normalization**- if set to “AUTO”, the created 
+      raster band will be scaled such that its intensities range from 0 to 255, 
+      in order to fully span the configured color ramp. Such behavior may not 
+      be desirable (typically for tiling) as the resulting intensity of a pixel 
+      at a given location will vary depending on the extent of the current map 
+      request.If set to a numeric value, the samples will be multiplied by the 
+      given value. It is up to the user to determine which scaling value to use 
+      so the resulting pixels span the full 0-255 range; determining that value 
+      is mostly a process of trial and error. Pixels that fall outside the 0-255 
+      range will be clipped to 0 or 255.
+
+      .. code-block:: mapfile
+
+          PROCESSING "KERNELDENSITY_NORMALIZATION=AUTO|numeric"
+
     .. index::
        triple: LAYER; PROCESSING; LABEL_NO_CLIP
 
