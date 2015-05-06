@@ -61,13 +61,6 @@ release = '7.0.0-beta1'
 # Else, today_fmt is used as the format for a strftime call.
 #today_fmt = '%B %d, %Y'
 
-# List of documents that shouldn't be included in the build.
-#unused_docs = []
-
-# List of directories, relative to source directory, that shouldn't be searched
-# for source files.
-exclude_trees = ['howto', 'redirection', 'users-manual']
-
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
 
@@ -86,7 +79,7 @@ show_authors = True
 pygments_style = 'sphinx'
 
 # Exclude git directories
-exclude_patterns = ['.git']
+exclude_patterns = ['.git', 'howto', 'redirection', 'users-manual']
 
 # Options for HTML output
 # -----------------------
