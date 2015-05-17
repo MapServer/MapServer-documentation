@@ -9,10 +9,10 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         = a4
 SHELL = /bin/bash
-TRANSLATIONS_STATIC  = zh_cn
+#TRANSLATIONS_STATIC  = zh_cn
 TRANSLATIONS_I18N  = ar de el es fr id it ja nl_NL pl ru sq tr uk
-LANGUAGES     = en $(TRANSLATIONS_STATIC) $(TRANSLATIONS_I18N)
-BUILD_LANGUAGES = $(TRANSLATIONS_I18N) $(TRANSLATIONS_STATIC)
+LANGUAGES     = en $(TRANSLATIONS_I18N)
+BUILD_LANGUAGES = $(TRANSLATIONS_I18N)
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
