@@ -9,10 +9,8 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         = a4
 SHELL = /bin/bash
-#TRANSLATIONS_STATIC  = zh_cn
-TRANSLATIONS_I18N  = ar de el es fr id it ja nl_NL pl ru sq tr uk
-LANGUAGES     = en $(TRANSLATIONS_I18N)
-BUILD_LANGUAGES = $(TRANSLATIONS_I18N)
+BUILD_LANGUAGES = ar de el es fr id it ja nl_NL pl ru sq tr uk
+LANGUAGES     = en $(BUILD_LANGUAGES)
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
@@ -89,7 +87,7 @@ init: en/*
 
 
 compile_messages: init translated/*/*.po
-	@set -e; for lang in $(TRANSLATIONS_I18N) ;\
+	@set -e; for lang in $(BUILD_LANGUAGES) ;\
 	do \
 		echo "Compiling messages for $$lang..."; \
 		for f in `find ./translated/$$lang -type f -name \*.po`; \
@@ -103,7 +101,7 @@ compile_messages: init translated/*/*.po
 	touch compile_messages
 
 generate_po_from_tmpl:
-	@for lang in $(TRANSLATIONS_I18N) ;\
+	@for lang in $(BUILD_LANGUAGES) ;\
 	do \
 		echo "Generate po files from pot files for $$lang..."; \
 		for f in `find ./translated/pot/ -name \*.pot -printf "%f\n"`; \
@@ -115,7 +113,7 @@ generate_po_from_tmpl:
 	@echo "*.pot files copy to *.po files. Now you can start your translation.";\
 
 update_po_from_pot:
-	@for lang in $(TRANSLATIONS_I18N) ;\
+	@for lang in $(BUILD_LANGUAGES) ;\
 	do \
 		echo "Update po files from pot files for $$lang..."; \
 		for f in `find ./translated/pot/ -name \*.pot -printf "%f\n"`; \
@@ -139,7 +137,7 @@ html: compile_messages
 		  mkdir -p $(BUILDDIR)/doctrees/$$lang; \
 			$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/html/$$lang; \
 		else \
-		  if [[ "$(TRANSLATIONS_I18N)" =~ "$$lang" ]]; then \
+		  if [[ "$(BUILD_LANGUAGES)" =~ "$$lang" ]]; then \
 				$(SPHINXBUILD) -b html $(ALLSPHINXOPTSI18N) en build/html/$$lang; \
 			fi \
 		fi \
@@ -227,7 +225,7 @@ pdf: compile_messages
 		mkdir -p $(BUILDDIR)/pdf/$$lang $(BUILDDIR)/doctrees/$$lang; \
 		$(SPHINXBUILD) -b pdf $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/pdf/$$lang;\
 	done
-	@set -e; for lang in $(TRANSLATIONS_I18N);\
+	@set -e; for lang in $(BUILD_LANGUAGES);\
 	do \
 		mkdir -p $(BUILDDIR)/pdf/$$lang $(BUILDDIR)/doctrees/$$lang; \
 		$(SPHINXBUILD) -b pdf $(ALLSPHINXOPTSI18N) en $(BUILDDIR)/pdf/$$lang;\
