@@ -48,7 +48,7 @@ to features much the same way as the native MapServer shapefile and tiled shapef
 -----------------------------
 
 Drivers that support complex expressions (e.g. PostGIS and Oracle Spatial) will need to implement a new layer API function
-(propose msXXXLayerTranslateFilter(layerObj *layer, expressionObj *filter, char *filteritem)) to translate both simple filters
+(propose msXXXLayerTranslateFilter(layerObj \*layer, expressionObj \*filter, char \*filteritem)) to translate both simple filters
 amd MapServer logical expressions to a native representation. MapServer logical exressions consist of a series of tokens that 
 are processed from from left to right. It should be possible then to convert these tokens to a native representation of 
 that the driver will handle independently of MapServer-- typically some flavor of SQL.
@@ -121,19 +121,21 @@ implementation approach, instead it offers an opportunity for more complete tran
 3.2 Overview
 ------------
 
-- limited additions to logial expression syntax are recommended:
+* limited additions to logial expression syntax are recommended:
+
   - spatial operator syntax (e.g. A INTERSECTS B) will be deprecated in favor of a functional notation (e.g. INTERSECTS(A, B) = TRUE). This is more consistent with spatialally enabled SQL syntax and easer to translate.
   - BEYOND/DWITHIN operators will *only* exist in the functional form, they are useless in logical expressions as they site now
-- there are no changes to the MapScript API
-- drivers that support complex expressions (e.g. PostGIS, Oracle, SDE, MS SQL Server, OGR) need to implement a translation 
-funcion to construct a partial "WHERE" clause from a set of expression/filter tokens
+
+* there are no changes to the MapScript API
+* drivers that support complex expressions (e.g. PostGIS, Oracle, SDE, MS SQL Server, OGR) need to implement a translation 
+  funcion to construct a partial "WHERE" clause from a set of expression/filter tokens
 
 3.2 Files affected
 ------------------
 
 The following files will be modified by this RFC:
 
-- mapserver.h: extend expressionObj to contain a native_string (char *). This will hold a the native expression of the filter.
+- mapserver.h: extend expressionObj to contain a native_string (char \*). This will hold a the native expression of the filter.
 - mapquery.c: call merging function in msQueryByAttribute() and msQueryByFilter(), call translation function in all query functions.
 - mapdraw.c: call fitler translation function in msDrawVectorLayer()
 - maplayer.c: changes/additions to layer API function
