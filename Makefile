@@ -9,8 +9,9 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         = a4
 SHELL = /bin/bash
-BUILD_LANGUAGES = ar de el es fr id it ja nl_NL pl ru sq tr uk
-LANGUAGES     = en $(BUILD_LANGUAGES)
+TRANSLATIONS = ar de el es fr id it ja nl_NL pl ru sq tr uk
+LANGUAGES     = en $(TRANSLATIONS)
+BUILD_LANGUAGES = $(TRANSLATIONS)
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
@@ -43,26 +44,6 @@ help:
 
 clean:
 	-rm -rf $(BUILDDIR)/* init compile_messages
-
-clean-repo: clean
-	@set -e; for lang in $(TRANSLATIONS_STATIC) ;\
-	do \
-		for file in `find $$lang -type f -a -regex '.*\.*$$' -a -not -regex '.*\.$$' -a -not -regex '.*\.svn.*' -printf "%p\n" ; cd ..;`; \
-		do \
-			echo "Working on "$$file ; \
-#			is file in git? \
-			if [ ! -d "$$file" -a -n "`git status --porcelain $$file`" ]; then  \
-				rm -f "$$file"; \
-#				is dir empty? \
-				ldir=`dirname "$$file" `; \
-				if [ ! -n "`ls -1 $$ldir`" ]; then \
-					echo "Removing empty dir "$$ldir; \
-					rm -rf "$$ldir"; \
-				fi \
-			fi \
-		done ; \
-	done
-	@echo "Clean-repo finished."
 
 init: en/*
 	@set -e; for lang in $(TRANSLATIONS_STATIC) ;\
@@ -133,13 +114,8 @@ html: compile_messages
 	for lang in $(BUILD_LANGUAGES); \
 	do \
 		mkdir -p $(BUILDDIR)/html/$$lang $(BUILDDIR)/doctrees/$$lang; \
-		if [[ "$(TRANSLATIONS_STATIC)" =~ "$$lang" ]]; then \
-		  mkdir -p $(BUILDDIR)/doctrees/$$lang; \
-			$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/html/$$lang; \
-		else \
-		  if [[ "$(BUILD_LANGUAGES)" =~ "$$lang" ]]; then \
-				$(SPHINXBUILD) -b html $(ALLSPHINXOPTSI18N) en build/html/$$lang; \
-			fi \
+		if [[ "$(BUILD_LANGUAGES)" =~ "$$lang" ]]; then \
+			$(SPHINXBUILD) -b html $(ALLSPHINXOPTSI18N) en build/html/$$lang; \
 		fi \
 	done
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html/<language>.";
@@ -220,11 +196,6 @@ latex: compile_messages
 pdf: compile_messages
 	@set -e;\
 	$(SPHINXBUILD) -b pdf $(ALLSPHINXOPTS) en $(BUILDDIR)/pdf;\
-	for lang in $(TRANSLATIONS_STATIC);\
-	do \
-		mkdir -p $(BUILDDIR)/pdf/$$lang $(BUILDDIR)/doctrees/$$lang; \
-		$(SPHINXBUILD) -b pdf $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/pdf/$$lang;\
-	done
 	@set -e; for lang in $(BUILD_LANGUAGES);\
 	do \
 		mkdir -p $(BUILDDIR)/pdf/$$lang $(BUILDDIR)/doctrees/$$lang; \
