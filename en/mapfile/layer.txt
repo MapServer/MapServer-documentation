@@ -283,13 +283,26 @@ EXTENT [minx] [miny] [maxx] [maxy]
 .. _FILTER:
 
 FILTER [string]
-    This parameter allows for data specific attribute filtering that is done
-    at the same time spatial filtering is done, but before any CLASS
-    expressions are evaluated. For OGR and shapefiles the string is simply
-    a mapserver regular expression. For spatial databases the string is a
-    SQL WHERE clause that is valid with respect to the underlying database.
 
-    For example: FILTER ([type]='road' and [size]<2)
+    This parameter allows for data specific attribute filtering that
+    is done at the same time spatial filtering is done, but before any
+    CLASS expressions are evaluated.  The string is simply a mapserver
+    regular expression::
+
+      FILTER ([type]='road' and [size]<2)
+
+    Native filters are supported through the `NATIVE_FILTER`
+    `PROCESSING` key::
+
+      PROCESSING 'NATIVE_FILTER=id=234'
+
+    .. note::
+
+      Until Mapserver 6, native filters could be specified as::
+
+        FILTER 'where id=234'.
+
+      But this is no longer supported.
 
 .. index::
    pair: LAYER; FILTERITEM
@@ -823,6 +836,20 @@ PROCESSING [string]
       .. code-block:: mapfile
 
           PROCESSING "GETSHAPE_STYLE_ITEMS=all"
+
+    .. index::
+       triple: LAYER; PROCESSING; NATIVE_FILTER
+
+    - **Native filter Directive** - This directive can be used to do
+      driver specific filtering.  For database connections the string
+      is a SQL WHERE clause that is valid with respect to the
+      underlying database.
+
+      .. code-block:: mapfile
+
+          PROCESSING "NATIVE_FILTER=id=234"
+
+      .. versionadded:: 7.0
 
     .. index::
        triple: LAYER; PROCESSING; GAMMA
