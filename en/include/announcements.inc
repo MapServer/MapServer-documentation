@@ -9,8 +9,8 @@ MapServer 7.0 beta2 is being simultaneously released and contains a number of fi
 were discovered during the beta1 test phase. Please help us pushing out a final 7.0 by testing this
 beta and reporting any issues you may have.
 
-:ref:`changelog <changelog-7-0-0-beta2>`
-:ref:`changelog <changelog-6-4-2>`
+ * :ref:`7.0-beta2 changelog <changelog-7-0-0-beta2>`
+ * :ref:`6.4.2 changelog <changelog-6-4-2>`
 
 Head to :ref:`download` to obtain a copy.
 
