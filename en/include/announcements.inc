@@ -1,7 +1,7 @@
 **2015-06-26 - MapServer 7.0.0-beta2, MapServer 6.4.2 and TinyOWS 1.1.1 are released**
 
-This is a security release to mitigate the effects of an issue in older versions of libxml2 (<=2.8).
-You are strongly recommended to update your systems if using an unpatched version of libxml2 < 2.8 as
+This is a security release to mitigate the effects of an issue in older versions of libxml2 (<2.9).
+You are strongly recommended to update your systems if using an unpatched version of libxml2 < 2.9 as
 it may lead to the information disclosure of any file readable by the user running the mapserver
 services.
 
