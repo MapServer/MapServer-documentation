@@ -222,6 +222,7 @@ Tiles are stored in the configured sqlite file created by mapcache with
 .. code-block:: xml
 
    <cache name="sqlite" type="sqlite3">
+      <dbfile>/path/to/dbfile.sqlite3</dbfile>
    </cache>
 
 
@@ -231,7 +232,7 @@ defaults
 
 .. code-block:: xml
    
-   <cache name="sqlitetemplate" type="sqlite3">
+   <cache name="sqlite" type="sqlite3">
       <dbfile>/tmp/sqlitefile.db</dbfile>
       <pragma name="max_page_count">10000000</pragma>
    </cache>
@@ -249,12 +250,132 @@ Custom Schema
 This cache can use any database schema, it is up to you to supply the SQL that
 will be exectuted to select or insert a new tile.
 
-This cache type is not fully implemented yet (there is no way to configure it
-from the mapcache.xml configuration file yet)
+In order to use such a functionality you should supply the sql queries that will
+be used against your custom schema. It is up to you to make sure your queries are 
+correct and will return the correct data for a given tileset, dimension, grid, x,
+y and z.
 
 
-MBTiles Schema
-================================================================================
+.. code-block:: xml
+   
+   <cache name="sqlitecustom" type="sqlite3">
+      <dbfile>/tmp/sqlitefile.db</dbfile>
+      <queries>
+        <create>create table if not exists tiles(tileset text, grid text, x integer, y integer, z integer, data blob, dim text, ctime datetime, primary key(tileset,grid,x,y,z,dim))</create>
+        <exists>select 1 from tiles where x=:x and y=:y and z=:z and dim=:dim and tileset=:tileset and grid=:grid</exists>
+        <get>select data,strftime("%s",ctime) from tiles where tileset=:tileset and grid=:grid and x=:x and y=:y and z=:z and dim=:dim</get>
+        <set>insert or replace into tiles(tileset,grid,x,y,z,data,dim,ctime) values (:tileset,:grid,:x,:y,:z,:data,:dim,datetime('now'))</set>
+        <delete>delete from tiles where x=:x and y=:y and z=:z and dim=:dim and tileset=:tileset and grid=:grid</delete>
+      </queries>
+   </cache>
+
+Note that for the <get> query that returns data for a given tile, the first returned argument
+is considered to be the image blob, and the second optional one a timestamp representing the 
+creation timestamp for that tile.
+
+Blank Tile Detection
+====================
+
+Mapcache's sqlite caches support the detection and storage of blank (i.e. uniform
+color) tiles, and will store a quadruplet of the rgba color component in the data
+blob instead of the compressed image data itself. That quadruplet will be
+transformed on-the-fly to a 1-bit paletted png before being returned to the client.
+
+
+.. code-block:: xml
+   
+   <cache name="sqliteblank" type="sqlite3">
+      <dbfile>/tmp/sqlitefile.db</dbfile>
+      <detect_blank/>
+   </cache>
+
+.. note::
+   
+   sqlite files created with this option will only be fully understood by
+   mapcache as each tile blob may contain a #rgba quadruplet instead of
+   the expected png or jpeg data.
+
+
+Using multiple sqlite database files
+====================================
+
+You may want to split an sqlite cache into multiple files, for organisational
+purposes, or to keep the size of each file to a reasonable limit if caching
+large amounts of data.
+
+In order to do so you may use a template to determine which file should be
+used for a given file:
+
+.. code-block:: xml
+
+   <cache name="sqlite" type="sqlite3">
+      <dbfile>/path/to/{grid}/{dim}/{tileset}.sqlite3</dbfile>
+   </cache>
+
+You may also limit the x and y number of tiles to be stored inside a single database
+file:
+
+.. code-block:: xml
+
+   <cache name="sqlite" type="sqlite3">
+      <dbfile>/path/to/{grid}/{dim}/{tileset}/{z}/{x}-{y}.sqlite3</dbfile>
+      <xcount>1000</xcount>
+      <ycount>1000</ycount>
+   </cache>
+
+In this case you **should** include the {x}, {y} and {z} replacements in the
+template determining the file to use.
+In the previous example, tile (z,x,y)=(15,3024,1534) would be stored in a file
+named /path/to/g/mytileset/15/3000-1000.sqlite3 and tile (5,2,8) would be stored
+in a file named /path/to/g/mytileset/5/0-0.sqlite3
+
+The following template keys are available for operating on the given tile's
+x,y, and z:
+
+- {z} is replaced by the zoom level
+- {x} is replaced by the x value of the leftmost tile inside the sqlite file
+  containing the requested tile
+- {inv_x} is replaced by the x value of the rightmost tile.
+- {y} is replaced by the y value of the bottommost tile.
+- {inv_y} is replaced by the y value of the topmost tile.
+- {div_x} is replaced by the index of the sqlite file starting from the left
+  of the grid (i.e. {div_x} = {x}/<xcount>)
+- {inv_div_x} same as {div_x} but starting from the right.
+- {div_y} is replaced by the index of the sqlite file starting from the bottom
+  of the grid (i.e. {div_y} = {y}/<ycount>)
+- {inv_div_y} same as {div_y} but starting from the top.
+
+.. note::
+
+   {inv_x} and {inv_div_x} will probably be rarely used, whereas
+   {inv_y} and {inv_div_y} will find some usage for people who prefer to index
+   their TIFF files from top to bottom rather than bottom to top.
+
+In some occurences, it may be desirable to have a precise hand on the
+filename to use for a given x,y,z, tile lookup, e.g. to look for a file
+named "Z03-R00003-C000009.sqlite3" instead of just "Z3-R3-C9.sqlite3". The 
+<dbfile> entry supports formatting attributes, following the unix
+printf syntax ( c.f.: http://linux.die.net/man/3/printf ), by suffixing
+each template key with "_fmt", e.g.:
+
+.. code-block:: xml
+
+   <cache name="mysqlite" type="sqlite3">
+      <dbfile
+         x_fmt="%08d"
+         inv_y_fmt="%08d"
+      >/data/{tileset}/{grid}/L{z}/R{inv_y}/C{x}.sqlite</template>
+   </cache>
+
+.. note::
+
+   If not specified, the default behavior is to use "%d" for formatting.
+
+
+.. _mapcache_cache_mbtiles:
+
+MBTiles caches
+--------------
 
 This cache type is a shortcut to the previous custom schema sqlite cache, with
 pre-populated SQL queries that correspond to the MBTiles specification.
@@ -312,7 +433,6 @@ The mbtiles schema is created with:
    backends, some errors may appear under high concurrency when writing to the 
    sqlite database (error: SQL logic error or missing database (1)). 
    Upgrading to sqlite >= 3.7.15 seems to resolve this issue.
-
 
 .. _mapcache_cache_memcache:
 
@@ -506,6 +626,97 @@ when compiled with geotiff support:
    Center      (   0.0000000,   0.0000000)
 
 
+.. _mapcache_cache_rest:
+
+REST Caches
+----------------
+
+The following cache types store and retrieve tiles through standard HTTP GET
+and PUT operations, and can be used to store tiles in popular cloud storage
+providers.
+
+Pure REST Cache
+===============
+
+This cache type can be used to store tiles to a webdav enabled server. You
+must provide a template URL that should be used when accessing a tile with
+a given x,y,z, etc...
+
+.. code-block:: xml
+
+   <cache name="myrestcache" type="rest">
+     <url>https://myserver/webdav/{tileset}/{grid}/{z}/{x}/{y}.{ext}</url>
+   </cache>
+
+Specifying specific HTTP headers
+================================
+
+You can customize which headers get added to the HTTP request, either
+globally for every HTTP request, or specifically for a given type of request
+(i.e. when getting, setting or deleting a tile):
+
+.. code-block:: xml
+
+   <cache name="myrestcache" type="rest">
+     <url>https://myserver/webdav/{tileset}/{grid}/{z}/{x}/{y}.{ext}</url>
+     <headers>
+       <Host>my-virtualhost-alias.domain.com</Host>
+     </headers>
+     <operation type="put">
+       <headers>
+         <X-my-specific-put-header>foo</X-my-specific-put-header>
+       </headers>
+     </operation>
+     <operation type="get">
+       <headers>
+         <X-my-specific-get-header>foo</X-my-specific-get-header>
+       </headers>
+     </operation>
+     <operation type="head">
+       <headers>
+         <X-my-specific-head-header>foo</X-my-specific-head-header>
+       </headers>
+     </operation>
+     <operation type="delete">
+       <headers>
+         <X-my-specific-delete-header>foo</X-my-specific-delete-header>
+       </headers>
+     </operation>
+   </cache>
+
+
+.. _mapcache_cache_rest_s3:
+
+Amazon S3 REST Caches
+=====================
+
+The REST cache has been specialized to enable access to Amazon S3, in order
+to add the layer of authentication/authorization needed for that platform.
+
+.. code-block:: xml
+
+   <cache name="s3" type="s3">
+     <url>https://foo.s3.amazonaws.com/tiles/{tileset}/{grid}/{z}/{x}/{y}/{ext}</url>
+     <headers>
+       <Host>foo.s3.amazonaws.com</Host>
+     </headers>
+     <id>AKIE3SDEIT6TUG8DXEQI</id>
+     <secret>5F+dGsTfsdfkjdsfSDdasf4555d/sSff56sd/RDS</secret>
+     <region>eu-west-1</region>
+     <operation type="put">
+       <headers>
+         <x-amz-storage-class>REDUCED_REDUNDANCY</x-amz-storage-class>
+         <x-amz-acl>public-read</x-amz-acl>
+       </headers>
+     </operation>
+   </cache>
+
+The <id> <secret> and <region> tags are required and are obtained and configured
+through your amazon management console. You should read the documentation as to
+what headers you want to be adding to your requests depending on your usecase (the
+supplied example hosts tiles on cheaper storage, and allows them to be publically
+accessible).
+
 .. _mapcache_cache_meta:
 
 Meta Caches
@@ -513,7 +724,9 @@ Meta Caches
 
 These cache types do not store tiles themselves, however they delegate the
 storage of a tile to a number of child caches based on a set of rules or
-behaviors.
+behaviors. These caches are mostly usefull for large mapcache deployments
+across multiple instances, with shared cache backends (i.e. dedicated memcache
+servers, and network mounted filer filesystems).
 
 
 .. _mapcache_cache_composite:
@@ -592,3 +805,31 @@ type is meant to be used when the first cache does automatic pruning of the leas
 used tiles (i.e. a memcache one).
 
 When writing a tile to such a cache, it will be written to the last child.
+
+Cache Combinations
+==================
+
+All these meta caches can be combined together to fine tune the availability and
+performance depending on storage costs, time to recreate missing tiles, etc...
+
+.. code-block:: xml
+
+   <cache name="slow_and_permanent" type="sqlite">...</cache>
+   <cache name="fast_and_transient" type="memcache">...</cache>
+   <cache name="low_zooms" type="multitier">
+      <cache>fast_and_transient</cache>
+      <cache>slow_and_permanent</cache>
+   <cache>
+   <cache name="mycache" type="composite">
+      <cache maxzoom="12">low_zooms</cache>
+      <cache>fast_and_transient</cache>
+   <cache>
+   <tileset>
+      <cache>mycache</cache>
+      ...
+   </tileset>
+
+In the previous example, all tiles are primarily accessed from a memcache instance, however
+the lower zoom level tiles are backed up to a permanent sqlite cache which will be used to
+populate the fast memcache cache e.g. on restarts.
+
