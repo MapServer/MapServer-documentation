@@ -714,8 +714,60 @@ to add the layer of authentication/authorization needed for that platform.
 The <id> <secret> and <region> tags are required and are obtained and configured
 through your amazon management console. You should read the documentation as to
 what headers you want to be adding to your requests depending on your usecase (the
-supplied example hosts tiles on cheaper storage, and allows them to be publically
+supplied example hosts tiles on cheaper storage, and allows them to be publicly
 accessible).
+
+
+.. _mapcache_cache_rest_azure:
+
+Microsoft Azure REST Caches
+===========================
+
+The REST cache has been specialized to enable access to Azure storage, in order
+to add the layer of authentication/authorization needed for that platform.
+
+.. code-block:: xml
+
+   <cache name="azure" type="azure">
+     <url>https://foo.blob.core.windows.net/tiles/{tileset}/{grid}/{z}/{x}/{y}/{ext}</url>
+     <headers>
+       <Host>foo.blob.core.windows.net</Host>
+     </headers>
+     <id>foo</id>
+     <secret>foobarcccccccccccccccccccccyA==</secret>
+     <container>tiles</container>
+   </cache>
+
+The <id> <secret> and <container> tags are required and are obtained and configured
+through your management console. You should read the documentation as to
+what headers you want to be adding to your requests depending on your usecase.
+
+
+.. _mapcache_cache_rest_google:
+
+Google Cloud Storage REST Caches
+================================
+
+The REST cache has been specialized to enable access to Google cloud storage, in order
+to add the layer of authentication/authorization needed for that platform.
+
+.. code-block:: xml
+
+   <cache name="google" type="google">
+     <url>https://storage.googleapis.com/mytiles-mapcache/{tileset}/{grid}/{z}/{x}/{y}.{ext}</url>
+     <access>GOOGPGDWFDG345SDFGSD</access>
+     <secret>sdfgsdSDFwedfwefr2345324dfsGdsfgs</secret>
+     <operation type="put">
+       <headers>
+         <x-amz-acl>public-read</x-amz-acl>
+       </headers>
+     </operation>
+   </cache>
+
+The <access> and <secret> tags are required and are obtained and configured
+through your management console. You should read the documentation as to
+what headers you want to be adding to your requests depending on your usecase.
+Note that support for Google cloud storage uses its Amazon compatibility layer.
 
 .. _mapcache_cache_meta:
 
@@ -832,4 +884,19 @@ performance depending on storage costs, time to recreate missing tiles, etc...
 In the previous example, all tiles are primarily accessed from a memcache instance, however
 the lower zoom level tiles are backed up to a permanent sqlite cache which will be used to
 populate the fast memcache cache e.g. on restarts.
+
+Riak Caches
+-----------
+
+requires https://github.com/trifork/riack
+
+.. code-block:: xml
+  
+  <cache name="myriak" type="riak">
+    <server>
+      <host>riakhost</host>
+      <port>12345</port>
+      <bucket>mytiles</bucket>
+    </server>
+  </cache>
 
