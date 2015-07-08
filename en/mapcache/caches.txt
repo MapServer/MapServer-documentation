@@ -83,11 +83,7 @@ Arcgis Compatible Structure
    </cache>
 
 This layout creates a tile structure compatible with an arcgis exploded cache. Tiles
-will be stored in files that ressemble
-
-.. code-block::
-
-  /tmp/{tileset}/{grid}/{dimension}/L{z}/R{y}/C{x}.{ext}
+will be stored in files that ressemble `/tmp/{tileset}/{grid}/{dimension}/L{z}/R{y}/C{x}.{ext}`
 
 
 Worldwind Compatible Structure
@@ -101,11 +97,7 @@ Worldwind Compatible Structure
    </cache>
 
 This layout creates a tile structure compatible with a worldwind cache. Tiles
-will be stored in files that ressemble
-
-.. code-block::
-
-  /tmp/{tileset}/{grid}/{dimension}/{z}/{y}/{y}_{x}.ext
+will be stored in files that ressemble `/tmp/{tileset}/{grid}/{dimension}/{z}/{y}/{y}_{x}.ext`
 
 
 Template Structure
@@ -332,18 +324,18 @@ in a file named /path/to/g/mytileset/5/0-0.sqlite3
 The following template keys are available for operating on the given tile's
 x,y, and z:
 
-- {z} is replaced by the zoom level
-- {x} is replaced by the x value of the leftmost tile inside the sqlite file
+- `{z}` is replaced by the zoom level
+- `{x}` is replaced by the x value of the leftmost tile inside the sqlite file
   containing the requested tile
-- {inv_x} is replaced by the x value of the rightmost tile.
-- {y} is replaced by the y value of the bottommost tile.
-- {inv_y} is replaced by the y value of the topmost tile.
-- {div_x} is replaced by the index of the sqlite file starting from the left
-  of the grid (i.e. {div_x} = {x}/<xcount>)
-- {inv_div_x} same as {div_x} but starting from the right.
-- {div_y} is replaced by the index of the sqlite file starting from the bottom
-  of the grid (i.e. {div_y} = {y}/<ycount>)
-- {inv_div_y} same as {div_y} but starting from the top.
+- `{inv_x}` is replaced by the x value of the rightmost tile.
+- `{y}` is replaced by the y value of the bottommost tile.
+- `{inv_y}` is replaced by the y value of the topmost tile.
+- `{div_x}` is replaced by the index of the sqlite file starting from the left
+  of the grid (i.e. `{div_x} = {x}/<xcount>`)
+- `{inv_div_x}` same as {div_x} but starting from the right.
+- `{div_y}` is replaced by the index of the sqlite file starting from the bottom
+  of the grid (i.e. `{div_y} = {y}/<ycount>`)
+- `{inv_div_y}` same as `{div_y}` but starting from the top.
 
 .. note::
 
@@ -353,7 +345,7 @@ x,y, and z:
 
 In some occurences, it may be desirable to have a precise hand on the
 filename to use for a given x,y,z, tile lookup, e.g. to look for a file
-named "Z03-R00003-C000009.sqlite3" instead of just "Z3-R3-C9.sqlite3". The 
+named `Z03-R00003-C000009.sqlite3` instead of just `Z3-R3-C9.sqlite3`. The 
 <dbfile> entry supports formatting attributes, following the unix
 printf syntax ( c.f.: http://linux.die.net/man/3/printf ), by suffixing
 each template key with "_fmt", e.g.:
@@ -466,7 +458,18 @@ You can add multiple <server> entries.
    default. This can be overriden at the tileset level with the <auto_expire>
    keyword.
 
+To limit the memory used by blank tiles inside the memcache instance, you
+may enable blank tile detection, in which case a `#rgba` quadruplet will
+be stored to the cache instead of the actual image data. MapCache will convert
+that on the fly to a 1-bit paletted PNG image before returning it to the client.
 
+
+.. code-block:: xml
+
+   <cache name="memcache" type="memcache">
+      <detect_blank/>
+      ...
+   </cache>
 
 .. _mapcache_cache_tiff:
 
@@ -592,6 +595,24 @@ In this example, assuming a grid using 256x256 tiles, the files that are read
 to load the tiles are tiled TIFFs with jpeg compression, who's size are
 16384x16384. The number of files to store on disk is thus reduced 4096 times
 compared to the basic disk cache.
+
+Using a specific locker
+=======================
+
+Mapcache needs to create a :ref:`lock <mapcache_locks>` when writing inside a
+TIFF file to ensure that no two instances are updating the same file
+concurrently. By default the global mapcache locker will be used, you can
+however configure a different locking mechanism or behavior by configuring it
+inside the TIFF cache itself.
+
+.. seealso:: :ref:`mapcache_locks`
+
+.. code-block:: xml
+
+   <cache name="tiff" type="tiff">
+      ...
+      <locker> .... </locker>
+   </cache>
 
 GeoTIFF Support
 ===========================
@@ -884,6 +905,8 @@ performance depending on storage costs, time to recreate missing tiles, etc...
 In the previous example, all tiles are primarily accessed from a memcache instance, however
 the lower zoom level tiles are backed up to a permanent sqlite cache which will be used to
 populate the fast memcache cache e.g. on restarts.
+
+.. _mapcache_cache_riak:
 
 Riak Caches
 -----------
