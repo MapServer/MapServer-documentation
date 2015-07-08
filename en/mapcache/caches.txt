@@ -16,7 +16,7 @@ Disk Caches
 
 The disk based cache is the simplest cache to configure, and the one with the
 the fastest access to existing tiles. It is ideal for small tile repositories,
-but may cause trouble for sites hosting millions of tiles, as the number of 
+but will often cause trouble for sites hosting millions of tiles, as the number of 
 files or directory may rapidly overcome the capabilities of the underlying
 filesystem. Additionaly, the block size chosen for the filesystem must closely
 match the mean size of a stored tile: ideally, any given tile should just fit
@@ -26,16 +26,36 @@ and not have to use up multiple blocks per tile.
 The location of the files/directories has to be readable and writable by the
 user running the tile server.
 
+Common Configuration
+====================
 
-There are two types of disk caches, that create a different hierarchy of files:
+Disk caches are added via
+
+.. code-block:: xml
+   
+   <cache name="disk_cache" type="disk" layout="...">
+     ...
+     <symlink_blank/>
+     <creation_retry>3</creation_retry>
+   </cache>
+
+All caches except the "template" one support the <symlink_blank/> option which
+(depending on platform availability) will detect tiles of uniform color and 
+create a symbolic link to a single uniform color tile instead of storing the
+actual blank data in the tile's file.
+
+All caches support the <creation_retry> option, which specifies the number of
+times mapcache should retry if it failed to create a tile's file or symlink. The
+default is to fail immediately, you may want to set this to a positive value 
+if using a network mounted filesystem where transient errors are common.
 
 Default Structure
-================================================================================
+=================
 
 The default disk cache stores tiles in a structure nearly identical to the
 file/directory hierarchy used by TileCache. The only change is that a top level
-directory corresponding to the name of the grid is added (as MapCache supports
-multiple grids per tileset)
+directory structure corresponding to the name of the grid and the eventual value
+of the tileset's dimensions is added.
 
 This cache is capable of detecting blank (i.e. uniform color) tiles and using
 a symbolic link to a single blank tile to gain disk space.
@@ -52,8 +72,44 @@ The two only configuration keys are the root directory where the tiles will be
 stored, and a key to activate the symbolic linking of blank tiles
 
 
+Arcgis Compatible Structure
+===========================
+
+.. code-block:: xml
+   
+   <cache name="arcgis" type="disk" layout="arcgis">
+      <base>/tmp</base>
+      <symlink_blank/>
+   </cache>
+
+This layout creates a tile structure compatible with an arcgis exploded cache. Tiles
+will be stored in files that ressemble
+
+.. code-block::
+
+  /tmp/{tileset}/{grid}/{dimension}/L{z}/R{y}/C{x}.{ext}
+
+
+Worldwind Compatible Structure
+==============================
+
+.. code-block:: xml
+   
+   <cache name="worldwind" type="disk" layout="worldwind">
+      <base>/tmp</base>
+      <symlink_blank/>
+   </cache>
+
+This layout creates a tile structure compatible with a worldwind cache. Tiles
+will be stored in files that ressemble
+
+.. code-block::
+
+  /tmp/{tileset}/{grid}/{dimension}/{z}/{y}/{y}_{x}.ext
+
+
 Template Structure
-================================================================================
+==================
 
 The template based disk cache allows you to create (or reuse an existing) tile
 structure that you define in advance. The <template> parameter takes a string
@@ -62,7 +118,7 @@ value for each tile to store.
 
 .. code-block:: xml
    
-   <cache name="tmpl" type="disk">
+   <cache name="tmpl" type="disk" layout="template">
       <!-- template
 
           string template that will be used to map a tile (by tileset, grid name, dimension,
@@ -87,7 +143,6 @@ value for each tile to store.
       -->
       <template>/tmp/template-test/{tileset}#{grid}#{dim}/{z}/{x}/{y}.{ext}</template>
    </cache>
-
 
 .. _mapcache_cache_bdb:
 
@@ -451,3 +506,89 @@ when compiled with geotiff support:
    Center      (   0.0000000,   0.0000000)
 
 
+.. _mapcache_cache_meta:
+
+Meta Caches
+----------------
+
+These cache types do not store tiles themselves, however they delegate the
+storage of a tile to a number of child caches based on a set of rules or
+behaviors.
+
+
+.. _mapcache_cache_composite:
+
+Composite Caches
+================
+
+This cache uses different child caches depending on the tile's zoom level, and
+can be used for example to store low zoom-level tiles to permanent storage, and
+higher zoom-level to a temporary (i.e. memcache) cache.
+
+.. code-block:: xml
+
+   <cache name="mydisk" ...> ... </cache>
+   <cache name="mymemcache" ...> ... </cache>
+   <cache name="composite" type="composite">
+      <cache minzoom="0" maxzoom="8">mydisk</cache>
+      <cache minzoom="9">mymemcache</cache>
+   </cache>
+   <tileset ...>
+      <cache>composite</cache>
+      ...
+   </tileset>
+
+For each tile, the caches are tested in the order in which they have been defined
+in the configuration file, and the first one to satisfy the min/max zoom constraint
+is used. It's up to the user to make sure the succession of min/max zoom values 
+makes sense, e.g.:
+
+
+.. code-block:: xml
+
+   <cache name="composite" type="composite">
+      <cache minzoom="0">cache1</cache>
+      <cache minzoom="9">this_cache_will_never_be_used</cache>
+   </cache>
+
+
+.. _mapcache_cache_fallback:
+
+Fallback Caches
+================
+
+These cache types will return tiles from the first configured subcache that does
+not return an error. They can be used when one of the caches is prone to error
+conditions (e.g. remote rest caches, memcache)
+
+
+.. code-block:: xml
+
+   <cache name="fallback" type="fallback">
+      <cache>mymemcache</cache>
+      <cache>mysqlitecache</cache>
+   </cache>
+
+When writing a tile to such a cache, it will be written to all the child caches.
+
+
+.. _mapcache_cache_multitier:
+
+Multitier Caches
+================
+
+These cache types can be used to combine fast/expensive caches with slow/cheap ones.
+
+.. code-block:: xml
+
+   <cache name="multitier" type="multitier">
+      <cache>fast</cache>
+      <cache>cheap</cache>
+   </cache>
+
+If a given tile isn't found in the first child cache, it will be read from the second
+child cache **and** copied into the first child cache for subsequent accesses. This cache
+type is meant to be used when the first cache does automatic pruning of the least recently
+used tiles (i.e. a memcache one).
+
+When writing a tile to such a cache, it will be written to the last child.
