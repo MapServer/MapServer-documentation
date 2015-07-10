@@ -66,6 +66,9 @@ arises)
             key: value\r\n
 
             HTTP header.
+
+            You may also forward a header from the incoming client request
+            using the <MyHeader>{X-Header-To-Forward}<MyHeader> syntax
          -->
          <headers>
             <User-Agent>mod-mapcache/r175</User-Agent>
@@ -431,6 +434,22 @@ given *format*.
          <grid restricted_extent="-10 40 10 50" minzoom="4" maxzoom="17">WGS84</grid>
          <grid>g</grid>
 
+      <!-- You may store hidden intermediate levels of tiles to enable higher quality output when reassembling
+         tiles. This may be needed when caching maps containing labels to avoid the text from becoming too
+         small or too blurry when requesting resolutions that are far away from the native grid resolutions.
+         
+         Supposing grid "mygrid" consists of 256x256 pixel tiles, with resolutions r1,r2,r3,r4,...rn, mapcache
+         will populate a hidden grid called "mygrid_intermediate_0.5" containing tiles of size `256+256*0.5=384`
+         with resolutions r1+(r2-r1)*0.5, r2+(r3-r2)*0.5, ... r(n-1)+(r(n)-r(n-1)*0.5. i.e. a tile with a given
+         extent will be stored once in a 256x256 tile, and once in a 384x384 one.
+
+         This intermediate grid is private to mapcache and will not be exposed to tiled requests. It will only be
+         used for WMS requests that require horizontal assembling.
+      <--
+
+         <grid use_wms_intermediate_resolutions="true">mygrid</grid>
+
+
       <!-- metadata
          optional metadata tags used for responding to GetCapabilities request.
          you can put anything in here, although only the title and abstract tags
@@ -583,7 +602,7 @@ to. You should of course enable at least one.
       <!-- format
          image format to use when assembling tiles
       -->
-      <format>myjpeg</format>
+      <format allow_client_override="true">myjpeg</format>
 
    </service>
    <service type="wmts" enabled="true"/>

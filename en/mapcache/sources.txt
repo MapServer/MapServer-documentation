@@ -7,28 +7,48 @@ Data Sources
 :Author: Thomas Bonfort
 :Contact: tbonfort at terriscope.fr
 
-.. note::
-  
-  This page is a work in progress
-
 MapCache uses the concept of a "source" as a service that is able to return
 image data given a set of parameters (namely an extent, an image size, and a
 projection). Typically, a source is the third party WMS server that you want
 to put a tilecache infront of.
 
 
-
-.. _mapcache_http:
-
-HTTP Service Definition
---------------------------------------------------------------------------------
-
 .. _mapcache_source_wms:
 
 WMS Sources
 --------------------------------------------------------------------------------
 
+A WMS server is the main upstream server type used by mapcache. When processing a
+given tile, if it is not found in its cache, MapCache will query a WMS server with
+a GetMap request, split the returned image data into individual tiles, and store
+those tiles in its cache for subsequent requests.
+
+
+
+.. code-block:: xml
+
+  <source name="mywmsserver" type="wms">
+    <http> .... </http>
+    <getmap>
+      <params>
+        <map>/path/to/mapserver/mapfile.map</map>
+        <layers>value2</layers>
+      </params>
+    </getmap>
+  </source>
+
+
+.. seealso:: :ref:`mapcache_http` to configure how the `<http>` block should be expressed
+
+.. warning:: You should usually only supply vendor specific parameter to the
+             `<params>` block.  **Never** include any hardcoded BBOX, WIDTH, HEIGHT, SRS or
+             any parameters related to dimensions inside this block, as these are calculated
+             by MapCache itself at runtime.
+               
+
 .. _mapcache_source_mapfile:
 
 MapFile Sources
 --------------------------------------------------------------------------------
+
+Experimental

@@ -228,6 +228,66 @@ The capabilities document is returned by:
 
   http://myhost.com/mapcache?service=wms&request=getcapabilities
 
+Optional WMS Configuration Options
+==================================
+
+
+Untiled GetMap Support
+++++++++++++++++++++++
+
+Support for untiled (non WMS-C) GetMap requests can be enabled or disabled:
+
+.. code-block:: xml
+
+   <service type="wms" enabled="true">
+      <!-- full_wms
+           configure response to wms requests that are not aligned to a tileset's grids.
+           responding to requests that are not in the SRS of a configured grid is not supported, but
+           this should never happen as only the supported SRSs are publicized in the capabilities
+           document.
+
+           allowed values are:
+             - error: return a 404 error (default)
+             - assemble: build the full image by assembling the tiles from the cache
+             - forward: forward the request to the configured source.
+      -->
+      <full_wms>assemble</full_wms>
+   </service>
+
+
+GetMap Image Format
++++++++++++++++++++
+
+You may explicitely set which image format should be returned to the client for
+an untiled WMS request (i.e. whenever the tile data cannot be served directly
+from the caches but needs to go through a decompression/recompression phase.
+
+
+.. code-block:: xml
+
+   <service type="wms" enabled="true">
+     <format allow_client_override="true/false">myjpegformat</format>
+   </service>
+
+If the `allow_client_override` attribute is set to true, then MapCache will honor
+the `FORMAT=...` parameter sent by the client. By default MapCache ignores this
+parameter and uses its configured image format.
+
+Image Resampling Quality
+++++++++++++++++++++++++
+
+.. code-block:: xml
+
+   <service type="wms" enabled="true">
+      <!-- resample mode
+      filter applied when resampling tiles for full wms requests.
+      can be either:
+      - nearest : fastest, poor quality
+      - bilinear: slower, higher qulity
+      -->
+      <resample_mode>bilinear</resample_mode>
+   </service>
+
 
 .. _mapcache_gmaps:
 
