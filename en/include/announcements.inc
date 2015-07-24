@@ -1,3 +1,10 @@
+**2015-07-24 - MapServer 7.0.0 and MapCache 1.4 are released**
+
+The major version MapServer 7.0 has been released. The list of significant
+changes for this release can be found in the :ref:`7.0 announcement <announce-7-0>`.
+See the :ref:`changelog <changelog-7-0-0>` for the full list
+of changes since beta2 and head to :ref:`download` to obtain a copy.
+
 **2015-06-26 - MapServer 7.0.0-beta2, MapServer 6.4.2 and TinyOWS 1.1.1 are released**
 
 This is a security release to mitigate the effects of an issue in older versions of libxml2 (<2.9).
