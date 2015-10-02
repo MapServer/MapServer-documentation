@@ -177,14 +177,22 @@ latex_logo = './_static/banner-large.png'
 # not chapters.
 latex_use_parts = False
 
+latex_elements = {
+# The paper size ('letter' or 'a4').
+'papersize': 'letter',
+
+# The font size ('10pt', '11pt' or '12pt').
+#'pointsize': '10pt',
+
 # Additional stuff for the LaTeX preamble.
-latex_preamble = '\setcounter{tocdepth}{3}'
+'preamble': '\setcounter{tocdepth}{3}'
+}
 
 # Documents to append as an appendix to all manuals.
 #latex_appendices = []
 
 # If false, no module index is generated.
-#latex_use_modindex = True
+latex_use_modindex = True
 #
 
 # -- Options for PDF output ---------------------------------------
