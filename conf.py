@@ -192,7 +192,7 @@ latex_elements = {
 #latex_appendices = []
 
 # If false, no module index is generated.
-#latex_use_modindex = True
+latex_use_modindex = True
 #
 
 # -- Options for PDF output ---------------------------------------
