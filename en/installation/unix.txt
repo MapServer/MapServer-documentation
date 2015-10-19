@@ -30,10 +30,13 @@ it can be compiled on a wide variety of platforms and operating systems.
 We will focus on how to obtain, compile and install MapServer on UNIX-like 
 platforms.
 
-Detailed configuration options are maintained in the `INSTALL.CMAKE`_
-file packaged at the root of the source directory:
+.. note:: 
 
-You might also check the `MapServerCompilation`_ wiki page for additional information.
+   Detailed configuration options are maintained in the `INSTALL.CMAKE`_
+   file packaged at the root of the source directory:
+
+You might also check the `MapServerCompilation`_ wiki page for
+additional information.
 
 =============================================================================
  Obtaining the necessary software
@@ -48,66 +51,42 @@ You can also get the latest MapServer source code from :ref:`git`.
  Required External Libraries
 -----------------------------------------------------------------------------
 
-* `libpng`_: libpng should be on
-  your system by default.  1.2.12 is the current release with security patches, although
-  versions all the way back to 1.2.7 should work.
+* `libpng`_: libpng should be on your system by default.  Versions
+  back to 1.2.7 should work.
 
 * `freetype`_: Version 2.x or above is required.
 
 * `libjpeg`_: libjpeg allows MapServer to render 
   images in JPEG format.  A sufficient version should be installed by 
-  default on your system.  Version 6b is the current version and dates back to 
-  1998.
+  default on your system (probably version 6b from 1998).
 
   .. warning::
         
-        Direct JPEG support is deprecated in MapServer 5.8+, and you should 
-        now depend on GDAL for raster read support in MapServer. JPEG support
-        is however still required for producing (i.e. writing) images.
+        Direct JPEG support was deprecated in MapServer 5.8+, and you
+        should now depend on GDAL for raster read support in
+        MapServer. JPEG support is however still required for
+        producing (i.e. writing) images.
   
-* `zlib`_: Zlib should be on your system by 
-  default.  1.2.1 is the current release with security patches. Though not
-  used directly by mapserver, it's a mandatory dependency of libpng.
+* `zlib`_: Zlib should be on your system by default.  Though not used
+  directly by mapserver, it's a mandatory dependency of libpng.
 
 -----------------------------------------------------------------------------
  Highly Recommended Libraries
 -----------------------------------------------------------------------------
 
-
 * `libproj`_: libproj provides projection support for MapServer.
   Version 4.4.6 or greater is required.
 
 * `libcurl`_: libcurl is the foundation of OGC (WFS/WMS/WCS) client
-  and server support.  Version 7.10 or greater is required. Installing
-  libcurl::
-
-      apt-get install -y libcurl4-gnutls-dev
-
-* `OGR`_: OGR provides access to at least 18 different vector formats.
-* `GDAL <http://www.gdal.org/>`__: GDAL provides access to at least 
-  42 different raster formats.
+  and server support.  Version 7.10 or greater is required.
+* `OGR`_: OGR provides access to a lot of vector formats.
+* `GDAL <http://www.gdal.org/>`__: GDAL provides access to a lot of
+  raster formats.
 
 -----------------------------------------------------------------------------
  Optional External Libraries
 -----------------------------------------------------------------------------
 
-* `libtiff`_: libtiff provides TIFF (Tagged Image File Format) reading
-  support to MapServer.
-  
-  .. warning::
-        
-        Direct libtiff support is deprecated in MapServer 5.8+, and you should 
-        now depend on GDAL for raster read support in MapServer.
-    
-* `libgeotiff`_:
-  libgeotiff provides support to read GeoTIFF files (TIFF files with 
-  geographic referencing).
-
-  .. warning::
-        
-        Direct GeoTIFF support is deprecated in MapServer 5.8+, and you should 
-        now depend on GDAL for raster read support in MapServer.
-  
 * `GEOS`_: GEOS allows MapServer to do 
   spatial predicate and algebra operations (within, touches, etc & union, 
   difference, intersection). 
@@ -119,10 +98,6 @@ You can also get the latest MapServer source code from :ref:`git`.
   
   .. versionadded:: 4.10
   
-* `SDE Client Library`_: The client libraries for your platform should
-  be part of the ArcSDE media kit.  They are *not* publicly available
-  for download.
-  
 * `Oracle Spatial OCI`_: The client libraries for your platform are
   available for download from Oracle's website.  Ideally, your client
   library matches the database you are querying from, but this is not
@@ -132,8 +107,8 @@ You can also get the latest MapServer source code from :ref:`git`.
   within the PostgreSQL database.  Ideally, your client library
   matches the database you are querying from.
   
-* `libgif-dev`_: giflib is
-  is used for reading GIF files used as PIXMAP symbols.
+* `giflib`_: libgif / `libgif`_ is is used for reading GIF files used
+  as PIXMAP symbols.
 
 * `FastCGI`_: FastCGI is a popular protocol for interfacing MapServer
   with various web servers.  You will need to install the development
@@ -143,162 +118,48 @@ You can also get the latest MapServer source code from :ref:`git`.
 
       $ apt-get -y install libfcgi-dev
 
-* `cairo (svg, pdf) support`_: This library is required to produce PDF
+* `Cairo (SVG, PDF) support`_: This library is required to produce PDF
   and SVG outputs.  If you're on an ubuntu system, it can be installed
   with "apt-get install -y libcairo2-dev"
 
-* `kml support`_: This renderer is has no external dependency.
+* `KML support`_: This renderer is has no external dependency.
 
-* `GD`_: libgd is used by MapServer for 
-  rendering images.  Version 2.0.28 or greater required. Version 2.0.29 or 
-  later is required to use curved (following) labels, and version 2.0.34
-  is required for antialiasing (1 pixel wide lines/outlines). 
+.. index::
+   single: HarfBuff
+
+.. index::
+   single: FriBidi
+
+* `HarfBuff`_: Support complex script shaping (to simplify: the tool
+  that will insert ligatures between characters).  Harfbuzz algorithms
+  will be applied on text strings that have been determined to not be
+  latin (i.e. the slowdown induced by harfbuzz is limited to those
+  languages that actually require shaping).  Requires `FriBidi`_.
+
+  .. seealso::
+
+    :ref:`rfc98`
+
+
+  .. versionadded:: 7.0
+
+* MySQL: Support joining with MySQL (the WITH_MYSQL option).
 
 -----------------------------------------------------------------------------
  Optional Features
 -----------------------------------------------------------------------------
 
-* `cairo svg parser support`_: The WITH_SVGCAIRO option is part of a
+* `Cairo SVG parser support`_: The WITH_SVGCAIRO option is part of a
   proposal to improve SVG support.  Using this feature requires
   installing the libsvg-cairo library available here:
   http://cairographics.org/snapshots/ .  You will need to compile and
   install cairo, libsvg, and libsvg-cairo.
 
 * SVG support can be enabled either through the unmaintained libsvg /
-  libsvg-cairo combo, or through librsvg at the cost of more dependencies. Use
-  librsvg if your distro provides a package for it, or fall back to libsvgcairo
-  if the cost of compiling the librsvg dependencies is too important.
-
-
-=============================================================================
- libgd
-=============================================================================
-
-.. warning::
-
-  It is not recommended to enable the GD renderer unless you know what you are
-  doing. It suffers from major rendering limitations, and will be completely
-  removed in version 7.0
-
-There are a number of issues that you should be aware of when using GD in 
-combination with MapServer.  
-
------------------------------------------------------------------------------
- Minimum libgd versions
------------------------------------------------------------------------------
-
-MapServer aggressively takes advantage of new features and bug fixes in the 
-latest versions of libgd.  The minimum required version to run MapServer is 
-2.0.29.  Upgrading to at least 2.0.34 is advised as it includes an important
-bug fix for antialiased lines.  Configure should detect which version of 
-libgd you have installed, but you  can quickly check yourself by issuing the 
-following command: 
-
-::
-
-    $ gdlib-config --version
-
-
------------------------------------------------------------------------------
- libiconv
------------------------------------------------------------------------------
-
-If you intend to use international character sets, your version of libgd 
-*must* be compiled against the GNU iconv libraries.  If you are using a 
-pre-packaged version, it is very likely that this is the case.  To check 
-for yourself, issue the following command and look for '-liconv' in the output:
-
-::
-
-    $ gdlib-config --libs
-
------------------------------------------------------------------------------
- Pre-packaged/system libraries
------------------------------------------------------------------------------
-
-If you intend to use your system's libgd, ensure that you have the development 
-package also installed so MapServer can find and use the appropriate headers.
-
------------------------------------------------------------------------------
- MacOSX
------------------------------------------------------------------------------
-
-A useful FAQ on for libgd on OSX is available at `GD on OSX`_.
-
------------------------------------------------------------------------------
- FreeType support
------------------------------------------------------------------------------
-
-The GD you compile MapServer against MUST be compiled against the FreeType 
-library in order to use TrueType fonts. MapServer no longer uses it's own 
-interface to FreeType, using it through GD instead.
-
-When you run your "configure" script, look for the following output:
-
-::
-
-    using GD ( -DUSE_GD_GIF -DUSE_GD_PNG -DUSE_GD_JPEG 
-               -DUSE_GD_WBMP -DUSE_GD_TTF -DGD_HAS_GDIMAGEGIFPTR)
-               from system libs.
-          
-If your GD is built against FreeType, you will see either 
-"-DUSE_GD_TTF" (Or "-DUSE_GD_FT" for Freetype 2.x) part. If it's missing, 
-you will need to recompile your GD to make sure you include FreeType 
-support. See the GD documentation for more information.
-
-Also note that the configure script looks for the FreeType library 
-separately as well, generating output looking somewhat like this:
-
-::
-
-    checking where FreeType is installed...
-    checking for FT_Init_FreeType in -lfreetype... yes
-    using libfreetype -lfreetype from system libs.
-
-Even though you have FreeType installed on your system *and* the 
-configure script finds it, does *NOT* mean you will have TrueType 
-font support. GD *MUST* be compiled against FreeType either way.
-
------------------------------------------------------------------------------
-  1px Anti-Aliasing and segfaults
------------------------------------------------------------------------------
-
-Versions of libgd earlier than 2.0.34 contain a one very 
-significant bug and will *always* cause a segfault if 
-you attempt to do one pixel wide antialiasing.  You can manually
-patch older gd's, or better yet upgrade to at least GD 2.0.34. 
-
-In gd.c, function gdImageSetAAPixelColor() change:
-
-::
-
-    int dr,dg,db,p,r,g,b;
-    p = gdImageGetPixel(im,x,y);
-
-to
-
-::
-
-    int dr,dg,db,p,r,g,b;
-    if (!gdImageBoundsSafeMacro (im, x, y)) return;
-    p = gdImageGetPixel(im,x,y);
-
-More detail about this patch (if you need any) was described by Steve Lime 
-in a `post to mapserver-users`_. 
-
-.. note: 
-
-    Windows builds that are built with the buildkit (this includes MS4W 
-    and OSGeo4W) have this patch already and do not need to be updated.
-
------------------------------------------------------------------------------
- Curved label support
------------------------------------------------------------------------------
-
-ANGLE FOLLOW, a new feature that allows MapServer to draw curved labels 
-about a linear feature like a road, requires libgd 2.0.29 and TrueType 
-font support.  Configure should autodetect if you have a sufficient 
-libgd and TrueType support to be able to use this feature.
+  libsvg-cairo combo, or through librsvg (the WITH_RSVG option) at the
+  cost of more dependencies. Use librsvg if your distro provides a
+  package for it, or fall back to libsvgcairo if the cost of compiling
+  the librsvg dependencies is too important.
 
 =============================================================================
 Anti-Grain Geometry Support
@@ -462,22 +323,6 @@ installation, you can use the CMAKE_PREFIX_PATH option
 (for instance "-DCMAKE_PREFIX_PATH=/usr/local/pgsql").
 
 -----------------------------------------------------------------------------
- ArcSDE
------------------------------------------------------------------------------
-MapServer allows you to use SDE as a data source both for geometry and 
-attributes. In order to achieve this, you must have the SDE client libraries 
-at your disposition, and have them installed on the machine running MapServer.
-
-In order to enable SDE support in MapServer, you have to use the
-following options: WITH_SDE ("-dWITH_SDE=ON") and SDE_VERSION (for
-example "-DSDE_VERSION=91").
-
-To verify that this feature is enabled, check the configure output
-for::
-
-  --   * SDE: /opt/arcsde/lib/libsde90.so
-
------------------------------------------------------------------------------
  Oracle Spatial
 -----------------------------------------------------------------------------
 
@@ -500,23 +345,15 @@ recommended libraries are installed before attempting to compile MapServer.
 This will make your life much less complicated ;).  Here is the order that I 
 usually use:
 
-1. Compile GD.  This often means acquiring libjpeg, libpng, zlib, and 
-   freetype before actually compiling the library.  You shouldn't have too 
-   much trouble finding binaries of the libraries that GD requires, and 
-   often, they will already be installed with your system.  On unix, I've
-   had very little luck finding pre-compiled binaries of the required 
-   GD library.  See `libgd`_ section for notes about patching libgd if you 
-   plan to use antialiasing.
-    
-2. Compile GDAL/OGR.  Describing how to compile GDAL/OGR is beyond the scope
+1. Compile GDAL/OGR.  Describing how to compile GDAL/OGR is beyond the scope
    of this document.  If you have requirements for lots of different formats,
    make sure to install those libraries first.  I often find that building 
    up a GDAL/OGR library often takes as long as compiling MapServer itself!   
 
-3. Compile Proj.4.  Proj.4 is a straight-forward configure/make/make install 
+2. Compile Proj.4.  Proj.4 is a straight-forward configure/make/make install 
    library.  
    
-4. Compile libcurl.  libcurl is a straight-forward configure/make/make
+3. Compile libcurl.  libcurl is a straight-forward configure/make/make
    install library.  This library is only used along with other
    features, so "--with-curl-config" won't do anything unless
    something like "--with-wmsclient" or "--with-wfsclient" is also
@@ -529,15 +366,15 @@ usually use:
         "--with-ssl" option.  Details about how to set this up is
         available in :ref:`wxs_secure`.
 
-5. Compile/install optional libraries.  These might include SDE, PostGIS,
+4. Compile/install optional libraries.  These might include PostGIS,
    Oracle Spatial, AGG, Ming, PDFlib, or MyGIS.  Mix and match as you need
    them.
 
-6. Unpack the MapServer tarball and cd into the mapserver directory::
+5. Unpack the MapServer tarball and cd into the mapserver directory::
    
       $ tar -zxvf mapserver-X.Y.Z.tar.gz
 
-7. Create the build directory and configure your environment.
+6. Create the build directory and configure your environment.
 
    Create the build directory::
 
@@ -554,17 +391,20 @@ usually use:
               -DWITH_CURL=ON \
               -DWITH_SOS=ON \
               -DWITH_PHP=ON \
+              -DWITH_PERL=ON \
+              -DWITH_RUBY=ON \
+              -DWITH_JAVA=ON \
+              -DWITH_CSHARP=ON \
               -DWITH_PYTHON=ON \
               -DWITH_SVGCAIRO=ON \
               -DWITH_ORACLESPATIAL=ON \
               -DWITH_MSSQL2008=ON \
-              -DWITH_SDE=ON \
-              -DSDE_VERSION=91 .. >../configure.out.txt
+              ../ >../configure.out.txt
 
-   The following options are enabled by default (version 6.4):
-   WITH_CAIRO, WITH_FCGI, WITH_FRIBIDI, WITH_GDAL, WITH_GEOS,
-   WITH_GIF, WITH_ICONV, WITH_LIBXML2, WITH_OGR, WITH_POSTGIS,
-   WITH_PROJ, WITH_WCS, WITH_WFS, WITH_WMS.
+   The following options are enabled by default (version 7.0:
+   WITH_PROJ, WITH_WMS, WITH_FRIBIDI, WITH_HARFBUFF, WITH_ICONV,
+   WITH_CAIRO, WITH_FCGI, WITH_GEOS, WITH_POSTGIS, WITH_GDAL,
+   WITH_OGR, WITH_WFS, WITH_WCS, WITH_LIBXML2, WITH_GIF.
 
    If you want to also build a static version of the library, the
    BUILD_STATIC and LINK_STATIC_LIBMAPSERVER options can be used,
@@ -576,7 +416,7 @@ usually use:
    and change its mode to executable (+x) to save typing and have a
    record of how MapServer was configured.                      
 
-8. Now that you have configured your build options and selected all the 
+7. Now that you have configured your build options and selected all the 
    libraries you wish mapserver to use, you're ready to compile the 
    source code.
    
@@ -585,7 +425,7 @@ usually use:
      $ make
 
 
-9. Install the Mapserver libraries::
+8. Install the Mapserver libraries::
 
      # make install
    
@@ -717,24 +557,21 @@ with MapServer.
 .. _`zlib`: http://www.gzip.org/zlib
 .. _`libproj`: http://trac.osgeo.org/proj/
 .. _`libcurl`: http://curl.haxx.se/libcurl/
-.. _`OGR`: http://www.gdal.org/ogr/
+.. _`OGR`: http://www.gdal.org/
 .. _`GDAL`: http://www.gdal.org/
-.. _`libtiff`: http://www.libtiff.org/
-.. _`libgeotiff`: http://trac.osgeo.org/geotiff/
 .. _`GEOS`: http://trac.osgeo.org/geos/
 .. _`libxml`: http://xmlsoft.org
-.. _`SDE Client Library`: http://www.esri.com/software/arcgis/arcsde/index.html
 .. _`Oracle Spatial OCI`: http://www.oracle.com/technology/products/spatial/index.html
 .. _`libpq`: http://www.postgresql.org/
-.. _`libgif-dev*`: http://sourceforge.net/projects/giflib/
+.. _`giflib`: http://giflib.sourceforge.net/
 .. _`FastCGI`: http://www.fastcgi.com
-.. _`cairo (svg, pdf) support`: http://cairographics.org/
-.. _`kml support`: http://mapserver.org/output/kml_output.html
-.. _`GD`: http://www.libgd.org/
-.. _`cairo svg parser support`: http://mapserver.org/development/rfc/ms-rfc-73.html
-.. _`GD on OSX`: http://www.libgd.org/DOC_INSTALL_OSX
+.. _`Cairo (SVG, PDF) support`: http://cairographics.org/
+.. _`KML support`: http://mapserver.org/output/kml_output.html
+.. _`Cairo SVG parser support`: http://mapserver.org/development/rfc/ms-rfc-73.html
 .. _`OGC`: http://www.opengeospatial.org
 .. _`PostGIS`: http://postgis.refractions.net
 .. _`setting up cgi-bin`: http://httpd.apache.org/docs/2.2/howto/cgi.html
 .. _`PostgreSQL`: http://www.postresql.org
-.. _`libgif-dev`: https://launchpad.net/ubuntu/precise/+package/libgif-dev
+.. _`libgif`: https://launchpad.net/ubuntu/precise/+package/libgif-dev
+.. _`HarfBuff`: http://freedesktop.org/wiki/Software/HarfBuzz
+.. _`FriBidi`: http://fribidi.org/
