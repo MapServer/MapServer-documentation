@@ -19,7 +19,7 @@ cd $destdir/mapserver.github.io
 git config user.email "mapserverbot@mapserver.bot"
 git config user.name "MapServer deploybot"
 
-rm -rf _sources */_sources
+#rm -rf _sources */_sources
 rm -rf .doctrees */.doctrees */.buildinfo
 
 git add -A
