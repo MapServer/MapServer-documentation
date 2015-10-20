@@ -145,7 +145,7 @@ html_copy_source = True
 #html_use_opensearch = ''
 
 # If nonempty, this is the file name suffix for HTML files (e.g. ".xhtml").
-#html_file_suffix = ''
+html_file_suffix = '.html'
 
 # Language to be used for generating the HTML full-text search index.
 # Sphinx supports the following languages:
