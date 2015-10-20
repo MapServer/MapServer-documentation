@@ -1,247 +1,17 @@
 .. index::
-   single: GEOMTRANSFORM Javascript
-
-.. _geomtransformjs:
-
-*****************************************************************************
- GEOMTRANSFORM Javascript
-*****************************************************************************
-
-:Author:        Alan Boudreault
-:Contact:       aboudreault at mapgears.com
-:Last Updated: 2013/16/12
-
-.. contents:: Table of Contents
-    :depth: 2
-    :backlinks: top
-
-Introduction
----------------------------------------------
-
-Using GEOMTRANSFORM this way makes it possible to modify the geometry
-programmatically in addition to the built-in geomtransform functions.
-
-Usage
----------------------------------------------
-Simply declare the javascript plugin this way:
-
-.. code-block:: mapfile
-
-  MAP
-    ...
-    LAYER
-    ...
-      GEOMTRANSFORM "javascript://transform.js" # relative path
-      CLASS
-      END
-    END
-  END
-
-The path can also be absolute.
-
-.. code-block:: mapfile
-
-  MAP
-    ...
-    LAYER
-    ...
-      GEOMTRANSFORM "javascript:///home/user/transform.js" # absolute path
-      CLASS
-      END
-    END
-  END
-
-The javascript plugin has to implement a function named **geomtransform** that
-will be automatically called. This function has to return a new shape. Note that
-*only* the geometry of this new shape will be used, so your original shape
-attributes will be preserved.
-
-Access to the feature attributes is made through the ``shape.attributes``
-javascript object.
-
-The following javascript functions are available:
-
-- alert(str1, str2, ..., str)
-    print some text in MapServer logs
-- print(str1, str2, ..., str)
-    print some text in MapServer logs
-- require(path_to_lib1, path_to_lib2, ..., path_to_lib)
-    include one or more javascript lib
-
-Example 1. Simple Geomtransform
----------------------------------------------
-This example does a simple vertical translation ...
-
-.. code-block:: javascript
-
-    function geomtransform() {
-      new_shape = new shapeObj();
-      new_shape.add(new lineObj());
-      new_point = new pointObj();
-      new_point.x = shape.line(0).point(0).x;
-      new_point.y = shape.line(0).point(0).y+30000;
-      new_shape.line(0).add(new_point);
-      return new_shape;
-    }
-
-Example 2. Printing logs in MapServer logs
----------------------------------------------
-This example prints some javascript logs in
-MapServer logs.
-
-.. code-block:: mapfile
-
-  MAP
-    ...
-    CONFIG  "MS_ERRORFILE" "/tmp/mapserver.log"
-    DEBUG 1
-    LAYER
-    ...
-       GEOMTRANSFORM "javascript://transform.js"
-    ...
-    END
-  END
-
-.. code-block:: javascript
-
-    function geomtransform() {
-      new_shape = new shapeObj();
-      new_shape.add(new lineObj());
-      new_point = new pointObj();
-      new_point.x = shape.line(0).point(0).x;
-      new_point.y = shape.line(0).point(0).y+30000;
-      print('Modified y value from: ' + shape.line(0).point(0).y + ' to: '+new_point.y);
-      new_shape.line(0).add(new_point);
-      return new_shape;
-    }
-
-Basic API
-----------
-
-A minimal API is currently available to create a new shape.
-
-pointObj
-^^^^^^^^
-
-Constructor
-...............................................................................
-
-.. code-block:: javascript
-
-   new pointObj()
-
-Members
-...............................................................................
-
-=============== =========== ====================================================
-Type                Name    Note
-=============== =========== ====================================================
-double          x
-double          y
-double          z
-double          m
-=============== =========== ====================================================
-
-Methods
-...............................................................................
-
-void setXY(double x, double y[, double m])
-     Set the x,y[,m] values.
-
-void setXYZ(double x, double y, double Z[, double m])
-     Set the x,y,z[,m] values.
-
-lineObj
-^^^^^^^^
-
-Constructor
-...............................................................................
-
-.. code-block:: javascript
-
-   new lineObj()
-
-Members
-...............................................................................
-
-=============== =========== ====================================================
-Type                Name    Note
-=============== =========== ====================================================
-int             numpoints   read-only
-=============== =========== ====================================================
-
-Methods
-...............................................................................
-
-pointObj point(int index)
-        Returns the point at the `index` position.
-
-void add(lineObj line)
-     Add a point to the line.
-
-void addXY(double x, double y[, double m])
-     Add point to the line from a x,y[,m] values.
-
-void addXYZ(double x, double y, double Z[, double m])
-     Add point to the line from a x,y,z[,m] values.
-
-shapeObj
-^^^^^^^^
-
-Constructor
-...............................................................................
-
-.. code-block:: javascript
-
-   new shapeObj(int type)
-
-'type' is one of shapeObj.Point, shapeObj.Line, shapeObj.Polygon or shapeObj.Null
-
-Members
-...............................................................................
-
-=============== =========== ====================================================
-Type                Name    Note
-=============== =========== ====================================================
-int             numvalues   read-only
-int             numlines    read-only
-int             index       read-only
-int             type        read-only
-int             tileindex   read-only
-int             classindex  read-only
-text            text
-object          attributes
-=============== =========== ====================================================
-
-Methods
-...............................................................................
-
-shapeObj clone()
-         Returns a clone of the shape.
-
-lineObj line(int index)
-        Returns the line at the `index` position.
-
-void add(lineObj line)
-     Add a line to the shape.
-
-void setGeometry(shapeObj shape)
-     Replace the geometry of the object with the `shape` geometry.
-
-.. index::
    single: Geometry transformations
 
 .. _geomtransform:
 
-*****************************************************************************
- Geometry Transformations
-*****************************************************************************
+*******************************************************************************
+ GEOMTRANSFORM - Geometry Transformations
+*******************************************************************************
 
-:Author: Håvard Tveite
+:Author:  Håvard Tveite
 :Contact: havard.tveite@nmbu.no
 
 .. contents:: Table of Contents
-    :depth: 3
+    :depth: 4
     :local:
     :backlinks: top
 
@@ -262,7 +32,7 @@ that is possible.  If `UNITS` is defined in the `LAYER`, the
   GEOMTRANSFORM (simplify([shape], [map_cellsize]*10))
 
 Transformations for simple styling (`CLASS` `STYLE` only)
----------------------------------------------------------
+===============================================================================
 
 The following simple geometry transformations are available at
 the `CLASS` `STYLE` level:
@@ -277,7 +47,7 @@ the `CLASS` `STYLE` level:
    pair: GEOMTRANSFORM; bbox
 
 bbox
-^^^^
+-------------------------------------------------------------------------------
 
 * `GEOMTRANSFORM bbox` returns the bounding box of the geometry.
 
@@ -313,7 +83,7 @@ Class definitions for the example::
    pair: GEOMTRANSFORM; centroid
 
 centroid
-^^^^^^^^
+-------------------------------------------------------------------------------
 
 * `GEOMTRANSFORM centroid` returns the centroid of the geometry.
 
@@ -358,7 +128,7 @@ Symbol definition for the `circlef` symbol::
    pair: GEOMTRANSFORM; start
 
 `end` and `start`
-^^^^^^^^^^^^^^^^^
+-------------------------------------------------------------------------------
 
 * `GEOMTRANSFORM end` returns the end point of a line.
 
@@ -466,7 +236,7 @@ ANCHORPOINT (value for endarrow: 1 0.5)::
    pair: GEOMTRANSFORM; vertices
 
 vertices
-^^^^^^^^
+-------------------------------------------------------------------------------
 
 * `GEOMTRANSFORM vertices` produces the set of vertices of a line (with
   direction information).
@@ -513,7 +283,7 @@ The vertline symbol definition::
   END # SYMBOL
 
 Labels (`LABEL` `STYLE` only)
------------------------------
+===============================================================================
 
 The following simple geometry transformations are available at
 the :ref:`LABEL` :ref:`STYLE` level:
@@ -538,7 +308,7 @@ shadow, background frame).
    pair: GEOMTRANSFORM; labelpoly
 
 labelpnt and labelpoly
-^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------------------------------------------------------
 
 * `GEOMTRANSFORM labelpnt` produces the geographic position the label
   is attached to.  This corresponds to the center of the label text
@@ -613,10 +383,10 @@ Symbol definition for the `circlef` symbol::
    pair: GEOMTRANSFORM; expressions
 
 Expressions and advanced transformations (`LAYER` and `CLASS` `STYLE`)
-----------------------------------------------------------------------
+===============================================================================
 
 Combining / chaining expressions
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------------------------------------------------------
 
 A geometry transformation produces a geometry, and that geometry can
 be used as input to another geometry transformation.  There are (at
@@ -680,8 +450,6 @@ following figure (the red lines).  The result of the LAYER level
 geomtransform is shown with a full black line.  The original polygon
 is the same as the one used at the top of the figure.
 
-
-
 .. figure:: ../images/geomtrans-expressions.png
    :height: 200
    :width: 200
@@ -693,7 +461,7 @@ is the same as the one used at the top of the figure.
    pair: GEOMTRANSFORM; buffer
 
 buffer
-^^^^^^
+...............................................................................
 
 * `GEOMTRANSFORM buffer` returns the buffer of the original geometry.
   The result is always a polygon geometry.
@@ -769,7 +537,7 @@ Upper right part (layer level geomtransform)::
    pair: GEOMTRANSFORM; generalize
 
 generalize ([shape], tolerance)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------------------------------------------------------
 
 * `GEOMTRANSFORM generalize` simplifies a geometry ([shape]) in a way
   comparable to FME’s ThinNoPoint algorithm.  See
@@ -815,7 +583,7 @@ One of the :ref:`STYLE` definitions for the example (tolerance 40)::
    pair: GEOMTRANSFORM; simplify
 
 simplify([shape], tolerance)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------------------------------------------------------
 
 * `GEOMTRANSFORM simplify` simplifies a geometry ([shape]) using the
   standard Douglas-Peucker algorithm.
@@ -856,7 +624,7 @@ One of the :ref:`STYLE` definitions for the example (tolerance 40)::
    pair: GEOMTRANSFORM; simplifypt
 
 simplifypt([shape], tolerance)
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------------------------------------------------------
 
 * `GEOMTRANSFORM simplifypt` simplifies a geometry ([shape]), ensuring
   that the result is a valid geometry having the same dimension and
@@ -906,7 +674,7 @@ One of the :ref:`STYLE` definitions for the example (tolerance 40)::
 
 
 smoothsia ( [shape], smoothing_size, smoothing_iterations, preprocessing )
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+-------------------------------------------------------------------------------
 
 * `GEOMTRANSFORM smoothsia` returns a smoothed version of a line.
 
@@ -974,17 +742,16 @@ values.
 
    Smoothsia - Larger window size (left) and larger window size with
    more iterations (right)
- 
 
 
 Tuning the behaviour of smoothsia
-.................................
+...............................................................................
 
 smoothsia has several parameters that can be used to tune its
 behaviour.  The following sections describe some cases / possiblities.
 
 Dataset resolution is too high
-..............................
+...............................................................................
 
 If you are trying to smooth a line that has a very high resolution
 (high density of vertices at the current view scale), you may not get
@@ -1006,7 +773,7 @@ visualization of the issue:
    High resolution geometry, smoothing and simplification
  
 Dataset resolution is too low
-.............................
+...............................................................................
 
 If you are trying to smooth a long line that has a low density of
 vertices, you may not get the expected result in some situations.  You
@@ -1036,7 +803,7 @@ Here's a visualization of the issue:
    Effects of normal smoothing and preprocessing
 
 Curves
-......
+...............................................................................
 
 The preprocessing step might not be appropriate for all cases since it
 can impact the smoothing result significantly.  However, without it,
@@ -1062,6 +829,235 @@ angle detection to recognize the curves. Here's how you can enable it::
    :align: center
 
    The use of `angle` with smoothsia
+
+
+.. index::
+   pair: GEOMTRANSFORM; Javascript
+
+.. _geomtransformjs:
+
+Javascript transformation
+===============================================================================
+
+:Author:       Alan Boudreault
+:Contact:      aboudreault at mapgears.com
+:Last Updated: 2013/16/12
+
+Introduction
+---------------------------------------------
+
+Using `GEOMTRANSFORM` this way makes it possible to modify the geometry
+programmatically in addition to the built-in geomtransform functions.
+
+Usage
+---------------------------------------------
+Simply declare the javascript plugin this way:
+
+.. code-block:: mapfile
+
+  MAP
+    ...
+    LAYER
+    ...
+      GEOMTRANSFORM "javascript://transform.js" # relative path
+      CLASS
+      END
+    END
+  END
+
+The path can also be absolute.
+
+.. code-block:: mapfile
+
+  MAP
+    ...
+    LAYER
+    ...
+      GEOMTRANSFORM "javascript:///home/user/transform.js" # absolute path
+      CLASS
+      END
+    END
+  END
+
+The javascript plugin has to implement a function named
+**geomtransform** that will be automatically called.  This function
+has to return a new shape.  Note that *only* the geometry of this new
+shape will be used, so your original shape attributes will be
+preserved.
+
+Access to the feature attributes is made through the
+``shape.attributes`` javascript object.
+
+The following javascript functions are available:
+
+- alert(str1, str2, ..., str)
+    print some text in MapServer logs
+- print(str1, str2, ..., str)
+    print some text in MapServer logs
+- require(path_to_lib1, path_to_lib2, ..., path_to_lib)
+    include one or more javascript lib
+
+Example 1. Simple Geomtransform
+...............................................................................
+
+This example does a simple vertical translation ...
+
+.. code-block:: javascript
+
+    function geomtransform() {
+      new_shape = new shapeObj();
+      new_shape.add(new lineObj());
+      new_point = new pointObj();
+      new_point.x = shape.line(0).point(0).x;
+      new_point.y = shape.line(0).point(0).y+30000;
+      new_shape.line(0).add(new_point);
+      return new_shape;
+    }
+
+Example 2. Printing logs in MapServer logs
+...............................................................................
+
+Extends example 1 by printing information to the MapServer log.
+
+.. code-block:: mapfile
+
+  MAP
+    ...
+    CONFIG  "MS_ERRORFILE" "/tmp/mapserver.log"
+    DEBUG 1
+    LAYER
+    ...
+       GEOMTRANSFORM "javascript://transform.js"
+    ...
+    END
+  END
+
+.. code-block:: javascript
+
+    function geomtransform() {
+      new_shape = new shapeObj();
+      new_shape.add(new lineObj());
+      new_point = new pointObj();
+      new_point.x = shape.line(0).point(0).x;
+      new_point.y = shape.line(0).point(0).y+30000;
+      print('Modified y value from: ' + shape.line(0).point(0).y + ' to: '+new_point.y);
+      new_shape.line(0).add(new_point);
+      return new_shape;
+    }
+
+Basic API
+-------------------------------------------------------------------------------
+
+A minimal API is currently available to create a new shape.
+
+pointObj
+...............................................................................
+
+Constructor
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+.. code-block:: javascript
+
+   new pointObj()
+
+Members
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+=============== =========== ====================================================
+Type                Name    Note
+=============== =========== ====================================================
+double          x
+double          y
+double          z
+double          m
+=============== =========== ====================================================
+
+Methods
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+void setXY(double x, double y[, double m])
+     Set the x,y[,m] values.
+
+void setXYZ(double x, double y, double Z[, double m])
+     Set the x,y,z[,m] values.
+
+lineObj
+...............................................................................
+
+Constructor
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+.. code-block:: javascript
+
+   new lineObj()
+
+Members
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+=============== =========== ====================================================
+Type                Name    Note
+=============== =========== ====================================================
+int             numpoints   read-only
+=============== =========== ====================================================
+
+Methods
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+pointObj point(int index)
+        Returns the point at the `index` position.
+
+void add(pointObj point)
+     Add a point to the line.
+
+void addXY(double x, double y[, double m])
+     Add point to the line from an x,y[,m] values.
+
+void addXYZ(double x, double y, double Z[, double m])
+     Add point to the line from an x,y,z[,m] values.
+
+shapeObj
+...............................................................................
+
+Constructor
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+.. code-block:: javascript
+
+   new shapeObj(int type)
+
+'type' is one of shapeObj.Point, shapeObj.Line, shapeObj.Polygon or
+shapeObj.Null
+
+Members
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+=============== =========== ====================================================
+Type                Name    Note
+=============== =========== ====================================================
+int             numvalues   read-only
+int             numlines    read-only
+int             index       read-only
+int             type        read-only
+int             tileindex   read-only
+int             classindex  read-only
+text            text
+object          attributes
+=============== =========== ====================================================
+
+Methods
+++++++++++++++++++++++++++++++++++++++++++++++++
+
+shapeObj clone()
+         Returns a clone of the shape.
+
+lineObj line(int index)
+        Returns the line at the `index` position.
+
+void add(lineObj line)
+     Add a line to the shape.
+
+void setGeometry(shapeObj shape)
+     Replace the geometry of the object with the `shape` geometry.
 
 
 .. _`http://trac.osgeo.org/gdal/ticket/966`: http://trac.osgeo.org/gdal/ticket/966
