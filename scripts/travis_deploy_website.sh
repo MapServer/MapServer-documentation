@@ -4,6 +4,7 @@ builddir=$1
 destdir=$2
 
 if [ -f $builddir/latex/en/MapServer.pdf ]; then
+  echo "running command: scp $builddir/latex/en/MapServer.pdf mapserver@mapserver.org:/var/www/mapserver.org/pdf/ ..."
   scp $builddir/latex/en/MapServer.pdf mapserver@mapserver.org:/var/www/mapserver.org/pdf/
 fi
 
