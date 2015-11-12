@@ -16,7 +16,7 @@ Disk Caches
 
 The disk based cache is the simplest cache to configure, and the one with the
 the fastest access to existing tiles. It is ideal for small tile repositories,
-but will often cause trouble for sites hosting millions of tiles, as the number of 
+but will often cause trouble for sites hosting millions of tiles, as the number of
 files or directories may rapidly overcome the capabilities of the underlying
 filesystem. Additionaly, the block size chosen for the filesystem must closely
 match the mean size of a stored tile: ideally, any given tile should just fit
@@ -32,7 +32,7 @@ Common Configuration
 Disk caches are added via
 
 .. code-block:: xml
-   
+
    <cache name="disk_cache" type="disk" layout="...">
      ...
      <symlink_blank/>
@@ -40,13 +40,13 @@ Disk caches are added via
    </cache>
 
 All caches except the "template" one support the <symlink_blank/> option which
-(depending on platform availability) will detect tiles of uniform color and 
+(depending on platform availability) will detect tiles of uniform color and
 create a symbolic link to a single uniform color tile instead of storing the
 actual blank data in the tile's file.
 
 All caches support the <creation_retry> option, which specifies the number of
 times MapCache should retry if it failed to create a tile's file or symlink. The
-default is to fail immediately: You may want to set this to a positive value 
+default is to fail immediately: You may want to set this to a positive value
 if using a network mounted filesystem where transient errors are common.
 
 Default Structure
@@ -62,7 +62,7 @@ a symbolic link to a single blank tile to gain disk space.
 
 
 .. code-block:: xml
-   
+
    <cache name="disk" type="disk">
       <base>/tmp</base>
       <symlink_blank/>
@@ -76,7 +76,7 @@ Arcgis Compatible Structure
 ===========================
 
 .. code-block:: xml
-   
+
    <cache name="arcgis" type="disk" layout="arcgis">
       <base>/tmp</base>
       <symlink_blank/>
@@ -90,7 +90,7 @@ Worldwind Compatible Structure
 ==============================
 
 .. code-block:: xml
-   
+
    <cache name="worldwind" type="disk" layout="worldwind">
       <base>/tmp</base>
       <symlink_blank/>
@@ -109,7 +109,7 @@ argument where various template entries will be replaced at runtime by the corre
 value for each tile to store.
 
 .. code-block:: xml
-   
+
    <cache name="tmpl" type="disk" layout="template">
       <!-- template
 
@@ -126,11 +126,11 @@ value for each tile to store.
                and you want to create on offline cache.
 
          * Note that this type of cache does not support blank-tile detection and symlinking.
-      
+
          * Warning: It is up to you to make sure that the template you chose creates a unique
            filename for your given tilesets. e.g. do not ommit the {grid} parameter if your
            tilesets reference multiple grids. Failure to do so will result in filename
-           collisions ! 
+           collisions !
 
       -->
       <template>/tmp/template-test/{tileset}#{grid}#{dim}/{z}/{x}/{y}.{ext}</template>
@@ -165,7 +165,7 @@ threads all try to insert new tiles concurrently.
          this directory must exist, and be writable
       -->
       <base>/tmp/foo/</base>
-      
+
       <!-- key_template (optional)
          string template used to create the key for a tile entry in the database.
          defaults to the value below. you should include {tileset}, {grid} and {dim} here
@@ -218,12 +218,12 @@ Tiles are stored in the configured SQLite file created by MapCache with
    </cache>
 
 
-You may also add custom SQLite pragmas that will be executed when first 
+You may also add custom SQLite pragmas that will be executed when first
 connecting to a SQLite db, e.g. to override some compiled-in SQLite
 defaults
 
 .. code-block:: xml
-   
+
    <cache name="sqlite" type="sqlite3">
       <dbfile>/tmp/sqlitefile.db</dbfile>
       <pragma name="max_page_count">10000000</pragma>
@@ -243,13 +243,13 @@ This cache can use any database schema: It is up to you to supply the SQL that
 will be exectuted to select or insert a new tile.
 
 In order to use such functionality you should supply the SQL queries that will
-be used against your custom schema. It is up to you to make sure your queries are 
+be used against your custom schema. It is up to you to make sure your queries are
 correct and will return the correct data for a given tileset, dimension, grid, x,
 y and z.
 
 
 .. code-block:: xml
-   
+
    <cache name="sqlitecustom" type="sqlite3">
       <dbfile>/tmp/sqlitefile.db</dbfile>
       <queries>
@@ -262,7 +262,7 @@ y and z.
    </cache>
 
 Note that for the <get> query that returns data for a given tile, the first returned argument
-is considered to be the image blob, and the second optional one a timestamp representing the 
+is considered to be the image blob, and the second optional one a timestamp representing the
 creation timestamp for that tile.
 
 Blank Tile Detection
@@ -275,14 +275,14 @@ transformed on-the-fly to a 1-bit palleted PNG before being returned to the clie
 
 
 .. code-block:: xml
-   
+
    <cache name="sqliteblank" type="sqlite3">
       <dbfile>/tmp/sqlitefile.db</dbfile>
       <detect_blank/>
    </cache>
 
 .. note::
-   
+
    SQLite files created with this option will only be fully understood by
    MapCache as each tile blob may contain a #rgba quadruplet instead of
    the expected PNG or JPEG data.
@@ -345,7 +345,7 @@ x,y, and z:
 
 In some cases, it may be desirable to have a precise hand on the
 filename to use for a given x,y,z tile lookup, e.g. to look for a file
-named `Z03-R00003-C000009.sqlite3` instead of just `Z3-R3-C9.sqlite3`. The 
+named `Z03-R00003-C000009.sqlite3` instead of just `Z3-R3-C9.sqlite3`. The
 <dbfile> entry supports formatting attributes, following the Unix
 printf syntax ( c.f.: http://linux.die.net/man/3/printf ), by suffixing
 each template key with "_fmt", e.g.:
@@ -374,7 +374,7 @@ pre-populated SQL queries that correspond to the MBTiles specification.
 
 Although the default MBTiles schema is very simple, MapCache uses the same multi-
 table schema found in most downloadable MBTiles files, notably to enable storing
-blank (i.e. uniform) tiles without duplicating the encoded image data (in the 
+blank (i.e. uniform) tiles without duplicating the encoded image data (in the
 same way the disk cache supports tile symlinking).
 
 The MBTiles schema is created with:
@@ -395,7 +395,7 @@ The MBTiles schema is created with:
        create table if not exists metadata(
          name text,
          value text); -- not used or populated yet
-       create view if not exists tiles 
+       create view if not exists tiles
          as select
             map.zoom_level as zoom_level,
             map.tile_column as tile_column,
@@ -406,24 +406,24 @@ The MBTiles schema is created with:
 
 
 .. code-block:: xml
-   
+
    <cache name="mbtiles" type="mbtiles">
       <dbfile>/Users/XXX/Documents/MapBox/tiles/natural-earth-1.mbtiles</dbfile>
    </cache>
 
 .. note::
-   
+
    Contrarily to the standard SQLite MapCache schema, the MBTiles db file only
    supports a single tileset per cache. The behavior if multiple tilesets are
    associated to the same MBTiles cache is undefined, and will definitely
    produce incorrect results.
 
 
-.. warning:: 
+.. warning::
 
-   When working with multiple processes (-p switch) and SQLite cache 
-   backends, some errors may appear under high concurrency when writing to the 
-   SQLite database (error: SQL logic error or missing database (1)). 
+   When working with multiple processes (-p switch) and SQLite cache
+   backends, some errors may appear under high concurrency when writing to the
+   SQLite database (error: SQL logic error or missing database (1)).
    Upgrading to SQLite >= 3.7.15 seems to resolve this issue.
 
 .. _mapcache_cache_memcache:
@@ -432,7 +432,7 @@ Memcache Caches
 ---------------
 
 This cache type stores tiles to an external memcached server running on the local
-machine or accessible on the network. This cache type has the advantage that 
+machine or accessible on the network. This cache type has the advantage that
 memcached takes care of expiring tiles, so the size of the cache will never
 exceed what has been configured in the memcache instance.
 
@@ -476,7 +476,7 @@ that on-the-fly to a 1-bit palleted PNG image before returning it to the client.
 (Geo)TIFF Caches
 ----------------
 
-TIFF caches are the most recent addition to the family of caches, and use the 
+TIFF caches are the most recent addition to the family of caches, and use the
 internal tile structure of the TIFF specification to access tile data. Tiles can
 be stored in JPEG only (TIFF does not support PNG tiles).
 
@@ -556,7 +556,7 @@ Customizing the Template Keys
 
 In some cases, it may be desirable to have a precise hand on the
 filename to use for a given x,y,z tile lookup, e.g. to look for a file
-named "Z03-R00003-C000009.tif" instead of just "Z3-R3-C9.tif". The 
+named "Z03-R00003-C000009.tif" instead of just "Z3-R3-C9.tif". The
 <template> entry supports formatting attributes, following the Unix
 printf syntax ( c.f.: http://linux.die.net/man/3/printf ), by suffixing
 each template key with "_fmt", e.g.:
@@ -577,7 +577,7 @@ each template key with "_fmt", e.g.:
 Setting JPEG Compression Options
 ================================
 
-An additional optional parameter defines which JPEG compression should be 
+An additional optional parameter defines which JPEG compression should be
 applied to the tiles when saved into the TIFF file:
 
 - <format> the name of the (JPEG) format to use
@@ -640,10 +640,10 @@ when compiled with GeoTIFF support:
      INTERLEAVE=PIXEL
      SOURCE_COLOR_SPACE=YCbCr
    Corner Coordinates:
-   Upper Left  (-20037508.343,20037508.343) 
-   Lower Left  (-20037508.343,-20037508.343) 
-   Upper Right (20037508.343,20037508.343) 
-   Lower Right (20037508.343,-20037508.343) 
+   Upper Left  (-20037508.343,20037508.343)
+   Lower Left  (-20037508.343,-20037508.343)
+   Upper Right (20037508.343,20037508.343)
+   Lower Right (20037508.343,-20037508.343)
    Center      (   0.0000000,   0.0000000)
 
 
@@ -915,7 +915,7 @@ Riak Caches
 requires https://github.com/trifork/riack
 
 .. code-block:: xml
-  
+
   <cache name="myriak" type="riak">
     <server>
       <host>riakhost</host>
