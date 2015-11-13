@@ -93,6 +93,7 @@ arises).
 * very least add the FORMAT and LAYERS parameters. By convention(?), WMS
 * parameters are uppercase, and you should respect this convention in your
 * configuration file.
+*
 * This is where you can also override some default WMS parameters if needed. By
 * default, the parameters that will be used are: `<REQUEST>GetMap</REQUEST>`
 * `<SERVICE>WMS</SERVICE>` `<STYLES></STYLES>` `<VERSION>1.1.0</VERSION>`
@@ -127,19 +128,21 @@ A cache is a location where received tiles will be stored.
    <cache name="tmpl" type="disk" layout="template">
       <!-- template
 
-           String template that will be used to map a tile (by tileset, grid name,
-           dimension, format, x, y, and z) to a filename on the filesystem.
+           String template that will be used to map a tile (by tileset, grid
+           name, dimension, format, x, y, and z) to a filename on the filesystem.
 
            The following replacements are performed:
-           - {tileset} : the tileset name
-           - {grid} : the grid name
-           - {dim} : a string that concatenates the tile's dimension
-           - {ext} : the filename extension for the tile's image format
-           - {x},{y},{z} : the tile x,y,z values
-           - {inv_x}, {inv_y}, {inv_z} : inverted x,y,z values
-               (inv_x = level->maxx - x - 1). This is mainly used to support
-               grids where one axis is inverted (e.g. the Google schema) and you
-               want to create on offline cache.
+
+           - {tileset}               : the tileset name
+           - {grid}                  : the grid name
+           - {dim}                   : string concatenating the tile's dimension
+           - {ext}                   : tile's image-format filename extension
+           - {x},{y},{z}             : tile's x,y,z values
+           - {inv_x},{inv_y},{inv_z} : inverted x,y,z values
+                                       
+           (For inverted x,y,z values, (inv_x = level->maxx - x - 1). This is
+           mainly used to support grids where one axis is inverted (e.g. the
+           Google schema) and you want to create on offline cache.)
 
          * Note that this type of cache does not support blank-tile detection
            and symlinking.
@@ -215,14 +218,14 @@ and to store tile data on disk.
      <colors>256</colors>
    </format>
    <format name="myjpeg" type ="JPEG">
+
       <!-- quality
 
            JPEG compression quality, ranging from 0 to 100.
 
-           95 produces high quality images with few visual artifacts.
-
-           Values under around 80 produce small images but with visible
-           artifacts. YMMV.
+           95 produces high quality images with few visual artifacts. Values
+           under around 80 produce small images but with visible artifacts.
+           YMMV.
       -->
       <quality>75</quality>
 
@@ -236,6 +239,7 @@ and to store tile data on disk.
       <photometric>ycbcr</photometric>
 
    </format>
+
    <format name="PNG_BEST" type ="PNG">
       <compression>best</compression>
    </format>
@@ -303,9 +307,9 @@ Mandatory Configuration Options
   used directly by MapCache aside from calculating scales for the WMTS
   capabilites document. Allowed values are:
 
-  * **m**: meters
-  * **dd**: decimal degrees
-  * **ft**: feet
+  * **m**  : meters
+  * **dd** : decimal degrees
+  * **ft** : feet
 
   .. code-block:: xml
 
@@ -442,7 +446,9 @@ the client in a given *format*.
 
    <tileset name="test">
 
-      <!-- source: The "name" attribute of a preconfigured <source>.
+      <!-- source
+
+           The "name" attribute of a preconfigured <source>.
  
            If the tileset does not contain a <source> element, then it is
            considered read-only and its cache will never be updated. In this
@@ -450,14 +456,19 @@ the client in a given *format*.
            mapcache.xml files.
 
            Blank tiles may be dealt with by setting the <errors> directive to
-           empty_img.
+           "empty_img".
       -->
       <source>vmap0</source>
 
-      <!-- cache: The "name" attribute of a preconfigured <cache> -->
+      <!-- cache
+
+           The "name" attribute of a preconfigured <cache>
+      -->
       <cache>sqlite</cache>
 
-      <!-- grid: The "name" attribute of a preconfigured <grid>.
+      <!-- grid
+
+           The "name" attribute of a preconfigured <grid>.
 
            You can also use the following notation to limit the area that will
            be cached and served to clients:
@@ -496,9 +507,7 @@ the client in a given *format*.
            to tiled requests. It will only be used for WMS requests that require
            horizontal assembling.
       -->
-
       <grid use_wms_intermediate_resolutions="true">mygrid</grid>
-
 
       <!-- metadata
 
@@ -583,8 +592,8 @@ the client in a given *format*.
            The order of the <dimension> tags inside the <dimensions> block is
            important, as it is used to create the directory structure for the
            disk cache. That is, if you change the order of these values, any
-           tiles that have been previously cached are invalidated. (They are not
-           removed from the cache, but they no longer exist for mod-mapcache.)
+           tiles that have been previously cached are invalidated: They are not
+           removed from the cache, but they no longer exist for mod-mapcache.
       -->
       <dimensions>
          <!-- values dimension
@@ -627,9 +636,10 @@ the client in a given *format*.
 
               The syntax is the same as common-ows, i.e. a comma-separated list
               of "min/max/resolution" entries, e.g:
+
               * 0/5000/1000 allows the values 0,1000,2000,3000,4000 and 5000.
               * 0/100/0 allows any values between 0 and 100.
-              * Both values can be combined: 0/5000/1000,0/100/0
+              * Both values can be combined: 0/5000/1000,0/100/0.
          -->
          <dimension name="ELEVATION" type="intervals" default="0">0/5000/1000</dimension>
 
@@ -647,21 +657,22 @@ of course, enable at least one.
 .. code-block:: xml
 
    <service type="wms" enabled="true">
-      <!-- This service should actually be called "ogc". It is different from
+      <!-- 
+           This service should actually be called "ogc". It is different from
            the other services as it does not listen on the /wms endpoint, but
            directly on /. It will intercept WMS GetMap requests that can be
            satisfied from configured tilesets, and can optionally forward all
            the rest to (an)other server(s).
 
            TODO: This needs way more documenting.
-      -->
 
       <forwarding_rule name="foo rule">
-            <append_pathinfo>true</append_pathinfo>
-            <http>
-               <url>http://localhost/mapcacheproxy</url>
-            </http>
+        <append_pathinfo>true</append_pathinfo>
+        <http>
+          <url>http://localhost/mapcacheproxy</url>
+        </http>
       </forwarding_rule>
+      -->
 
       <!-- full_wms
  
@@ -673,8 +684,7 @@ of course, enable at least one.
            Allowed values are:
              
            - error    : Return a 404 error (default).
-           - assemble : Build the full image by assembling the tiles from the
-                        cache.
+           - assemble : Build the full image by assembling cached tiles.
            - forward  : Forward the request to the configured source.
       -->
       <full_wms>assemble</full_wms>
