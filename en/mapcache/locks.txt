@@ -7,43 +7,43 @@ Locking Mechanisms
 :Author: Thomas Bonfort
 :Contact: tbonfort at terriscope.fr
 
-Mapcache sometimes needs exclusive access to a given ressource, and provides
-some mechanisms to ensure that no more than one mapcache instance may be 
-operating on that given ressource. This may happen when:
+MapCache sometimes needs exclusive access to a given resource, and provides
+some mechanisms to ensure that no more than one MapCache instance can
+operate on that ressource. This may happen when:
 
 * Sending a request to a source WMS server for a given metatile. Only a single
-  mapcache instance should be sending that request, other mapcache instances
+  MapCache instance should be sending that request; other MapCache instances
   processing a tile from that same metatile should wait for that request to
   finish rather than sending the same exact request again (in order not to
-  overload the WMS server)
+  overload the WMS server).
 
 * Writing a tile inside a TIFF cache. The TIFF library does not handle concurrent
-  writes, MapCache must thus ensure that only a single instance is accessing a
-  given TIFF file for writing
+  writes, so MapCache must ensure that only a single instance is accessing a
+  given TIFF file for writing.
 
 A locker is configured with:
 
 .. code-block:: xml
-  
+
   <locker type="...">
     <timeout>60</timeout>
     <retry>0.1</retry>
     ...
   </locker>
 
-When a MapCache instance cannot aquire a lock because it has already been aquired
+When a MapCache instance cannot acquire a lock because it has already been acquired
 by another instance, it will:
 
 * Check back every `<retry>` seconds to see if the lock has been released by the
   other instance.
 * Consider that after `<timeout>` seconds the other instance has failed, and delete
-  the lock before aquiring it itself.
+  the lock before acquiring it itself.
 
 Disk Locks
 ==========
 
-This locking mechanism places a file somewhere on the filesystem. The filesystem
-can be a network share in order to synchronize multiple mapcache instances.
+This locking mechanism places a file somewhere in the filesystem. The filesystem
+can be a network share in order to synchronize multiple MapCache instances.
 
 .. code-block:: xml
 
@@ -51,13 +51,13 @@ can be a network share in order to synchronize multiple mapcache instances.
     <directory>/path/to/lockdir</directory>
   </locker>
 
-The configured directory should be read/write accessible by the mapcache instance.
+The configured directory should be read/write accessible by the MapCache instance.
 
 
 Memcache Locks
 ==============
 
-This locking mechanism uses a third party memcache instance to keep track of the locks
+This locking mechanism uses a third-party memcache instance to keep track of the locks.
 
 
 .. code-block:: xml
@@ -76,9 +76,9 @@ This locking mechanism uses a third party memcache instance to keep track of the
 Fallback Locks
 ==============
 
-This "meta" locker will fall back to its seconf configured locker if the first
-one failed (typically used with a memcache instance if the memcache instance
-went down)
+This "meta" locker will fall back to its second configured locker if the first
+one fails (typically used with a memcache instance if the memcache instance
+goes down).
 
 
 .. code-block:: xml
@@ -98,4 +98,3 @@ went down)
       <directory>/path/to/lockdir</directory>
     </locker>
   </locker>
-
