@@ -40,7 +40,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'MapServer'
-copyright = u'2015, Regents of the University of Minnesota'
+copyright = u'2016, Open Source Geospatial Foundation'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
