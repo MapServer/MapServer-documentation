@@ -43,9 +43,11 @@ limitation if layer->maxfeatures>=0, and honouring layer->startindex if
 layer->startindex >= 1 and paging is enabled.
 It should returns -1 in case of failure.
 
-This method will be called by msQueryByRect() when only feature count is
-requested (i.e. map->query.only_cache_result_count == 1). Such query is only
-done by the WFS server code.
+This method will be called by msQueryByRect() and msQueryByFilter() when only
+feature count is requested (i.e. map->query.only_cache_result_count == 1), and
+that a layer template is defined (the WFS code has traditionnaly set a fake
+layer template 'ttt.html' if none was defined, so as to disable any class template).
+Such query is only done by the WFS server code.
 
 A default implementation of LayerGetShapeCount() using msLayerWhichShapes()
 and msLayerNextShape() is provided, and a specialized implementation is done in
@@ -102,7 +104,7 @@ have SQL semantics and implement LayerTranslateFilter(): Oracle, MSSQL Spatial
 3.1 Affected files
 ------------------
 
-- mapquery.c: to use msLayerGetFeatureCount()
+- mapquery.c: to use msLayerGetFeatureCount() in msQueryByRect() and msQueryByFilter()
 - maplayer.c: defines msLayerGetFeatureCount() and LayerDefaultGetFeatureCount()
 - mapwfs.c: to take into account "wfs_ignore_maxfeatures_for_hits"
 - mappostgis.c: implement LayerGetFeatureCount()
@@ -112,7 +114,8 @@ have SQL semantics and implement LayerTranslateFilter(): Oracle, MSSQL Spatial
 ------------------
 
 - code: https://github.com/rouault/mapserver/tree/wfs_fast_hits
-- tests: existing WFS tests cover the modified code
+- tests: 4 new test cases have been added (https://github.com/mapserver/msautotest/commit/05e8264ce737a795d81f1a87614fa5c87399de91)
+  to test the behaviour of resultType=hits with filters, and already existing WFS tests pass.
 
 3.3 Documentation
 -----------------
