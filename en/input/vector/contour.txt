@@ -35,7 +35,9 @@ following options:
 
  * Set the layer TYPE to LINE.
  * Set CONNECTIONTYPE to CONTOUR.
- * Set the DATA to the raster file that contains the elevation band.
+ * Set the DATA to the raster file that contains the elevation band. Starting
+   with MapServer 7.0.1, a TILEINDEX can also be used, together with
+   :ref:`wms_time` to specify which raster of the tileindex must be used.
  * Specify the band to use as elevation using PROCESSING "BANDS", same as
    regular raster.
  * Specify one or more classes and styles to render the line features.
@@ -56,13 +58,13 @@ PROCESSING settings:
 
 Example of a simple layer definition:
 
-::
+.. code-block:: mapfile
 
   LAYER NAME "my_contour_layer"
     TYPE LINE
     STATUS DEFAULT
     CONNECTIONTYPE CONTOUR
-    DATA /mnt/data/raster/grib/dem.grib
+    DATA "/mnt/data/raster/grib/dem.grib"
     PROCESSING "BANDS=1"
     PROCESSING "CONTOUR_ITEM=elevation"     
     PROCESSING "CONTOUR_INTERVAL=10"
@@ -76,13 +78,13 @@ Example of a simple layer definition:
 
 Example of a layer definition with scale-dependent contour ranges:
 
-::
+.. code-block:: mapfile
 
   LAYER NAME "my_contour_layer"
     TYPE LINE
     STATUS DEFAULT
     CONNECTIONTYPE CONTOUR
-    DATA /mnt/data/raster/grib/dem.grib
+    DATA "/mnt/data/raster/grib/dem.grib"
     PROCESSING "BANDS=1"
     PROCESSING "CONTOUR_ITEM=elevation"     
     PROCESSING "CONTOUR_INTERVAL=0,25000:5" # interval of 5 for scales of 25000 or less
@@ -99,6 +101,34 @@ Example of a layer definition with scale-dependent contour ranges:
       END
     END
 
+Example of a layer definition with a tile index and WMS TIME support:
+
+.. code-block:: mapfile
+
+  LAYER NAME "my_contour_layer"
+    TYPE LINE
+    STATUS OFF
+    CONNECTIONTYPE CONTOUR
+    TILEINDEX "data/contour_ti.shp"
+    TILEITEM  "location"
+    PROCESSING "BANDS=1"
+    PROCESSING "CONTOUR_ITEM=elevation"
+    PROCESSING "CONTOUR_INTERVAL=20"
+    CLASS
+      STYLE
+        WIDTH 1
+        COLOR 255 0 0
+      END # STYLE
+    END # CLASS
+
+    METADATA
+      "DESCRIPTION" "contour"
+      "wms_title" "contour"
+      "wms_timeitem"  "TIME"
+      "wms_timeextent"  "2004-01-01/2004-02-01"
+    END # METADATA
+  END # LAYER
+
 2.1 Data cellsize 
 ------------------
 
@@ -112,7 +142,7 @@ cellsize.
 In the following example, I generalize my shape with a tolerance of 25% of the
 data cellsize to produce smooth contours at all scales:
 
-::
+.. code-block:: mapfile
 
   LAYER
     NAME "MyContourLayer"

@@ -1,0 +1,392 @@
+installing mapserver and other geographic information system tools (gis) on openbsd
+
+I started this process at 2:00 pm jan 11 2005
+
+	+ other citations of
+		http://www.arch.cam.ac.uk/~dir21/gis/
+
+
+	+ docs
+		+ the mapserver site itself does not document how to install itself amazingly
+		+ looked for citations re installation
+			+ the below url was elsewhere but had a redirect to a dead site
+			  so i used wget to fetch the url, removed the redirect and posted it here:
+			  http://p2pmap.org/HowToCompileMapserver.htm
+			+ here is one for the mac but is still useful; although not citing gdal?
+			  http://home.nc.rr.com/wwheaton has a mac
+
+	+ openbsd
+		+ there is a discontinuity between openbsd 3.6 and 3.7 that makes upgrades hard
+		  so i figured it would be best to goto a straight pre-rel-3.7 for everything
+		  hopefully it can be updated to the real 3.7 when it comes out
+		+ also in general it is essentially impossible to upgrade ports and packages
+		  packages can not be deleted without deleting dependencies
+		  its best to restart from scratch
+		+ fetched snapshots of openbsd cdi386.iso dated of jan 11 2005
+		+ did install on a brand new box - 1000mb drive pentium cpu, 512mb ram
+		+ note that they recommend fairly small partition sizes - i recommend the opposite
+		+ installed xwindows to prime the system
+		+ installed mozilla-firefox because last time i made mistake of installing from
+		  non ports packages (such as below) first and completely confused all of the
+		  ports install - particularly moz which i was never able to re-install.  the
+		  problem is that new include files from non ports managed packages pollute the
+		  include path... so a best practice is fully prep your system with all stock
+		  pieces that you can conceivably think of installing before installing any
+		  non ports managed pieces...
+		+ done
+
+	+ libjpeg 6b
+		+ is already installed so i didn't do it
+		+ done
+
+	+ proj-4.4.9
+		+ fetched via ftp
+		+ and built it without any special configuration...
+		+ done	
+
+	+ libgeotiff
+		+ skipped it
+
+	+ freetype
+		+ so openbsd like /usr/ports/print/freetype version 1.3.1
+		+ and the docs recommend 2.1.3
+		+ and the latest version is 2.1.9
+		+ regarding freetype and php i see something:
+		  http://groups-beta.google.com/group/mailing.netbsd.help/msg/921216c154abb70d?hl=en&lr=&ie=UTF-8&oe=UTF-8&safe=off
+		  some people compile gd first before freetype?
+		+ should i install 1.3.1 first and then the other one?
+		+ can i statically link to it?
+		+ NOTE that it is apparently already present:
+		  http://www.monkey.org/openbsd/archive/ports/0302/msg00290.html
+		+ done (well revisited later on to do a manual install)
+
+
+	+ gd
+		+ http://www.boutell.com/gd/
+		+ apparently we really want gd to be able to manufacture pretty jpegs with text on them etc
+		+ options include
+			--with-libiconv-prefix=dirprefix ???  (system has libiconv-1.9.1 - is that good enough??? )
+			--with-png=dir
+			--with-freetype=dir
+			--with-fontconfig=dir ???
+			--with-jpeg=dir
+			--with-xpm=dir
+		+ a totally stock install worked flawlessly - just ./configure...
+		+ oops - not true - cannot find png.h
+			+ why is it trying /usr/local/includes/libpng/libpng???
+			+ tried set CPPFLAGS=-I/usr/local/includes/libpng - did not work
+			+ oh well, gave up, just did
+				mkdir /usr/local/includes/libpng/libpng
+				cp /usr/local/includes/libpng/* /usr/local/includes/libpng/libpng
+		+ and it builds
+		+ done
+
+	+ gd patch
+		+ i skipped this because it looks like the lzw patent expired and the
+		  support that was hacked into the patch is now not needed i believe
+		+ done
+
+	+ gd for perl
+		+ http://stein.cshl.org/WWW/software/GD/GD.pm.tar.gz
+		+ skipped for now
+		+ done
+
+Now it is 11:00 PM Jan 2005
+
+	+ java support
+		+ i want postgres java for geoserver
+		+ cd /usr/local/devel/jdk/1.4
+		+ make will list things needed
+		+ fetch lots of stupid pieces from sun from behind legal veils
+		+ fetch bits from eyesbeyond
+		+ now make
+		+ took about 4 hours, finally built and 'hello world' works
+		  (the thing to do now is try eclipse, geoserver and my own stuff)
+		  (and to see if the java imageio stuff works yet or can be ported)
+		+ done
+
+	+ gnu m4
+		+ http://ftp.gnu.org/gnu/m4/
+		+ bison wanted this so i installed it
+		+ backed up orig: first i did 'which m4' and backed it up
+		+ backed up orig: also i backed up the lib in
+		+ moved away orig to '/usr/bin/m4_old' -> leaving bison to find new in /usr/local/bin
+		+ (turned out i had to move the orig back to build python)
+		+ done
+
+	+ bison
+		+ http://ftp.gnu.org/gnu/bison/bison-1.875.tar.gz
+		+ backed up orig:  found bison using 'which bison' and backed it up
+		+ backed up orig:  moved liby.a also
+		+ postgresqy complained that it wanted this so i installed it
+		+ but this thing wants GNU M4 1.4
+		+ gave it that and it builds
+		+ done
+
+	+ libcurl
+		+ libcurl is apparently needed for wms/wfs support
+		+ hrm, there is no such thing as 'libcurl' - it appears to be in 'curl'
+		+ i'm building from /usr/ports/net/curl
+		+ the original site for ftp is down but luckily mirrors seem to work
+		+ libcurl couldn't find gzip for some reason...?
+		+ anyway, seems to install
+		+ done
+
+	+ python
+		+ i noticed gdal would like python so i did a /usr/ports/lang/python make all
+		+ i recall that python was useful for some reason or other last time i did all this
+		+ because i am lazy i am doing the java and python builds simultaneously
+		+ also since these seem to be multi-hour things i am doing a lot of the below also at the same time
+		+ heh python failed because it couldn't find the m4 i moved away - i moved it back temporarily
+		+ had to pkg_delete the python stuff installed already ( complains re cannot symbolic link if symbolic link exists )
+		+ then run make build again
+		+ arg it still failed, did a make clean and tried again... works.
+		+ done
+
+	+ geos
+		+ http://geos.refractions.net/geos-2.1.1.tar.bz2
+		+ ./configure
+		+ make
+		+ make install
+		+ done
+
+	+ swig
+		+ i see swig being mentioned so took at shot at it from ports
+		+ failed due to python not being there (it was still installing in another window)
+		+ once python showed up i tried it again and it installed fine... although pulled in ruby ug.
+		+ done
+
+	+ postgresql
+		+ http://www.postgresql.org
+		+ first off it wants newer bison - so did that above
+		+ looks like 7.4.6 is latest? seems to be prominent in the ftp folder
+		+ also grabbed http://postgis.refractions.net/postgis-0.9.1.tar.gz
+		+ although other docs suggest otherwise you have to build postgres first (before the postgis part)
+		+ seemed to want bison 1.875 as mentioned
+		+ ./configure
+		+ make
+		+ (later when java is done i will come back and remake with java support)
+		+ instructions in other doc are ok:
+			cd postgresql-7.3.4 
+			./configure 
+			gmake 
+			su 
+			gmake install 
+			adduser postgres 
+			mkdir /$your database location 
+			chown postgres /$your database location 
+			su - postgres 
+			/usr/local/pgsql/bin/initdb -D /$your database location 
+			/usr/local/pgsql/bin/postmaster -D /$your database location >logfile 2>&1 & 
+			logout from superuser 
+			login as postgres 
+			/usr/local/pgsql/bin/createdb test 
+			/usr/local/pgsql/bin/psql test
+		+ non critical stuff is good too
+		( i skipped for now )
+			Download and install Tools(admin and ODBC) for window. 
+			Change directory to /usr/local/pgsql/data. 
+			Allow other host connect to the server by adding more host inside pg_hba.conf file. 
+			Modify connection parameter inside postgresql.conf as follow: 
+			change #tcpip_socket = false --> tcpip_socket = true 
+			change #post = --> port=5432 
+		- revisit for java later
+		+ done
+
+	+ postgis
+		+ had to get postgis off net
+		+ cd contrib
+		+ tar zxvf postgis.tar.gz
+		+ cd postgis
+		+ make failed
+		+ gmake failed - needs 'geos'??? oops, forgot to do geos/ make 'install'
+		+ gmake failed - can't find 'projects.h' - oh forgot to do proj4/ make 'install'
+		+ ok builds
+		+ so overall procedure is fine:
+			cd contrib 
+			gunzip postgis-0.7.1.tar.gz 
+			tar xvf postgis-0.7.1.tar 
+			cd postgis-0.7.1 
+			make 
+			make install 
+			(forgot to do the make install first time - leading to mayhem)
+			(i switched to postgres user here)
+			createlang plpgsql test 
+			psql -d test -f postgis.sql 
+			psql -d test -f spatial_ref_sys.sql
+		+ done
+
+	+ grass?
+		- later
+
+Now it is 2:00 AM and everything except java, gdal and mapserver are present.
+
+	+ gdal
+		+ http://www.remotesensing.org/gdal
+		+ http://www.remotesensing.org/gdal/gdal_building.html
+		+ http://www.arch.cam.ac.uk/~dir21/gis/gdal.html
+
+
+		+ one recommendation is:
+			$ tar -xzvf gdal-1.2.0.tar.gz
+			$ cd gdal-1.2.0
+			$ ./configure --with-netcdf=/usr/local/include --with-gif=no \
+			  --with-ogdi=/usr/local/include --without-bsb --with-cfitsio=no \
+			  --with-local=/usr/local
+
+		+ another one is:
+			cd gdal-1.1.9 
+			./configure --with-libtiff=/usr/local/lib/ --with-geotiff=/usr/local/lib/ --with-jpeg=/usr/local/lib/ --with-gif=/usr/local/lib/ --with-pg=/usr/local/pgsql/bin/pg_config 
+			make 
+			make install 
+
+		+ i tried just ./configure and everything i need seems to be discovered by itself
+		  it uses internal versions of libpng, libtiff, libgeotiff, libjpeg, libgif
+		  so i figure its probably ok
+
+		+ 1.2.5 won't configure due to some kind of weird configure glitch
+		+ 1.2.4 doesn't configure for same reason
+		+ 1.1.9 does seem to configure and build fine
+		  oops except for a small endian bug in a header that i have seen before
+		+ 1.2.3 configures and mostly builds except for endian bug
+		+ the fix is simple
+			vi frmts/fit/gstEndian.h
+			#undef swap64
+			#undef swap32
+			#undef swap16
+		  (this is what this guy got hung up on : http://www.arch.cam.ac.uk/~dir21/gis/gdal.html )
+		+ gmake install is fine too
+		+ done
+
+		+ revisiting to get latest
+			+ tried to do geos with gmake instead of make... on theory that geos_config differs?
+			+ turned of mysql to get around configure bad substitution error (fixes this)
+			+ supplied geos path *dammit* still does not help configure bad substitution
+			+ supplied version # to try get around another configure bad substitution... nope.
+			  it looks like it is reading these bad values from 'confdefs.h' using a macro? ACEOFF?
+			  tries to do
+				if test "${VERSION:0:1}"
+				i notice it does
+				VERSION=`$GEOS_CONFIG --version`
+				hrm, that does work if i run it from the shell
+				its like gmake cannot find /usr/local/bin/geos-config
+				what if i hardcode it?  nope.
+				well, what if remove the entire check?
+				ok gets past that one
+			ah, and it seems to configure
+			building crashes though with tiff problems... switching to internal tiff
+			(i'll bet these internal / external differences cause problems with mapserver?)
+			(arg still problems... hrm, switching to internal jpeg also since tiff refers to it)
+			ok, appears to be fucking building
+			no uninstaller
+			installed new over old
+			back to mapserver
+
+
+	+ w3c-libwww
+		+ optional but what the hell
+		+ http://www.w3.org/Library/Distribution/w3c-libwww-5.4.0.tgz
+		+ ./configure
+		+ make
+		  oops, gmake only...
+		+ gmake install is all fine
+		+ done
+
+Now it is 2:30 AM and we are onto the final item - mapserver?  Well not quite.
+
+	+ apache
+		+ http://ftp.wayne.edu/apache/httpd/apache_1.3.33.tar.gz
+		+ (we don't want to use the openbsd version that is jailed)
+		./configure --prefix=/var/www --enable-module=rewrite --enable-shared=rewrite --enable-shared=so
+		+ modify /etc to point to new one
+		+ renamed old one in /usr/bin/httpd to httpd_unused
+		+ OH, php wants --enable-shared=so
+		+ also it wants to see apache, ok, do ln -s for old apache paths to new ( both /usr/sbin/httpd and /var/www )
+		+ redid for .so's
+		+ done
+
+	+ php
+		+ /usr/ports/www/php4
+		+ php4-gd may fail because of no freetype? see http://groups-beta.google.com/group/mailing.netbsd.help/msg/921216c154abb70d?hl=en&lr=&ie=UTF-8&oe=UTF-8&safe=off
+		+ ming wants php
+		+ so we give it php4 because php5 is the weird one with object support
+		+ failed, wanted apache, fixed
+		+ weird; php sucks in mysql... what a terrible set of dependencies for a scripting language
+		  (in future probably best to build all this before any of the custom stuff)
+		+ arg 'can't install php extensions because it is already installed'
+		+ make clean
+		+ pkg_delete php extensions
+		+ make install
+		+ still fails for similar reason (php4-core already installed)
+		+ make? (by itself?)
+		+ well by deleting php4 and extensions and doing make install a couple of times it does install
+		+ done
+
+
+bailed here around 3:00
+
+	+ ming
+		+ well decided to throw ming in too
+		+ after php is in
+
+starting up again around 08:00
+
+	+ freetype (from net not ports)
+		+ http://umn.dl.sourceforge.net/sourceforge/freetype/freetype-2.1.9.tar.gz
+		+ mapserver says it cannot find freetype... among other things
+		  (mostly it is complaining on behalf of 'gd' which actually is ok with things)
+		  (maybe this isn't needed...  could probably convince it to find it... and it should not really care itself)
+		  (anyway, will do it as waving dead chicken kind of thing)
+		+ well maybe if i give a real freetype install off of net instead of ports?
+		+ weird error 'gmake is required at version x' hrm.
+		+ setenv GMAKE gmake
+		+ ./configure
+		+ gmake
+		+ does not indicate which version of freetype2 is built into openbsd...
+		+ well, built and installed this one; hopefully can undo if conflicts
+		+ (went back and rebuilt 'gd' with this version of freetype now.
+		+ (went back and rebuilt 'gdal' also with this version)
+		+ done
+
+	+ mapserver
+		+ at head revision mapserver_dev
+		+ complains it cannot find freetype or other related things (on behalf of gd)
+		  i think it is just being stupid but lets give it a vanilla freetype install
+		+ still complains about png, jpeg, xpmfreexpmimage, libiconv... idiotic.
+		  ok, lets first try to make mapserver realize where they really are
+		+ persistently cannot find xpm nor iconv
+		+ ok, xpm is found by --use-xpm=/usr/X11R6/lib
+		+ ok, libiconv was specified wrong - it is not '--use-iconv' like the rest but '--use-libiconv'
+		+ and couldn't find proj - path should not include /lib - corrected
+		+ and could not find ogr - the incantation suggests /usr/local/bin/gdal_config... oh, my typo
+		+ oh weird... it found ogr this time although i changed nothing... nice.
+		+ dammit a compile time warning:
+			warning libfreetype.so.13.0 needed by gd-2.0.33
+			libgd.so.2.0 may conflict with libfreetype.so.9.7
+			(at least i found out which version of libfreetype2 comes with openbsd)
+			(i guess i'd like to remove this from ldconfig? or hide it for now?)
+		+ and a compile error
+			libmap.a mapogr.o msOGRGetvalues undefined reference to __gxx_personality_sj0
+			http://www.cs.vassar.edu/~priestdo/emacspeak/list.archive.2003/msg00277.html
+			holy crap - if i add this to the compile sequence it does work...  (-lstdc++)
+		+ 'undefined reference to 'typeinfo' for geos::GEOSException ... sigh.
+		+ scanning the ./configure --help i notice it wants --enable-runpath - so i did that too.
+		+ http://geos.refractions.net/pipermail/geos-devel/2003-November/000773.html
+			setenv LDFLAGS -s
+			setenv CPPFLAGS -I/usr/local/include
+			???
+		+ now i am getting
+			undefined reference to geos::WKTReader::~WKTReader for example (lots of)
+		+ ok, maybe since i wasn't able to use an at head version of gdal i have to use older geos as well?
+			maybe i should try harder to get the latest gdal building?
+			no effect... sigh.
+			oh i see, i need to do --use-geos=/usr/local/bin/geos-config
+		+ ok it builds
+		+ i installed it
+
+Still for me to do for my own use:
+
+	- mapscript
+	- geoserver + update postgresql to include jdbc
+	- data and samples
+

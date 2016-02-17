@@ -93,6 +93,13 @@ with GDAL support, and the PDF and SVG depend on building with cairo support.
       IMAGEMODE RGB
       EXTENSION "png"
     END
+    OUTPUTFORMAT
+      NAME "myUTFGrid"
+      DRIVER UTFGRID
+      FORMATOPTION "LABELS=true"
+      FORMATOPTION "UTFRESOLUTION=4"
+      FORMATOPTION "DUPLICATES=false"
+    END
 
 .. index::
    pair: OUTPUTFORMAT; DRIVER
@@ -100,17 +107,18 @@ with GDAL support, and the PDF and SVG depend on building with cairo support.
 DRIVER [name]
     The name of the driver to use to generate this output format. Some driver 
     names include the definition of the format if the driver supports multiple 
-    formats. For AGG, the possbile driver names are "AGG/PNG" and "AGG/JPEG".
+    formats. For AGG, the possible driver names are "AGG/PNG" and "AGG/JPEG".
     For GD the possible driver names are "GD/Gif" and "GD/PNG".
     For output through OGR the OGR driver name is appended, such as 
     "OGR/Mapinfo File".  For output through GDAL the GDAL shortname for the 
     format is appended, such as "GDAL/GTiff". Note that PNG, JPEG and GIF 
     output can be generated with either GDAL or GD (GD is generally more 
-    efficient).  TEMPLATE should be used for template based output. (mandatory)
+    efficient).  TEMPLATE should be used for template based output. (mandatory).
+    Other drivers: KML, KMZ and UTFGRID.
 
 .. index::
    pair: OUTPUTFORMAT; EXTENSION
-    
+
 EXTENSION [type]
     Provide the extension to use when creating files of this type. (optional)
 
@@ -152,7 +160,7 @@ FORMATOPTION [option]
 
     - AGG/PNG supports quantizing from 24/32 bits to 8bits, in order
       to reduce the final image size (and therefore save bandwidth)
-      (see also http://trac.osgeo.org/mapserver/ticket/2436#comment:4
+      (see also `MapServer issue #2436`_
       for strategies when applying these options):
 
       .. index::
@@ -171,7 +179,7 @@ FORMATOPTION [option]
         256. Specifying anything between 17 and 255 is probably a
         waste of quality as each pixel is still encoded with a full
         byte. Specifying a value under 16 will produce tiny images,
-        but severly degraded.
+        but severely degraded.
 
       .. index::
          triple: OUTPUTFORMAT; FORMATOPTION; PALETTE
@@ -288,7 +296,32 @@ FORMATOPTION [option]
       format options.
 
     .. index::
-       triple: OUTPUTFORMAT; FORMATOPTION; GAMMA
+       pair: OUTPUTFORMAT; UTFGRID
+
+    - UTFGRID: See :ref:`rfc93`.
+
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; LABELS
+
+      - "LABELS=true".  Labels can be rendered using their parent
+        feature id (derived via UTFITEM) where the labels bounding box
+        is drawn to the map.
+
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; UTFRESOLUTION
+
+      - "UTFRESOLUTION=4".  The resolution of the grid.  A larger
+        resolution will make the grid smaller and therefore reduce its
+        weight but also its precision.
+
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; DUPLICATES
+
+      - "DUPLICATES=false".  It may be desirable NOT to remove
+        duplicate feature id/key pairs since that process could be
+        expensive depending on the number of features in the map. This
+        option can be used to skip this step. The resulting JSON file
+        will be a bit larger.
 
 .. index::
    pair: OUTPUTFORMAT; IMAGEMODE
@@ -373,3 +406,4 @@ TRANSPARENT [ON/OFF]
     as the background color.
 
 .. _`GDAL Geospatial PDF`: http://www.gdal.org/frmt_pdf.html
+.. _`MapServer issue #2436`: https://github.com/mapserver/mapserver/issues/2436#comment:4

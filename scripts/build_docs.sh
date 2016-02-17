@@ -7,8 +7,8 @@ BUILDDIR="/tmp/ms-$BRANCH-$RANDOM-build"
 
 
 #LOCATION="/osgeo/mapserver.org"
-LANGUAGES="en de fr es it zh_cn"
-PDF_LANGUAGES="en"
+LANGUAGES="ar en de el es fr id it ja nl_NL pl ru sq tr uk zh_cn"
+PDF_LANGUAGES="ar en de el es fr id it ja nl_NL pl ru sq tr uk zh_cn"
 
 cd "$REPO"
 git checkout $BRANCH
@@ -34,15 +34,7 @@ do
    if [ $lang != "en" ]; then
 	cd $BUILDDIR/en
    
-   if [ "$lang" == "fr" ]; then
-     warn=".. warning::
-
-   Cette page de documentation n'est pas a jour, avec au moins @DAYS@ jours de
-   retard sur la version originale. Nous vous conseillons **fortement** de
-   naviguer vers la version anglaise de cette page.
-
-"
-   elif [ "$lang" == "de" ]; then
+   if [ "$lang" == "de" ]; then
    warn=".. warning::
 
    Diese Übersetzung ist seid mindestens @DAYS@ Tagen nicht aktualisiert
@@ -54,20 +46,28 @@ do
    elif [ "$lang" == "it" ]; then
    warn=".. warning::
 
-   outdated by @DAYS@ days !
+   outdated by @DAYS@ days!
 
    "
 
    elif [ "$lang" == "es" ]; then
    warn=".. warning::
 
-   outdated by @DAYS@ days !
+   outdated by @DAYS@ days!
+
+   "
+   elif [ "$lang" == "fr" ]; then
+   warn=".. warning::
+
+   La traduction de cette page est en retard de @DAYS@ jours !
+   Contribuez à la traduction est aussi simple que d'utiliser 
+   transifex : https://www.transifex.com/organization/mapserver/dashboard
 
    "
    elif [ "$lang" == "zh_cn" ]; then
    warn=".. warning::
 
-   outdated by @DAYS@ days !
+   outdated by @DAYS@ days!
 
    "
    else
@@ -115,6 +115,8 @@ do
 done
 
 cd $BUILDDIR
+#make clean
+#make compile_messages
 make TARGET=mapserverorg html
 make latex
 make epub

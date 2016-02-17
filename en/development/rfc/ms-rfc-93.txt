@@ -8,14 +8,14 @@ MS RFC 93: UTF Grid Support
 :Author: Steve Lime
 :Contact: sdlime@comcast.net
 :Author: Thomas Bonfort
-:Contact: 
+:Contact: thomas.bonfort@gmail.com
 :Author: Daniel Morissette
-:Contact:
+:Contact: dmorissette@mapgears.com
 :Author: Mike Smith
 :Contact: 
 :Author: Francois Desjarlais
 :Contact: fdesjarlais1@gmail.com
-:Status: Draft (last update 2013-09-03)
+:Status: Adopted
 :Version: MapServer 7.0
 
 1. Overview
@@ -69,7 +69,7 @@ through the output format:
     FORMATOPTION "DUPLICATES=false"
   END
 
-It may be desireable NOT to remove duplicate feature id/key pairs since that process could be expensive depending
+It may be desirable NOT to remove duplicate feature id/key pairs since that process could be expensive depending
 on the number of features in the map. The format option duplicates=false can be used to skip this step. The resulting
 JSON file will be a bit larger.
 
@@ -198,8 +198,16 @@ It is also possible to only keeps the UTFITEM which returns :
 3. Implementation Details
 -------------------------
 
+Additions:
+
 - there are two new keywords (UTFDATA and UTFITEM) that exists at the layer-level
 - one new renderer (UTFGRID) will be made available
+
+Known limitations of the initial implementation produced during GSoC:
+
+- Attribute values are not JSON-escaped, so the JSON output could be broken if the attribute values contain invalid characters. A JSON escaping function should be added for UTFGrid and would also be useful for general template support of JSON output.
+
+- Due to the upcoming changes to TrueType rendering, the renderTrueTypeSymbols method has not been implemented yet. All other types of symbols and labels are implemented.
 
 4. Files affected
 ------------------
@@ -212,7 +220,7 @@ The following files will be modified/added by this RFC:
   mapfile.c/mapfile.h: Add new keywords: UTFITEM and UTFDATA.
   mapoutput.c: Add appropriate entries for new UTFGRID driver.
   maputfgrid.cpp/maputfgrid.h: Implementation of the new UTFGrid renderer.
-  mapaggcommon.h: Common ressources for AGG and UTFGrid drivers.
+  mapaggcommon.h: Common resources for AGG and UTFGrid drivers.
 
 5. OpenLayers
 -------------
@@ -228,7 +236,7 @@ There is a working example in the OpenLayers library (exemples/utfgridwms.html).
 
 PHP MapScript will need get/set methods added to the layer class. Swig-based MapScript should need no changes.
 
-7. Backwards Compatibilty Issues
+7. Backwards Compatibility Issues
 ---------------------------------
 
 None anticipated.
@@ -246,22 +254,22 @@ No impacts on core performance are anticipated.
 10. Documentation needs
 ------------------------
 
-The layer object documentation will need to be updated to reflect the new parameters. The output section will need some
-additions to talk about configuration options associated with the new output format.
+The layer object documentation will need to be updated to reflect the new parameters. The output section will need a new UTFGrid HowTo page to talk about configuration options associated with the new output format.
 
 11. Bug ID and references
 -------------------------
 
-* No tracking ticket created yet.
-* You can find the code developed during GSoC 2013 at https://github.com/fdesj/mapserver/tree/utfgridgsoc in the utfgridgsoc branch.
-* Pull request for msautotests at https://github.com/mapserver/msautotest/pull/24
+* Tracking issue: https://github.com/mapserver/mapserver/pull/4765 (contains code diff)
+* You can find the original code developed during GSoC 2013 at https://github.com/fdesj/mapserver/tree/utfgridgsoc in the utfgridgsoc branch (obsolete)
+* Doc updates created during GSoC are available in https://github.com/fdesj/docs/tree/rfc-93
+* Pull request for msautotests at https://github.com/mapserver/msautotest/pull/24 (obsolete)
 * Pull request for OpenLayers UTFGridWMS support at https://github.com/openlayers/openlayers/pull/1076
 * See also the GSoC project reports at https://github.com/mapserver/mapserver/wiki/GSoC-UTF-Grid-implementation
 
 12. Voting history
 ------------------
 
-None
++1 from DanielM, ThomasB, PerryN, SteveW, MikeS, SteveL, YewondwossenA, TamasS and StephanM
 
 
 .. _4564: https://github.com/mapserver/mapserver/issues/4564

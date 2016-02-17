@@ -118,15 +118,31 @@ BACKGROUNDCOLOR [r] [g] [b] - `deprecated`
 .. index::
    pair: STYLE; COLOR
 
-COLOR [r] [g] [b] | [attribute]
+COLOR [r] [g] [b] | [hex string] | [attribute]
     Color to use for drawing features. 
 
-    - `r`, `g` and `b` shall be
-      integers [0..255].  To specify green, the following is used:
+    - `r`, `g` and `b` shall be integers [0..255].  To specify green,
+      the following is used:
 
-      .. code-block:: mapfile
+        .. code-block:: mapfile
 
-         COLOR 0 255 0
+           COLOR 0 255 0
+
+    - `hex string` can be
+
+      - RGB value - "#rrggbb".  To specify magenta, the following is
+        used:
+
+        .. code-block:: mapfile
+
+           COLOR "#FF00FF"
+
+      - RGBA value (adding translucence) - "#rrggbbaa".  To specify a
+        semi-translucent magenta, the following is used:
+
+        .. code-block:: mapfile
+
+           COLOR "#FF00FFCC"
 
     - [*attribute*] was introduced in version 5.0, to specify the
       attribute to use for color values.  The hard brackets [] are
@@ -209,7 +225,7 @@ GAP [double]
 .. index::
    triple: STYLE; GEOMTRANSFORM; vertices
 
-GEOMTRANSFORM [bbox|end|labelpnt|labelpoly|start|vertices|<expression>]
+GEOMTRANSFORM [bbox|centroid|end|labelpnt|labelpoly|start|vertices|<expression>]
     Used to indicate that the current feature will be transformed
     before the actual style is applied. Introduced in version 5.4.
 
@@ -244,6 +260,17 @@ GEOMTRANSFORM [bbox|end|labelpnt|labelpoly|start|vertices|<expression>]
         `dist` will produce a setback.
 
       .. index::
+         triple: STYLE; GEOMTRANSFORM; generalize
+
+      - *(generalize([shape],tolerance))*: simplifies a geometry (`[shape]`)
+        in way comparable to FME's ThinNoPoint algorithm. See 
+        http://trac.osgeo.org/gdal/ticket/966 for more information.
+ 
+      .. note::
+ 
+         Depends on GEOS.
+
+      .. index::
          triple: STYLE; GEOMTRANSFORM; simplify
 
       - *(simplify([shape],tolerance))*: simplifies a geometry (`[shape]`) using
@@ -256,17 +283,6 @@ GEOMTRANSFORM [bbox|end|labelpnt|labelpoly|start|vertices|<expression>]
         ensuring that the result is a valid geometry having the same 
         dimension and number of components as the input. `tolerance` must be
         non-negative.
-
-      .. index::
-         triple: STYLE; GEOMTRANSFORM; generalize
-
-      - *(generalize([shape],tolerance))*: simplifies a geometry (`[shape]`)
-        in way comparable to FME's ThinNoPoint algorithm. See 
-        http://trac.osgeo.org/gdal/ticket/966 for more information.
- 
-      .. note::
- 
-         Depends on GEOS.
 
       .. index::
          triple: STYLE; GEOMTRANSFORM; smoothsia
@@ -285,12 +301,13 @@ GEOMTRANSFORM [bbox|end|labelpnt|labelpoly|start|vertices|<expression>]
            GEOMTRANSFORM (buffer([shape],-5))
          END
 
-    There is a difference between STYLE and LAYER GEOMTRANSFORM. LAYER-level 
-    will receive ground coordinates (meters, degress, etc) and STYLE-level will
-    receive pixel coordinates. The argument to methods such as simplify() must be
-    in the same units as the coordinates of the shapes at that point of the
-    rendering workflow, i.e. pixels at the STYLE-level and in ground units
-    at the LAYER-level.
+    There is a difference between STYLE and LAYER GEOMTRANSFORM.
+    LAYER-level will receive ground coordinates (meters, degress, etc)
+    and STYLE-level will receive pixel coordinates. The argument to
+    methods such as simplify() must be in the same units as the
+    coordinates of the shapes at that point of the rendering workflow,
+    i.e. pixels at the STYLE-level and in ground units at the
+    LAYER-level.
 
     .. code-block:: mapfile
 
@@ -308,6 +325,9 @@ GEOMTRANSFORM [bbox|end|labelpnt|labelpoly|start|vertices|<expression>]
             END
         END
 
+    .. seealso::
+
+       :ref:`geomtransform`
 
 .. index::
    pair: STYLE; INITIALGAP
@@ -415,7 +435,7 @@ MAXSCALEDENOM [double]
 
     .. seealso::
         
-        :term:`Map Scale`
+       :term:`Map Scale`
 
 .. index::
    pair: STYLE; MAXSIZE
@@ -447,7 +467,7 @@ MINSCALEDENOM [double]
 
     .. seealso::
         
-        :term:`Map Scale`
+       :term:`Map Scale`
 
 .. index::
    pair: STYLE; MINSIZE

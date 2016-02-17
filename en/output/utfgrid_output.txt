@@ -1,0 +1,89 @@
+.. index::
+   single: UTFGRID
+
+.. _utfgrid_output:
+
+======================================================================
+UTFGrid Output
+======================================================================
+
+:Author:  Francois Desjarlais
+:Contact: fdesjarlais1 at gmail.com
+:Last Updated: 2015-10-15
+
+.. contents:: Table of Contents
+    :depth: 2
+    :backlinks: top
+
+Introduction
+============
+
+UTFGrid is an output format that was added in MapServer version 7.
+This howto assumes that you have basic knowledge of the mapfile
+syntax (see :ref:`mapfile`).
+
+Functionality
+==============
+
+UTFGrid output will allow more interaction with maps by allowing data
+to be exposed via an invisible UTF-8 character grid.
+
+.. seealso::
+
+   :ref:`rfc93`
+
+Build
+=====
+
+* Iconv is required.
+* AGG is required.
+
+Setting the OutputFormat
+========================
+
+Adding the following to the mapfile will allow mapserver to use
+generate UTFGrid output.  For this example, the output generated will
+be a grid with each pixel corresponding to a 4x4 pixels square in the
+original image.  Also, it will not allow duplicates which means
+different shapes with the same IDs will be considered as a single
+shape.
+
+.. code-block:: mapfile
+
+  OUTPUTFORMAT
+    NAME "utfgrid"
+    DRIVER UTFGRID
+    MIMETYPE "application/json"
+    EXTENSION "json"
+    FORMATOPTION "UTFRESOLUTION=4"
+    FORMATOPTION "DUPLICATES=false"
+  END
+
+If no FORMATOPTION is set, default values will be used. Default values
+are: *4* for UTFRESOLUTION and *true* for DUPLICATES.
+
+Exposing Feature Properties
+===========================
+
+Two `LAYER` parameters are used to choose which data to expose.  To
+use them, add these to your `LAYER` in the mapfile.
+
+.. code-block:: mapfile
+
+  UTFITEM   "id"
+  UTFDATA   "{\"id\":\"[id]\",\"name\":\"[name]\"}"
+ 
+The items can be used separetly.  If `UTFITEM` is not set, a sequence
+number (based on the rendering order) will be used as the grid ID.  If
+`UTFDATA` is not set, no data beyond the `UTFITEM` will be exposed.
+
+.. note:: 
+
+   UTFGrids can be set on multiple layers, but only one UTFGrid can be
+   rendered at a time. If you wish to add multiples UTFGrids, with for
+   example OpenLayers, you need to add a new layer for each of them.
+
+.. note::
+
+   Due to upcoming changes in text rendering the UTFGrid driver doesn't
+   support Truetype symbol rendering.

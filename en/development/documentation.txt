@@ -8,10 +8,10 @@
 :Contact: hobu.inc at gmail.com
 :Author:  Jeff McKenna
 :Contact: jmckenna at gatewaygeomatics.com
-:Last Updated: 2013-06-20
+:Last Updated: 2015-05-20
 
 .. contents:: Table of Contents
-    :depth: 2
+    :depth: 4
     :backlinks: top
 
 Background
@@ -29,7 +29,7 @@ GitHub Notes
 ------------
 
 * Documentation files are stored in the /docs sub-project on GitHub at: https://github.com/mapserver/docs
-* Always submit pull requests on the latest branch (such as branch-6-2), not 
+* Always submit pull requests on the latest branch (such as branch-7-0), not 
   on master 
 * See GitHub's `help guidelines <https://help.github.com/articles/set-up-git/>`__ to 
   install Git locally
@@ -39,7 +39,7 @@ GitHub Notes
    
     ::
    
-      git clone -b branch-6-2 git@github.com:mapserver/docs.git mapserver-docs-git-branch-6-2
+      git clone -b branch-7-0 git@github.com:mapserver/docs.git mapserver-docs-git-branch-7-0
       
   * update local files:
   
@@ -103,13 +103,13 @@ Installing and Using Sphinx for rst-html Generation
 
 .. note::
    
-    As of 2010-06-01 the MapServer site requires Sphinx 1.0.  You can browse
+    As of 2015-05-20 the MapServer site requires Sphinx 1.3.1 - You can browse
     the versions of the Sphinx packages `here <http://pypi.python.org/pypi?%3Aaction=index>`__,
     and then install the exact version such as:
         
     ::
         
-        easy_install Sphinx==1.0.7
+        easy_install Sphinx==1.3.1
 
 
 **On Windows:**
@@ -127,7 +127,7 @@ Installing and Using Sphinx for rst-html Generation
 
    .. note::
    
-      Make sure you install Sphinx 1.0 or more recent.  See note above.
+      Make sure you install Sphinx 1.3.1 or more recent.  See note above.
       
 #. inside the /docs directory, execute:
 
@@ -161,13 +161,14 @@ Installing and Using Sphinx for rst-html Generation
        
    .. note::
     
-      Make sure you install Sphinx 1.0 or more recent.  See note above.       
+      Make sure you install Sphinx 1.3.1 or more recent.  See note above.       
 
 #. to process the docs, from the MapServer /docs directory, run:
 
    ::
 
        make html
+       make html BUILD_LANGUAGES=
 
    or
 
@@ -180,7 +181,7 @@ Installing and Using Sphinx for rst-html Generation
 .. note::
 
     If there are more than one translation, the above commands will automatically
-    build all translations.
+    build all translations, unless you add a "BUILD_LANGUAGES=" to the make arguments
 
 
 **On OS X:**
@@ -193,7 +194,7 @@ Installing and Using Sphinx for rst-html Generation
        
    .. note::
    
-      Make sure you install Sphinx 1.0 or more recent.  See note above.        
+      Make sure you install Sphinx 1.3.1 or more recent.  See note above.        
 
 # install MacTex from http://www.tug.org/mactex/2009/ if you want to build pdfs
 
@@ -201,11 +202,15 @@ Installing and Using Sphinx for rst-html Generation
 
    ::
 
+       make compile_messages
+
        make html
 
    or
 
    ::
+
+       make compile_messages
 
        make latex
 
@@ -216,8 +221,57 @@ Installing and Using Sphinx for rst-html Generation
     If there are more than one translation, the above commands will automatically
     build all translations.
 
+(English) typo fixing script
+----------------------------
+
+(Tested on Linux. Should also likely run on MacOSX. Windows users might need
+to install Cygwin, Python 3, git, curl, sed, grep, awk)
+
+The script in scripts/fix_typos.sh is an interactive script to detect and correct
+common spelling issues in the English documentation (en/ directory).
+
+It requires Python 3 (python3 executable) to run. The first time it is run,
+it also uses 'git' and 'curl' binaries to download the codespell engine,
+its own dictionary, as well as the Debian Lintian and QGIS dictionaries.
+They are downloaded in the fix_typos/ subdirectories. This directory can be
+safely removed at any time (to enable getting new versions of the dictionaries
+or the codespell engine).
+
+The script is launched with :
+
+::
+
+    ./scripts/fix_typos.sh
+
+Whenever a typo is detected, it asks if it must be fixed with the proposed
+replacement (Y/N), or in case if there are several options, to select the option
+(0, 1, etc..).
+
+It contains a white list of words that are marked as not being typo errors (in
+the WORDS_WHITE_LIST variable). The EXCLUDED_FILES variable can also be edited
+to add files fully ignored. The scripts/typos_whitelist.txt file can be edited
+to add full lines that should be ignored (sensitive to starting and trailing
+whitespace/tabulations, and only work on LF terminated files, hence prior conversion
+from CRLF to LF might be needed). scripts/typos_whitelist.txt should be used rather
+than WORDS_WHITE_LIST, only when a word is not a typo in a given context, but
+might be a typo in another context.
+
+
 How translations are handled
 ----------------------------
+
+Nowadays, MapServer have two coexisting systems to manage translations process.
+Both rely on Sphinx software.
+
+The first one was the answer to the absence of internationalization support in 
+first days of the Sphinx software. The second use the new system of  
+`internationalization`_ and is currently only used for the French translation.
+
+The "old" way for translations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Although we think that nowadays the new system is better, we do not wanted to enforce 
+every language community to change their habits.
 
 
 * All translations are organized in subdirectories in MapServer /docs directory
@@ -261,7 +315,191 @@ How translations are handled
 The build script will then process the subdirectories *en* and *de*. If they
 are not accessible, an error message will be returned.
 
+The standard internationalization system (i18n) for translations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
+
+Initial translation process for a new language
+..............................................
+
+It follows steps below:
+
+
+* Generate pot file from original English documentation using Sphinx (except 
+  if already here)
+
+   ::
+
+      make gettext
+
+* copy new version of \*.pot files from _build/gettext/en to translated/pot
+
+   ::
+
+      make gettext_copy
+
+
+* Copy \*.pot file => \*.po file (a \*.po file is the same as \*.pot, only 
+  extension change and if you translate three languages, you will get 
+  three \*.po file and each of them will be into a language dir)
+
+   ::
+
+      make generate_po_from_tmpl -e TRANSLATIONI18N=fr
+
+* translate your \*.po file(s)
+
+  You can do it with software like PoEdit but we may switch to Transifex, 
+  an hosted translation service to make contribution more easy, follow 
+  translation advance and have a review process for translation.
+
+* compile \*.po to \*.mo (sphinx need \*.mo file to make substitution from 
+  original version to the language translated)
+
+   ::
+
+      make compile_messages -e TRANSLATIONI18N=fr
+
+* Generate doc for the language
+
+
+You just need to set in the file `Makefile` or make.bat depending on your OS
+the following parameter before building the documentation:
+
+   ::
+
+      TRANSLATIONI18N=fr
+
+You need to change as well the scripts/build_docs.sh script to add your language at 
+the top of the file:
+
+   ::
+
+      LANGUAGES= fr
+
+Please for both parameter, keep the alphabetical order to kept them readable.
+
+**Structure of the i18n files in the docs root directory**
+
+The structure you need to make all the transaltion process is like below (an 
+excerpt to give you the main required structure)
+
+   ::
+
+      
+      translated/
+      ├── fr
+      │   ├── about.po
+      │   ├── announcements_all.po
+      │   ├── cgi.po
+      │   ├── community.po
+      │   ├── copyright.po
+      │   ├── development.po
+      │   ├── documentation.po
+      │   └── LC_MESSAGES
+      │       ├── about.mo
+      │       ├── announcements_all.mo
+      │       ├── cgi.mo
+      │       ├── community.mo
+      │       ├── copyright.mo
+      │       ├── development.mo
+      │       └── documentation.mo
+      └── pot
+          ├── about.pot
+          ├── announcements_all.pot
+          ├── cgi.pot
+          ├── community.pot
+          ├── copyright.pot
+          ├── development.pot
+          └── documentation.pot
+
+Moreover, you only need to commit the \*.pot and \*.po files.
+Be cautious, you must have an LC_MESSAGES directory to receive \*.mo files.
+To keep this directory in Git, it's recommended to create and empty file into 
+it.
+
+.. note:: When adding a new language, take care of the ISO code used. Famfamfam 
+  flag icons is using ISO Country code, and transifex is using ISO Language code 
+  which can be different. See `ISO country code page <http://fr.wikipedia.org/wiki/ISO_3166-1>`_ 
+  for more information.
+
+The usual workflow for already existing translation
+....................................................
+
+The previous process we explained is only for the language creation. After, the 
+workflow consists of:
+
+* translating po files for your language via `transifex <https://www.transifex.com/organization/mapserver/dashboard>`_,
+* pull po files from transifex and commit them
+* generating the .mo files
+* building again
+
+Here are the command line:
+
+* Getting po files from transifex (you can use -l flags to filter the language)::
+
+    tx pull -a 
+  
+* Build mo files from po files::
+
+    make compile_messages  -e TRANSLATIONI18N=fr
+
+* Build html page::
+  
+    make clean html
+    
+See below how to setup your transifex account to use transifex client to push, 
+pull translated files and build html files.
+
+Sometimes, when a change occurs in the main english documentation, you will 
+need to generate again the pot files. Then, you will have to merge your 
+translated files with the new pot files using for example the command line 
+utility (from gettext) below::
+
+      make gettext
+      make gettext_copy 	
+
+.. we don't merge string anymore: msgmerge translated/fr/index.po build/gettext/en/index.pot -U -N
+
+-U mean update po file with pot file and -N mean don't use fuzzy but exact match. 
+Then push po files to transifex (you can use -l flags to filter the language)::
+
+    tx push -s
+
+When committing your update, add [build_pdf] or [build_translations] in order to 
+build pdf and/or translation to the webserver.
+
+**Knonw issues:**
+ 
+* when downloading po files to local dir, if the file exists it won't be 
+  updated. At this moment we should remove all po files before downloading.
+* when building html doc cache system doesn't allow to update a page with up to 
+  date translation. We should use the clean target with make.
+* This command line throw an error::
+  
+    tx push -s -t
+
+How to use Transifex client to manage translation process
+...........................................................
+
+.. NOTE::
+   Transifex is described more in depth in the document: :ref:`documentation_translation`
+
+* Install transifex client::
+
+    sudo apt-get install transifex-client
+
+* Edit ~/.transifexrc and add the appropriate info in there::
+
+    vim ~/.transifexrc
+
+  * With the following content::
+
+     [https://www.transifex.com/]                                                                                                                                                                                                 
+     username = yjacolin
+     token =
+     password = passw0rd!
+     hostname = https://www.transifex.com/
 
 Reference Labels
 ----------------
@@ -270,7 +508,7 @@ Reference Labels
 
 
 Regenerating the reference labels
-..................................
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can regenerate the reference labels by issuing:
 
@@ -287,3 +525,5 @@ from the docs directory like when you are building the html or latex versions
 .. _`setuptools`: http://pypi.python.org/pypi/setuptools#windows
 .. _`Python 2.X`: http://www.python.org/
 .. _`ISO3166-1 alpha-2 country codes`: http://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
+.. _`internationalization`: http://sphinx-doc.org/latest/intl.html
+

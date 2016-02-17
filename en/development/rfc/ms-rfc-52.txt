@@ -5,7 +5,7 @@ MS RFC 52: One-pass query processing
 :Authors: Steve Lime
 :Contact: sdlime at comcast.net
 :Last Edited: 2009/06/03
-:Status: Draft
+:Status: Adopted
 :Version: MapServer 6.0
 
 Overview
@@ -44,7 +44,7 @@ pass through the features.
 behaves. We prepose changing the behavior of that function to provide random
 access to a result set (as defined by msLayerWhichShapes()) rather than the 
 entire data set. This removes most of the overhead currently incurred by 
-referencing the results already returned by the data driver in the intial 
+referencing the results already returned by the data driver in the initial 
 query. For implementation purposes we would retain the current msLayerGetShape() 
 implementations to support easy random access and create a new function 
 called msLayerResultsGetShape(). 
@@ -70,7 +70,7 @@ The query functions would need to:
   * not close the layer when finished with a query (we assume that users will 
     want to do something with the results)
 
-  * allow msLayerWhichItems() to retrieve ALL items so that the retreived
+  * allow msLayerWhichItems() to retrieve ALL items so that the retrieved
     shapes are presentation-ready (draw, template, or ...)
 
 The presentation functions:
@@ -88,7 +88,7 @@ effect is that primary keys need not be used to retrieve features from the resul
 set. It is the drivers responsibility to provide data to uniquely identify a 
 row in the result set.
 
-Backwards Compatability Issues
+Backwards Compatibility Issues
 ------------------------------------------------------------------------------
 This solution will most likely require changes to MapScript applications that 
 process query results depending on types of data being processed. Those hitting
@@ -111,21 +111,21 @@ It becomes necessary to instead recreate the result set but re-executing the
 query. Problem is, there's no easy way to serialize query parameters.
 
 I propose creating a new object, a queryObj, to store the various parameters
-associated with MapServer queries. It might look something like::
+associated with MapServer queries. It might look something like:
 
 .. code-block:: python
 
-  typedef struct {
-    int type; /* By rect, point, shape, attribute, etc... Types match the query functions. */
-    int qlayer; /* used by all functions */
-
-    rectObj *rect; /* used by msQueryByRect() */
-
-    char *qitem; /* used by msQueryByAttribute() */
-    char *qstring; /* used by msQueryByAttribute() */
-
-    ...and so on...
-  } queryObj;
+   typedef struct {
+      int type; /\* By rect, point, shape, attribute, etc... Types match the query functions. \*/
+      int qlayer; /\* used by all functions \*/
+  
+      rectObj *rect; /\* used by msQueryByRect() \*/
+  
+      char *qitem; /* used by msQueryByAttribute() \*/
+      char *qstring; /\* used by msQueryByAttribute() \*/
+  
+      ...and so on...
+   } queryObj;
 
 A single queryObj would hang off a mapObj and the mapObj would be the sole parameter 
 passed to the various query methods. MapServer C code, primarily the CGI and OGC
@@ -150,7 +150,7 @@ Files Impacted
 
 * mapgml.c: don't open/close a layer when presenting results
 
-* mapdraw.c: don't open/close a layer ect... IF if drawing a query map
+* mapdraw.c: don't open/close a layer etc... IF if drawing a query map
 
 * maplayer.c: refactor msLayerWhichItems(), add msLayerResultsGetShape() to the
   layer plugin API
@@ -186,4 +186,5 @@ checking need be done.
 
 Voting History
 --------------------------------------------------------------------------------
-None
+
++1 from SteveL, DanielM, HowardB, PerryN, TamasS

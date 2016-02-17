@@ -22,7 +22,8 @@ ALIGN [left|center|right]
    pair: LABEL; ANGLE
 
 ANGLE [double|auto|auto2|follow|attribute]
-    - Angle, given in degrees, to draw the label.  
+    - Angle, counterclockwise, given in degrees, to draw the label.
+      Default is 0.
     - AUTO allows MapServer to compute the angle. Valid for LINE
       layers only.
     - AUTO2 same as AUTO, except no logic is applied to try to keep
@@ -174,13 +175,17 @@ MAXLENGTH [integer]
 
     .. csv-table:: Interaction with WRAP_ keyword
 
-        "", **maxlength = 0** ,  **maxlength > 0**,  **maxlength < 0**
-        **wrap = ‘char’** ,always wrap at the WRAP_ character ,newline at the first WRAP_ character after MAXLENGTH_ characters, hard wrap (always break at exactly MAXLENGTH_ characters)
-        **no wrap** ,no processing,skip label if it contains more than MAXLENGTH_ characters , hard wrap (always break at exactly MAXLENGTH_ characters)
+        "", **maxlength = 0** ,  **maxlength > 0**
+        **wrap = ‘char’** ,always wrap at the WRAP_ character ,newline at the first WRAP_ character after MAXLENGTH_ characters
+        **no wrap** ,no processing,skip label if it contains more than MAXLENGTH_ characters 
 
     The associated RFC document for this feature is :ref:`RFC40`.
 
     .. versionadded:: 5.4
+
+    Support for negative MAXLENGTH that implied forced linebreaks is not
+    supported since version 7, a workaround implies pre-processing such labels
+    to include linebreaks or wrap characters.
 
 .. index::
    pair: LABEL; MAXOVERLAPANGLE
@@ -311,10 +316,16 @@ OUTLINECOLOR [r] [g] [b] | [attribute]
 .. index::
    pair: LABEL; OUTLINEWIDTH
 
+.. _OUTLINEWIDTH:
+
 OUTLINEWIDTH [integer]
-    Width of the outline if OUTLINECOLOR_ has been set. Defaults to 1. 
+    Width of the outline if OUTLINECOLOR_ has been set. Defaults to 1.
     Currently only the AGG renderer supports values greater than 1, and
-    renders these as a 'halo' effect: recommended values are 3 or 5.
+    renders these as a 'halo' effect: recommended values are 3 or 5. If the
+    renderer supports it and the text size is variable, the outline will be
+    scaled proportionally to the text and the value specified as
+    OUTLINEWIDTH is therefore the width at the same scale at which the
+    SIZE_ is specified.
 
 .. index::
    pair: LABEL; PARTIALS
@@ -401,6 +412,8 @@ SHADOWSIZE [x][y]|[attribute][attribute]|[x][attribute]|[attribute][y]
 
 .. index::
    pair: LABEL; SIZE
+
+.. _SIZE:
 
 SIZE [double]|[tiny|small|medium|large|giant]|[attribute]
     - Text size. Use a number to give the size in pixels of your

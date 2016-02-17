@@ -1,0 +1,114 @@
+.. index::
+   single: COMPOSITE
+
+.. _composite:
+
+*****************************************************************************
+ COMPOSITE
+*****************************************************************************
+
+Background
+------------------------------------
+
+The `COMPOSITE` block is used to achieve blending effects with
+MapServer.
+
+Some cartographic renderings benefit from the addition of advanced
+blending modes, as explained in detail in `Blend Modes`_.  This
+functionality is essential for more pleasant renderings of raster
+hillshadings over vector surfaces.  It is also useful for simulating
+different kinds of overprinting effects.
+
+.. seealso::
+
+   :ref:`rfc113`
+
+Performance is affected by advanced blending (all modes except
+`src-over`).
+
+Parameters
+------------------------------------
+
+.. index::
+   pair: COMPOSITE; OPACITY
+    
+.. _opacity:
+
+OPACITY [integer]
+
+    Sets the opacity level (or the inability to see through the layer) of all
+    classed pixels for a given layer.  A value of 100 is opaque and 
+    0 is fully transparent.
+
+COMPOP [string]
+
+    Name of the compositing operator to use when blending the temporary image
+    onto the main map image. See `http://en.wikipedia.org/wiki/Blend_modes`.
+    The default compositing operator is "src-over".
+
+    Available operators are:
+
+    - clear
+    - color-burn
+    - color-dodge
+    - contrast*
+    - darken
+    - difference
+    - dst
+    - dst-atop
+    - dst-in
+    - dst-out
+    - dst-over
+    - exclusion
+    - hard-light
+    - invert*
+    - invert-rgb*
+    - lighten
+    - minus*
+    - multiply
+    - overlay
+    - plus
+    - screen
+    - soft-light
+    - src
+    - src-atop
+    - src-in
+    - src-out
+    - src-over
+    - xor
+
+    Operators marked with a star (*) will only be supported when using an AGG
+    backends *and* when pixman support is not enabled, and will fall back to
+    "src-over" when this is not the case.
+
+Usage
+------------------------------------
+
+Simple transparency / opacity is achieved by only specifying the
+`OPACITY` parameter (this achieves the same effect as the legacy
+`LAYER` `OPACITY` parameter):
+
+.. code-block:: mapfile
+
+  LAYER
+    COMPOSITE
+      OPACITY 70
+    END # COMPOSITE
+  ...
+  END # LAYER
+
+The darkening effect is achieved by adding the `COMPOP` parameter with
+the value `darken`:
+
+.. code-block:: mapfile
+
+  LAYER
+    COMPOSITE
+      OPACITY 100
+      COMPOP "darken"
+    END # COMPOSITE
+  ...
+  END # LAYER
+
+
+.. _`Blend Modes`: http://en.wikipedia.org/wiki/Blend_modes

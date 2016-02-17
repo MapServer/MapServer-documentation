@@ -67,7 +67,7 @@ Software Requirements
 ---------------------
 
 In order to enable MapServer to serve WFS, it MUST be compiled against
-certain librairies:
+certain libraries:
 
 - PROJ.4: The reprojection library. Version 4.4.3 or greater is required.
 
@@ -261,6 +261,13 @@ layer in your WFS:
    At the map top-level the `wfs_srs` / `ows_srs` metadata value takes
    precedence over the contents of the :ref:`PROJECTION` block.
 
+.. note::
+   The first advertised `wfs_srs` / `ows_srs` metadata value will be used
+   as the default projection of the bbox requested (unless explicitly set)
+   and will be using in spatial filtering the data for those layer types 
+   that support spatial filtering. If the data is in a different projection, 
+   the spatial filter BBOX will be projected to match the source data.
+
 At the layer level, if both the `wfs_srs` / `ows_srs` metadata and the
 PROJECTION object are set to different values, then the `wfs_srs` /
 `ows_srs` metadata defines the projection to use in advertising this
@@ -413,7 +420,7 @@ potentially with parameters whose value can be assigned by the client
 during a GetFeature request.
 
 At WEB.METADATA level, a "wfs_storedqueries" metadata item can be
-specified with a comma seperated list of stored queries ids.
+specified with a comma separated list of stored queries ids.
 
 Then for each stored query id, "wfs_[storedqueryid]_inlinedef" must be
 specified with a valid <StoredQueryDescription> as value. As it is not
@@ -573,6 +580,40 @@ mapfile:
 
 Web Object Metadata
 -------------------
+
+.. index:: 
+   triple: WFS; METADATA; ows_allowed_ip_list
+
+.. index:: 
+   triple: WFS; METADATA; wfs_allowed_ip_list
+
+**ows_allowed_ip_list** (or wfs_allowed_ip_list)
+
+- *Description:* (Optional) A list of IP addresses that will be
+  allowed access to the service.
+
+  Example::
+
+    METADATA
+      "ows_allowed_ip_list" "123.45.67.89 11.22.33.44"
+    END
+
+.. index:: 
+   triple: WFS; METADATA; ows_denied_ip_list
+
+.. index:: 
+   triple: WFS; METADATA; wfs_denied_ip_list
+
+**ows_denied_ip_list** (or wfs_denied_ip_list)
+
+- *Description:* (Optional) A list of IP addresses that will be denied
+  access to the service.
+
+  Example::
+
+    METADATA
+      "ows_denied_ip_list" "123.45.67.89 11.22.33.44"
+    END
 
 .. index:: 
    triple: WFS; METADATA; ows_schemas_location
@@ -770,7 +811,7 @@ Web Object Metadata
    triple: WFS; METADATA; wfs_storedqueries
 
 **wfs_storedqueries**
-  (Optional, WFS 2.0) A comma separted list of stored queries IDs. The
+  (Optional, WFS 2.0) A comma separated list of stored queries IDs. The
   definition of each of those stored queries must be given with
   wfs_[storedqueryid]_inlinedef or wfs_[storedqueryid]_filedef
 
@@ -979,9 +1020,10 @@ Layer Object
 .. index:: 
    triple: WFS; METADATA; gml_[item name]_type
 
-**gml_[item name]_type**
-  (Optional) Specifies the type of the attribute.  Valid values are
-  Integer|Real|Character|Date|Boolean.
+**gml_[item name]_type** (Optional)
+  Specifies the type of the attribute.  Valid values are the OGR data
+  types: Integer|Real|Character|Date|Boolean.  Mapserver translates
+  these to valid GML data types.
 
 .. index:: 
    triple: WFS; METADATA; gml_[item name]_value
@@ -1037,6 +1079,18 @@ Layer Object
 **gml_xml_items**
   (Optional) A comma delimited list of items that should not be
   XML-encoded.
+
+.. index:: 
+   triple: WFS; METADATA; ows_allowed_ip_list
+
+**ows_allowed_ip_list**
+  Same as ows_allowed_ip_list in the Web Object. 
+
+.. index:: 
+   triple: WFS; METADATA; ows_denied_ip_list
+
+**ows_denied_ip_list**
+  Same as ows_denied_ip_list in the Web Object. 
 
 .. index:: 
    triple: WFS; METADATA; wfs_abstract
@@ -1172,7 +1226,7 @@ To-do Items and Known Limitations
 .. _`OGC Web Feature Service Implementation Specification`: https://portal.opengeospatial.org/files/?artifact_id=7176
 .. _`Geography Markup Language Implementation Specification`: https://portal.opengeospatial.org/files/?artifact_id=7174
 .. _`OGC Web Services Workshop package`: http://ms-ogc-workshop.maptools.org/
-.. _`MS4W`: http://www.maptools.org/ms4w/
+.. _`MS4W`: http://www.ms4w.com
 .. _`WFS 1.0.0 specification`: https://portal.opengeospatial.org/files/?artifact_id=7176
 .. _`Quantum GIS`: http://www.qgis.org/
 .. _`Deegree`: http://www.deegree.org/
@@ -1182,7 +1236,7 @@ To-do Items and Known Limitations
 .. _`TinyOWS`: http://www.tinyows.org
 .. _`GML2 request output`: http://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=1.0.0&REQUEST=getfeature&TYPENAME=continents&MAXFEATURES=1&OUTPUTFORMAT=gml2
 .. _`GML3 request output`: http://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=1.0.0&REQUEST=getfeature&TYPENAME=continents&MAXFEATURES=1&OUTPUTFORMAT=gml3
-.. _`bug#884`: http://trac.osgeo.org/mapserver/ticket/884
+.. _`bug#884`: https://github.com/mapserver/mapserver/issues/884
 .. _`OGC WFS 2.0 specification`: http://portal.opengeospatial.org/files/?artifact_id=39967
 .. _`OGC Filter Encoding 2.0 specification`: http://portal.opengeospatial.org/files/?artifact_id=39968
 .. _`OGC GML 3.2.1 specification`: http://portal.opengeospatial.org/files/?artifact_id=20509

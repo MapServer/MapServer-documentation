@@ -1,0 +1,155 @@
+.. _rfc113:
+
+======================================
+MS RFC 113: Layer Compositing Pipeline
+======================================
+
+:Date:  2015/02
+:Author: Thomas Bonfort
+:Contact: thomas.bonfort@gmail.com
+:Status: Implemented
+:Version: MapServer 7.0
+
+1. Motivation
+=============
+
+Some cartographic renderings would benefit from the addition of advanced
+blending modes, as can be explained in detail in
+http://en.wikipedia.org/wiki/Blend_modes . In particular, this functionality is
+essential for more pleasant renderings of raster hillshadings over vector
+surfaces.
+
+2. Proposed enhancement
+=======================
+
+The LAYER->OPACITY functionality will be replaced with one or more LAYER->COMPOSITE
+blocks that will define which compositing mode should be used to blend the current
+layer onto the pre-exisiting basemap. Similarly to when using the actual LAYER->OPACITY
+mechanism, the addition of a LAYER->COMPOSITE block will instruct mapserver to render
+the current layer in a temporary image buffer and composite it back onto the base image
+in a final step.
+
+::
+  
+  LAYER
+    COMPOSITE
+      COMPOP "multiply"
+      OPACITY 70
+      COMPFILTER "foo" #reserved for future use
+    END
+  END
+
+The COMPFILTER keyword will allow to also apply some kind of filter to the pixels
+before compositing them onto the base image (this would typically be used to apply
+a blurring filter to the layer to obtain a halo effect around geometries). The syntax
+and implementations for such features will be determined in a future release and RFC.
+Supporting multiple COMPOSITE blocks inside a LAYER will only make real sense once these
+COMPFILTERs are decided upon.
+
+2.1 Supported Compositing Operations
+------------------------------------
+
+The default compositing operator which is equivalent to the current
+layer compositing operator is "src-over". The COMPOP values that
+can be used should be explicit and are listed here:
+
+- clear
+- color-burn
+- color-dodge
+- contrast*
+- darken
+- difference
+- dst
+- dst-atop
+- dst-in
+- dst-out
+- dst-over
+- exclusion
+- hard-light
+- invert*
+- invert-rgb*
+- lighten
+- minus*
+- multiply
+- overlay
+- plus
+- screen
+- soft-light
+- src
+- src-atop
+- src-in
+- src-out
+- src-over
+- xor
+
+Operators marked with a star (*) will only be supported when using an AGG
+backends *and* when pixman support is not enabled, and will fall back to
+"src-over" when this is not the case.
+
+2.2 Backwards Compatibility
+===========================
+
+LAYER->OPACITY will be deprecated and should be replaced by
+
+::
+
+  LAYER
+    COMPOSITE
+      OPACITY 70
+    END
+
+in new mapfiles. The mapfile parser and mapscript setters/getters will be updated
+to work with LAYER->OPACITY but will produce unspecified results if used in
+conjunction with COMPOSITE blocks.
+
+2.3 Performance Implications
+============================
+
+None if not explicitly enabled. Depending on the selected compositing operator
+performance may be slightly degraded compared to when using "src-over".
+
+2.4 Limitations
+===============
+
+- The Compositing pipeline is ony supported by pixel renderers, and as such will
+  not be functional for PDF and SVG backends.
+- Some compositing operators are not supported by the cairo backends or when pixman
+  support has been enabled.
+
+3. Implementation Details
+=========================
+
+3.1 Architecture
+----------------
+
+- Renderers will have their vtable signature updated to include a
+  compositeRasterBuffer() function to be used when compositing has been
+  requested.
+
+- msDrawMap() will be modified to create a temporary image and then call
+  compositeRasterBuffer() once the layer rendering is over.
+
+- TBD: The current implementation can be configured to use pixman as an external
+  dependency to enable use of SSE optimized operations inside the AGG renderer.
+  Whether this will be kept in the long term should be decided upon depending on
+  the cost/benefit ratio (performance, features, dependencies)
+
+3.1 Affected files
+------------------
+
+- mapfile.c, maplexer.l: parser, keywords.
+- mapagg.cpp, mapcairo.c: actual compositing operations
+- mapcontext.c mapcopy.c, mapkml.c, maplegend.c, mapogcsld.c, maputil.c, mapscripts: housekeeping
+  and backwards compatibility
+- mapdraw.c: calls to compositing backends on drawing operations
+
+3.2 Tracking Issue
+------------------
+
+- code: https://github.com/tbonfort/mapserver/compare/compositing (to be updated with PR#)
+- tests: TBD
+
+4. Voting History
+=================
+
++1 from ThomasB, StephanM, MikeS, SteveW, DanielM, TomK and PerryN

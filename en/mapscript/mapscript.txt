@@ -18,8 +18,7 @@
 :Contact: szekerest at gmail.com
 :Author: Daniel Morissette
 :Contact: dmorisette at mapgears.com
-:Revision: $Revision$
-:Date: $Date$
+:Last Updated: 2015-05-21
 
 .. contents::
     :depth: 3
@@ -710,6 +709,11 @@ addLabel( labelObj ) : int
 clone( ) : classObj
     Return an independent copy of the class without a parent layer.
 
+convertToString() : string
+    Saves the object to a string.  Provides the inverse option for
+    updateFromString.
+    .. versionadded:: 6.4
+
 createLegendIcon( mapObj_ map, layerObj_ layer, int width, int height ) : imageObj_
     Draw and return a new legend icon.
 
@@ -823,18 +827,14 @@ associations.
 colorObj Attributes
 -------------------
 
+alpha : int
+    Alpha (opacity) component of color in range [0-255]
+
 blue : int
     Blue component of color in range [0-255]
 
 green : int
     Green component of color in range [0-255]
-
-pen : int
-    Don't mess with this unless you know what you are doing! 
-    
-    .. note:: Because of the issue with *pen*, setting colors by
-       individual components is unreliable.  Best practice is to use
-       setRGB(), setHex(), or assign to a new instance of colorObj().
 
 red : int
     Red component of color in range [0-255]
@@ -842,20 +842,24 @@ red : int
 colorObj Methods
 ----------------
 
-new colorObj( [ int red=0, int green=0, int blue=0, int pens=-4 ] ) : colorObj_ 
+new colorObj( [ int red=0, int green=0, int blue=0, int alpha=255 ] ) : colorObj_ 
     Create a new instance.  The color arguments are optional.
     
 setHex( string hexcolor ) : int 
     Set the color to values specified in case-independent hexadecimal
-    notation.  Calling setHex('#ffffff') assigns values of 255 to each
-    color component.  Returns MS_SUCCESS or MS_FAILURE.
+    notation.  hex must start with a '#' followed by three or four hex bytes,
+    e.g. '#ffffff' or '#ffffffff'.  If only three hex bytes are supplied, the
+    alpha will be set to 255.  Calling setHex('#ffffff') therefore assigns
+    values of 255 to each color component, including the alpha.  Returns
+    MS_SUCCESS or MS_FAILURE.
     
-setRGB( int red, int green, int blue ) : int 
-    Set all three RGB components.  Returns MS_SUCCESS or MS_FAILURE.
+setRGB( int red, int green, int blue, int alpha=255 ) : int 
+    Set all four RGBA components.  Returns MS_SUCCESS or MS_FAILURE.
     
 toHex() : string 
     Complement to setHex, returning a hexadecimal representation of the
-    color components.
+    color components.  If alpha is 255 then this is three hex bytes "#rrggbb",
+    otherwise four hex bytes "#rrggbbaa".
 
 
 .. index::
@@ -1308,6 +1312,11 @@ wrap : string
 labelObj Methods
 ----------------
 
+convertToString() : string
+    Saves the object to a string.  Provides the inverse option for
+    updateFromString.
+    .. versionadded:: 6.4
+
 getBinding( int binding ) : string
     Get the attribute binding for a specified label property. Returns
     NULL if there is no binding for this property.
@@ -1593,6 +1602,11 @@ clone() : layerObj
 close() : void
     Close the underlying layer.
 
+convertToString() : string
+    Saves the object to a string.  Provides the inverse option for
+    updateFromString.
+    .. versionadded:: 6.4
+
 .. note:: demote() is removed in MapServer 4.4  
 
 draw( mapObj_ map, imageObj_ image ) : int
@@ -1718,14 +1732,14 @@ moveClassDown( int class ) : int
     The class specified by the class index will be moved up into
     the array of layers. Returns MS_SUCCESS or MS_FAILURE.
     ex. moveClassDown(1) will have the effect of moving class 1
-    down to postion 2, and the class at position 2 will be moved
+    down to position 2, and the class at position 2 will be moved
     to position 1.
 
 moveClassUp( int class ) : int 
     The class specified by the class index will be moved up into
     the array of layers. Returns MS_SUCCESS or MS_FAILURE.
     ex. moveClassUp(1) will have the effect of moving class 1
-    up to postion 0, and the class at position 0 will be moved
+    up to position 0, and the class at position 0 will be moved
     to position 1.
 
 nextShape( ) : shapeObj_
@@ -1935,7 +1949,10 @@ width : int
 legendObj Methods
 -----------------
 
-None
+convertToString() : string
+    Saves the object to a string.  Provides the inverse option for
+    updateFromString.
+    .. versionadded:: 6.4
 
 
 .. index::
@@ -2164,6 +2181,11 @@ clone( ) : mapObj
 
     .. note:: In the Java module this method is named 'cloneMap'.
 
+convertToString() : string
+    Saves the object to a string.  Provides the inverse option for
+    updateFromString.
+    .. versionadded:: 6.4
+
 draw( ) : imageObj_
     Draw the map, processing layers according to their defined order and
     status.  Return an imageObj.
@@ -2217,7 +2239,7 @@ getLayersDrawingOrder( ) : int*
 
     .. note:: Unless the proper typemap is implemented for the
        module's language a user is more likely to get back an
-       unuseable SWIG pointer to the integer array.
+       unusable SWIG pointer to the integer array.
 
 getMetaData( string key ) : string
     Return the value at *key* from the web.metadata hash table.
@@ -2250,7 +2272,7 @@ getSymbolByName( string name ) : int
     Return the index of the named symbol in the map's symbolset.
 
     .. note:: This method is poorly named and too indirect.  It is
-       preferrable to use the getSymbolByName method of symbolSetObj,
+       preferable to use the getSymbolByName method of symbolSetObj,
        which really does return a symbolObj reference, or use the
        index method of symbolSetObj to get a symbol's index number.
 
@@ -2305,7 +2327,7 @@ processLegendTemplate( string names[], string values[], int numitems ) : string
     Process MapServer legend template and return HTML.
 
     .. note:: None of the three template processing methods will be
-       useable unless the proper typemaps are implemented in the
+       usable unless the proper typemaps are implemented in the
        module for the target language.  Currently the typemaps are not
        implemented.
     
@@ -2313,7 +2335,7 @@ processQueryTemplate( string names[], string values[], int numitems ) : string
     Process MapServer query template and return HTML.
 
     .. note:: None of the three template processing methods will be
-       useable unless the proper typemaps are implemented in the
+       usable unless the proper typemaps are implemented in the
        module for the target language.  Currently the typemaps are not
        implemented.
     
@@ -2321,7 +2343,7 @@ processTemplate( int generateimages, string names[], string values[], int numite
     Process MapServer template and return HTML.
 
     .. note:: None of the three template processing methods will be
-       useable unless the proper typemaps are implemented in the
+       usable unless the proper typemaps are implemented in the
        module for the target language.  Currently the typemaps are not
        implemented.
     
@@ -2912,7 +2934,10 @@ width : int
 referenceMapObj Methods
 -----------------------
 
-None
+convertToString() : string
+    Saves the object to a string.  Provides the inverse option for
+    updateFromString.
+    .. versionadded:: 6.4
 
 
 .. index::
@@ -3029,7 +3054,10 @@ width : int
 scalebarObj Methods
 -------------------
 
-None
+convertToString() : string
+    Saves the object to a string.  Provides the inverse option for
+    updateFromString.
+    .. versionadded:: 6.4
 
 
 .. index::
@@ -3066,7 +3094,7 @@ get( int i, shapeObj_ shape ) : int
     Returns MS_SUCCESS or MS_FAILURE.
 
 getShape( int i ) : shapeObj_
-    Returns the shapefile feature at index i.  More effecient than *get*.
+    Returns the shapefile feature at index i.  More efficient than *get*.
 
 *TODO*
 
@@ -3384,6 +3412,11 @@ new styleObj( [ classObj_ parent_class ] ) : styleObj
 clone : styleObj
     Returns an independent copy of the style with no parent class.
 
+convertToString() : string
+    Saves the object to a string.  Provides the inverse option for
+    updateFromString.
+    .. versionadded:: 6.4
+
 getBinding( int binding ) : string
     Get the attribute binding for a specified style property. Returns
     NULL if there is no binding for this property.
@@ -3623,6 +3656,11 @@ template : string
 webObj Methods
 --------------
 
-None.
+convertToString() : string
+    Saves the object to a string.  Provides the inverse option for
+    updateFromString.
+    .. versionadded:: 6.4
+
+
 
 

@@ -1,0 +1,96 @@
+.. _rfc112:
+
+============================================================================
+MS RFC 112: Retry "Follow" label positioning after maxoverlapangle colision 
+============================================================================
+
+:Date:  2014/10
+:Author: Thomas Bonfort
+:Contact: thomas.bonfort@gmail.com
+:Status: Implemented
+:Version: MapServer 7.2
+
+1. The Current Situation
+========================
+
+The current algorithm used to place "FOLLOW" labels has the following limitations:
+
+- When two subsequent caracters of the label have a relative angle that is over
+  the defined "maxoverlapangle", the label is unconditionally discarded.
+- The function used to compute character positions relies on "gotos" that
+  interrupt the code flow
+- Placement of repeated labels works optimally for odd number of repetitions
+  only when using repeatdistance, i.e. even if there's room for two labels,
+  only one will be rendered
+
+2. Proposed enhancement
+=======================
+
+- The algorithm will be extended to account for and try to correct for
+  colisions happening when maxoverlapangle kicks in, by ensuring that such
+  colisions may only occur between words:
+
+  - collisions hapenning on a 'space' character will be ignored
+  - when a colision does occur, the label placement will be retried with an
+    offset placed such that the colision falls either on a space or at the
+    beginning or end of the string.
+
+- Code will be refactored to avoid usage of gotos
+
+- The placement algorithm will be modified to optimally treat an even number of
+  label repetitions:
+
+ - before:
+
+  ::
+
+   -------label--------
+
+ - after:
+  
+  ::
+
+   --label------label--
+
+2.1 Questions/Limitations
+=========================
+
+- Should the retrying behavior be enabled by default, and/or can it be
+  deactivated ? Computing and testing a retried offset is not costly, the
+  impact in terms of performance should be minimal and will result in more
+  labels being placed.
+- Should the maximum allowed offset be configurable?  Seems unnecessary for the
+  time being, all the relevant info as to what the maximum offset can be is contained
+  by the line length, label length, and repeatdistance. 
+
+2.2 Backwards Compatibility
+===========================
+
+None expected aside from the fact created maps may contain more/different labels
+than beforehand.
+
+2.3 Performance Implications
+============================
+
+Limited. Retrying a label after a colision is not a cpu-heavy operation. Costly 
+operations such as computing glyph advances and/or shaping text runs are not
+re-run for each retry.
+
+3. Implementation Details
+=========================
+
+3.1 Affected files
+------------------
+
+- mapprimitive.c: implement retrying behavior - compute retried offsets
+
+3.2 Tracking Issue
+------------------
+
+- code: https://github.com/mapserver/mapserver/pull/5048
+- tests: https://github.com/tbonfort/msautotest/tree/displace_follow_labels
+
+4. Voting History
+=================
+
++1 from SteveL, DanielM, StephanM, PerryN, MikeS, StephenW, ThomasB

@@ -317,7 +317,7 @@ would look like:
 
 ::
 
-  http://my.host.com/cgi-bin/mapserv?map=mywcs.map&SERVICE=wcs
+  http://my.host.com/cgi-bin/mapserv?map=mywcs.map&SERVICE=WCS
     &VERSION=1.0.0&REQUEST=GetCoverage&coverage=bathymetry
     &CRS=EPSG:42304&BBOX=-2200000,-712631,3072800,3840000&WIDTH=3199
     &HEIGHT=2833&FORMAT=GTiff
@@ -525,7 +525,8 @@ The following KVP request parameters are available in WCS 2.0:
 
     **SUBSETTINGCRS=crs:** This parameter defines the crs subsetting all 
     *SUBSETs* are expressed in, and also the output CRS if no *OUTPUTCRS* is 
-    specified.
+    specified. By default all subsets are interpreted to be relative to
+    the coverages CRS.
     
     **OUTPUTCRS=crs:** This parameter defines in which crs the output 
     image should be expressed in. 
@@ -576,7 +577,7 @@ available for the GeoTIFF outputformat:
     **GEOTIFF:PREDICTOR=None|Horizontal|FloatingPoint:** The predictor value 
     for the LZW and Deflate compression methods.
 
-    **GEOTIFF:INTERLEAVE=Band|Pixel:** Defines wether the image shall be band 
+    **GEOTIFF:INTERLEAVE=Band|Pixel:** Defines whether the image shall be band 
     or pixel interleaved.
 
     **GEOTIFF:TILING=true|false:** Defines if the output image shall be 
@@ -613,7 +614,9 @@ Unchanged KVP parameters
 The following parameters have not (or just slightly) changed since the 
 last version of the WCS standard.
 
-    **VERSION=version:** For WCS 2.0, this should be set to '2.0.1'.
+    **VERSION=version:** For WCS 2.0, this should be set to '2.0.1'. This 
+      parameter is deprecated for GetCapabilities related to OGC Web Services 
+      Common Standard 2.0.0.
     
     **SERVICE=service**
     
@@ -643,24 +646,26 @@ KVP request examples
 The below sample request outline the new KVP request syntax::
 
   # GetCapabilities
-  http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.1
+  http://www.yourserver.com/wcs?SERVICE=WCS&ACCEPTVERSIONS=1.0.0,2.0.1
     &REQUEST=GetCapabilities
+  http://www.yourserver.com/wcs?SERVICE=WCS&REQUEST=GetCapabilities
   # DescribeCoverage 2.0
-  http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.1
+  http://www.yourserver.com/wcs?SERVICE=WCS&VERSION=2.0.1
     &REQUEST=DescribeCoverage&COVERAGEID=grey
   # GetCoverage 2.0 image/tiff full
-  http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.1
+  http://www.yourserver.com/wcs?SERVICE=WCS&VERSION=2.0.1
     &REQUEST=GetCoverage&COVERAGEID=grey&FORMAT=image/tiff
   # GetCoverage 2.0 multipart/related (GML header & image/tiff) full
-  http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.1
+  http://www.yourserver.com/wcs?SERVICE=WCS&VERSION=2.0.1
     &REQUEST=GetCoverage&COVERAGEID=grey&FORMAT=image/tiff
     &MEDIATYPE=multipart/related
-  # GetCoverage 2.0 image/tiff trim x y both
-  http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.1
+  # GetCoverage 2.0 image/tiff trim x y both in imageCRS
+  http://www.yourserver.com/wcs?SERVICE=WCS&VERSION=2.0.1
     &REQUEST=GetCoverage&COVERAGEID=grey&FORMAT=image/tiff
     &SUBSET=x(10,200)&SUBSET=y(10,200)
+    &SUBSETTINGCRS=imageCRS
   # GetCoverage 2.0 reproject to EPSG 4326
-  http://www.yourserver.com/wcs?SERVICE=wcs&VERSION=2.0.1
+  http://www.yourserver.com/wcs?SERVICE=WCS&VERSION=2.0.1
     &REQUEST=GetCoverage&COVERAGEID=grey&FORMAT=image/tiff
     &SUBSET=x(-121.488744,-121.485169)
     &SUBSETTINGCRS=http://www.opengis.net/def/crs/EPSG/0/4326
@@ -683,7 +688,7 @@ For WCS enabled layers in MapServer, there are different possibilities
 for declaring coverage metadata for WCS 2.0.  In the simplest case,
 all of the required metadata can be retrieved from the source image.
 
-For some reason this may not be desireable, maybe because the source
+For some reason this may not be desirable, maybe because the source
 image does not provide these metadata.  Not every input image format
 has geospatial metadata attached.  In this case, the layer metadata
 can be used to provide this information.
@@ -760,7 +765,7 @@ of the bands name:
   * (wcs|ows)_description
   * (wcs|ows)_interval
   
-If no specific or default value is given, the output is dependant on 
+If no specific or default value is given, the output is dependent on 
 the metadata key. The UOM, for example will be set to 'W.m-2.Sr-1', 
 interval and significant figures will be determined according to the 
 image type and definition, description, and interpretation will not be 
@@ -1036,6 +1041,40 @@ Web Object Metadata
 -------------------
 
 .. index:: 
+   triple: WCS; METADATA; ows_allowed_ip_list
+
+.. index:: 
+   triple: WCS; METADATA; wcs_allowed_ip_list
+
+**ows_allowed_ip_list** (or wcs_allowed_ip_list)
+
+- *Description:* (Optional) A list of IP addresses that will be
+  allowed access to the service.
+
+  Example::
+
+    METADATA
+      "ows_allowed_ip_list" "123.45.67.89 11.22.33.44"
+    END
+
+.. index:: 
+   triple: WCS; METADATA; ows_denied_ip_list
+
+.. index:: 
+   triple: WCS; METADATA; wcs_denied_ip_list
+
+**ows_denied_ip_list** (or wcs_denied_ip_list)
+
+- *Description:* (Optional) A list of IP addresses that will be denied
+  access to the service.
+
+  Example::
+
+    METADATA
+      "ows_denied_ip_list" "123.45.67.89 11.22.33.44"
+    END
+
+.. index:: 
    triple: WCS; METADATA; wcs_abstract
 
 **wcs_abstract**
@@ -1259,6 +1298,18 @@ wcs_responsibleparty_phone_voice, wcs_responsibleparty_postionname**
 
 Layer Object Metadata
 ---------------------
+
+.. index:: 
+   triple: WCS; METADATA; ows_allowed_ip_list
+
+**ows_allowed_ip_list**
+  Same as ows_allowed_ip_list in the Web Object. 
+
+.. index:: 
+   triple: WCS; METADATA; ows_denied_ip_list
+
+**ows_denied_ip_list**
+  Same as ows_denied_ip_list in the Web Object. 
 
 .. index:: 
    triple: WCS; METADATA; wcs_abstract
@@ -1589,11 +1640,11 @@ To-do Items and Known Limitations
 .. _`WCS 2.0 Schemas`: http://schemas.opengis.net/wcs/2.0/
 .. _`OWS Common 2.0`: http://portal.opengeospatial.org/files/?artifact_id=38867
 .. _`Open Geospatial Consortium (OGC)`: http://www.opengeospatial.org/
-.. _`MapServer for Windows (MS4W)`: http://www.maptools.org/ms4w/index.phtml
-.. _`WCS 2.0 tests in msautotest`: http://trac.osgeo.org/mapserver/browser/trunk/msautotest/wxs/wcs_simple.map
+.. _`MapServer for Windows (MS4W)`: http://www.ms4w.com
+.. _`WCS 2.0 tests in msautotest`: https://github.com/mapserver/msautotest/blob/master/wxs/wcs_simple.map
 .. _`MS RFC 67`: http://mapserver.org/development/rfc/ms-rfc-67.html
 .. _`public RFC on EO-WCS`: http://www.opengeospatial.org/standards/requests/81
 .. _`EOxServer`: http://eoxserver.org
-.. _`WCS DescribeCoverage live example`: http://demo.mapserver.org/cgi-bin/wcs?SERVICE=wcs&VERSION=1.0.0&REQUEST=DescribeCoverage&COVERAGE=modis
-.. _`WCS GetCapabilities live example`: http://demo.mapserver.org/cgi-bin/wcs?SERVICE=wcs&VERSION=1.0.0&REQUEST=GetCapabilities
-.. _`WCS GetCoverage live example`:  http://demo.mapserver.org/cgi-bin/wcs?SERVICE=wcs&VERSION=1.0.0&REQUEST=GetCoverage&COVERAGE=modis-001&CRS=EPSG:26915&BBOX=159707,4597395,1400707,5501395&WIDTH=400&HEIGHT=300&FORMAT=GEOTIFF_RGB
+.. _`WCS DescribeCoverage live example`: http://demo.mapserver.org/cgi-bin/wcs?SERVICE=WCS&VERSION=1.0.0&REQUEST=DescribeCoverage&COVERAGE=modis
+.. _`WCS GetCapabilities live example`: http://demo.mapserver.org/cgi-bin/wcs?SERVICE=WCS&VERSION=1.0.0&REQUEST=GetCapabilities
+.. _`WCS GetCoverage live example`:  http://demo.mapserver.org/cgi-bin/wcs?SERVICE=WCS&VERSION=1.0.0&REQUEST=GetCoverage&COVERAGE=modis-001&CRS=EPSG:26915&BBOX=159707,4597395,1400707,5501395&WIDTH=400&HEIGHT=300&FORMAT=GEOTIFF_RGB

@@ -1,38 +1,41 @@
 .. _autotest:
 
 *****************************************************************************
- Regression Testing 
+ Regression Testing
 *****************************************************************************
 
-:Author:        Frank Warmerdam
-:Contact:       warmerdam at pobox.com
-:Revision: $Revision$
-:Date: $Date$
-:Last Updated: 2011/3/20
+:Author:       Frank Warmerdam
+:Contact:      warmerdam at pobox.com
+:Last Updated: 2015/2/13
 
 .. contents:: Table of Contents
     :depth: 2
     :backlinks: top
 
 
-The msautotest is a suite of test maps, data files, expected result images,
+`msautotest` is a suite of test maps, data files, expected result images,
 and test scripts intended to make it easy to run an a set of automated
 regression tests on MapServer.
 
-Getting msautotest
+Getting `msautotest`
 ------------------------------------------------------------------------------
 
-The autotest is available from SVN. On Unix it could be fetched something like:
+Skip this section if you've followed the :ref:`vagrant` steps.
 
-::
+`msautotest` is available from GitHub. On Unix it could be fetched
+something like::
 
-    % svn checkout http://svn.osgeo.org/mapserver/trunk/msautotest
+    git checkout https://github.com/mapserver/msautotest.git
 
-This would create an msautotest subdirectory whereever you are. I normally put
+This would create an `msautotest` subdirectory wherever you are. I normally put
 the autotest within my MapServer directory.
 
 Running msautotest
 ------------------------------------------------------------------------------
+
+If you're using Vagrant as described in :ref:`vagrant` everything is
+installed and configured as needed and you may skip the next three
+paragraphs.
 
 The autotest requires python (but not python MapScript), so if you don't have
 python on your system - get and install it. More information on python is
@@ -56,8 +59,8 @@ Verify that you can run stuff by typing 'shp2img -v' in the autotest
 directory::
 
      warmerda@gdal2200[152]% shp2img -v
-     MapServer version 3.7 (development) OUTPUT=PNG OUTPUT=JPEG OUTPUT=WBMP 
-     SUPPORTS=PROJ SUPPORTS=TTF SUPPORTS=WMS_SERVER SUPPORTS=GD2_RGB 
+     MapServer version 3.7 (development) OUTPUT=PNG OUTPUT=JPEG OUTPUT=WBMP
+     SUPPORTS=PROJ SUPPORTS=TTF SUPPORTS=WMS_SERVER SUPPORTS=GD2_RGB
      INPUT=TIFF INPUT=EPPL7 INPUT=JPEG INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE
 
 Now you are ready to run the tests. The tests are subdivided into categories,
@@ -66,7 +69,7 @@ currently just "gdal", "misc", and "wxs" each as a subdirectory. To run the
 
 Unix::
 
-  ./run_test.py 
+  ./run_test.py
 
 Windows::
 
@@ -133,8 +136,8 @@ directory. A binary comparison is then done to the corresponding file in the
 expected directory and differences are reported. The general principles for
 the test suite are that:
 
-- The test data should be small so it can be easily stored and checked out of
-  svn without big files needing to be downloaded.
+- The test data should be small so it can be easily stored and checked out
+  without big files needing to be downloaded.
 
 - The test data should be completely contained within the test suite ... no
   dependencies on external datasets, or databases that require additional
@@ -172,7 +175,7 @@ statement, but otherwise the comparisons are done similarly.
 The initial comparison of files is done as a binary file comparison.  If
 that fails, for image files, there is an attempt to compare the image checksums
 using the GDAL Python bindings.  If the GDAL Python bindings are not available
-this step is quietly skipped.  
+this step is quietly skipped.
 
 If you install the PerceptualDiff program (http://pdiff.sourceforge.net/) and
 it is in the path, then the autotest will attempt to use it as a last fallback
@@ -180,11 +183,11 @@ when comparing images. If images are found to be "perceptually" the same the
 test will pass with the message "result images perceptually match, though
 files differ." This can dramatically cut down the number of apparent failures
 that on close inspection are for all intents and purposes identical. Building
-PerceptualDiff is a bit of a hassle and it will miss some significant 
+PerceptualDiff is a bit of a hassle and it will miss some significant
 differences so it's use is of mixed value.
 
-For non-image results, such as xml and html output, the special image 
-comparisons are skipped. 
+For non-image results, such as xml and html output, the special image
+comparisons are skipped.
 
 
 
@@ -228,7 +231,7 @@ For instance, the following line in misc/tr_scalebar.map indicates that the
 output file should be called tr_scalebar.png, the commandline should look like
 "[SCALEBAR] [MAPFILE] [RESULT]" instead of the default "[SHP2IMG] -m [MAPFILE]
 -o [RESULT]".
- 
+
 ::
 
     RUN_PARMS: tr_scalebar.png [SCALEBAR] [MAPFILE] [RESULT]
@@ -256,35 +259,35 @@ Result File Preprocessing
 ------------------------------------------------------------------------------
 
 As mentioned above the [RESULT_DEMIME] directive can be used for image file
-output from web services (ie. WMS GetMap requests).  
+output from web services (ie. WMS GetMap requests).
 
-For text, XML and HTML output it can also be helpful to apply other 
-pre-processing to the output file to make comparisons easlier.   The 
+For text, XML and HTML output it can also be helpful to apply other
+pre-processing to the output file to make comparisons easlier.   The
 [RESULT_DEVERSION] directive in the RUN_PARMS will apply several translations
 to the output file including:
 
-- stripping out the MapServer version string which changes depending on build 
+- stripping out the MapServer version string which changes depending on build
   options and version.
 
-- manipulating the format of exponential numbers to be consistent across 
+- manipulating the format of exponential numbers to be consistent across
   platforms (changes windows e+0nn format to e+nn).
 
-- strip the last decimal place off floating point numbers to avoid 
+- strip the last decimal place off floating point numbers to avoid
   unnecessary sensitivity to platform specific number handling.
 
-- blank out timestamps to avoid "current time" sensitivity. 
+- blank out timestamps to avoid "current time" sensitivity.
 
 In some cases it is also helpful to strip out lines matching a particular
-pattern.  The [STRIP:xxx] directive drops all lines containing the indicated 
-substring.  Multiple [STRIP:xxx] directives may be included in the command 
-string if desired.  For instance, the error reports from the runtime 
-substitution validation test (misc/runtime_sub.map) produces error messages 
+pattern.  The [STRIP:xxx] directive drops all lines containing the indicated
+substring.  Multiple [STRIP:xxx] directives may be included in the command
+string if desired.  For instance, the error reports from the runtime
+substitution validation test (misc/runtime_sub.map) produces error messages
 with an absolute path in them which changes for each person.  The following
 directive will drop any text lines in the result that contain the string
 ShapefileOpen, which will be error messages in this case::
 
  # RUN_PARMS: runtime_sub_test001.txt [MAPSERV] QUERY_STRING='map=[MAPFILE]
- &mode=map&layer=layer1&name1=bdry_counpy2' > [RESULT_DEVERSION] [STRIP:ShapefileOpen] 
+ &mode=map&layer=layer1&name1=bdry_counpy2' > [RESULT_DEVERSION] [STRIP:ShapefileOpen]
 
 
 What If A Test Fails?
@@ -306,7 +309,7 @@ expected. PNG should be pretty safe.
 TODO
 ------------------------------------------------------------------------------
 
-- Add lots of tests for different stuff!  Very little vector testing done yet. 
+- Add lots of tests for different stuff!  Very little vector testing done yet.
 
 - Add a high level script in the msautotest directory that runs the subscripts
   in all the subdirectories and produces a summary report.
@@ -339,22 +342,19 @@ Adding New Tests
   directory. These test datasets should be as small as possible! Reuse
   existing datasets if at all possible.
 
-- run the "run_tests.py" script.  
+- run the "run_tests.py" script.
 
 - verify that the newly created expected/<testname>.png file produces the
   results you expect. If not, revise the map and rerun the test, now checking
   the results/<testname>.png file. Move the results/<testname>.png file into
   the expected directory when you are happy with it.
- 
-- add the .map file, and the expected/<testname>.png file to SVN when you are
-  happy with them.  For example,
+
+- add the .map file, and the expected/<testname>.png file to the
+  repository when you are happy with them.  For example,
 
 ::
 
-    % svn add mynewtest.map expected/mynewtest.png
-    % svn commit -m "new" mynewtest.map expected/mynewtest.png
- 
+    % git add mynewtest.map expected/mynewtest.png
+    % git commit -m "My new test" mynewtest.map expected/mynewtest.png
+
 You're done!
-
-
-
