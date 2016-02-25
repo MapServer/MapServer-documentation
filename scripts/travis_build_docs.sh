@@ -6,9 +6,10 @@ if [[ $? -eq 0 ]]; then
   echo "building PDF"
   sudo apt-get update && sudo apt-get install texlive-latex-extra texlive-fonts-recommended
   # handle missing file 'newfloat.sty' in precise builds
+  pwd
   wget http://math.sut.ac.th/lab/software/texlive/texmf-dist/tex/latex/caption/newfloat.sty
-  mkdir build/latex/en/
-  mv newfloat.sty build/latex/en/
+  mkdir /home/travis/build/mapserver/docs/build/latex/en/
+  mv newfloat.sty /home/travis/build/mapserver/docs/build/latex/en/
   make all-pdf
 fi
 
