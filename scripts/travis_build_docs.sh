@@ -5,11 +5,10 @@ git log -n1 | grep -q "\\[build_pdf\\]"
 if [[ $? -eq 0 ]]; then
   echo "building PDF"
   sudo apt-get update && sudo apt-get install texlive-latex-extra texlive-fonts-recommended
-  # handle missing file 'newfloat.sty' in precise builds
-  pwd
+  # handle missing latex style file 'newfloat.sty' in precise packages
   wget http://math.sut.ac.th/lab/software/texlive/texmf-dist/tex/latex/caption/newfloat.sty
-  mkdir /home/travis/build/mapserver/docs/build/latex/en/
-  mv newfloat.sty /home/travis/build/mapserver/docs/build/latex/en/
+  mkdir -p build/latex/en/
+  mv newfloat.sty build/latex/en/
   make all-pdf
 fi
 
