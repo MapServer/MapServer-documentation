@@ -1,3 +1,13 @@
+**2016-02-25 - MapServer 7.0.1 and 6.4.3, and MapCache 1.4.1 are released**
+
+The maintenance versions of MapServer 7.0 and 6.4 have been released.
+See the :ref:`7.0.1 changelog <changelog-7-0-1>` and :ref:`6.4.3 changelog <changelog-6-4-3>`
+for the full list of changes.
+
+The maintenance release 1.4.1 of MapCache has been released.
+
+Head to :ref:`download` to obtain a copy.
+
 **2015-07-24 - MapServer 7.0.0 and MapCache 1.4 are released**
 
 The major version MapServer 7.0 has been released. The list of significant
