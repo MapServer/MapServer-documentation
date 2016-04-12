@@ -198,7 +198,7 @@ latex_elements = {
 # The font size ('10pt', '11pt' or '12pt').
 #'pointsize': '10pt',
 
-# necessary for unicode charactacters
+# necessary for unicode charactacters in pdf output
 'inputenc': '',
 'utf8extra': '',
 
