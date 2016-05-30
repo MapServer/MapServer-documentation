@@ -424,14 +424,8 @@ def setup(app):
     lexers['wkt'] = WKTLexer()
     lexers['mapfile'] = MapFileLexer()
     
-# patch Sphinx to avoid warnings of "nonlocal image URI found"
-import sphinx.environment
-from docutils.utils import get_source_line
+# avoid warnings of "nonlocal image URI found" (this parameter requires Sphinx >=1.4)
+suppress_warnings = ['image.nonlocal_uri']
 
-def _warn_node(self, msg, node):
-    if not msg.startswith('nonlocal image URI found:'):
-        self._warnfunc(msg, '%s:%s' % get_source_line(node))
-
-sphinx.environment.BuildEnvironment.warn_node = _warn_node
 
 
