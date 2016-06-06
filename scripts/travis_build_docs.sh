@@ -7,7 +7,7 @@ if [[ $? -eq 0 ]]; then
   sudo apt-get update && sudo apt-get install texlive-latex-extra texlive-fonts-recommended
   # handle missing latex style files 'newfloat.sty' & 'iftex.sty' in precise packages
   wget http://math.sut.ac.th/lab/software/texlive/texmf-dist/tex/latex/caption/newfloat.sty
-  wget ftp://ftp.tug.org/tex/texlive/Contents/live/texmf-dist/tex/generic/iftex/iftex.sty
+  wget http://math.sut.ac.th/lab/software/texlive/texmf-dist/tex/generic/iftex/iftex.sty
   mkdir -p build/latex/en/
   mv newfloat.sty build/latex/en/
   mv iftex.sty build/latex/en/
