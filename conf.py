@@ -207,7 +207,10 @@ latex_elements = {
 'babel' : '\\usepackage[english]{babel}',
 
 # Additional stuff for the LaTeX preamble.
-'preamble': '\setcounter{tocdepth}{3}'
+'preamble': r'''
+  \usepackage{hyperref}
+  \setcounter{tocdepth}{3}
+'''
 }
 
 # Documents to append as an appendix to all manuals.
