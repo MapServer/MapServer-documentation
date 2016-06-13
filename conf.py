@@ -202,6 +202,10 @@ latex_elements = {
 'inputenc': '',
 'utf8extra': '',
 
+# remove blank pages (between the title page and the TOC, etc.)
+'classoptions': ',openany,oneside', 
+'babel' : '\\usepackage[english]{babel}',
+
 # Additional stuff for the LaTeX preamble.
 'preamble': '\setcounter{tocdepth}{3}'
 }
