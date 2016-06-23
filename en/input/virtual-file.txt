@@ -194,3 +194,49 @@ Configure MapServer Layer
 .. warning:: 
 
     Virtual layers have a "cost" / are not as fast to display in MapServer as regular layers.
+    
+Display Remote (RASTER) File Directly in MapServer
+--------------------------------------------------
+
+Remote raster files can also be accessed through HTTP, using **/vsicurl/**
+
+Test Access through gdalinfo
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+	> gdalinfo /vsicurl/http://download.osgeo.org/gdal/data/gtiff/small_world.tif
+	
+::
+
+	Driver: GTiff/GeoTIFF
+	Files: /vsicurl/http://download.osgeo.org/gdal/data/gtiff/small_world.tif
+	Size is 400, 200
+	Coordinate System is:
+	GEOGCS["WGS 84",
+	    DATUM["WGS_1984",
+	        SPHEROID["WGS 84",6378137,298.257223563,
+	            AUTHORITY["EPSG","7030"]],
+	        AUTHORITY["EPSG","6326"]],
+	    PRIMEM["Greenwich",0],
+	    UNIT["degree",0.0174532925199433],
+	    AUTHORITY["EPSG","4326"]]
+	Origin = (-180.000000000000000,90.000000000000000)
+  	Pixel Size = (0.900000000000000,-0.900000000000000)
+  	...
+	
+
+Configure MapServer Layer
+^^^^^^^^^^^^^^^^^^^^^^^^^
+    
+.. code-block:: mapfile
+
+	LAYER
+  	  NAME "test"
+  	  TYPE RASTER
+  	  STATUS ON
+  	  DATA "/vsicurl/http://download.osgeo.org/gdal/data/gtiff/small_world.tif"
+  	  CLASS
+    	    NAME "test"
+  	  END
+	END # layer  
