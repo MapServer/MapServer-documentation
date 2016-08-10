@@ -11,7 +11,7 @@ PAPER         = a4
 SHELL = /bin/bash
 
 # Note: uk for ukrainian has been removed due to error with UK flag. We should use
-#       uk_UA if we need to enable again.
+# uk_UA if we need to enable again.
 TRANSLATIONS = ar de el es fr id it ja nl_NL pl ru sq tr
 LANGUAGES     = en $(TRANSLATIONS)
 BUILD_LANGUAGES = $(TRANSLATIONS)
