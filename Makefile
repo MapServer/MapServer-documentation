@@ -9,7 +9,9 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         = a4
 SHELL = /bin/bash
-BUILD_LANGUAGES = ar de el es fr id it ja nl_NL pl ru sq tr uk
+# Note: uk for ukrainian has been removed due to error with UK flag. We should use
+#       uk_UA if we need to enable again.
+BUILD_LANGUAGES = ar de el es fr id it ja nl_NL pl ru sq tr
 LANGUAGES     = en $(BUILD_LANGUAGES)
 
 # Internal variables.
