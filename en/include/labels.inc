@@ -133,6 +133,7 @@
 	php_install                    :ref:`PHP MapScript Installation <php_install>`
 	php_install_example_steps      :ref:`Example Steps of a Full Windows Installation <php_install_example_steps>`
 	projection                     :ref:`PROJECTION <projection>`
+	psc                            :ref:`Project Steering Committee <psc>`	
 	python                         :ref:`Python MapScript Appendix <python>`
 	querying                       :ref:`Querying <querying>`
 	querymap                       :ref:`QUERYMAP <querymap>`
