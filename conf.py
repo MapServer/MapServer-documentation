@@ -121,8 +121,8 @@ html_use_smartypants = True
 
 # Custom sidebar templates, maps document names to template names.
 html_sidebars = {
-    '**': ['sourcelink.html', 'sidebar2.html', 'localtoc2.html', 'searchbox.html'],
-"index":["indexsidebar.html", 'searchbox.html']}
+    '**': ['sourcelink.html', 'searchbox.html', 'sidebar2.html', 'localtoc2.html'],
+"index":['searchbox.html', "indexsidebar.html"]}
 # Additional templates that should be rendered to pages, maps page names to
 # template names.
 #html_additional_pages = {"index":'index.html'}
