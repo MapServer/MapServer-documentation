@@ -6,7 +6,9 @@
 
 :Author:       Frank Warmerdam
 :Contact:      warmerdam at pobox.com
-:Last Updated: 2015/2/13
+:Author:       Jeff McKenna
+:Contact:      jmckenna at gatewaygeomatics.com
+:Last Updated: 2016-09-20
 
 .. contents:: Table of Contents
     :depth: 2
@@ -22,13 +24,13 @@ Getting `msautotest`
 
 Skip this section if you've followed the :ref:`vagrant` steps.
 
-`msautotest` is available from GitHub. On Unix it could be fetched
+`msautotest` is available from GitHub, and exists inside the main
+MapServer repository, in /mapserver/msautotest/. On Unix it could be fetched
 something like::
 
-    git checkout https://github.com/mapserver/msautotest.git
+    git checkout https://github.com/mapserver/mapserver.git
 
-This would create an `msautotest` subdirectory wherever you are. I normally put
-the autotest within my MapServer directory.
+You will notice that a `msautotest` subdirectory exits after your checkout.
 
 Running msautotest
 ------------------------------------------------------------------------------
@@ -55,21 +57,46 @@ bash/sh::
 
  % PATH=$HOME/mapserver:$PATH
 
-Verify that you can run stuff by typing 'shp2img -v' in the autotest
+Verify that you can run stuff by typing 'shp2img -v' in the msautotest
 directory::
 
-     warmerda@gdal2200[152]% shp2img -v
-     MapServer version 3.7 (development) OUTPUT=PNG OUTPUT=JPEG OUTPUT=WBMP
-     SUPPORTS=PROJ SUPPORTS=TTF SUPPORTS=WMS_SERVER SUPPORTS=GD2_RGB
-     INPUT=TIFF INPUT=EPPL7 INPUT=JPEG INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE
+     % shp2img -v
+     MapServer version 7.0.1 OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ 
+     SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS 
+     SUPPORTS=RSVG SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER 
+     SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_
+     SERVER SUPPORTS=SOS_SERVER SUPPORTS=GEOS INPUT=JPEG INPUT=POSTGIS 
+     INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE
+
 
 Now you are ready to run the tests. The tests are subdivided into categories,
-currently just "gdal", "misc", and "wxs" each as a subdirectory. To run the
-"gdal" tests cd into the gdal directory and run the run_test.py script.
+each as its own subdirectory, such as:
+
+::
+
+  gdal
+  misc
+  mspython
+  php
+  query
+  renderers
+  wxs
+
+To run the "gdal" tests cd into the gdal directory and run the run_test.py script.
+
+.. note::
+   Inside each folder ("gdal", "misc", etc.) you will first have to run
+   the following, to download appropriate schemas: 
+   
+     `python ../pymod/xmlvalidate.py -download_ogc_schemas`
 
 Unix::
 
   ./run_test.py
+  
+.. note::
+   msautotest requires Python's `lxml` library for some of its functionality.
+   Be sure to install it, such as: `apt-get install python-lxml`
 
 Windows::
 
@@ -77,29 +104,37 @@ Windows::
 
 The results in the gdal directory might look something like this::
 
- warmerda@gdal2200[164]% run_test.py
- version = MapServer version 6.0.0-beta2 OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=ICONV SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER SUPPORTS=THREADS SUPPORTS=GEOS INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE
+ % run_test.py
+ version = MapServer version 7.0.1 OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML 
+ SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO 
+ SUPPORTS=SVG_SYMBOLS SUPPORTS=RSVG SUPPORTS=ICONV SUPPORTS=FRIBIDI 
+ SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER 
+ SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER 
+ SUPPORTS=GEOS INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE
+ 
+  Processing: 256color_overdose_cmt.map
+      results match.
+  Processing: alpha_on_alpha_overlay.map
+      results match.
+  Processing: simplealpha_plug.map
+      results match.
+  Processing: ticket_5032_optim_2.map
+      results match.
+  Processing: rawmode_nodata_resample.map
+      results match.
+  Processing: nonsquare.map
+      results match.
+  Processing: 256color_overdose_res.map
+      results match.
+  Processing: class16_oddscale.map
+      results match.
 
- Processing: grayalpha.map
-     results match.
- Processing: class16.map
-     result images match, though files differ.
- Processing: nonsquare_multiraw.map
-     results match.
- Processing: bilinear_float.map
-     results match.
- Processing: processing_scale_auto.map
-     results match.
- Processing: grayalpha_plug.map
-     result images match, though files differ.
- Processing: processing_bands.map
-     results match.
  ...
  Processing: 256color_overdose_cmt.map
      results match.
  Test done (100.00% success):
  0 tested skipped
- 69 tests succeeded
+ 85 tests succeeded
  0 tests failed
  0 test results initialized
 
