@@ -259,7 +259,7 @@ pdf_stylesheets = ['sphinx','kerning','a4']
 
 # Bibliographic Dublin Core info.
 epub_title = 'MapServer Documentation'
-epub_author = 'Steve Lime'
+epub_author = 'The MapServer Team'
 epub_publisher = 'http://mapserver.org'
 epub_copyright = copyright
 
