@@ -378,6 +378,7 @@ class MapFileLexer(RegexLexer):
             (r'!=|==|<=|>=|=~|&&|\|\||[-~+/*%=<>&^|./\$]', Operator),
             ('(?:[rR]|[uU][rR]|[rR][uU])"', String, 'dqs'),
             ("(?:[rR]|[uU][rR]|[rR][uU])'", String, 'sqs'),
+            (r'`([^`])*`', Number.Date),
             ('[uU]?"', String, combined('stringescape', 'dqs')),
             ("[uU]?'", String, combined('stringescape', 'sqs')),
 #            (constants, Keyword.Constant),
