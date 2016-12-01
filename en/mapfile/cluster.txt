@@ -83,11 +83,34 @@ The following processing options can be used with the cluster layers:
 .. index::
    triple: LAYER; PROCESSING; CLUSTER_GET_ALL_SHAPES
 
-CLUSTER_GET_ALL_SHAPES
+CLUSTER_GET_ALL_SHAPES=ON
     Return all shapes contained by a cluster instead of a single shape.
-    This setting affects both the drawing and the query processing.
-
+    This setting affects both the drawing and the query processing (especially
+    useful for GetFeatureInfo requests).  Example 
+    usage: `PROCESSING "CLUSTER_GET_ALL_SHAPES=ON"`
     
+.. index::
+   triple: LAYER; PROCESSING; CLUSTER_KEEP_LOCATIONS    
+    
+CLUSTER_KEEP_LOCATIONS=ON
+    Set whether the location of the cluster shape should be preserved (setting
+    this will show all points in the cluster). Example 
+    usage: `PROCESSING "CLUSTER_KEEP_LOCATIONS=ON"`
+    
+.. index::
+   triple: LAYER; PROCESSING; CLUSTER_USE_MAP_UNITS     
+    
+CLUSTER_USE_MAP_UNITS=ON
+    Provide scale independent clustering (maxdistance and the buffer parameters are 
+    specified in map units). Example usage: `PROCESSING "CLUSTER_USE_MAP_UNITS=ON"`   
+    
+.. index::
+   triple: LAYER; PROCESSING; ITEMS   
+    
+ITEMS
+    Specify the feature attributes in the cluster to expose during a query, separated
+    by a comma. Example usage: `PROCESSING "ITEMS=attribute_x,attribute_y,attribute_z"`    
+      
 Mapfile Snippet
 ===============
 
@@ -131,6 +154,11 @@ The clustered layer itself provides the following aggregated attributes:
 1. Cluster_FeatureCount - count of the features in the clustered shape 
 2. Cluster_Group - The group value of the cluster (to which the group
    expression is evaluated)
+   
+ .. note::
+   If you are using MapServer version 6.x these attributes contain a ":" 
+   in their names instead, such as ``Cluster:FeatureCount`` & ``Cluster:Group``.
+   The "_" was changed in MapServer 7.
 
 These attributes (in addition to the attributes provided by the
 original data source) can be used to configure the labels of the
@@ -151,6 +179,45 @@ layer attributes, then the actual value of the cluster attribute will
 be non-deterministic if the cluster contains multiple shapes with
 different values. The Count aggregate function in fact provides the
 same value as Cluster_FeatureCount.
+  
+Handling GetFeatureInfo
+=======================
+
+If you want to allow WMS GetFeatureInfo on all features inside a cluster,
+you must 1) set the "wms_include_items" metadata as usual, and 2) set the following 
+PROCESSING parameters in the layer:
+
+::
+
+  PROCESSING "CLUSTER_GET_ALL_SHAPES=ON"
+  PROCESSING "ITEMS=attribute_x,attribute_y,attribute_z"
+  
+So your layer might look like the following:
+
+.. code-block:: mapfile
+
+  LAYER
+    NAME "my-cluster"
+    TYPE POINT
+    METADATA
+      "wms_title"    "myttitle"
+      "wms_include_items" "all"                 
+    END    
+    ...
+    CLUSTER
+       ...
+    END
+    LABELITEM "Cluster_FeatureCount"    
+    CLASS
+      ...
+      LABEL
+       ...
+      END
+    END
+    ...
+    PROCESSING "CLUSTER_GET_ALL_SHAPES=ON"           
+    PROCESSING "ITEMS=name,description"      
+  END
 
 PHP MapScript Usage
 ===================

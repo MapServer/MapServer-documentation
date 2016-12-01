@@ -1,7 +1,7 @@
 .. _dynamic_charting:
 
-..index::
-  single: Dynamic charting
+.. index::
+   single: Dynamic charting
 
 *****************************************************************************
  Dynamic Charting
@@ -9,10 +9,12 @@
 
 :Author:       Thomas Bonfort
 :Contact:      thomas.bonfort at gmail.com
-:Last Updated: 2012/05/24
+:Author:       Jeff McKenna
+:Contact:      jmckenna at gatewaygeomatics.com
+:Last Updated: 2016-08-22
 
 .. contents:: Table of Contents
-    :depth: 2
+    :depth: 3
     :backlinks: top
 
 Starting with version 5.0, MapServer included the ability to automatically draw 
@@ -20,7 +22,7 @@ pie or bar graphs whose values are taken and adjusted from attributes of a
 datasource. 
 
 This document assumes that you are already familiar with MapServer application 
-development and especially setting up :ref:`mapfile` s. You 
+development and especially setting up :ref:`mapfiles <mapfile>`. You 
 can also check out the :ref:`Vector Data Access Guide <vector>`, which has lots of 
 examples of how to access specific data sources.
 
@@ -30,12 +32,15 @@ Setup
 Supported Renderers
 ...............................................................................
 
-Dynamic charts are supported solely with the GD and :ref:`AGG <agg>` renderers. 
+Dynamic charts are supported through the :ref:`AGG <agg>` renderer (for PNG output) 
+and Cairo renderer (for PDF & SVG output) for MapServer 7 and more recent versions, 
+as the GD renderer was removed in the MapServer 7.0 release; MapServer versions 
+5 and 6 support the GD and :ref:`AGG <agg>` renderers for dynamic charting. 
 
-Attempting to add a chart layer with any other renderer (e.g. PDF or SVG) will 
-result in undefined behavior. Rendering quality with the GD renderer is less 
-than optimal, especially with small graphs, due to the lack of subpixel 
-rendering functions.
+Attempting to add a chart layer with an unsupported renderer will 
+result in undefined behavior. Rendering quality with the GD renderer (if you are
+using MapServer 5 or 6) is less than optimal, especially with small graphs, due 
+to the lack of subpixel rendering functions.
 
 Output from AGG and GD Renderers
 ...............................................................................
@@ -73,8 +78,8 @@ chart specific configuration is determined by PROCESSING directives.
 Specifying the Size of each Chart
 ...............................................................................
 
-..index::
-  triple: PROCESSING; CHART_SIZE; LAYER
+.. index::
+   triple: PROCESSING; CHART_SIZE; LAYER
 
 The size of each chart is specified by the CHART_SIZE directive. If two values 
 are given for this parameter, this will specify the width and height of each 
@@ -90,8 +95,8 @@ pixels.
         ...
     END
 
-..index::
-  triple: PROCESSING; CHART_SIZE_RANGE; LAYER
+.. index::
+   triple: PROCESSING; CHART_SIZE_RANGE; LAYER
 
 The diameter of a pie chart can be bound to an
 attribute,using the CHART_SIZE_RANGE PROCESSING attribute:
@@ -166,8 +171,8 @@ At least 2 CLASS blocks must be specified before charting can occur (but
 you already knew this if you want your charts to convey at least *some* 
 information ;) ).
 
-..index::
-  triple: PROCESSING; CHART_TYPE; LAYER
+.. index::
+   triple: PROCESSING; CHART_TYPE; LAYER
 
 Specifying Style
 ...............................................................................
@@ -196,8 +201,8 @@ be silently ignored. Only a subset of the styling keywords are supported:
         OFFSET a b
     END
 
-..index::
-  single: Pie chart
+.. index::
+   single: Pie chart
 
 Pie Charts
 -------------------------------------------------------------------------------
@@ -252,8 +257,71 @@ In the example above, if for a given shape we have v1006=1000, v1007=600 and
 v1008=400 then the actual pie slices for each class will be respectively 
 50%, 30% and 20% of the total pie size.
 
-..index::
-  single: Bar graph
+Pie Chart Expressions
+.....................
+
+Expressions can be used within a CLASS to generate a pie chart for a layer.  
+This is best explained through an example.  Let's say we have 3 polygons, 
+with the following crop type attributes:
+
+=====  ========  =============== 
+ID     NAME      TYPE 
+=====  ========  ===============
+1      polygon1  corn,rice 
+2      polygon2  wheat 
+3      polygon3  rice,corn,wheat 
+=====  ========  ===============
+
+We can use an expression to give a specific color for each crop type, such as:
+
+.. code-block:: mapfile
+
+  LAYER
+    NAME "pie-charts"
+    TYPE CHART
+    STATUS ON
+    DATA "croptype.shp"  
+    PROCESSING "ITEMS=TYPE"  
+    PROCESSING "CHART_TYPE=pie"
+    PROCESSING "CHART_SIZE=70"
+    CLASSITEM "TYPE"
+    CLASS
+      NAME "corn"
+      EXPRESSION /(^|,)corn($|,)/ 
+      STYLE
+        SIZE 1
+        COLOR 255 0 0
+      END
+    END
+    CLASS
+      NAME "wheat"
+      EXPRESSION /(^|,)wheat($|,)/ 
+      STYLE
+        SIZE 1
+        COLOR 0 255 0
+      END
+    END
+    CLASS
+      NAME "rice"
+      EXPRESSION /(^|,)rice($|,)/ 
+      STYLE
+        SIZE 1
+        COLOR 0 0 255
+      END
+    END
+  END # layer
+  
+.. image:: ../images/pie-chart-expressions.png
+
+More examples of working mapfiles with expressions can be found within the
+`msautotest suite <https://github.com/mapserver/msautotest/blob/master/renderers/chartlayer_pie_expressions.map>`__.
+
+.. NOTE::
+   The size of the pie chart is actually set by: PROCESSING "CHART_SIZE=70", not 
+   through the STYLE within the CLASS.
+
+.. index::
+   single: Bar graph
 
 Bar Graphs
 -------------------------------------------------------------------------------
@@ -276,11 +344,11 @@ will always include the origin (=0). For example
  * a shape whose STYLE SIZEs contains values {-5,-8,10,3} will be plotted 
    on a graph whose vertical axis spans -8 to 10.
 
-..index::
-  triple: PROCESSING; CHART_BAR_MINVAL; LAYER
+.. index::
+   triple: PROCESSING; CHART_BAR_MINVAL; LAYER
 
-..index::
-  triple: PROCESSING; CHART_BAR_MAXVAL; LAYER
+.. index::
+   triple: PROCESSING; CHART_BAR_MAXVAL; LAYER
 
 Additional PROCESSING directives are used to optionally specify the bounds 
 of vertical axes so that the graphs for all the shapes can be plotted with 
@@ -298,8 +366,8 @@ each shape to include at least the origin, i.e. the graphs for all the
 shapes will be in the same scale *only if* all the values are of the 
 same sign (positive or negative).
 
-..index::
-  single: Stacked bar graph
+.. index::
+   single: Stacked bar graph
 
 Stacked bar Graphs
 ...............................................................................

@@ -1,0 +1,242 @@
+.. index::
+   single: Virtual file system
+
+.. _virtual-file:
+
+*****************************************************************************
+ Virtual File System 
+*****************************************************************************
+
+:Author:       Jeff McKenna
+:Contact:      jmckenna at gatewaygeomatics.com
+:Last Updated: 2016-06-23
+
+.. contents:: Table of Contents
+    :depth: 4
+    :backlinks: top
+
+
+.. index::
+   pair: OGR; Virtual File Support   
+   
+Virtual File System
+===================
+
+Starting with GDAL version 1.8.0, it is possible to read and display "virtual"
+**VECTOR and RASTER files**, such as to a remote file by pointing to a URL, or a compressed local
+.zip file that contains an OGR data source, and display that in MapServer.  Useful mapfile parameters
+include **/vsizip/**, **/vsigzip/**, **/vsitar/**, **/vsicurl/**
+
+More Information on Virtual File System
+---------------------------------------
+
+- Blog post by initial developer `Even Rouault <http://erouault.blogspot.ca/2012/05/new-gdal-virtual-file-system-to-read.html>`_
+
+- GDAL Trac `page <https://trac.osgeo.org/gdal/wiki/UserDocs/ReadInZip>`_
+
+Display Compressed File Directly in MapServer
+---------------------------------------------
+
+The following example uses a compressed shapefile, "test.zip", that contains 3 files:
+
+::
+
+    	test.shp
+    	test.dbf
+    	test.zip
+
+Step 1: Verify Format is "Virtual" Enabled
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Execute `ogrinfo --formats` (for vector) or `gdalinfo --formats` (for raster) to check if the format
+lists a "v" beside the driver name, such as:
+
+::
+
+        > ogrinfo --formats
+        
+::
+
+	Supported Formats:
+	  PCIDSK -raster,vector- (rw+v): PCIDSK Database File
+	  netCDF -raster,vector- (rw+s): Network Common Data Format
+	  PDF -raster,vector- (rw+vs): Geospatial PDF
+	  DB2ODBC -raster,vector- (rw+): IBM DB2 Spatial Database
+	  ESRI Shapefile -vector- (rw+v): ESRI Shapefile
+	  MapInfo File -vector- (rw+v): MapInfo File
+          ...
+          
+The "(rw+v)" beside shapefile indicates that virtual files are supported.
+
+Step 2: Test Access through ogrinfo/gdalinfo
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Use ogrinfo with **/vsizip/** to summarize the features of the zipped shapefile. 
+Follow the :ref:`ogr` document examples for how to use the ogrinfo command 
+with layers, such as:
+
+::
+
+	> ogrinfo /vsizip/test.zip/test.shp test -summary
+	
+Note that "test.zip" exists in the same directory where we are running the ogrinfo 
+command.
+	
+::
+
+	INFO: Open of `/vsizip/test.zip/test.shp'
+	      using driver `ESRI Shapefile' successful.
+	
+	Layer name: test
+	Metadata:
+	  DBF_DATE_LAST_UPDATE=2000-03-17
+	Geometry: Polygon
+	Feature Count: 665
+	Extent: (-2750564.750000, -936638.500000) - (3583872.500000, 4673125.000000)
+	Layer SRS WKT:
+	(unknown)
+	AREA: Real (15.3)
+	PERIMETER: Real (15.3)
+	...
+
+Step 3: Configure MapServer Layer
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Once you have verified that you can read the features with ogrinfo (or gdalinfo for raster),
+then we can try creating a map in MapServer.
+
+.. warning:: 
+
+    A full (absolute) path is required for the CONNECTION parameter, for these virtual layers.
+    
+.. code-block:: mapfile
+
+	LAYER
+	  NAME "test"
+	  TYPE POLYGON
+	  STATUS ON
+	  CONNECTIONTYPE OGR
+	  CONNECTION "/vsizip/C:/ms4w/apps/test/data/test.zip/test.shp"
+	  DATA "test"
+	  CLASS
+	    NAME "test"
+	    STYLE
+	      COLOR 240 240 240
+	      OUTLINECOLOR 199 199 199    
+	    END
+	  END
+        END # layer
+        
+.. note:: 
+
+    You can omit the filename from the connection (test.shp) if there are no
+    other files inside the zip than expected for a shapefile.  When you omit it,
+    the zip is recognized as a directory and it is the same logic as executing
+    ogrinfo on a directory.
+
+Step 4: Test your Mapfile
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Verify that MapServer can generate a map image by using the :ref:`shp2img` utility:
+
+::
+
+  	shp2img -m mymapfile.map -o test.png -all_debug 5
+
+::
+
+	msDrawMap(): rendering using outputformat named png (AGG/PNG).
+	msDrawMap(): WMS/WFS set-up and query, 0.000s
+	GDAL: GDALOpen(/vsizip/C:/ms4w/apps/test/data/test.zip/test.shp, this=07D691D8) succeeds as ESRI Shapefile.
+	Shape: 492 features read on layer 'test'.
+	GDAL: GDALClose(/vsizip/C:/ms4w/apps/test/data/test.zip/test.shp, this=07D691D8)
+	msDrawMap(): Layer 0 (test), 0.016s
+	msDrawMap(): Drawing Label Cache, 0.000s
+	msDrawMap() total time: 0.031s
+	msSaveImage(ttt.png) total time: 0.000s
+	msFreeMap(): freeing map at 06289688.
+
+Display Remote Compressed File Directly in MapServer
+----------------------------------------------------
+
+We can also display an external compressed file, that is accessible through HTTP, using **/vsicurl/**
+with **/vsizip/**
+
+Test Access through ogrinfo/gdalinfo
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+	> ogrinfo -ro /vsizip/vsicurl/http://download.osgeo.org/mapserver/docs/vsicurl-test.zip/test.shp test -summary
+	
+
+Configure MapServer Layer
+^^^^^^^^^^^^^^^^^^^^^^^^^
+    
+.. code-block:: mapfile
+
+	LAYER
+	  NAME "test"
+	  TYPE POLYGON
+	  STATUS ON
+	  CONNECTIONTYPE OGR
+	  CONNECTION "/vsizip/vsicurl/http://download.osgeo.org/mapserver/docs/vsicurl-test.zip/test.shp"
+	  DATA "test"
+	  CLASS
+	    NAME "test"
+	    STYLE
+	      COLOR 240 240 240
+	      OUTLINECOLOR 199 199 199    
+	    END
+	  END
+        END # layer
+
+.. warning:: 
+
+    Virtual layers have a "cost" / are not as fast to display in MapServer as regular layers.
+    
+Display Remote (RASTER) File Directly in MapServer
+--------------------------------------------------
+
+Remote raster files can also be accessed through HTTP, using **/vsicurl/**
+
+Test Access through gdalinfo
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+::
+
+	> gdalinfo /vsicurl/http://download.osgeo.org/gdal/data/gtiff/small_world.tif
+	
+::
+
+	Driver: GTiff/GeoTIFF
+	Files: /vsicurl/http://download.osgeo.org/gdal/data/gtiff/small_world.tif
+	Size is 400, 200
+	Coordinate System is:
+	GEOGCS["WGS 84",
+	    DATUM["WGS_1984",
+	        SPHEROID["WGS 84",6378137,298.257223563,
+	            AUTHORITY["EPSG","7030"]],
+	        AUTHORITY["EPSG","6326"]],
+	    PRIMEM["Greenwich",0],
+	    UNIT["degree",0.0174532925199433],
+	    AUTHORITY["EPSG","4326"]]
+	Origin = (-180.000000000000000,90.000000000000000)
+  	Pixel Size = (0.900000000000000,-0.900000000000000)
+  	...
+	
+
+Configure MapServer Layer
+^^^^^^^^^^^^^^^^^^^^^^^^^
+    
+.. code-block:: mapfile
+
+	LAYER
+  	  NAME "test"
+  	  TYPE RASTER
+  	  STATUS ON
+  	  DATA "/vsicurl/http://download.osgeo.org/gdal/data/gtiff/small_world.tif"
+  	  CLASS
+    	    NAME "test"
+  	  END
+	END # layer  

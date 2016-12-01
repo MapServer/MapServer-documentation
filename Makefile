@@ -9,7 +9,10 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         = a4
 SHELL = /bin/bash
-TRANSLATIONS = ar de el es fr id it ja nl_NL pl ru sq tr uk
+
+# Note: uk for ukrainian has been removed due to error with UK flag. We should use
+# uk_UA if we need to enable again.
+TRANSLATIONS = ar de el es fr id it ja nl_NL pl ru sq tr
 LANGUAGES     = en $(TRANSLATIONS)
 BUILD_LANGUAGES = $(TRANSLATIONS)
 
