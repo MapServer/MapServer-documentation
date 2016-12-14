@@ -59,7 +59,7 @@ release = '7.0.3'
 # non-false value, then it is used:
 #today = ''
 # Else, today_fmt is used as the format for a strftime call.
-#today_fmt = '%B %d, %Y'
+today_fmt = '%Y-%m-%d'
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
