@@ -2,8 +2,6 @@
 
 git log -n1 | grep -q "\\[build_pdf\\]"
 
-make clean
-
 if [[ $? -eq 0 ]]; then
   echo "building PDF"
   sudo apt-get update && sudo apt-get install texlive-latex-extra texlive-fonts-recommended
