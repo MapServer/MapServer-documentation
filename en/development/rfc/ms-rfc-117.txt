@@ -76,9 +76,9 @@ As mentioned above, this should give a huge performance boost.
 2.4 Limitations
 ===============
 
-During compile, PHP's reserved keywords for the functions "empty()" and "clone()"
-will be automatically renamed by SWIG to "c_empty()" and "c_clone()"
-for several MapServer objects, as follows:
+1. During compile, PHP's reserved keywords for the functions "empty()" and "clone()"
+   will be automatically renamed by SWIG to "c_empty()" and "c_clone()"
+   for several MapServer objects, as follows:
 
    ::
 
@@ -89,9 +89,36 @@ for several MapServer objects, as follows:
     ..\swiginc\style.i(122) : Warning 314: 'clone' is a PHP keyword, renaming to 'c_clone'
     ..\swiginc\shape.i(110) : Warning 314: 'clone' is a PHP keyword, renaming to 'c_clone'
     
-This needs discussion, on how to handle that (document these changes in the SWIG API for PHP, 
-or change the underlying function names in the MapServer source).
+   This needs discussion, on how to handle that (document these changes in the SWIG API for PHP, 
+   or change the underlying function names in the MapServer source).
+   
+2. In downstream PHP scripts, users must include the SWIG-generated file `mapscript.php` before 
+   calling any MapScript objects, as this file contains various constants and classes.
 
+   .. code-block:: php
+   
+     <?php
+     
+       include("mapscript.php");
+     
+       $mapfile = "C:/ms4w/apps/gmap/map/swig.map";
+       $oMap = new mapObj($mapfile);
+
+3. In downstream PHP scripts, users will have to modify their syntax for declaring new objects, 
+   such as:
+
+   from:
+   
+   .. code-block:: php
+   
+       $oMap = ms_newMapObj(MAPFILE);
+       
+   to:       
+   
+   .. code-block:: php   
+   
+       $oMap = new mapObj(MAPFILE);
+   
 3. Implementation Details
 =========================
 
