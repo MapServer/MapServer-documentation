@@ -6,7 +6,7 @@ MS RFC 117: PHP 7 MapScript Support Through SWIG
 
 :Author: 	Jeff McKenna
 :Contact: 	jmckenna@gatewaygeomatics.com
-:Last Updated:  2016-12-17
+:Last Updated:  2016-12-20
 :Version: 	MapServer 7.2
 :Status: 	Draft
 
@@ -94,6 +94,19 @@ As mentioned above, this should give a huge performance boost.
     
    **This needs discussion, on how to handle that (document these changes in the SWIG API for PHP, 
    or change the underlying function names in the MapServer source)**
+
+   Update: regarding the 'clone()' keyword, Java MapScript also faced this issue and solved it by redefining
+   the functions, such as `cloneMap()` or `cloneLayer()`:
+
+   .. code-block:: c
+
+     #ifdef SWIGJAVA
+       %newobject cloneMap;
+       mapObj *cloneMap() 
+     #else
+       %newobject clone;
+       mapObj *clone() 
+     #endif
    
 3. In downstream PHP scripts, users must include the SWIG-generated file `mapscript.php` before 
    calling any MapScript objects, as this file contains various constants and classes:
