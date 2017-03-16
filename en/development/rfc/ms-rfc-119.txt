@@ -1,0 +1,123 @@
+.. _rfc119:
+
+============================================
+MS RFC 119: Mapbox Vector Tile (MVT) Support
+============================================
+
+:Date:  2017-03-15
+:Authors: Thomas Bonfort, Stephen Lime
+:Contacts: thomas.bonfort@gmail.com, sdlime@comcast.net
+:Status: Draft
+:Version: MapServer 7.2
+
+1. Overview
+-------------
+
+Mapbox vector tiles (MVT) represent an alternative to delivering tiled map data to the client. In contrast to raster tiles, vector tiles encode a coordinate and attribute information across any number of geospatial layers. This allows for rich application development where geospatial data can be filtered and symbolized on the client without the need for extra server interactions. See the `specification <https://www.mapbox.com/vector-tiles/specification/>`_.
+
+2. Proposed solution
+--------------------
+
+This RFC proposes the implementation of the MVT specification (version 2.1) within MapServer and MapCache. Highlights include:
+
+- the introduction of no new mapfile keywords, all configuration uses existing mechanisms
+- MVT are implemented as a new output driver and can be used with mode=map, mode=tile or WMS actions
+- the implementation introduces a new dependency on protobuf/protobuf-c
+
+
+2.1 New and Updated Files
+-------------------------
+
+New and updated files are described here:
+
+2.1.1 MapServer
+---------------
+
+- mapmvt.c (new): MVT implementation code
+- renderers/mvt/vector_tile.proto (new): protocol buffer definition file
+- mapoutput.c (updated): register MVT renderer and default output format (application/x-protobuf)
+- mapservutil.c (updated): intercept calls to produce MVT output
+- mapwms.c (updated): intercept calls to produce MVT output
+- mapserver.h (updated): register MVT renderer and public function (e.g. msMVTWriteTile())
+- CMakeLists.txt (updated): add protobuf/protobuf-c rules
+
+2.1.2 MapCache
+--------------
+
+- TODO
+
+2.2 Configuration Notes
+-----------------------
+
+2.2.1 MapServer
+---------------
+
+- configuration of attribute data uses gml_ or ows_ metadata elements
+- WMS_SRS metadata (layer and server) should include epsg:3857 and epsg:900913
+- layers must define a projection
+
+2.2.2 MapCache
+--------------
+
+- TODO
+
+2.3 Sample MapServer Requests
+-----------------------------
+
+::
+
+  /cgi-bin/mapserv?map=mvt.map&mode=tile&tilemode=gmap&tile=1935+2856+13&layers=all&map.imagetype=mvt
+
+::
+
+  /cgi-bin/mapserv?map=mvt.map&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=major_roads,lakes,sna,wma&STYLES=
+  &SRS=EPSG:3857&BBOX=-10434562.049185,5909509.084589,-10429689.188632,5914381.945142&WIDTH=256&HEIGHT=256&FORMAT=application/x-protobuf
+
+3. Implementation Details
+-------------------------
+
+3.1.1 MapServer
+---------------
+
+The implementation has three primary components. The MVT output driver, driver registration and calling the driver as appropriate when making a map, tile or WMS request, The implementation is non-invasive and has mimimal impact on the existing code base.
+
+3.1.2 MapCache
+---------------
+
+TODO
+
+4. Limitations
+---------------
+
+The current implementation can only be used with mode=map, mode=tile and WMS requests. Rendering a query result (think QUERYMAP) is possible but is not implemented at this time. It is not clear what the use case is for that support.
+
+5. Backwards Compatibility Issues
+---------------------------------
+
+None anticipated.
+
+6. Security implications
+-------------------------
+
+None anticipated.
+
+7. Performance implications
+---------------------------
+
+No impacts on core performance are anticipated.
+
+8. Documentation needs
+------------------------
+
+The primary need will be in educating users on what do with MVT files. In reality that goes beyond the scope of MapServer but letting folks know what clients exist to render MVT tiles will be important. A number of clients exist at this point with the most prominent being Mapbox-GL and OpenLayers 3.x.
+
+9. Bug ID and references
+-------------------------
+
+- initial MapServer `implementation <https://github.com/sdlime/mapserver/tree/vector-tiles>`_
+- demo using `Mapbox GL and mode=tile <https://github.com/sdlime/mvt-demo>`_
+
+10. Voting history
+------------------
+
+No vote yet
