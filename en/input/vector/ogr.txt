@@ -9,7 +9,7 @@
 
 :Author:       Jeff McKenna
 :Contact:      jmckenna at gatewaygeomatics.com
-:Last Updated: 2016-06-23
+:Last Updated: 2017-03-21
 
 .. contents:: Table of Contents
     :depth: 3
@@ -844,7 +844,7 @@ Accessing OGR STYLEITEMAUTO Label Styles Through MapScript
 OGR STYLEITEMAUTO label styles can be accessed through MapScript, such
 as PHP/MapScript's getshape() or getvalue() methods, by setting the
 LAYER's PROCESSING parameter to "GETSHAPE_STYLE_ITEMS=all".
-Therefore, the LAYER may contain:
+Therefore, the LAYER must contain:
 
 .. code-block:: mapfile
 
@@ -894,6 +894,34 @@ OGR:LabelOColor     Outline color (gdal > 1.6.0)        5.4
 
 Please see the `OGR Feature Style Specification`_ document for more details
 on those specific styles.
+
+Sample PHP MapScript code to access the "OGR:LabelText" label style follows:
+
+.. code-block:: php
+  
+  <?php
+  
+  // define variables
+  define( "MAPFILE", "D:/ms4w/apps/ogr-demos/nfld_demo/test.map" );
+  
+  // open map
+  $oMap = ms_newMapObj( MAPFILE );
+  
+  //get layer
+  $oLayer = $oMap->getLayerByName("Map_Labels");
+  
+  //get styles
+  $status = $oLayer->open();
+  $status = $oLayer->whichShapes($oMap->extent);
+  while ($oShape = $oLayer->nextShape())
+  {
+    //echo $oShape->index ."<br>\n";
+    echo $oShape->getValue($oLayer,"OGR:LabelText");
+    echo "\n";
+  }
+  $oLayer->close();
+  
+  ?>
 
 Sample Sites Using OGR/MapServer
 ================================
