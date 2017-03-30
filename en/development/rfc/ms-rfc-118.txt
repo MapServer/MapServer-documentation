@@ -1,0 +1,117 @@
+.. _rfc118:
+
+=========================================================================
+MS RFC 118: Support Vendor-Specific OGC FILTER parameter in WMS requests
+=========================================================================
+
+:Date:  2017-02-09
+:Author: Daniel Morissette
+:Contact: dmorissette@mapgears.com
+:Status: Draft
+:Version: MapServer 7.2
+
+1. Overview
+-------------
+
+It is common practice for JS client applications to let the users make selections or apply filters on the client side that should be reflected on the map that is rendered by a WMS GetMap request.
+
+At the moment, there is no simple way to pass a filter to a WMS GetMap request, so JS application developers have to resort to one of the following methods/hacks:
+
+- Apply a SLD to the GetMap request: overkill especially when only a simple filter is required and needs to be applied to multiple layers with complex symbology
+- Use %variable% replacements: limited functionality, messes up your layer definitions and is prone to security issues
+- Create temporary mapfiles on the server side: hey, we are in 2017!
+
+The OpenLayers3 code already makes it possible for JS devs to build and pass an OGC filter in a WMS GetMap request the same way as for WFS GetFeature requests, and GeoServer already supports this as a vendor-specific parameter, so this RFC proposes to support the same vendor-specific FILTER parameter in MapServer.
+
+
+2. Proposed solution
+--------------------
+
+This RFC proposes the implementation of a vendor-specific FILTER parameter in the MapServer WMS server interface that operates like the WFS GetFeature FILTER parameter. 
+
+2.1 The WMS FILTER parameter
+----------------------------
+
+The WMS FILTER parameter will be supported in both GetMap and GetFeatureInfo requests. The syntax and format is the same that is currently supported by the WFS GetFeature FILTER parameter. As for any GET HTTP request parameters, the value will have to be properly URL encoded.
+
+If more than one layer is specified in the LAYERS parameter then a separate FILTER must be specified for each layer.  In this case the list is enclosed in parentheses: ( ).
+
+2.2 Examples
+-------------
+
+Simple PropertyIsEqualTo on a single layer:
+
+::
+
+  /cgi-bin/mapserv?map=...
+  &SERVICE=WMS
+  &REQUEST=GetMap
+  &LAYERS=popplace
+  &FILTER=<Filter><PropertyIsEqualTo><PropertyName>NAME</PropertyName><Literal>Digby</Literal></PropertyIsEqualTo></Filter>
+  &...
+
+DWithin spatial filter:
+
+::
+
+  /cgi-bin/mapserv?map=...
+  &SERVICE=WMS
+  &REQUEST=GetMap
+  &LAYERS=popplace
+  &FILTER=<Filter><DWithin><PropertyName>Geometry</PropertyName><gml:Point><gml:coordinates>-60.18,46.10</gml:coordinates></gml:Point><Distance units='dd'>0.05</Distance></DWithin></Filter>
+  &...
+
+Filter on multiple layers enclosed in parentheses:
+
+::
+
+  TODO
+
+
+3. Implementation Details
+-------------------------
+
+The internal WFS GetFeature FILTER handling code is closely tied to the WFS interface. It will have to be made generic in order to be usable by both the WFS and WMS interfaces.
+
+Tests will be added to msautotest for the new feature.
+
+4. Limitations
+---------------
+
+This will only be implemented for GET requests, and will be subject to the limitation in URL length of the HTTP servers. The exact limit of GET URL length depends on the server configuration.
+
+The use of FILTER in WMS requires previous knowledge of the geometry and attribute column names that would normally be obtained with a WFS DescribeFeatureType.  While this is not strictly required for the FILTER to work on their own in the GetMap request, access to DescribeFeatureType can be provided by enabling the WFS interface on the corresponding layers.
+
+5. Backwards Compatibility Issues
+---------------------------------
+
+None anticipated.
+
+6. Security implications
+-------------------------
+
+None anticipated. If anything, this will generally improve the security of servers which will no longer have to rely on %variable% embedded in their data statements.
+
+7. Performance implications
+---------------------------
+
+No impacts on core performance are anticipated.
+
+8. Documentation needs
+------------------------
+
+Documentation for this vendor-specific parameter will be added to the relevant section of the WMS Server documentation:
+
+* http://mapserver.org/ogc/wms_server.html#vendor-specific-wms-parameters
+
+9. Bug ID and references
+-------------------------
+
+* GeoServer FILTER parameter: http://docs.geoserver.org/latest/en/user/services/wms/vendor.html#filter
+
+
+10. Voting history
+------------------
+
+No vote yet
+

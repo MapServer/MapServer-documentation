@@ -40,7 +40,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'MapServer'
-copyright = u'2016, Open Source Geospatial Foundation'
+copyright = u'2017, Open Source Geospatial Foundation'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -59,7 +59,7 @@ release = '7.2.0'
 # non-false value, then it is used:
 #today = ''
 # Else, today_fmt is used as the format for a strftime call.
-#today_fmt = '%B %d, %Y'
+today_fmt = '%Y-%m-%d'
 
 # The reST default role (used for this markup: `text`) to use for all documents.
 #default_role = None
@@ -112,8 +112,7 @@ html_static_path = ['_static']
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
-#html_last_updated_fmt = '%A %e %B %Y, %R'
-#html_last_updated_fmt = ''
+html_last_updated_fmt = '%Y-%m-%d'
 
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
@@ -206,7 +205,7 @@ latex_elements = {
 'utf8extra': '',
 
 # remove blank pages (between the title page and the TOC, etc.)
-'classoptions': ',openany,oneside', 
+'classoptions': ',openany,oneside',
 'babel' : '\\usepackage[english]{babel}',
 
 # Additional stuff for the LaTeX preamble.
@@ -252,7 +251,7 @@ pdf_stylesheets = ['sphinx','kerning','a4']
 #pdf_use_modindex = True
 
 # If false, no coverpage is generated.
-#pdf_use_coverpage = True 
+#pdf_use_coverpage = True
 
 
 # -- Options for Epub output ---------------------------------------------------
@@ -434,7 +433,7 @@ def setup(app):
     from sphinx.highlighting import lexers
     lexers['wkt'] = WKTLexer()
     lexers['mapfile'] = MapFileLexer()
-    
+
 # avoid warnings of "nonlocal image URI found" (this parameter requires Sphinx >=1.4)
 suppress_warnings = ['image.nonlocal_uri']
 
