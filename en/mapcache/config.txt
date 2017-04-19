@@ -484,10 +484,15 @@ the client in a given *format*.
            You can also limit the zoom levels that are cached/accessible by
            using the minzoom and maxzoom attributes.
 
+           A grid may reference a ruleset to impose certain behaviour:
+
+           <grid ruleset="rules">4326</grid>
+
            NOTE: When adding a <grid> element, you *MUST* make sure that the
            source you have selected is able to return images in the grid's SRS.
       -->
       <grid restricted_extent="-10 40 10 50" minzoom="4" maxzoom="17">WGS84</grid>
+      <grid ruleset="rules">4326</grid>
       <grid>g</grid>
 
       <!-- You may store hidden intermediate levels of tiles to enable higher
@@ -713,6 +718,66 @@ of course, enable at least one.
    <service type="ve" enabled="true"/>
    <service type="demo" enabled="true"/>
 
+Ruleset
+================================================================================
+
+A ruleset contains a set of rules to impose certain behaviour on zoom levels.
+It is referenced from a grid element inside a tileset. See tileset for more
+information.
+
+It is possible to define rules that:
+
+* Puts limits on the visible extent of zoom levels.
+
+.. code-block:: xml
+
+   <ruleset name="rules">
+
+      <!-- rule
+
+           A rule impose certain behaviour on one or more zoom levels.
+           There is no limit on the number of rules.
+
+           zoom_level attribute contains the levels affected by this rule.
+           A zoom level can not be referenced by multiple rules.
+      -->
+      <rule zoom_level="4 5 6 7">
+
+         <!-- visibility
+
+              Contains a collection of visible extents.
+
+              Tiles inside these extents will be fetched from the cache.
+              Tiles outside will be created on the fly using configured
+              color and returned to the client in declared format,
+              but not stored in the cache.
+              This does not affect the extent announced to the client,
+              but will limit the potentially large number of blank tiles
+              stored in the cache when data only covers small subsets of
+              the total extent.
+
+              hidden_color attribute is the (hex) color (ARGB or RGB) of tiles
+              outside the visible extents. Default is a fully transparent tile.
+         -->
+         <visibility hidden_color="ff000000">
+
+            <!-- extent
+
+                 One or more extents.
+
+                 Extent must be given in the srs of the referencing grid.
+            -->
+            <extent>228355 6085026 953704 7686970</extent>
+         </visibility>
+      </rule>
+
+      <rule zoom_level="8 9 10">
+         <visibility>
+            <extent>335972 6099021 495792 6166722</extent>
+            <extent>309336 6166722 644513 6273268</extent>
+         </visibility>
+      </rule>
+   </ruleset>
 
 Miscellaneous
 ================================================================================
