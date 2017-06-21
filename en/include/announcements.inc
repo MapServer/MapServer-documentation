@@ -1,8 +1,18 @@
+**2017-06-21 - MapServer 7.0.6 is released**
+
+The maintenance release of MapServer 7.0.6 is now available.
+See the :ref:`7.0.6 changelog <changelog-7-0-6>`
+for the full list of changes.  
+
+Head to :ref:`download` to obtain a copy.
+
 **2017-05-09 - MapServer 7.0.5 is released**
 
 The maintenance release of MapServer 7.0.5 is now available.
 See the :ref:`7.0.5 changelog <changelog-7-0-5>`
-for the full list of changes.  Head to :ref:`download` to obtain a copy.
+for the full list of changes.  
+
+Head to :ref:`download` to obtain a copy.
 
 **2017-04-13 - MapCache 1.6.0 is released**
 
