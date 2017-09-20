@@ -7,8 +7,8 @@ MS RFC 118: Support Vendor-Specific OGC FILTER parameter in WMS requests
 :Date: 2017-02-09
 :Author: Daniel Morissette
 :Contact: dmorissette@mapgears.com
-:Status: Draft
-:Last update: 2017-08-15
+:Status: Adopted
+:Last update: 2017-09-20
 :Version: MapServer 7.2
 
 1. Overview
@@ -73,6 +73,17 @@ Filter on multiple layers enclosed in parentheses:
   &FILTER=(<Filter><DWithin><PropertyName>Geometry</PropertyName><gml:Point><gml:coordinates>46,-63</gml:coordinates></gml:Point><Distance units='dd'>0.5</Distance></DWithin></Filter>)(<Filter><DWithin><PropertyName>Geometry</PropertyName><gml:Point><gml:coordinates>46,-63</gml:coordinates></gml:Point><Distance units='dd'>0.5</Distance></DWithin></Filter>)
   &...
 
+GetMap on multiple layers, with empty filter on some layers:
+
+::
+
+  /cgi-bin/mapserv?map=...
+  &SERVICE=WMS
+  &REQUEST=GetMap
+  &LAYERS=road,popplace
+  &FILTER=()(<Filter><PropertyIsEqualTo><PropertyName>NAME</PropertyName><Literal>Digby</Literal></PropertyIsEqualTo></Filter>)
+  &...
+
 
 3. Implementation Details
 -------------------------
@@ -87,6 +98,8 @@ Tests will be added to msautotest for the new feature.
 This will only be implemented for GET requests, and will be subject to the limitation in URL length of the HTTP servers. The exact limit of GET URL length depends on the server configuration.
 
 The use of FILTER in WMS requires previous knowledge of the geometry and attribute column names that would normally be obtained with a WFS DescribeFeatureType.  While this is not strictly required for the FILTER to work on their own in the GetMap request, access to DescribeFeatureType can be provided by enabling the WFS interface on the corresponding layers.
+
+Since rendering of the filtered layers is done via the QUERYMAP mechanism, the MASK, OPACITY and COMPOSITE settings are ignored since they are not implemented for QUERYMAPs. (This could be considered a QUERYMAP bug but is out of scope for this RFC)
 
 5. Backwards Compatibility Issues
 ---------------------------------
@@ -119,5 +132,6 @@ Documentation for this vendor-specific parameter will be added to the relevant s
 10. Voting history
 ------------------
 
-No vote yet
++1 from TomK, SteveL, JukkaR, SteveW, MichaelS, StephanM, JeffM and DanielM.
+
 
