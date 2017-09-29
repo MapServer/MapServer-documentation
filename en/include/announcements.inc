@@ -1,3 +1,10 @@
+**2017-09-29 - MapCache 1.6.1 and 1.4.2 are released**
+
+Maintenance releases of MapCache have been issued in order to fix
+CVE-2017-12808.
+See the :ref:`1.6.1 changelog <changelog-mapcache-1-6-1>` or :ref:`1.4.2 changelog <changelog-mapcache-1-4-2>`
+for the full list of changes.
+
 **2017-06-21 - MapServer 7.0.6 is released**
 
 The maintenance release of MapServer 7.0.6 is now available.
@@ -20,7 +27,7 @@ Head to :ref:`download` to obtain a copy.
 
 **2017-01-16 - MapServer 7.0.4, 6.4.5, 6.2.4, and 6.0.6 are released**
 
-The maintenance releases of MapServer have been issued in order to fix
+Maintenance releases of MapServer have been issued in order to fix
 CVE-2017-5522.
 See the :ref:`7.0.4 changelog <changelog-7-0-4>`,
 :ref:`6.4.5 changelog <changelog-6-4-5>`,
