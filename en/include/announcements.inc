@@ -5,6 +5,8 @@ CVE-2017-12808.
 See the :ref:`1.6.1 changelog <changelog-mapcache-1-6-1>` or :ref:`1.4.2 changelog <changelog-mapcache-1-4-2>`
 for the full list of changes.
 
+Head to :ref:`download` to obtain a copy.
+
 **2017-06-21 - MapServer 7.0.6 is released**
 
 The maintenance release of MapServer 7.0.6 is now available.
