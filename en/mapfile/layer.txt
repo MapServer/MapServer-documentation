@@ -7,6 +7,12 @@
  LAYER
 *****************************************************************************
 
+.. image:: ../images/layer_classes.png
+    :align: center
+    :height: 248
+    :width: 1024
+    :target: ../_images/layer_classes.png
+
 .. index::
    pair: LAYER; CLASS
 
@@ -647,7 +653,6 @@ METADATA
     pair: LAYER; MINGEOWIDTH
 
 MINGEOWIDTH [double]
-
     Minimum width, in the map's geographic units, at which this LAYER
     is drawn.  If MINSCALEDENOM is also specified then MINSCALEDENOM
     will be used instead.
@@ -1082,6 +1087,71 @@ REQUIRES [expression]
     Sets context for displaying this layer (see LABELREQUIRES_).
 
 .. index::
+   pair: LAYER; SCALETOKEN
+
+SCALETOKEN
+    Signals the start of a `SCALETOKEN` object.
+    Allows scale dependent string substitutions.
+    See :ref:`rfc86`.
+
+    .. code-block:: mapfile
+
+      LAYER
+        ...
+        SCALETOKEN
+          NAME "%pri%"
+          VALUES
+            "0" "1"
+            "1000" "2"
+            "10000" "3"
+          END # VALUES
+        END # SCALETOKEN
+        # data from a specific table:
+        DATA "geom from mytable_%pri%"
+        # data from a specific Shapefile format dataset:
+        DATA "/path/to/roads_%pri%.shp"
+        # data from a specific column in the table:
+        DATA "geom_%pri% from roads"
+        # filtering:
+        DATA "geom_%pri% from (select * from roads where pri > %pri%) as foo"
+        CLASS
+          ...
+        END # CLASS
+      END # LAYER
+
+    In the previous example, %pri% would be replaced by:
+
+    - "1" for scale denominators smaller than 1,000, giving:
+
+      .. code-block:: mapfile
+
+        DATA "geom from mytable_1"
+        DATA "/path/to/roads_1.shp"
+        DATA "geom_1 from roads"
+        DATA "geom_1 from (select * from roads where pri > 1) as foo"
+
+    - "2" for scale denominators between 1,000 and 10,000:
+
+      .. code-block:: mapfile
+
+        DATA "geom from mytable_2"
+        DATA "/path/to/roads_2.shp"
+        DATA "geom_2 from roads"
+        DATA "geom_2 from (select * from roads where pri > 2) as foo"
+
+    - "3" for scale denominators larger than 10,000:
+
+      .. code-block:: mapfile
+
+        DATA "geom from mytable_3"
+        DATA "/path/to/roads_3.shp"
+        DATA "geom_3 from roads"
+        DATA "geom_3 from (select * from roads where pri > 3) as foo"
+
+    .. versionadded:: 6.4
+
+
+.. index::
    pair: LAYER; SIZEUNITS
 
 .. index::
@@ -1106,7 +1176,7 @@ REQUIRES [expression]
    triple: LAYER; SIZEUNITS; pixels
 
 SIZEUNITS [feet|inches|kilometers|meters|miles|nauticalmiles|pixels]
-    Sets the unit of :ref:`CLASS` object SIZE values (default is
+    Sets the unit of :ref:`STYLE` object SIZE values (default is
     pixels).  Useful for simulating buffering. `nauticalmiles` was
     added in MapServer 5.6.
 
@@ -1335,7 +1405,7 @@ TRANSPARENCY [integer|alpha] - deprecated
 .. index::
    pair: LAYER; TRANSFORM
 
-TRANSFORM [true|false ul|uc|ur|lc|cc|lr|ll|lc|lr]
+TRANSFORM [true|false] | [ul|uc|ur|cl|cc|cr|ll|lc|lr]
     Tells MapServer whether or not a particular layer needs to be transformed
     from some coordinate system to image coordinates. Default is true. This
     allows you to create shapefiles in image/graphics coordinates and
@@ -1498,8 +1568,8 @@ UTFITEM [string]
 .. index::
    pair: LAYER; VALIDATION
 
-VALIDATION
-    Signals the start of a `VALIDATION` block.
+:ref:`VALIDATION`
+    Signals the start of a :ref:`VALIDATION` block.
 
     As of MapServer 5.4.0, `VALIDATION` blocks are the preferred
     mechanism for specifying validation patterns for CGI param runtime

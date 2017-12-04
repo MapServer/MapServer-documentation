@@ -1,163 +1,271 @@
 .. _iis:
 
-*****************************************************************************
- IIS Setup for MapServer
-*****************************************************************************
+IIS Setup for MapServer
+=======================
 
-:Author: Debbie Paqurek
-:Last Updated: 2005/12/12
+:Author: Seth Girvin
+:Contact: sgirvin at compass.ie
+:Last Updated: 2017-06-26
 
-.. contents:: Table of Contents
-    :depth: 2
-    :backlinks: top
+.. contents::
+   :local:
 
+.. index:: IIS
 
-.. index:: IIS, php, CGI
+This document details how to configure a pre-built version of MapServer to run on IIS (Microsoft's web server - Internet Information Services). 
+These steps have a minimum requirement of IIS 7 and Windows 7, and should work for all release since up to IIS 10 and Windows 10. 
 
-
-Some help on how to set up MapServer/Chameleon/PhpPgAdmin on Microsoft IIS
-(v5.0). Contains note on changes to the php.ini file and necessary changes to
-the MapServer mapfiles. Please contribute or make changes as required.
-
-Base configuration
-------------------------------------------------------------------------------
-
-* Windows 2000
-* IIS 5.0
-* `MS4W <http://www.ms4w.com>`__ 1.2.1
-* Chameleon 2.2
-* PHP 4.3.11
-* MapServer 4.7
-* PhpPgAdmin 3.5.4 (if using postgresql/postgis) 
-* Postgres 8.0.3 (if using postgresql/postgis)
-* Postgis 1.0.3 (if using postgresql/postgis)
-
-This setup assumes that `MS4W <http://www.ms4w.com>`__ was unzipped to form c:\\ms4w\\ directory.<br>
-
-Php.ini file
-------------------------------------------------------------------------------
-
-* session.save_path (absolute path to your tmp directory)
-* extension_dir (relative path to your php/extensions directory)
-* cgi.force_redirect = 0</li>
-* enable the pg_sql extension (php_pgsql.dll) (for Postgresql)
-
-Internet Services Manager
-------------------------------------------------------------------------------
-
-Under your website tree, create a new website (e.g. msprojects). View the
-properties for the new website.
-
-Web Site Tab
-    * set the IP address and under the Advanced tab put the complete Host
-      Header name (e.g.msprojects.gc.ca).
-    
-Home Directory Tab
-    - content should come from: A directory located on this computer.
-    - Local Path: c:\\ms4w\\Apache\\htdocs
-    - Read access + whatever else you need
-    - Execute Permissions: Scripts only
-    - Configuration button - App Mappings (Add extensions .php and .phtml,
-      Executable is c:\\ms4w\\Apache\\cgi-bin\\php.exe,select All verbs, Script
-      Engine, and check that file exists<br>
-
-Documents Tab
-    * Add index.phtml and index.html
-    * Directory Security Tab
-        - Anonymous access amd authentication control
-        - Select Anonymous access and the edit button should indicate the
-          IUSR_account
-
-Server Extensions Tab
-    * Enable authoring is selected and client scripting says Javascript
-	
-Under the tree for your new website - add virtual directories for
-------------------------------------------------------------------------------
-
-cgi-bin 
-    Under Properties, virtual directory tab Local Path should point to
-    c:\\ms4w\\apache\\cgi-bin. Select Read. Execute Permissions should say
-    "scripts and executables"
-
-ms_tmp
-    Under Properties, virtual directory tab Local Path should point to
-    c:\\ms4w\\tmp\\ms_tmp. Select Read, Write. Execute Permissions should say
-    "scripts only". This is where temporary images are written to so in the
-    File system Security tab (use windows explorer), the c:\\ms4w\\tmp\\ms_tmp
-    directory should have permissions set for the Internet Guest Account
-    (Read and execute, Read, Write, List Folder Contents).
-
-tmp
-    Under Properties, virtual directory tab Local Path should point to
-    c:\\ms4w\\tmp. Select Read, Write. Execute Permissions should say "scripts
-    only". This is where chameleon writes sessions to so in the File system
-    Security tab (use windows explorer), the c:\\ms4w\\tmp directory should have
-    permissions set for the Internet Guest Accounnt (Read and execute, Read,
-    Write, List Folder Contents).
-
-chameleon
-    Under Properties, virtual directory tab Local Path should point to
-    C:\\ms4w\\apps\\chameleon\\htdocs. Select Read. Execute Permissions should say
-    "scripts only". Under the Chameleon tree, you can add virtual directories for admin
-    (c:\\ms4w\\apps\\chameleon\\admin\\htdocs), samples
-    (c:\\ms4w\\apps\\chameleon\\samples\\htdocs), cwc2
-    (c:\\ms4w\\apps\\chameleon\\cwc2\\htdocs)
-
-phppgadmin
-    If using postgresql/postgis, under Properties, virtual directory tab
-    Local Path should point to C:\\ms4w\\Apache\\htdocs\\phpPgAdmin. Select Read,
-    Write. Execute Permissions should say "scripts and executables". Under
-    Documents - add index.php.
+MapServer can also be run on Windows using `MS4W <http://www.ms4w.com>`_ (MapServer for Windows) - which installs its 
+own preconfigured Apache web server, and other related tools such as PHP, TinyOWS, and MapCache (which doesn't currently run under IIS). 
+Running MapServer under IIS may be necessary when deploying to servers where the installation of an additional web server is restricted, or where 
+system administrators have more experience maintaining IIS. 
 
 .. note::
 
-    We had to unzip the phppgadmin package into this directory in order to
-    get phppgadmin to show us the login page at
-    http://yourserver/phppgadmin/index.php. You might want additional
-    security on this directory.
+        The MapServer executables from `MS4W <http://www.ms4w.com>`_ can also be used under IIS as well; for more 
+        information see the section in MS4W's `README <http://ms4w.com/README_INSTALL.html#o-installing-the-ms4w-mapserver-binaries-in-other-environments>`__, 
+        or ask the MS4W community for assistance (`subscribe <https://lists.ms4w.com/mailman/listinfo/ms4w-users>`_).
 
-gmap
-    Good for testing purposes. Remember to change your mapfiles as discussed
-    in Mapfiles for IIS below. Under Properties, virtual directory tab Local
-    Path should point to C:\\ms4w\\apps\\gmap\\htdocs. Select Read. Execute
-    Permissions should say "scripts only".
+MapServer Setup
+---------------
+
+Precompiled versions of MapServer and GDAL (a required dependency) can be downloaded from http://www.gisinternals.com/release.php.
+These downloads are built and maintained by Tamas Szekeres a long term contributor to MapServer, and Project Steering 
+Committee (PSC) member.
+
+.. note:: 
+
+	Which version should I download?
 	
-Test PHP
-------------------------------------------------------------------------------
+	+ Unless you are using deprecated features in your Mapfiles you should download the latest stable release. 
+	+ Nearly all servers will now have a x64 (64-bit) architecture, so unless you are restricted to a win32 (32-bit) server
+	  download a x64 release. 
+	+ Unless you have a good reason you should use the latest compiler version. MSVC 2013 means the binaries were compiled with
+	  using Visual C++ 2013. If you rely on Python2 Mapscript you will need to use the MSVC 2008 version so that it matches the version Python2 was compiled with. 
+	+ This installation guide uses the *"Compiled binaries in a single .zip package"* download (release-1800-x64-gdal-2-1-3-mapserver-7-0-4). There is 
+	  also a *"MapServer installer with IIS registration support"* option but at the time of writing this did not install successfully. 
+   
+Once you have downloaded the zip file follow the steps below. 
 
-In a command line window, navigate to c:\\ms4w\\apache\\cgi-bin and run php -i.
-This should return the output that the phpinfo() function returns. I got an
-error about how it couldn't find ntwdblib.dll. I found this in
-c:\\ms4w\\apache\\php\\dlls and I copied it to the cgi-bin directory.
+#. Unzip the folder to your machine. In this example we will assume it has been unzipped to ``C:\MapServer``. 
+   Make sure that have "unblocked" the zip, to avoid and security related issues later. Right-click on the zip file,
+   select properties and click the "Unblock" button on the General tab. 
+   
+   .. image:: ../images/unblock_zip.png
+   
+#. Test that MapServer is working by double clicking ``C:\MapServer\SDKShell.bat`` to start a new Windows command 
+   session configured with MapServer environment settings, and then type:
 
-Mapfiles for IIS
-------------------------------------------------------------------------------
+   .. code-block:: bat
 
-* Add a config line to the MAP level of the mapfile
+        mapserv -v
 
-::
+   The MapServer version and supported format types should be displayed in the command window. 
 
-    CONFIG PROJ_LIB "c:\ms4w\proj\nad\"
+Configuring with IIS
+--------------------
 
-* change the IMAGEPATH to be an absolute path to your tmp/ms_tmp folder
+These steps assume IIS 7 or higher is installed on the development machine, and MapServer will use the default website
+location at ``C:\Inetpub\wwwroot``. All command line steps should be "Run as Administrator" (to select this option this right-click on the Windows command line icon). 
+Make sure IIS is on the machine - if you have a folder named ``C:\Inetpub`` then it is likely IIS is already installed. 
 
-::
+#. First copy the required .exes into the same folder as the MapServer DLLs. This can be done using the command below:
 
-    IMAGEPATH "c:\ms4w\tmp\ms_tmp"
+   .. sourcecode:: bat
 
-Configuration files:
-------------------------------------------------------------------------------
+        xcopy C:\MapServer\bin\ms\apps\* C:\MapServer\bin
 
-For Chameleon
+#. Create a new folder ``C:\Inetpub\wwwroot\mapserver``
 
-::
+   .. code-block:: bat
 
-    C:\ms4w\apps\chameleon\config\chameleon.xml
-    C:\ms4w\apps\chameleon\config\cwc2.xml 
+        md C:\Inetpub\wwwroot\mapserver
 
-For phppgadmin: (if using postgresql/postgis)
+#. Create a new, empty ``C:\Inetpub\wwwroot\mapserver\web.config`` file:
+#. Paste in the following configuration:
 
-::
+   .. code-block:: xml
+   
+        <?xml version="1.0" encoding="UTF-8"?>
+        <configuration>
+            <system.webServer>
+                <handlers>
+                    <add name="MapServerFastCgi" path="*" verb="*" type="" modules="FastCgiModule" scriptProcessor="C:\Mapserver\bin\mapserv.exe" resourceType="Unspecified" requireAccess="Script" allowPathInfo="false" preCondition=""  />
+                </handlers>
+                <caching enabled="true" enableKernelCache="true" />
+            </system.webServer>
+        </configuration>
 
-    C:\ms4w\apps\phpPgAdmin\conf\config.inc.php
+#. Next set up the web application in IIS:
 
+   .. code-block:: bat
+
+        "%systemroot%\system32\inetsrv\appcmd" add app /site.name:"Default Web Site" /path:/mapserver /physicalPath:"C:\Inetpub\wwwroot\mapserver"
+
+#. Next make sure the required ISAPI and CGI modules are installed in IIS with the following command:
+
+   .. code-block:: bat
+
+        start /w pkgmgr /iu:IIS-CGI;IIS-ISAPIExtensions;IIS-ISAPIFilter;
+
+   .. note:: You can enable IIS modules through the useer interface as follows:
+     
+     #. Click "Start button"
+     #. In the Search box, enter "Turn windows features on or off"
+     #. In the Features window, Click: "Internet Information Services"
+     #. Click: "World Wide Web Services"
+     #. Click: "Application Development Features"
+     #. Check (enable) the features. 
+     #. IIS may then need to be restarted
+   
+     .. image:: ../images/windows_features.jpg
+    
+#. Next we set the mapserver.exe to be a FastCGI application and allow it to run in IIS:
+
+   .. code-block:: bat
+
+        "%systemroot%\system32\inetsrv\appcmd" set config -section:system.webServer/fastCgi /+"[fullPath='C:\Mapserver\bin\mapserv.exe']" /commit:apphost
+        "%systemroot%\system32\inetsrv\appcmd" set config /section:isapiCgiRestriction /+"[path='C:\MapServer\bin\mapserv.exe',description='MapServer',allowed='True']"
+
+#. Test the setup was successful by entering the following URL in a browser: http://localhost/mapserver/. If the following text is displayed then MapServer has 
+   been successfully configured as a FastCGI application in IIS. 
+   
+   .. code-block:: bat
+      
+    No query information to decode. QUERY_STRING is set, but empty. 
+
+Setting up Applications
+-----------------------
+
+MapServer applications consist of a Mapfile, and additional optional files for data, symbols, logs, and images. The same instance of MapServer
+can be used to serve many applications. In this example we will create a new ``test`` subfolder for a test application in a ``C:\MapServer\apps`` folder. 
+
+.. code-block:: bat
+
+    md C:\MapServer\apps\test
+    
+Now create a new ``test.map`` file in this folder and paste in the test Mapfile below. 
+
+.. code-block:: mapfile
+
+    MAP
+        EXTENT -180 -90 180 90
+        # Set the path to where the map projections are stored
+        CONFIG "PROJ_LIB" "C:\MapServer\bin\proj\SHARE"    
+        NAME "TestMap"
+        WEB
+          METADATA
+            "ows_enable_request" "*"
+          END
+        END
+        PROJECTION
+          "init=epsg:4326"
+        END
+        LAYER
+          NAME "country_bounds"
+          TYPE RASTER
+          CONNECTION "http://demo.mapserver.org/cgi-bin/wms?"
+          CONNECTIONTYPE WMS
+          METADATA
+            "wms_srs"             "EPSG:4326"
+            "wms_name"            "country_bounds"
+            "wms_server_version"  "1.1.1"
+            "wms_format"          "image/gif"
+          END
+        END
+    END
+    
+You should now be able to test the application is accessible through IIS using the following URL to retrieve an image via WMS: 
+http://localhost/mapserver/mapserv?map=C:/MapServer/apps/test/test.map&SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=country_bounds&STYLES=&CRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=400&HEIGHT=300&FORMAT=image/png
+    
+Setting up Logging
+------------------
+
+You can setup MapServer logging by adding the following lines to your ``MAP`` block.
+
+.. code-block:: mapfile
+
+    DEBUG 5 # a value from 0 (OFF) to 5 (detailed)
+    CONFIG "MS_ERRORFILE" "logs\ms.log"
+
+The path to the log file is relative to the Mapfile, so in this example you need to create a new ``C:\MapServer\apps\test\logs`` folder:
+
+.. code-block:: bat
+
+    md C:\MapServer\apps\test\logs
+   
+You will then need to set read-write permissions on the log file to the IIS application pool user (in this example we are using the default ``IIS AppPool\DefaultAppPool`` account
+that the MapServer FastCGI runs under):
+
+.. code-block:: bat
+
+    icacls "C:\MapServer\apps\test\logs" /grant "IIS AppPool\DefaultAppPool":(OI)(CI)RW
+    
+If a different application pool is used, or you don't set the permissions you will receive the following message 
+(also check that the ``C:\MapServer\apps\test\logs`` folder exists as it will not be created automatically). 
+    
+.. code-block:: bat
+   
+    msSetErrorFile(): General error message. Failed to open MS_ERRORFILE C:/MapServer/apps/test/logs/ms.log    
+
+Troubleshooting
+---------------
+
++ Check that the file exists if you receive the following error. If it does exist then check the file permissions. 
+
+  .. code-block:: bat
+   
+    msLoadMap(): Unable to access file. (C:/MapServer/apps/test/test.map)
+     
++ MapServer projections are stored in ``C:\MapServer\bin\proj\SHARE``. When the projection is specified in the following form ``"init=epsg:3857"``, MapServer
+  will try to find this code in the ``epsg`` file, where it is listed as ``<3857> +proj=merc +a=6378137...``. If you receive the error below then
+  make sure the ``CONFIG "PROJ_LIB" "C:\MapServer\bin\proj\SHARE"`` setting is pointing to the correct path. 
+  *Note on one installation this message was shown as forward slashes rather than backslashes were used.*
+
+  .. code-block:: bat
+
+    msProcessProjection(): Projection library error. proj error "No such file or directory" for "init=epsg:3857"
+
+
++ The following error is caused if IIS has been locked-down so settings cannot be overridden at the ``web.config`` level. 
+ 
+  .. code-block:: bat
+
+    HTTP Error 500.19 - Internal Server Error
+    The requested page cannot be accessed because the related configuration data for the page is invalid.
+
+    This configuration section cannot be used at this path. This happens when the section is locked at a parent level. 
+    Locking is either by default (overrideModeDefault="Deny"), or set explicitly by a location tag with 
+    overrideMode="Deny" or the legacy allowOverride="false". 
+
+  Run the following in a command window (with administrator permissions). This enables the handlers section in the /mapserver/web.config
+  file to override the ones set at the machine level. See http://stackoverflow.com/questions/9794985/iis-this-configuration-section-cannot-be-used-at-this-path-configuration-lock
+
+  .. code-block:: bat
+
+    %windir%\system32\inetsrv\appcmd.exe unlock config -section:system.webServer/handlers
+
++ Check ``C:\MapServer\bin\mapserv.exe`` exists if you encounter the error below. 
+
+  .. code-block:: bat
+
+    HTTP Error 500.0 - Internal Server Error
+    The FastCGI executable could not be found
+
++ To view the CGI applications registered with IIS you can use the command below (this reads the ``C:\Windows\System32\inetsrv\config``):
+
+  .. code-block:: bat
+
+    "%systemroot%\system32\inetsrv\appcmd" list config /section:isapiCgiRestriction
+
+  This should output XML similar to below for this section:
+
+  .. code-block:: xml
+
+    <system.webServer>
+      <security>
+        <isapiCgiRestriction>
+          <add path="C:\MapServer\bin\mapserv.exe" allowed="true" description="MapServer" />
+        </isapiCgiRestriction>
+      </security>
+    </system.webServer>
