@@ -666,6 +666,9 @@ Web Object Metadata
   *NOT* define this item. When it is not defined, the 'numberMatched'
   attribute is set to "unknown".
 
+  See "wfs_maxfeatures_ignore_for_resulttype_hits" for a similar setting
+  affecting resultType=hits GetFeature request.
+
 .. index:: 
    triple: WFS; METADATA; wfs_anable_request
 
@@ -695,6 +698,28 @@ Web Object Metadata
 **wfs_feature_collection**
   Replaces the default name of the feature-containing element
   (<msFeatureCollection>) with a user-defined value.
+
+.. index:: 
+   triple: WFS; METADATA; wfs_features_cache_count
+
+**wfs_features_cache_count**
+  (Optional, since MapServer 7.2) Maximum number of features retrieved during
+  the first query pass that should be cached, so as not to be asked again to
+  the datasource. This might be set to the same value as wfs_maxfeatures, but
+  not necessarily. If wfs_features_cache_size is also set, the most limiting
+  will be honoured.
+  Note: this is an advanced setting.
+
+.. index:: 
+   triple: WFS; METADATA; wfs_features_cache_size
+
+**wfs_features_cache_size**
+  (Optional, since MapServer 7.2) Maximum amount of RAM allowed to cache
+  features during the first query pass, so as not to be asked again to
+  the datasource when geneating the GML or OGR output.
+  If wfs_features_cache_count   is also set, the most limiting will be honoured.
+  By default the value is in bytes, unless the " MB" suffix is specified.
+  Note: this is an advanced setting.
 
 .. index:: 
    triple: WFS; METADATA; wfs_fees
@@ -746,6 +771,28 @@ Web Object Metadata
   returned. In WFS 2.0, this item is used to fill the "CountDefault"
   parameter of the response document to a GetCapabilities request, so
   that clients are aware of the server limit.
+  See also the "wfs_maxfeatures_ignore_for_resulttype_hits" item.
+
+.. index::
+   triple: WFS; METADATA; wfs_maxfeatures_ignore_for_resulttype_hits
+
+**wfs_maxfeatures_ignore_for_resulttype_hits**
+  (Optional, added in MapServer 7.2) Controls whether the limit set by
+  "wfs_maxfeatures" is also taken into account in resultType=hits GetFeature requests.
+
+  See "resultType parameter" chapter (`OGC WFS 2.0 specification`_, sect. 7.6.3.6)
+
+  When setting this item to "false", the limit set by "wfs_maxfeatures" will also
+  be taken into account when processing a resultType=hits GetFeature request, that is
+  to say the number of hits returned will not be greater than wfs_maxfeatures. This is
+  the behaviour in MapServer version prior to 7.2, and also the general default behaviour
+  in later versions. Unless if all the layers that are queried are PostGIS layers,
+  in which case wfs_maxfeatures is not taken into account when computing the number of hits.
+  The item may be explicitly set to "true" so that wfs_maxfeatures is not taken
+  into account when computing the number of hits (for any layer type), which may exhibit
+  performance issues for large layers and/ or backends with slow access.
+
+  This item has no effect if wfs_maxfeatures is not set.
 
 .. index:: 
    triple: WFS; METADATA; wfs_namespace_prefix
@@ -1213,6 +1260,14 @@ Layer Object
   those cases, setting this item to NO will avoid he default spatial filter to
   be appended to the request. This is only implemented for OGR datasources.
 
+Layer Metadata API
+----------------------
+
+If ``wfs_metadataurl_href`` is not defined, MapServer will provide a link to
+the Layer Metadata API for the given layer in the ``<MetadataURL>`` element.
+See the :ref:`Layer Metadata API <layer_metadata>` documentation for more
+information.
+
 To-do Items and Known Limitations
 ==================================
 
@@ -1247,3 +1302,4 @@ To-do Items and Known Limitations
 .. _`OGC WFS 2.0 specification`: http://portal.opengeospatial.org/files/?artifact_id=39967
 .. _`OGC Filter Encoding 2.0 specification`: http://portal.opengeospatial.org/files/?artifact_id=39968
 .. _`OGC GML 3.2.1 specification`: http://portal.opengeospatial.org/files/?artifact_id=20509
+

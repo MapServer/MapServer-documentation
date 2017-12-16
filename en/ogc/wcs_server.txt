@@ -13,7 +13,7 @@
 :Contact:      stephan.meissl at eox.at
 :Author:       Fabian Schindler
 :Contact:      fabian.schindler at eox.at
-:Last Updated: 2012-08-30
+:Last Updated: 2017-12-05
 
 .. contents:: Table of Contents
     :depth: 2
@@ -1427,6 +1427,32 @@ Layer Object Metadata
    GetCoverage requests will use this format when no other format is
    specified (the format parameter is optional then).
 
+.. index:: 
+   triple: WCS; METADATA; wcs_outputformat_creationoption
+
+**wcs_outputformat_{OUTPUTFORMATNAME}_creationoption_{OPTIONNAME}**
+
+- *Description:* (Optional) (added in MapServer 7.2.0) To provide
+  creation options in a (GDAL) output format specific and layer specific way.
+  {OUTPUTFORMATNAME} should be substituted by the user with the OUTPUTFORMAT.NAME
+  value of an output format allowed for the layer. And {OPTIONNAME} by a
+  valid GDAL creation option valid for the OUTPUTFORMAT.DRIVER.
+  
+  The purpose of this metadata item is to provide creation options that depend
+  on the layer,  typically to configure some metadata in the resulting raster
+  file that depends on that layer (for non-layer dependent configuration options,
+  OUTPUTFORMAT.FORMATOPTION should rather be used).
+
+  For GDAL drivers that support band-specific creation output (at time of
+  writing, only the GRIB  driver in GDAL 2.3.0), with a BAND_{bandnumber}_{OPTIONNAME}
+  syntax for the GDAL creation option, it is also possible to use a MapServer
+  metadata item named
+  wcs_outputformat_{OUTPUTFORMATNAME}_creationoption_BAND_{bandnumber}_{OPTIONNAME}.
+  bandnumber will be automatically adjusted when passed to GDAL so that the
+  WCS band subsetting is properly taken into account.
+  You can consult `WCS GRIB output in msautotest`_ as
+  a practical example of how to configure GRIB2 WCS output (requires GDAL 2.3.0)
+
 *Axes Descriptions* (WCS 1.x only)
 
 MapServer allows you define a number of these for a layer. Individual
@@ -1506,6 +1532,12 @@ conventions below.
   given coverage (i.e. "2000-11-11T11:11:11Z,2001-11-11T11:11:11Z"),
   used when advertising GetCapabilities.
 
+Layer Metadata API
+----------------------
+
+If ``wcs_metadatalink_href`` is not defined, MapServer will provide a link to
+the Layer Metadata API for the given layer. See the
+:ref:`Layer Metadata API <layer_metadata>` documentation for more information.
 
 Rules for handling SRS in a MapServer WCS
 =========================================
@@ -1609,6 +1641,11 @@ To-do Items and Known Limitations
   validation be aware that there is a currently bug in libxml2 that 
   breaks the validation of GML 3.2.1.
 
+Credits
+=======
+
+Support for per-layer creation options has been funded by Meteorological
+Service of Canada.
 
 .. #### rST Link Section ####
 
@@ -1629,7 +1666,8 @@ To-do Items and Known Limitations
 .. _`OWS Common 2.0`: http://portal.opengeospatial.org/files/?artifact_id=38867
 .. _`Open Geospatial Consortium (OGC)`: http://www.opengeospatial.org/
 .. _`MapServer for Windows (MS4W)`: http://www.ms4w.com
-.. _`WCS 2.0 tests in msautotest`: https://github.com/mapserver/msautotest/blob/master/wxs/wcs_simple.map
+.. _`WCS 2.0 tests in msautotest`: https://github.com/mapserver/mapserver/blob/master/msautotest/wxs/wcs_simple.map
+.. _`WCS GRIB output in msautotest`: https://github.com/mapserver/mapserver/blob/master/msautotest/wxs/wcs_grib_output.map
 .. _`MS RFC 67`: http://mapserver.org/development/rfc/ms-rfc-67.html
 .. _`public RFC on EO-WCS`: http://www.opengeospatial.org/standards/requests/81
 .. _`EOxServer`: http://eoxserver.org
