@@ -197,7 +197,9 @@ Let's go through each of these parameters in more detail:
   WMS Capabilities requires a Name and a Title tag for every
   layer. The Map's NAME and wms_title metadata will be used to set the
   root layer's name and title in the GetCapabilities XML output. The
-  root layer in the WMS context corresponds to the whole mapfile.
+  root layer in the WMS context corresponds to the whole mapfile. You 
+  can suppress the root layer's name by setting ``wms_rootlayer_name``
+  to ``""``.
 
 - **Layer Name and wms_title metadata:**
 
@@ -1338,6 +1340,17 @@ wms_postcode, wms_country**
 .. index:: 
    triple: WMS; METADATA; wms_rootlayer_title
 
+**wms_rootlayer_name**
+
+- *WMS TAG Name:* Name (WMS1.1.1, sect. 7.1.4.1)
+- *Description:* (Optional) Same as MAP.NAME, applied to the root
+  Layer element.  If not set, then MAP.NAME will be used. If set to
+  ``""``, then Name element is suppressed and the root layer name
+  will not be advertised as a GetMap capable layer.
+
+.. index:: 
+   triple: WMS; METADATA; wms_rootlayer_name
+
 **wms_rootlayer_title**
 
 - *WMS TAG Name:* Title (WMS1.1.1, sect. 7.1.4.1)
@@ -1818,14 +1831,12 @@ Layer Object Metadata
   of hierarchically nested groups. This grouped hierarchy will be
   expressed in the capabilities.
 
-  WMS_LAYER_GROUP is different from the GROUP keyword in that it does not 
-  necessarily publish the name of the group in the capabilities, only the 
-  title is always published. If a layer with the same name as used in 
-  WMS_LAYER_GROUP is found it is treated as named group and if no layer with 
-  this name is found as unnamed group.
-  
-  As a consequence the groups set with WMS_LAYER_GROUP can not always 
-  be requested with a GetMap or GetFeatureInfo request (see section
+  From MapServer 7.2, WMS_LAYER_GROUP is similar from the GROUP keyword in that
+  it necessarily publishes the name and the tile of the group in the
+  capabilities.
+
+  As a consequence the groups set with WMS_LAYER_GROUP can always be
+  requested with a GetMap or GetFeatureInfo request (see section
   7.1.4.5.2 of the WMS implementation specification version
   1.1.1. (OGC 01-068r2)). Another difference is that GROUP does not
   support nested groups. The purpose of this metadata setting is to
@@ -1833,7 +1844,7 @@ Layer Object Metadata
 
   All group names should be preceded by a forward slash (/). It is not
   allowed to use both the WMS_LAYER_GROUP setting and the GROUP
-  keyword for a single layer.
+  keyword for a single layer. GROUP can be seen as deprecated!
 
   .. code-block:: mapfile
 
@@ -1997,6 +2008,14 @@ Layer Object Metadata
 
 .. index::
    pair: WMS; Vendor specific parameters
+
+Layer Metadata API
+----------------------
+
+If ``wms_metadataurl_href`` is not defined, MapServer will provide a link to
+the Layer Metadata API for the given layer in the ``<MetadataURL>`` element
+See the :ref:`Layer Metadata API <layer_metadata>` documentation for more
+information.
 
 Vendor specific WMS parameters
 ------------------------------
@@ -2260,3 +2279,4 @@ FAQ / Common Problems
 .. _`http://schemas.opengis.net`: http://schemas.opengis.net
 .. _`http://trac.osgeo.org/proj/`: http://trac.osgeo.org/proj/
 .. _`http://www.maptools.org/dl/proj4-epsg.zip`: http://www.maptools.org/dl/proj4-epsg.zip
+

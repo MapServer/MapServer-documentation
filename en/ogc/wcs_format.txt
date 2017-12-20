@@ -11,7 +11,7 @@
 :Contact:      nbarker at ittvis.com
 :Author:       Gail Millin
 :Contact:      nbarker at ittvis.com
-:Last Updated: 2005/12/12
+:Last Updated: 2017-12-05
 
 
 .. contents::
@@ -21,6 +21,8 @@
 This document explains how to use MapServer to deliver Landsat, SPOT, DEM, and
 NetCDF temporal/banded data through the MapServer WCS interface. Thanks go to
 Steve Lime and Frank Warmerdam for their assistance with these projects
+
+It also shows how to configure MapServer for GRIB2 output format.
 
 Landsat
 =======
@@ -334,3 +336,90 @@ order to use it for WCS:
 
 If your image has a colortable and only one band, it will come out greyscale
 unless you set the IMAGEMODE to PC256 instead of BYTE.
+
+GRIB2 output format
+===================
+
+This requires MapServer 7.2.0 for format-specific and layer-specific
+creation options mechanism, as well as GDAL 2.3.0 for GRIB2 output support.
+
+
+Define your output format as
+
+.. code-block:: mapfile
+
+    OUTPUTFORMAT
+        NAME GRIB
+        DRIVER "GDAL/GRIB"
+        MIMETYPE "application/x-grib2"
+        IMAGEMODE Float32
+        EXTENSION "grib2"
+        FORMATOPTION "DATA_ENCODING=SIMPLE_PACKING"
+    END
+
+(consult `GDAL GRIB driver documentation`_ for more options that can be 
+provided in FORMATOPTION)
+
+and the actual layer
+
+.. code-block:: mapfile
+
+    LAYER
+        NAME temperatures
+        TYPE raster
+        STATUS ON
+        DUMP TRUE
+        DATA "temperatures.tif"
+
+        PROJECTION
+            "init=epsg:4326"
+        END
+
+        METADATA
+            "ows_extent" "-180 -90 180 90"
+            "wcs_label" "Test label"
+            "ows_srs"	"EPSG:4326"
+            "wcs_resolution" "2.4 2.4"
+            "wcs_bandcount" "1"
+            "wcs_imagemode" "Float32"
+            "wcs_formats" "GEOTIFF_FLOAT32 GRIB"
+            "wcs_description" "Test description"
+            "wcs_metadatalink_href" "http://www.gdal.org/metadata_test_link.html"
+            "wcs_keywordlist" "test,mapserver"
+            "wcs_abstract" "abstract"
+
+            # GDAL creation options for the GRIB output format
+            "wcs_outputformat_GRIB_creationoption_DISCIPLINE" "0(Meteorological)"
+            "wcs_outputformat_GRIB_creationoption_IDS" "Normally this will never be used given the BAND_1_IDS override"
+            "wcs_outputformat_GRIB_creationoption_BAND_1_IDS" "CENTER=54(Montreal) SUBCENTER=0 MASTER_TABLE=4 LOCAL_TABLE=0 SIGNF_REF_TIME=1(Start_of_Forecast) REF_TIME=2017-01-05T00:00:00Z PROD_STATUS=0(Operational) TYPE=2(Analysis_and_forecast)"
+            "wcs_outputformat_GRIB_creationoption_PDS_PDTN" "0"
+            "wcs_outputformat_GRIB_creationoption_PDS_TEMPLATE_ASSEMBLED_VALUES" "0 0 2 47 47 0 0 1 0 103 0 2 255 -127 -2147483647"
+
+            # WCS 2.0 metadata items
+            "wcs_native_format" "application/x-grib2"
+            "wcs_band_names" "Temperature_2m"
+            "Temperature_2m_band_interpretation" "interp"
+            "Temperature_2m_band_uom" "Celcius"
+            "Temperature_2m_band_definition"       "Temperature at 2m above ground"
+            "Temperature_2m_band_description"      "Temperature at 2m above ground"
+            "Temperature_2m_interval" "-100 100"
+            "Temperature_2m_significant_figures" "1"
+
+            # WCS 1.x metadata items
+            "wcs_nativeformat" "GRIB"
+            "wcs_rangeset_axes" "bands"
+            "wcs_rangeset_name" "Temperatures"
+            "wcs_rangeset_label" "Bands"
+            "wcs_rangeset_description" "Temperatures"
+        END
+    END
+
+(consult `GDAL GRIB driver documentation`_ for more options that can be 
+provided in 'wcs_outputformat_GRIB_creationoption_{OPTIONNAME}')
+
+Credit: Support for per-layer creation options has been funded by Meteorological
+Service of Canada.
+
+.. #### rST Link Section ####
+
+.. _`GDAL GRIB driver documentation`: http://gdal.org/frmt_grib.html

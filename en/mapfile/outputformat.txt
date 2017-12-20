@@ -52,6 +52,22 @@ with GDAL support, and the PDF and SVG depend on building with cairo support.
       FORMATOPTION "GAMMA=0.75"
     END
     OUTPUTFORMAT
+      NAME "jpeg_png"
+      MIMETYPE "image/vnd.jpeg-png"
+      DRIVER AGG/MIXED
+      IMAGEMODE RGBA
+      FORMATOPTION "TRANSPARENT_FORMAT=png"
+      FORMATOPTION "OPAQUE_FORMAT=jpeg"
+    END
+    OUTPUTFORMAT
+      NAME "jpeg_png8"
+      MIMETYPE "image/vnd.jpeg-png8"
+      DRIVER AGG/MIXED
+      IMAGEMODE RGBA
+      FORMATOPTION "TRANSPARENT_FORMAT=png8"
+      FORMATOPTION "OPAQUE_FORMAT=jpeg"
+    END
+    OUTPUTFORMAT
       NAME "svg"
       DRIVER CAIRO/SVG
       MIMETYPE "image/svg+xml"
@@ -107,7 +123,8 @@ with GDAL support, and the PDF and SVG depend on building with cairo support.
 DRIVER [name]
     The name of the driver to use to generate this output format. Some driver 
     names include the definition of the format if the driver supports multiple 
-    formats. For AGG, the possible driver names are "AGG/PNG" and "AGG/JPEG".
+    formats. For AGG, the possible driver names are "AGG/PNG", "AGG/JPEG" or
+    "AGG/MIXED"
     For GD the possible driver names are "GD/Gif" and "GD/PNG".
     For output through OGR the OGR driver name is appended, such as 
     "OGR/Mapinfo File".  For output through GDAL the GDAL shortname for the 
@@ -213,6 +230,53 @@ FORMATOPTION [option]
 
     .. index::
        pair: PDF; Geospatial
+
+    - AGG/MIXED is a meta driver that automatically selects the appropriate format
+      depending if the result image has transparency or not. It requires the
+      TRANSPARENT_FORMAT and OPAQUE_FORMAT options to be defined and set to
+      another valid format. The valid formats for TRANSPARENT_FORMAT and
+      OPAQUE_FORMAT are those handled by the AGG/PNG, AGG/JPEG or GDAL/xxxx
+      drivers. By default, the "jpeg_png" format (with "image/vnd.jpeg-png" mime
+      type) is pre-configured to use PNG images when they are non-opaque pixels
+      and JPEG when they are only opaque pixels. Similarly a "jpeg_png8" format
+      (with "image/vnd.jpeg-png8" mime type) is pre-configured to use PNG 8bits
+      images when they are non-opaque pixels and JPEG when they are only opaque
+      pixels.
+
+      .. versionadded:: 7.2
+
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; TRANSPARENT_FORMAT
+
+      - "TRANSPARENT_FORMAT=name": which output format to be used when the
+        image contains non-opaque/transparent pixels.
+
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; OPAQUE_FORMAT
+
+      - "OPAQUE_FORMAT=name": which output format to be used when the
+        image contains only opaque pixels.
+ 
+      Example:
+
+      .. code-block:: mapfile
+
+        OUTPUTFORMAT
+          NAME "jpeg_low"
+          MIMETYPE "image/jpeg; quality=50"
+          DRIVER AGG/JPEG
+          IMAGEMODE RGB
+          FORMATOPTION "QUALITY=50"
+        END
+
+        OUTPUTFORMAT
+          NAME "jpeg_low_png"
+          MIMETYPE "image/vnd.jpeg-png; quality=50"
+          DRIVER AGG/MIXED
+          IMAGEMODE RGBA
+          FORMATOPTION "TRANSPARENT_FORMAT=png"
+          FORMATOPTION "OPAQUE_FORMAT=jpeg_low"
+        END
 
     - CAIRO/PDF:
 
