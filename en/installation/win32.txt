@@ -220,10 +220,10 @@ Set Compilation Options
 =======================
 
 MapServer, like many of it's support libraries, comes with a Visual C++
-makefile called Makefile.vc.  It includes the file nmake.opt which contains
-many of the site specific definitions.  We will only need to edit the nmake.opt
+makefile called Makefile.vc.  It includes the file cmake.opt which contains
+many of the site specific definitions.  We will only need to edit the cmake.opt
 file to configure the build for our local site options, and support libraries.
-The Makefile.vc, and nmake.opt template file have been provided by Assefa
+The Makefile.vc, and cmake.opt template file have been provided by Assefa
 Yewondwossen, and the DM Solutions folks. 
 
 As of MapServer 4.4, the default MapServer build options only include 
@@ -236,14 +236,14 @@ use the default PROJ.4 build without tweaking.
 The example will compile with the GDWin32 pre-built DLL as well as regex-0.12,
 and PROJ.4.   The PROJ.4 support will ensure we can enable 
 MapServer OGC-WMS compatibility.  Use notepad or another text editor to open 
-the nmake.opt file and make the following changes.
+the cmake.opt file and make the following changes.
 
 Comments
 --------
 
 Use the pound sign ( # ) to comment out 
 the lines that you want to disable, or remove the pound sign to enable
-an option for NMAKE.
+an option for CMAKE.
 
 A. Enable PROJ.4 support, and update the path to the PROJ.4
 directory.   Uncomment the PROJ= line, and the PROJ_DIR= line as follows,
@@ -287,7 +287,7 @@ bgd.lib stub library.  It is necessary to run the **makemsvcimport.bat**
 script in the gdwin32 directory first. 
 
 D. Make sure the regex path is set correctly.  In order for the 
-"delete" command in the "nmake /f makefile.vc clean" target to work properly
+"delete" command in the "cmake /f makefile.vc clean" target to work properly
 it is necessary to use backslashes in the REGEX_DIR definition.
 
 ::
@@ -315,7 +315,7 @@ Compile the Libraries
 
 Before compiling MapServer, you must first compile its supporting 
 libraries.  How this is done varies for each library.  For the PROJ.4 library
-a **nmake /f makefile.vc** command in the proj-4.4.9\src 
+a **cmake /f makefile.vc** command in the proj-4.4.9\src 
 directory should be sufficient.  The regex-0.12 code is actually built by 
 the MapServer build process, so you don't need to do anything there.
 
@@ -325,7 +325,7 @@ Previously, curl libraries can be compiled using the following command:
 
 :: 
 
-  nmake /f makefile.vc6 CFG=release
+  cmake /f makefile.vc6 CFG=release
 
 This creates a static library, libcurl.lib, to which you compile against.
 Versions newer than version 7.10.x should be compiled as dynamic library.  This
@@ -333,9 +333,9 @@ is accomplished using the command:
 
 ::
   
-  nmake /f makefile.vc6 CFG=release-dll
+  cmake /f makefile.vc6 CFG=release-dll
   
-You will then need to edit MapServer's nmake.opt to replace the CURL_LIB variable with this line:
+You will then need to edit MapServer's cmake.opt to replace the CURL_LIB variable with this line:
 
 ::
 
@@ -358,7 +358,7 @@ vcvars32.bat usually located in **C:\Program Files\Microsoft Visual Studio\VC98\
   Setting environment for using Microsoft Visual C++ tool.
   C:\Projects\mapserver>
 
-Now issue the command: **nmake /f Makefile.vc** and wait 
+Now issue the command: **cmake /f Makefile.vc** and wait 
 for it to finish compiling. If it compiles successfully, you should get 
 mapserver.lib, libmap.dll, mapserv.exe, and other .EXE files.  That's it for 
 the compilation process. If you run into problems, read section 4 about 
@@ -381,10 +381,10 @@ To compile PostGIS support into MapServer, here's what you need to do:
 5. copy everything from C:\projects\postgresql-8.0.1\src\interfaces\libpq\release 
    to C:\projects\postgresql-8.0.1\src\interfaces\libpq as the MapServer 
    makefile will try to find it there
-6. Define the following in the nmake.opt for MapServer:
+6. Define the following in the cmake.opt for MapServer:
    POSTGIS =-DUSE_POSTGIS
    POSTGIS_DIR =c:/projects/postgresql-8.0.1/src
-7. nmake /f makefile.vc
+7. cmake /f makefile.vc
 8. don't forget to copy libpq.dll (from 
    C:\projects\postgresql-8.0.1\src\interfaces\libpq\release) 
    into a location where MapServer can find it.
@@ -398,8 +398,8 @@ MapServer.
  * Visual C++ Tools Not Properly Initialized.
    :: 
    
-    C:\projects\mapserver> nmake -f /makefile.vc
-    'nmake' is not recognized as an internal or external command,
+    C:\projects\mapserver> cmake -f /makefile.vc
+    'cmake' is not recognized as an internal or external command,
     operable program or batch file.
 
    This occurs if you have not properly defined the path and other environment
@@ -407,14 +407,14 @@ MapServer.
    VCVARS32.BAT script, usually with the command **C:\Program Files\Microsoft
    Visual Studio\VC98\bin\vcvars32.bat** or something similar if visual studio was
    installed in an alternate location.  To test if VC++ is available, just type
-   "nmake" or "cl" in the command shell and ensure it is found.
+   "cmake" or "cl" in the command shell and ensure it is found.
 
  * Regex Build Problems.
    ::
    
      regex.obj : error LNK2001: unresolved external symbol _printchar
      libmap.dll : fatal error LNK1120: 1 unresolved externals
-     NMAKE : fatal error U1077: 'link' : return code '0x460'
+     CMAKE : fatal error U1077: 'link' : return code '0x460'
      Stop.
 
    This occurs if you use the stock regex-0.12 we referenced.  I work around
@@ -430,7 +430,7 @@ MapServer.
    ::
 
      LINK : fatal error LNK1104: cannot open file 'c:/projects/gdwin32/bgd.lib'
-     NMAKE : fatal error U1077: 'link' : return code '0x450'
+     CMAKE : fatal error U1077: 'link' : return code '0x450'
      Stop.
 
    If you are using the pre-built GD binaries, you still need to run the
