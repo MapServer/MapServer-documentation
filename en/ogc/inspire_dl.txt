@@ -11,7 +11,9 @@
 :Contact:      stephan.meissl at eox.at
 :Author:       Even Rouault
 :Contact:      even.rouault at mines-paris.org
-:Last Updated: 2014-01-22
+:Author:       Fabian Schindler
+:Contact:      fabian.schindler at eox.at
+:Last Updated: 2018-03-16
 
 .. contents:: Table of Contents
     :depth: 2
@@ -25,9 +27,11 @@ for spatial information in Europe to support Community environmental policies,
 and policies or activities which may have an impact on the environment.
 
 The INSPIRE Download Service is an implementation of the `INSPIRE Technical
-Guidance Download Services v3.1`_ on top of the :ref:`WFS_server`, version 2.0,
-implementation explained in the previous chapter.
-The `INSPIRE schemas`_ contain extensions to OGC WFS schemas.
+Guidance Download Services v3.1`_ on top of the :ref:`WFS_server`, version 2.0
+(implementation explained in the previous chapter) and an implementation of
+`Technical Guidance for the implementation of INSPIRE Download Services using
+Web Coverage Services`_ on top of :ref:`WCS_server`, version 2.0.
+The `INSPIRE schemas`_ contain extensions to OGC WFS and WCS schemas.
 
 In order to achieve INSPIRE Download Service compliance, the following enhancements 
 have been implemented in MapServer:
@@ -39,7 +43,8 @@ have been implemented in MapServer:
 Support for INSPIRE Download Service in MapServer uses a syntax identical to
 the one used for :ref:`inspire_view_service`. Consequently, it is possible to
 define shared metadata items between Download and View services by using the ``ows_``
-prefix instead of ``wfs_``.
+prefix instead of ``wfs_`` or ``wcs_``. In the following examples the ``ows_``
+prefix is used, as the documentation is meant for both WCS and WFS.
 
 Activation of INSPIRE support
 =============================
@@ -50,16 +55,16 @@ capabilities document (scenario 2). MapServer supports both scenarios.
 
 Activation of the corresponding scenario for INSPIRE support takes place in 
 the ``WEB.METADATA`` section of the mapfile through 
-``wfs_inspire_capabilities``. If activated, the corresponding INSPIRE 
-namespace as well as appropriate validation warnings are generated in the 
-capabilities document.
+``ows_inspire_capabilities``. If activated, the
+corresponding INSPIRE  namespace as well as appropriate validation warnings are
+generated in the capabilities document.
 
 Scenario 1 - activate INSPIRE support using a reference to external service 
 metadata::
 
   WEB
    METADATA
-    "wfs_inspire_capabilities" "url"
+    "ows_inspire_capabilities" "url"
     ...
    END
   END
@@ -68,7 +73,7 @@ Scenario 2 - activate INSPIRE support using embedded service metadata::
 
   WEB
    METADATA
-    "wfs_inspire_capabilities" "embed"
+    "ows_inspire_capabilities" "embed"
     ...
    END
   END
@@ -83,12 +88,16 @@ languages as well as the default language in the capabilities document. Based
 on the language parameter in the GetCapabilities request, certain specific 
 metadata values, namely
 
-- ``wfs_title``
-- ``wfs_abstract``
+- ``ows_title``
+- ``ows_abstract``
 
 need to be provided in the requested language (both at the WEB.METADATA and
 LAYER.METADATA levels). If the language is not supported 
 (or no language parameter is present), the default language has to be used.
+
+For INSPIRE download service WCS, only the WEB.METADATA fields have an effect,
+as the INSPIRE and language specific metadata are only relevant for the service
+itself and is not required on the level of coverages.
 
 As an extension, also not encouraged by the INSPIRE Download Services technical
 guidance, MapServer supports language dependent reference data like
@@ -104,7 +113,7 @@ section of the mapfile. This language parameter is also added to the
   WEB
    METADATA
     ...
-    "wfs_languages" "eng,ger"       #first default, values according ISO 639-2/B
+    "ows_languages" "eng,ger"       #first default, values according ISO 639-2/B
     ...
    END
   END
@@ -114,10 +123,10 @@ For language specific metadata values, a key extension method is applied::
   WEB
    METADATA
     ...
-    "wfs_title.eng" "myservicetitle"
-    "wfs_title.ger" "myservicetitleger"
-    "wfs_abstract" "mylayerabstract"        #fallback
-    "wfs_abstract.ger" "mylayerabstractger"
+    "ows_title.eng" "myservicetitle"
+    "ows_title.ger" "myservicetitleger"
+    "ows_abstract" "mylayerabstract"        #fallback
+    "ows_abstract.ger" "mylayerabstractger"
     ...
    END
   END
@@ -158,20 +167,20 @@ Scenario 1 - INSPIRE related fields using referenced external service metadata::
 
   WEB
    METADATA
-    "wfs_inspire_capabilities" "url"
-    "wfs_languages" "eng,ger"               #first default, values according ISO 639-2/B
+    "ows_inspire_capabilities" "url"
+    "ows_languages" "eng,ger"               #first default, values according ISO 639-2/B
 
-    "wfs_inspire_metadataurl_href" "http://INSPIRE.service/metadata"
-    "wfs_inspire_metadataurl_format" "application/vnd.ogc.csw.capabilities.response_xml"
-    "wfs_inspire_dsid_code" "mycode"
+    "ows_inspire_metadataurl_href" "http://INSPIRE.service/metadata"
+    "ows_inspire_metadataurl_format" "application/vnd.ogc.csw.capabilities.response_xml"
+    "ows_inspire_dsid_code" "mycode"
 
-    "wfs_keywordlist" "ogc,wfs,gml"
-    "wfs_title" "myservicetitle"
-    "wfs_abstract" "myabstract"
-    "wfs_fees" "conditions unknown"         #value either "no conditions apply"|default "conditions unknown"|<specific conditions>
+    "ows_keywordlist" "ogc,wfs,gml"
+    "ows_title" "myservicetitle"
+    "ows_abstract" "myabstract"
+    "ows_fees" "conditions unknown"         #value either "no conditions apply"|default "conditions unknown"|<specific conditions>
     "wfs_accessconstraints" "None"          #value according ISO 19115 (MD_RestrictionCode codelist) or default "None"
-    "wfs_contactorganization" "MapServer"   #responsible organization
-    "wfs_contactposition" "owner"           #responsible organization, value according "INSPIRE Metadata Regulation" (part D6)
+    "ows_contactorganization" "MapServer"   #responsible organization
+    "ows_contactposition" "owner"           #responsible organization, value according "INSPIRE Metadata Regulation" (part D6)
     ...
    END
   END
@@ -180,25 +189,25 @@ Scenario 2 - INSPIRE related fields using embedded service metadata::
 
   WEB
    METADATA
-    "wfs_inspire_capabilities" "embed"
-    "wfs_languages" "eng,ger"               #first default, values according ISO 639-2/B
+    "ows_inspire_capabilities" "embed"
+    "ows_languages" "eng,ger"               #first default, values according ISO 639-2/B
 
-    "wfs_inspire_temporal_reference" "2011-09-19"                                 #date of last revision, value according YYYY-MM-DD
-    "wfs_inspire_mpoc_name" "mympocname"                                          #point of contact
-    "wfs_inspire_mpoc_email" "mympoc@e.mail"                                      #point of contact
-    "wfs_inspire_metadatadate" "2011-09-19"
-    "wfs_inspire_resourcelocator" "http://myinspireresource"                      #URL for ResourceLocator
-    "wfs_inspire_keyword" "infoMapAccessService"                                  #value according "classification of spatial data services"
-    "wfs_inspire_dsid_code" "mycode"
-    "wfs_inspire_dsid_ns" "http://mycode"
+    "ows_inspire_temporal_reference" "2011-09-19"                                 #date of last revision, value according YYYY-MM-DD
+    "ows_inspire_mpoc_name" "mympocname"                                          #point of contact
+    "ows_inspire_mpoc_email" "mympoc@e.mail"                                      #point of contact
+    "ows_inspire_metadatadate" "2011-09-19"
+    "ows_inspire_resourcelocator" "http://myinspireresource"                      #URL for ResourceLocator
+    "ows_inspire_keyword" "infoMapAccessService"                                  #value according "classification of spatial data services"
+    "ows_inspire_dsid_code" "mycode"
+    "ows_inspire_dsid_ns" "http://mycode"
 
-    "wfs_keywordlist" "ogc,wfs,gml"
-    "wfs_title" "myservicetitle"
-    "wfs_abstract" "myabstract"
-    "wfs_fees" "conditions unknown"         #value either "no conditions apply"|default "conditions unknown"|<specific conditions>
-    "wfs_accessconstraints" "None"          #value according ISO 19115 (MD_RestrictionCode codelist) or default "None"
-    "wfs_contactorganization" "MapServer"   #responsible organization
-    "wfs_contactposition" "owner"           #responsible organization, value according "INSPIRE Metadata Regulation" (part D6)
+    "ows_keywordlist" "ogc,wfs,gml"
+    "ows_title" "myservicetitle"
+    "ows_abstract" "myabstract"
+    "ows_fees" "conditions unknown"         #value either "no conditions apply"|default "conditions unknown"|<specific conditions>
+    "ows_accessconstraints" "None"          #value according ISO 19115 (MD_RestrictionCode codelist) or default "None"
+    "ows_contactorganization" "MapServer"   #responsible organization
+    "ows_contactposition" "owner"           #responsible organization, value according "INSPIRE Metadata Regulation" (part D6)
     ...
    END
   END
@@ -221,6 +230,7 @@ Notes:
 
 .. _`European directive`: http://inspire.jrc.ec.europa.eu/
 .. _`INSPIRE Technical Guidance Download Services v3.1`: http://inspire.jrc.ec.europa.eu/documents/Network_Services/Technical_Guidance_Download_Services_v3.1.pdf
+.. _`Technical Guidance for the implementation of INSPIRE Download Services using Web Coverage Services`: http://inspire.ec.europa.eu/file/1635/download?token=7m3PXp4a
 
 .. _`INSPIRE schemas`: http://inspire.ec.europa.eu/schemas/inspire_dls/1.0/inspire_dls.xsd
 .. _`INSPIRE Metadata Implementing Rules`: http://inspire.jrc.ec.europa.eu/documents/Metadata/Changes_to_MD_Guidelines_from_v1-1_to_v1-2_20100616-1.pdf
