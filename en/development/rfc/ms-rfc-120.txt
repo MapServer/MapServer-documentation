@@ -1,0 +1,260 @@
+.. _rfc120:
+
+========================================================
+MS RFC 120: INSPIRE download service support for WCS 2.0
+========================================================
+
+:Date:  2018/03/06
+:Author: Fabian Schindler (fabian.schindler at eox.at)
+:Last Edited:  2018/03/21
+:Status: Adopted on 2018/03/21
+:Version: MapServer 7.2
+
+1. Overview
+-----------
+
+In order to achieve INSPIRE download service for WCS 2.0 compliance, several
+enhancements need to be implemented in MapServer to support the specification_:
+
+- Activation of INSPIRE support (two scenarios)
+- Multi-language support for certain capabilities fields
+- Provision of INSPIRE specific metadata
+
+This RFC aggregates and extends the already provided ideas/solutions regarding 
+INSPIRE download service for WCS 2.0 support.
+
+
+2. Activation of INSPIRE support
+--------------------------------
+
+INSPIRE specific metadata can either be referenced in an external INSPIRE 
+service metadata document (scenario 1) or can be directly embedded in the 
+capabilities document (scenario 2). MapServer needs to support both scenarios.
+
+Activation of the corresponding scenario for INSPIRE support takes place in the
+WEB.METADATA section of the mapfile through "wcs_inspire_capabilities". If
+activated, the corresponding INSPIRE namespace as well as appropriate validation
+warnings are generated in the capabilities document.  
+
+Scenario 1 - activate INSPIRE support using a reference to external service 
+metadata
+::
+
+  WEB
+   METADATA
+    "wcs_inspire_capabilities" "url"
+    ...
+   END
+  END
+  
+Scenario 2 - activate INSPIRE support using embedded service metadata
+::
+
+  WEB
+   METADATA
+    "wcs_inspire_capabilities" "embed"
+    ...
+   END
+  END
+
+
+3. Multi-language support for certain capabilities fields
+---------------------------------------------------------
+
+INSPIRE requires multi-language support and requests a list of all supported 
+languages as well as the default language in the capabilities document. Based 
+on the language parameter in the GetCapabilities request, certain specific 
+metadata values, namely
+
+  - "wcs_title"
+  - "wcs_abstract"
+
+need to be provided in the requested language. If the language is not supported 
+(or no language parameter is present), the default language has to be used.
+
+All supported languages are specified as comma separated list (first language is
+default) through "wcs_languages" in  the WEB.METADATA section of the mapfile. 
+This language parameter is also added to the onlineresource in the
+GetCapabilities output.
+::
+
+  WEB
+   METADATA
+    ...
+    "wcs_languages" "eng,ger"       #first default, values according ISO 639-2/B
+    ...
+   END
+  END
+
+To address the second issue, different options_ regarding implementation were 
+evaluated.
+
+For language specific metadata values, a key extension method is applied.
+::
+
+  WEB
+   METADATA
+    ...
+    "wcs_title.eng" "myservicetitle"
+    "wcs_title.ger" "myservicetitleger"
+    "wcs_abstract" "mylayerabstract"        #fallback
+    "wcs_abstract.ger" "mylayerabstractger"
+    ...
+   END
+  END
+
+
+4. Provision of INSPIRE specific metadata
+-----------------------------------------
+
+Depending on the scenario, additional metadata information is required to 
+support the specification. The INSPIRE related fields are provided below:
+
+Scenario 1 - INSPIRE related fields using referenced external service metadata
+::
+
+  WEB
+   METADATA
+    "wcs_inspire_capabilities"        "url"
+    "wcs_languages"                   "eng,ger"     #first default, values according ISO 639-2/B
+    "wcs_inspire_metadataurl_href"    "http://INSPIRE.service/metadata"
+    "wcs_inspire_metadataurl_format"  "application/vnd.ogc.csw.capabilities.response_xml"
+    "wcs_keywordlist_ISO_items"       "infoCoverageAccessService"
+    "wcs_keywordlist_vocabulary"      "ISO"
+    "wcs_title"                       "myservicetitle"
+    "wcs_abstract"                    "myabstract"
+    "wcs_fees"                        "conditions unknown"    #value either "no conditions apply"|default "conditions unknown"|<specific conditions>
+    "wcs_accessconstraints"           "None"                  #value according ISO 19115 (MD_RestrictionCode codelist) or default "None"
+    "wcs_contactorganization"         "MapServer"             #responsible organization
+    "wcs_contactposition"             "owner"                 #responsible organization, value according "INSPIRE Metadata Regulation" (part D6)
+    ...
+   END
+  END
+  
+
+Scenario 2 - INSPIRE related fields using embedded service metadata
+::
+
+  WEB
+   METADATA
+    "wcs_inspire_capabilities"        "embed"
+    "wcs_languages"                   "eng,ger"               #first default, values according ISO 639-2/B
+    "wcs_inspire_temporal_reference"  "2011-09-19"            #date of last revision, value according YYYY-MM-DD
+    "wcs_inspire_mpoc_name"           "mympocname"            #point of contact
+    "wcs_inspire_mpoc_email"          "mympoc@e.mail"         #point of contact
+    "wcs_inspire_metadatadate"        "2011-09-19"            #value according YYYY-MM-DD
+    "wcs_inspire_resourcelocator"     "http://myinspireresource" #URL for ResourceLocator
+    "wcs_inspire_keyword"             "infoMapAccessService"  #value according "classification of spatial data services"
+    "wcs_keywordlist_ISO_items"       "infoMapAccessService"
+    "wcs_keywordlist_vocabulary"      "ISO"
+    "wcs_title"                       "myservicetitle"
+    "wcs_abstract"                    "myabstract"
+    "wcs_fees"                        "conditions unknown"    #value either "no conditions apply"|default "conditions unknown"|<specific conditions>
+    "wcs_accessconstraints"           "None"                  #value according ISO 19115 (MD_RestrictionCode codelist) or default "None"
+    "wcs_contactorganization"         "MapServer"             #responsible organization
+    "wcs_contactposition"             "owner"                 #responsible organization, value according "INSPIRE Metadata Regulation" (part D6)
+    ...
+   END
+  END
+
+Notes:
+
+- several fields require certain values, these values are not validated by 
+  MapServer itself, instead a manual validation against the `INSPIRE schemas`_ 
+- <inspire_common:ResourceType> is always set to 'service' and 
+  <inspire_common:SpatialDataServiceType> is always set to 'download', both
+  values can't be altered through the mapfile
+- conformity is always set to 'not evaluated', based on the latest 
+  `INSPIRE Metadata Implementing Rules`_ (page 7), a specification document, 
+  the specification date and a specification URI or URL need to be provided for 
+  degree conformant/not conformant, which is currently not implemented
+
+
+5 Implementation details
+------------------------
+
+In order to implement these enhancements, the following changes need to be 
+implemented in the MapServer codebase:
+ 
+1) negotiate language with the client supplied 'AcceptLanguages'
+2) detect if INSPIRE support is activated, if so add corresponding namespaces
+3) output extended capabilitities with language list and INSPIRE specific 
+   metadata (depending on scenario 1 or 2)
+4) add language parameter to onlineresource in output
+5) consider key extension based on language (e.g. "wcs_title.eng") when 
+   deriving metadata from the mapobject, use fallback with no extension 
+   (e.g. "wcs_title")
+6) add warnings for missing but mandatory INSPIRE specific metadata
+
+5.1 Files affected
+------------------
+
+The following files are affected by this RFC:
+
+::
+
+  mapows.c/mapows.h
+
+  [N] MS_DLL_EXPORT char *msOWSLanguageNegotiation(..)
+
+  mapwcs20.c
+
+  [N] void msXMLStripIndentation(char* ptr)
+  [C] int msWCSParseRequest20_XMLGetCapabilities(..)
+  [C] int msWCSParseRequest20(..)
+  [S] void msWCSPrepareNamespaces20(.., int addInspire)
+  [N] void msWCSAddInspireDSID20(mapObj *map, xmlNsPtr psNsInspireDls, xmlNsPtr psNsInspireCommon, xmlNodePtr pDlsExtendedCapabilities)
+  [C] int msWCSGetCapabilities20(..)
+  [C] int msWCSDescribeCoverage2(..)
+  [C] int msWCSGetCoverage2(..)
+
+- [C] function changed
+- [N] new function
+- [S] signature of function also changed
+
+5.2 MapScript issues
+--------------------
+
+This changes provide new functionality with no MapScript issues being 
+considered.
+
+5.3 Backwards compatibility issues
+----------------------------------
+
+This change provides new functionality with no backwards compatibility issues 
+being considered.
+
+6. Solution
+-----------
+
+The code for this RFC can be found in the 'wcs-inspire-dl' branch of the forked
+repository_ or PR 5571_.
+
+Incorporated tickets:
+
+  - Ticket 5223_: request for inspire DL support in MapServer WCS 2.0
+
+7. Tests
+--------
+
+2 example mapfiles were created for testing purposes:
+  - wcs_inspire_scenario1.map_ INSPIRE scenario 1
+  - wcs_inspire_scenario2.map_ INSPIRE scenario 2
+  
+The GetCapabilities responses with these mapfiles validate against the 
+`INSPIRE schemas`_.
+
+8. Voting history
+-----------------
+
+Passed with +1 from JukkaR, TomK, SteveL, DanielM, ThomasB, MikeS, and StephanM
+
+.. _specification: http://inspire.ec.europa.eu/file/1635/download?token=7m3PXp4a
+.. _options: http://trac.osgeo.org/mapserver/wiki/gsoc2011/work#multilanguagesupport
+.. _`INSPIRE Metadata Implementing Rules`: http://inspire.jrc.ec.europa.eu/documents/Metadata/Changes_to_MD_Guidelines_from_v1-1_to_v1-2_20100616-1.pdf
+.. _repository: https://github.com/constantinius/mapserver/tree/wcs-inspire-dl
+.. _5571: https://github.com/mapserver/mapserver/pull/5571
+.. _5223: https://github.com/mapserver/mapserver/issues/5223
+.. _wcs_inspire_scenario1.map: https://github.com/mapserver/mapserver/blob/master/msautotest/wxs/wcs_inspire_scenario1.map
+.. _wcs_inspire_scenario2.map: https://github.com/mapserver/mapserver/blob/master/msautotest/wxs/wcs_inspire_scenario2.map
+.. _`INSPIRE schemas`: http://inspire.ec.europa.eu/schemas/inspire_dls/1.0/inspire_dls.xsd
