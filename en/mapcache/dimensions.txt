@@ -6,4 +6,162 @@ Tileset Dimensions
 
 :Author: Thomas Bonfort
 :Contact: tbonfort at terriscope.fr
+:Author: Seth Girvin
+:Contact: sgirvin at compass.ie
+:Last Updated: 2018/05/04
+
+WMS layers in MapServer can support dimensions see :ref:`WMS Dimension <wms_dimension>` for details. 
+MapCache also supports dimensions for tilesets. 
+
+Storing separate tile caches for different dimensions has several practical use cases such as creating caches for different 
+spatial boundaries, elevations, or time periods. It also provides a mechanism for dynamically switching Mapfiles based on a dimension value. 
+
+Dimension Types
+---------------
+
+Several types of dimensions are supported by MapCache. These are added within a ``<tileset>`` configuration.  
+
+Values Dimensions
++++++++++++++++++
+
+A Values type dimension lists all possible dimension values. The name of the dimension is used as the key in a query string when accessing 
+through a WMS or WMTS service, for example ``&DIM1=foobarbaz``. Any dimensions specified for a tileset will be forwarded on to their WMS source. 
+
+If a client does not provide the dimension as a key value pair the default will be used (in this example ``foobar``). 
+         
+.. code-block:: xml        
+         
+    <tileset name="LayerName">
+        <source>LayerSource</source>
+        <cache>sqlite</cache>
+        <grid>GoogleMapsCompatible</grid>
+        <format>PNG</format>
+        <metatile>5 5</metatile>
+        <metabuffer>10</metabuffer>
+        <dimensions>
+            <dimension type="values" name="DIM1" default="foobar">
+                <value>foobar</value>
+                <value>foobarbaz</value>
+                <value>foo</value>
+                <value>bar</value>
+            </dimension>
+        </dimensions>
+    </tileset>
+
+..
+    case_sensitive="true" option mentioned in MIGRATION_GUIDE.txt
+        
+Regex Dimensions
+++++++++++++++++
+
+An alternative to the hard-coded list of values is to use regular expressions. 
+
+The following example creates a MAPFILE dimension, for using the same MapCache tileset with different MapServer 
+Mapfiles. The name of the Mapfiles need not be known to MapCache, and can therefore be created even after MapCache has been started.
+
+When a user passes a ``MAPFILE=/path/to/mapfile``, the string ``/path/to/mapfile`` is validated against
+the supplied (PCRE) regular expression. The one in this example allows a name composed of alphanumeric characters
+separated by slashes (/) and finishing with ".map" ( [a-zA-Z0-9\./]*\.map$ ) , but will fail if there
+are two consecutive dots (..) in the path, to prevent file-system traversal.
+
+.. code-block:: xml
+         
+	 <dimension type="regex" name="MAPFILE" default="/path/to/mapfile.map">
+		 <regex>^(?!.*\.\.)[a-zA-Z0-9\./]*\.map$</regex>
+	 </dimension>
+     
+Time Dimensions
++++++++++++++++
+
+MapCache supports WMTS and WMS requests that include a TIME parameter, for both timestamps and time intervals.
+See :ref:`MS RFC 96: Time Dimension Support in MapCache Tilesets <rfc96>` for further details. 
+
+.. code-block:: xml
+         
+    <dimension type="time" name="MAPFILE" default="/path/to/mapfile.map">
+        <dbfile>/path/to/mapcache-time.sqlite</dbfile>
+        <query>
+            select
+            strftime('%Y-%m-%dT%H:%M:%SZ',start_time)||'/'||strftime('%Y-%m-%dT%H:%M:%SZ',end_time)
+            from
+            time
+            where
+            source_id=:tileset
+            and
+            start_time&gt;=datetime(:start_timestamp,'unixepoch')
+            and
+            end_time&lt;=datetime(:end_timestamp,'unixepoch')
+            order by
+            end_time
+        </query>
+    </dimension>
+
+Assembly Dimensions
++++++++++++++++++++
+
+TODO
+
+.. code-block:: xml
+         
+    <dimensions>
+        <assembly_type>stack</assembly_type>
+        <dimension ...>....</dimension>
+    </dimensions>
+
+Storing Dimensions
+------------------
+
+When using a disk based cache tiles will be stored in a folder structure similar to 
+``base/gridname/DIM1/value/xx/xx/xx/xx/xx/xx.png`` (where DIM1 is the dimension value). 
+   
+The order of the ``<dimension>`` tags inside the ``<dimensions>`` tag  is important as it is used
+to create the directory structure for the disk cache. If you change the order of these
+values, any tiles that have been previously cached are invalidated (they will be unavailable to MapCache but not deleted). 
+         
+Templates can be used to change the folder structure for example:
+
+.. code-block:: xml
+
+    <cache name="tmpl" type="disk">
+        <template>/tmp/template-test/{tileset}#{grid}#{dim}/{z}/{x}/{y}.{ext}</template>
+    </cache>
+
+Templates can also be used to change Sqlite database names e.g. 
+
+.. code-block:: xml
+
+   <!-- the following will create databases named TilesetName-#DimensionValue.db -->
+   <cache name="sqlite" type="sqlite3">
+      <dbfile>{tileset}-{dim}.db</dbfile>
+      <detect_blank />
+   </cache>
+   
+
+Accessing Tile Caches with Dimensions
+-------------------------------------
+
+To retrieve a tile with a specific dimension, add the dimension name and value to the request query string e.g. ``&DIM1=value``
+
+Only WMS and WMTS clients support passing dimensions to MapCache. Other tile services such as gmaps (GoogleMaps), tms, and KML
+do not support dimensions. WMTS however does allow access using a x,y,z addressing scheme, so by using URL rewriting on the web server 
+tile-based clients (for example an OpenLayers ``ol.source.XYZ`` layer) can load a dimension-based tileset.
+
+.. code-block:: python
+
+    # a URL such as the following
+    http://servername/tiles/13/3914/2687.png
+    # can be rewritten into a WMTS request - note WMTS uses {z}/{y}/{x} rather than {z}/{x}/{y}
+    # so these values need to be swapped
+    http://servername/mapcache/wmts/1.0.0/layername/default/dimension/GoogleMapsCompatible/13/2687/3914.png
+
+             
+Seeding Tile Caches with Dimensions
+-----------------------------------
+
+The :ref:`MapCache seeding tool <mapcache_seed>` allows specific dimensions to be seeded with the following syntax:
+
+.. code-block:: bat
+
+    mapcache_seed -c mapcache_config.xml -t tileset1 -e -1187000,6695000,-605000,7450000 -z 7,10 --dimension DIMENSION_NAME=DIMENSION_VALUE
+
 
