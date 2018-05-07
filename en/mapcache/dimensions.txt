@@ -8,24 +8,83 @@ Tileset Dimensions
 :Contact: tbonfort at terriscope.fr
 :Author: Seth Girvin
 :Contact: sgirvin at compass.ie
+:Author: Jerome Boue
 :Last Updated: 2018/05/04
+:Version: 1.6.1
 
-WMS layers in MapServer can support dimensions see :ref:`WMS Dimension <wms_dimension>` for details. 
+Introduction
+------------
+
+WMS layers in MapServer can support dimensions, see :ref:`WMS Dimension <wms_dimension>` for details.
 MapCache also supports dimensions for tilesets. 
 
 Storing separate tile caches for different dimensions has several practical use cases such as creating caches for different 
 spatial boundaries, elevations, or time periods. It also provides a mechanism for dynamically switching Mapfiles based on a dimension value. 
 
-Dimension Types
----------------
+MapCache uses Dimensions to:
 
-Several types of dimensions are supported by MapCache. These are added within a ``<tileset>`` configuration.  
+  - create the directory structure of disk and SQLite caches, using the
+    template structure with ``{dim}`` replacement entry, see
+    *Template Structure* in :ref:`mapcache_cache_disk` and
+    *Using Multiple SQLite Database Files* in :ref:`mapcache_cache_sqlite`.
+
+  - create the database structure of SQLite caches, using custom schema with
+    ``:dim`` replacement entry, see *Custom Schema* in
+    :ref:`mapcache_cache_sqlite`.
+
+  - build requests to WMS sources: any dimensions specified for a tileset will
+    be forwarded on to their WMS source whenever a cache miss occurs.
+
+Enabling Dimension Support in MapCache
+--------------------------------------
+
+Dimensions are enabled in the configuration file at the
+:ref:`mapcache_config_tileset` level. Each tileset may define its own
+dimensions with a ``<dimensions>`` section which includes one or several
+``<dimension>`` elements.
+
+Dimension Attributes
+++++++++++++++++++++
+
+Several attributes are defined for the ``<dimension>`` element.
+
+  - ``name`` (required): The name by which the dimension is refered to in a WMS
+    request (minus the ``dim_`` prefix as specified in
+    `WMS 1.1.1 Specification`_).
+
+  - ``default`` (required): The default value for the dimension if none is
+    explicitly provided in the WMS request.
+
+  - ``type`` (required): MapCache defines several ways for specifying a
+    dimension: ``values``, ``regex``, ``sqlite`` and ``time``. They are
+    described in the following sections.
+    
+  - ``unit`` (optional): dimension unit. This information is used only in the
+    GetCapabilities response.
+
+Dimension Types
++++++++++++++++
+
+Several types of dimensions are supported by MapCache: Values, Regex, SQLite
+and Time. They can be classified into two groups depending on how dimension values are defined:
+
+  - First level dimension types: Values and Regex. Dimensions values are
+    statically specified in the configuration file.
+
+  - Second level dimensions types: SQLite and Time. Dimensions values are
+    stored in a dynamic backend (a SQLite file) so that an update in the
+    dimension values does not involve a server restart.
+
+First Level Dimensions
+----------------------
+
+First level dimensions define values in the configuration file.
 
 Values Dimensions
 +++++++++++++++++
 
 A Values type dimension lists all possible dimension values. The name of the dimension is used as the key in a query string when accessing 
-through a WMS or WMTS service, for example ``&DIM1=foobarbaz``. Any dimensions specified for a tileset will be forwarded on to their WMS source. 
+through a WMS or WMTS service, for example ``&DIM1=foobarbaz``.
 
 If a client does not provide the dimension as a key value pair the default will be used (in this example ``foobar``). 
          
@@ -70,42 +129,155 @@ are two consecutive dots (..) in the path, to prevent file-system traversal.
 		 <regex>^(?!.*\.\.)[a-zA-Z0-9\./]*\.map$</regex>
 	 </dimension>
      
+Second Level Dimensions
+-----------------------
+
+Second level dimensions store values in a dynamic back-end, initially a SQLite
+file. This allows for adding new dimension values without modifying MapCache
+configuration file, which otherwise would need to restart the server.
+
 Time Dimensions
 +++++++++++++++
 
 MapCache supports WMTS and WMS requests that include a TIME parameter, for both timestamps and time intervals.
-See :ref:`MS RFC 96: Time Dimension Support in MapCache Tilesets <rfc96>` for further details. 
+See :ref:`MS RFC 96: Time Dimension Support in MapCache Tilesets <rfc96>` initial proposal for further details. 
+
+
+Defining a Time dimension in MapCache involves a SQLite back-end. Two elements
+must be provided:
+
+  - ``<dbfile>``: Location of the SQLite file implementing the time dimension
+
+  - ``<query>``: SQL query returning the list of available timestamp values
+    within a given time interval. In that query, start time and end time are
+    represented by the respective placeholders ``:start_timestamp`` and
+    ``:end_time_stamp``. Returned values shall be in ``yyyy-mm-ddThh:mm:ssZ``
+    time format, as specified in `RFC 3339`_, but restricted to UTC.
+
+Time values in the SQLite back-end are expressed in Unix time, i.e. the number
+of seconds that have elapsed since January 1, 1970 (midnight UTC).
+
+Querying the back-end with an interval may result in returning multiple
+timestamp values, each of which referencing distinct tiles. Assembling these
+tiles is described in `Tile Assembly Policies`_ section below.
 
 .. code-block:: xml
          
-    <dimension type="time" name="MAPFILE" default="/path/to/mapfile.map">
+    <!-- "time" dimension
+
+         This example defines a "time" dimension whose possible values are
+         stored in the /path/to/mapcache-time.sqlite SQLite file. The default
+         value is "2010".
+
+         A WMS request with that dimension may contain, e.g.
+         "... &time=1999-08-11T11:03:07Z/2001-09-21T08:17:56Z& ..."
+    -->
+    <dimension type="time" name="time" default="2010">
         <dbfile>/path/to/mapcache-time.sqlite</dbfile>
         <query>
-            select
-            strftime('%Y-%m-%dT%H:%M:%SZ',start_time)||'/'||strftime('%Y-%m-%dT%H:%M:%SZ',end_time)
-            from
-            time
-            where
-            source_id=:tileset
-            and
-            start_time&gt;=datetime(:start_timestamp,'unixepoch')
-            and
-            end_time&lt;=datetime(:end_timestamp,'unixepoch')
-            order by
-            end_time
+             SELECT strftime("%Y-%m-%dT%H:%M:%SZ",ts) FROM time
+              WHERE ts &gt;= datetime(:start_timestamp,"unixepoch")
+                AND ts &lt;= datetime(:end_timestamp,"unixepoch")
+           ORDER BY ts DESC
         </query>
     </dimension>
 
-Assembly Dimensions
-+++++++++++++++++++
+SQLite Dimensions
++++++++++++++++++
 
-TODO
+In a SQLite dimension, dimension values are stored in a SQLite file. Moreover,
+each value references a list of internal, or sub-dimension values which are
+used to query cache.
+
+For example, let's define a "sensor" dimension whose allowed values represent
+various Earth observation spacecrafts. A WMS request with that dimension may
+contain, e.g.: ``...&dim_sensor=spot&...`` In this example, each sensor
+references several data along an internal "product" sub-dimension. An example
+of the "sensor" dimension back-end contents is represented in the following
+table:
+
+================    =====================
+Sensor dimension    Product sub-dimension
+================    =====================
+spot                spot-img1
+spot                spot-img2
+phr                 phr-img1
+phr                 phr-img2
+phr                 phr-img3
+================    =====================
+
+The WMS request occurs at the "sensor" dimension level. The cache query is
+performed at the "product" sub-dimension level. In case of a cache miss, the
+"product" sub-dimension values are used to query the data source.
+
+Querying the back-end may then result in returning multiple sub-dimension
+values, each of which referencing distinct tiles. Assembling these tiles is
+described in `Tile Assembly Policies`_ section below.
+
+.. code-block:: xml
+
+    <!-- "sqlite" dimension
+
+         This example defines a "sensor" dimension whose possible values are
+         stored in the /data/sensor.sqlite SQLite file. The default value is
+         "phr".
+
+         A WMS request with that dimension may contain, e.g.
+         "... &dim_sensor=spot& ..."
+    -->
+    <dimension type="sqlite" name="sensor" default="phr">
+       <dbfile>/data/sensor.sqlite</dbfile>
+       <list_query>
+          SELECT distinct(product) FROM dim
+       </list_query>
+       <validate_query>
+          SELECT product FROM dim
+           WHERE sensor=:dim
+       </validate_query>
+    </dimension>
+
+Tile Assembly Policies
+++++++++++++++++++++++
+
+When several time or sub-dimension values are returned from a dimension
+back-end query, the resulting tile is an assembly of all simple tiles matching
+each value. The way simple tiles are assembled is set with the
+``<assembly_type>`` tag of the ``<dimensions>`` element. Currently only two
+values are implemented in MapCache:
+
+  - ``none``: No assembly is performed, the resulting tile is the first
+    retrieved simple tile. This is the default value.
+
+  - ``stack``: Every pixel of the resulting tile is filled with the first
+    opaque pixel found in all simple tiles in their retrieval order, e.g.:
+
+    .. list-table:: Assembly type: ``stack``
+
+       * - .. image:: ../images/mapcache-assembly-stack-1.png
+              :scale: 50%
+         - .. image:: ../images/mapcache-assembly-stack-2.png
+              :scale: 50%
+         - .. image:: ../images/mapcache-assembly-stack-3.png
+              :scale: 50%
+       * - Product #1
+         - Product #2
+         - ``stack`` assembly of Products #1 & #2
+
+The resulting tile may or may not be cached depending on the value of the
+``<store_assemblies>`` tag of the ``<dimensions>`` element. The two possible
+values are ``true`` and ``false``. Default is ``true``.
+
+The ``<subdimensions_read_only>`` tag of the ``<dimensions>`` element indicates
+whether data source shall be queried in case of cache miss. The two possible
+values are ``true`` and ``false``. Default is ``false``.
 
 .. code-block:: xml
          
     <dimensions>
         <assembly_type>stack</assembly_type>
-        <dimension ...>....</dimension>
+        <store_assemblies>true</store_assemblies>
+        <subdimensions_read_only>false</subdimensions_read_only>
+        <dimension >...</dimension>
     </dimensions>
 
 Storing Dimensions
@@ -164,4 +336,12 @@ The :ref:`MapCache seeding tool <mapcache_seed>` allows specific dimensions to b
 
     mapcache_seed -c mapcache_config.xml -t tileset1 -e -1187000,6695000,-605000,7450000 -z 7,10 --dimension DIMENSION_NAME=DIMENSION_VALUE
 
+
+.. #### rST Link Section ####
+
+.. _`WMS 1.3.0 Specification`: http://portal.opengeospatial.org/files/
+   ?artifact_id=14416
+.. _`WMS 1.1.1 Specification`: http://portal.opengeospatial.org/files/
+   ?artifact_id=1081&version=1&format=pdf
+.. _`RFC 3339`: https://tools.ietf.org/html/rfc3339
 
