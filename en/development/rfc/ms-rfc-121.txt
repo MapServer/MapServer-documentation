@@ -4,9 +4,9 @@
 MS RFC 121: PostgreSQL and ElasticSearch Support in MapCache dimensions
 =======================================================================
 
-:Date: 2018/06/25
+:Date: 2018-06-25
 :Author: Jerome Boue
-:Version: MapCache 1.7
+:Version: MapCache TBD
 
 1. Overview
 -----------
@@ -190,13 +190,12 @@ values. Hereafter is an example of current Time Dimension configuration:
     -->
     <dimension type="time" name="time" default="d1">
       <dbfile>/data/times.sqlite</dbfile>
-      <list_query>SELECT ts FROM timedim</list_query>
-      <validate_query>
+      <query>
            SELECT strftime("%Y-%m-%dT%H:%M:%SZ",ts) FROM timedim
             WHERE ts &gt;= datetime(:start_timestamp,"unixepoch")
               AND ts &lt;= datetime(:end_timestamp,"unixepoch")
          ORDER BY ts DESC
-      </validate_query>
+      </query>
     </dimension>
 
 In a perspective where Dimensions back-ends will be implemented in other ways
@@ -304,6 +303,66 @@ attribute to a dimension of any type among ``sqlite``, ``postgresql`` or
       ]]></validate_response>
 
     </dimension>
+
+Compatibility issue on Time Dimension with implicit SQLite back-end
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Together with explicit back-end configuration, an almost backward compatible
+configuration of Time dimension is still provided with an implicit SQLite
+back-end. Following example highlights the differences:
+
+.. list-table::
+
+   * - .. code-block:: xml
+          :emphasize-lines: 12,17
+
+          <!-- "time" dimension
+
+               This example defines a "time" dimension whose possible values
+               are stored in the /data/times.sqlite SQLite file. The
+               default value is "2010".
+
+               A WMS request with that dimension may contain, e.g.  "...
+               &time=1999-08-11T11:03:07Z/2001-09-21T08:17:56Z& ..."
+          -->
+          <dimension type="time" name="time" default="2010">
+              <dbfile>/data/times.sqlite</dbfile>
+              <query>
+                   SELECT strftime("%Y-%m-%dT%H:%M:%SZ",ts) FROM time
+                    WHERE ts &gt;= datetime(:start_timestamp,"unixepoch")
+                      AND ts &lt;= datetime(:end_timestamp,"unixepoch")
+                 ORDER BY ts DESC
+              </query>
+
+          </dimension>
+
+     - .. code-block:: xml
+          :emphasize-lines: 12,17,18
+
+          <!-- "time" dimension
+
+               This example defines a "time" dimension whose possible values
+               are stored in the /data/times.sqlite SQLite file. The
+               default value is "2010".
+
+               A WMS request with that dimension may contain, e.g.  "...
+               &time=1999-08-11T11:03:07Z/2001-09-21T08:17:56Z& ..."
+          -->
+          <dimension type="time" name="time" default="2010">
+              <dbfile>/data/times.sqlite</dbfile>
+              <validate_query>
+                   SELECT strftime("%Y-%m-%dT%H:%M:%SZ",ts) FROM time
+                    WHERE ts &gt;= datetime(:start_timestamp,"unixepoch")
+                      AND ts &lt;= datetime(:end_timestamp,"unixepoch")
+                 ORDER BY ts DESC
+              </validate_query>
+              <list_query>SELECT ts FROM time</list_query>
+          </dimension>
+
+   * - Up to MapCache 1.6.1
+     - From MapCache > 1.6.1 on
+
+
 
 3. Implementation Details
 -------------------------
