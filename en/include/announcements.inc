@@ -7,22 +7,6 @@ of changes since beta2.
 
 Head to :ref:`download` to obtain a copy.
 
-**2018-06-13 - MapServer 7.2.0-beta2 is released**
-
-The second beta release of 7.2.0 is now available.
-See the :ref:`7.2.0-beta2 changelog <changelog-7-2>`
-for the full list of changes.  
-
-Head to :ref:`download <dev-release>` to obtain a copy.
-
-**2018-05-09 - MapServer 7.2.0-beta1 is released**
-
-The first beta release of 7.2.0 is now available.
-See the :ref:`7.2.0-beta1 changelog <changelog-7-2>`
-for the full list of changes.  
-
-Head to :ref:`download <dev-release>` to obtain a copy.
-
 **2017-11-15 - MapServer 7.0.7 is released**
 
 The maintenance release of MapServer 7.0.7 is now available.
