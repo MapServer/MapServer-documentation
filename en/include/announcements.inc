@@ -1,4 +1,4 @@
-**2015-07-27 - MapServer 7.2.0 is released**
+**2018-07-27 - MapServer 7.2.0 is released**
 
 The major version MapServer 7.2.0 has been released. The list of significant
 changes for this release can be found in the :ref:`7.2 announcement <announce-7-2>`.
