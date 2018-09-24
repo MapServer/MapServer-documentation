@@ -167,7 +167,7 @@ htmlhelp_basename = 'MapServerdoc'
 html_show_sourcelink = False
 
 # Set the theme explicitly
-#html_theme = "classic"
+html_theme = "classic"
 
 # Options for LaTeX output
 # ------------------------
