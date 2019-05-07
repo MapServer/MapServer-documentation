@@ -11,8 +11,8 @@ MS RFC 124: Improving SLD Support in MapServer
 :Version: TBD
 
 
-1. Motivation
-=============
+Motivation
+==========
 
 The current implementation of SLD/SE in MapServer has many drawbacks. This RFC
 proposes to address some of them towards a better support. So far, the
@@ -43,39 +43,82 @@ following issues have been identified:
 6. **UserLayer**: MapServer implementation of SLD doesn’t handle <UserLayer>
    element.
 
-The next sections of this RFC develop for each issue the proposed solution and
-implementation details.
+The next sections of this RFC develop a description of each issue and the
+proposed solution.
 
 
-2. Arithmetic expressions
-=========================
+1. Literal constants, variables and arithmetic expressions
+==========================================================
+
+Currently, MapServer only supports raw constants in <CssParameter> or
+<SvgParameter> tags, e.g.:
+
+.. code-block:: xml
+
+  <SvgParameter name="stroke">#0000ff</SvgParameter>
+  <SvgParameter name="stroke-width">2.0</SvgParameter>
+
+The objective is to support <Literal> and <PropertyName> as well as arithmetic
+expressions, e.g.:
+
+.. code-block:: xml
+
+  <!-- Literal, PropertyName -->
+  <SvgParameter name="stroke"> <Literal>#0000ff</Literal> </SvgParameter>
+  <SvgParameter name="stroke-width"> <PropertyName>LINE_WIDTH</PropertyName> </SvgParameter>
+
+  <!-- Arithmetic expression -->
+  <SvgParameter name="stroke-width"> 
+    <Mul>
+      <PropertyName>CATEGORY</PropertyName>
+      <Literal>3</Literal>
+    </Mul>
+  </SvgParameter>
+
+This RFC proposes to extent this syntax to the following tags:
+
++---------------------------------------------+------------------------------------------------+
+| Parent tag hierarchy                        | Target tags                                    |
++=============================================+================================================+
+| | <PolygonSymbolizer><Fill>                 | | <SvgParameter name="fill">                   |
+| |                                           | | <SvgParameter name="fill-opacity">           |
++---------------------------------------------+------------------------------------------------+
+| | <PolygonSymbolizer><Stroke>               | | <SvgParameter name="stroke">                 |
+| | <LineSymbolizer><Stroke>                  | | <SvgParameter name="stroke-width">           |
+| |                                           | | <SvgParameter name="stroke-opacity">         |
++---------------------------------------------+------------------------------------------------+
+| | <PointSymbolizer><Graphic>                | | <Size>                                       |
+| |                                           | | <Opacity>                                    |
+| |                                           | | <Rotation>                                   |
++---------------------------------------------+------------------------------------------------+
+| | <PointSymbolizer><Graphic><Displacement>  | | <DisplacementX>                              |
+| |                                           | | <DisplacementY>                              |
++---------------------------------------------+------------------------------------------------+
+| | <PointSymbolizer><Graphic><Mark><Fill>    | | <SvgParameter name="fill">                   |
++---------------------------------------------+------------------------------------------------+
+| | <PointSymbolizer><Graphic><Mark><Stroke>  | | <SvgParameter name="stroke">                 |
+| |                                           | | <SvgParameter name="stroke-width">           |
++---------------------------------------------+------------------------------------------------+
+| | <TextSymbolizer>                          | | <Rotation>                                   |
++---------------------------------------------+------------------------------------------------+
+| | <TextSymbolizer><Font>                    | | <SvgParameter name="font-size">              |
++---------------------------------------------+------------------------------------------------+
+| | <TextSymbolizer><Fill>                    | | <SvgParameter name="fill">                   |
++---------------------------------------------+------------------------------------------------+
+| | <TextSymbolizer><Halo><Fill>              | | <SvgParameter name="fill">                   |
++---------------------------------------------+------------------------------------------------+
+
+Adding arithmetic expression support to style and label properties involves the
+creation of a new field array, named ``exprBindings[]``, in ``styleObj`` and
+``labelObj`` data structures. This field array stores expression strings
+converted from SLD syntax to MapFile syntax. It is handled in a way similar to
+existing ``bindings[]`` field array, used to store attribute names.
+
+In addition, a new function is created to parse SLD arithmetic expressions and
+perform syntax conversion: ``msSLDParseOgcExpression()``.
+
+A by-product effect is that adding support for arithmetic expressions in
+MapFile styles would be effortless.
 
 
 
-
-
-
-RFC ends here, following text is garbage
-========================================
-
-Hi,
-
-I’m starting to work on improving SLD support in MapServer. So far,
-we’ve identified seven issues that should be fixed for the benefit of our
-internal projects and hopefully of the whole community of MapServer
-users. These issues are:
-
-Currently I’m working on issues #7 and #3. I plan to open issues and write RFC.
-Any comments, discussions or advices from former developers of SLD in MapServer, or from other
-MapServer experts, are warmly welcome.
-
-Moreover, I am studying the possibility of attending the upcoming OSGeo
-Community Sprint 2019 to be held in Minneapolis in May.
-
-Regards,
-Jérome.
-
-
-mapserver-dev mailing list
-mapserver-dev@lists.osgeo.org
-https://lists.osgeo.org/mailman/listinfo/mapserver-dev
