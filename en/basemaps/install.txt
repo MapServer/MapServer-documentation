@@ -1,0 +1,191 @@
+.. _basemaps_install:
+
+***************************
+Installation
+***************************
+
+:Author: Yves Jacolin
+:Contact: yjacolin at free.fr
+
+.. contents:: Table of Contents
+   :depth: 3
+   :backlinks: top
+
+Basemaps needs:
+* data
+* project configuration
+
+This section explains how to set up both of them.
+
+Data
+=====
+
+Data come from OpenStreetMap database and are store in a PostgreSQL database.
+
+Database creation
+------------------
+
+.. code-block:: bash
+
+   $ sudo -u postgres createdb osm
+   $ sudo -u postgres psql -d osm -c "CREATE EXTENSION postgis;"
+   $ sudo -u postgres createuser -D -l -R -S -P "www-data"
+   $ sudo -u postgres psql -d osm -c 'GRANT ALL ON ALL TABLES IN SCHEMA public TO "www-data";'
+
+This will create a new database called *osm*, add the postgis extension, create
+a *www-data* role with right in the public schema.
+
+Imposm Installation
+--------------------
+
+OpenStreetMap data are processed by imposm. This is a fast and easy step.
+
+Check the Installation process from
+http://imposm.org/docs/imposm/latest/install.html or see the steps below:
+
+.. code-block:: bash
+
+   $ cd # switch to user home
+   $ mkdir osm_pbf
+   $ cd osm_pbf
+   $ sudo apt-get install build-essential python-dev  protobuf-compiler \
+     libprotobuf-dev libtokyocabinet-dev python-psycopg2 libgeos-c1
+   $ virtualenv venv
+   $ venv/bin/pip install imposm
+
+We have now a virtual python env with imposm. Each time you need to use it, run
+*source venv/bin/activate* (see below the next steps to use it in our use
+case).
+
+Data Import
+------------
+
+Source: http://imposm.org/docs/imposm/latest/tutorial.html#writing
+
+.. code-block:: bash
+
+   $ cd /tmp
+   $ wget http://download.geofabrik.de/europe/france/poitou-charentes-latest.osm.pbf
+   $ wget http://download.geofabrik.de/europe/france/centre-latest.osm.pbf #if you need another location
+   $ pwd
+     /tmp/
+   $ ls -1
+     centre-latest.osm.pbf 
+     poitou-charentes-latest.osm.pbf
+   $ source venv/bin/activate
+   $ imposm -m /path/to/basemaps/imposm-mapping.py --read poitou-charentes-latest.osm.pbf 
+   $ imposm -m /path/to/basemaps/imposm-mapping.py --read --merge-cache centre-latest.osm.pbf 
+   $ imposm -m /path/to/basemaps/imposm-mapping.py --write -d osm --connection postgis://www-data:www-data@localhost/osm --proj EPSG:2154
+   $ imposm -m /path/to/basemaps/imposm-mapping.py --optimize --connection postgis://www-data:www-data@localhost/osm
+   # Following command is probably not useful
+   $ sudo -u postgres psql -d osm -c "CREATE VIEW osm_new_waterways_gen1 AS \
+       SELECT * FROM osm_new_waterways;CREATE VIEW osm_new_waterways_gen0 AS SELECT * FROM osm_new_waterways;"
+   $ sudo -u postgres psql -d osm -c "GRANT ALL ON ALL TABLES IN SCHEMA public TO \"www-data\";"
+
+Let explain this better: First we donwload two pbf file from Geofabrik
+OpenStreetMap data. PBF is just another format well compressed from Google.
+*pwd* and *ls -1* commands are just there to show you where we are and what we
+get.
+
+The *source* command activate the Python virtual environment in order to use
+imposm.
+
+The next two commands (read) are similar and preprocess PBF data. The difference is
+that the second one merge cached data to push both French region into the
+database.
+
+Then we write (push) data into the database using the French National
+projection EPSG code (EPSG:2154). You can use whatever that's fit your need.
+
+The last commands optimize the data and give some right to *www-data*.
+
+Some datas are missing, you can get there:
+
+* Get the following layer : https://github.com/datadesk/osm-la-streets/tree/master/la-streets/layers/processed_p
+  and putt hem in basemaps/data/
+* Get the following layer land_polygon (Projection: Mercator) http://openstreetmapdata.com/data/land-polygons
+  also in basemaps/data/
+* Get the following layer simplified_land_polygon http://data.openstreetmapdata.com/simplified-land-polygons-complete-3857.zip
+  also in basemaps/data/
+
+Project configuration
+======================
+
+The Basemaps project source code is located here: https://github.com/mapserver/basemaps.
+
+Project deployment
+-------------------
+
+.. code-block:: bash
+
+   $ cd  /var/www/somewhere/
+   $ git clone git@github.com:mapserver/basemaps.git
+   $ cd basemaps
+
+That's easy enought to not need much explenation.
+
+Custom configuration
+--------------------
+
+Create your own custom makefile and give it a name (whatever your want):
+
+.. code-block:: bash
+
+   $ vim aname.mk (edit the following file with custom variable):
+
+You can add all customs values from the main Makefile, here some example:
+
+.. code-block:: makefile
+
+   OSM_SRID = 2154
+   OSM_DB_CONNECTION = host=localhost dbname=osm user=www-data
+   password=www-data port=5432
+
+   include Makefile
+
+Here we cutomize the SRID of the data (see above when we imported data into the
+database) and the database connection.
+
+Build the mapfile
+-----------------
+
+.. code-block:: bash
+
+   $ make -f aname.mk
+
+You should have now a working mapfile.
+
+Apache configuration
+--------------------
+Create an Apache configuration and enable it.
+
+.. code-block:: bash
+
+   $ vim osm.conf
+
+With such a content:
+
+.. code-block:: apache
+
+    <VirtualHost \*:80>
+       ErrorLog ${APACHE_LOG_DIR}/osm_error.log
+       CustomLog ${APACHE_LOG_DIR}/osm_access.log combined
+   
+       ScriptAlias /osm-default /usr/lib/cgi-bin/mapserv
+       <Location /osm-default>
+          #    Order Deny,Allow
+          #    Deny from all
+          #    Allow from 127.0.1.1 ::1
+          SetEnv MS_MAPFILE /path/to/basemaps/osm-default.map
+       </Location>
+    </VirtualHost>
+
+Finally enable this Apache virtual conf:
+
+.. code-block:: bash
+
+   $ cp osm.conf /etc/apache/site-available/conf/
+   $ sudo a2ensite osm
+   $ sudo /etc/init.d/apache2 graceful
+
+And test the GetCapabilities URL: http://localhost/osm-default?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities

@@ -9,8 +9,8 @@ Tileset Dimensions
 :Author: Seth Girvin
 :Contact: sgirvin at compass.ie
 :Author: Jerome Boue
-:Last Updated: 2018/05/04
-:Version: 1.6.1
+:Last Updated: 2018/06/29
+:Version: 1.8
 
 Introduction
 ------------
@@ -56,8 +56,9 @@ Several attributes are defined for the ``<dimension>`` element.
     explicitly provided in the WMS request.
 
   - ``type`` (required): MapCache defines several ways for specifying a
-    dimension: ``values``, ``regex``, ``sqlite`` and ``time``. They are
-    described in the following sections.
+    dimension: ``values``, ``regex``, ``sqlite``, ``postgresql``,
+    ``elasticsearch`` and ``time``. They are described in the following
+    sections.
     
   - ``unit`` (optional): dimension unit. This information is used only in the
     GetCapabilities response.
@@ -65,15 +66,17 @@ Several attributes are defined for the ``<dimension>`` element.
 Dimension Types
 +++++++++++++++
 
-Several types of dimensions are supported by MapCache: Values, Regex, SQLite
-and Time. They can be classified into two groups depending on how dimension values are defined:
+Several types of dimensions are supported by MapCache: Values, Regex, SQLite,
+PostgreSQL, ElasticSearch and Time. They can be classified into two groups
+depending on how dimension values are defined:
 
   - First level dimension types: Values and Regex. Dimensions values are
     statically specified in the configuration file.
 
-  - Second level dimensions types: SQLite and Time. Dimensions values are
-    stored in a dynamic backend (a SQLite file) so that an update in the
-    dimension values does not involve a server restart.
+  - Second level dimensions types: SQLite, PostgreSQL, ElasticSearch and Time.
+    Dimensions values are stored in a dynamic backend (SQLite file, PostgreSQL
+    database or ElasticSearch index) so that an update in the dimension values
+    does not involve a server restart.
 
 First Level Dimensions
 ----------------------
@@ -132,55 +135,10 @@ are two consecutive dots (..) in the path, to prevent file-system traversal.
 Second Level Dimensions
 -----------------------
 
-Second level dimensions store values in a dynamic back-end, initially a SQLite
-file. This allows for adding new dimension values without modifying MapCache
-configuration file, which otherwise would need to restart the server.
-
-Time Dimensions
-+++++++++++++++
-
-MapCache supports WMTS and WMS requests that include a TIME parameter, for both timestamps and time intervals.
-See :ref:`MS RFC 96: Time Dimension Support in MapCache Tilesets <rfc96>` initial proposal for further details. 
-
-
-Defining a Time dimension in MapCache involves a SQLite back-end. Two elements
-must be provided:
-
-  - ``<dbfile>``: Location of the SQLite file implementing the time dimension
-
-  - ``<query>``: SQL query returning the list of available timestamp values
-    within a given time interval. In that query, start time and end time are
-    represented by the respective placeholders ``:start_timestamp`` and
-    ``:end_time_stamp``. Returned values shall be in ``yyyy-mm-ddThh:mm:ssZ``
-    time format, as specified in `RFC 3339`_, but restricted to UTC.
-
-Time values in the SQLite back-end are expressed in Unix time, i.e. the number
-of seconds that have elapsed since January 1, 1970 (midnight UTC).
-
-Querying the back-end with an interval may result in returning multiple
-timestamp values, each of which referencing distinct tiles. Assembling these
-tiles is described in `Tile Assembly Policies`_ section below.
-
-.. code-block:: xml
-         
-    <!-- "time" dimension
-
-         This example defines a "time" dimension whose possible values are
-         stored in the /path/to/mapcache-time.sqlite SQLite file. The default
-         value is "2010".
-
-         A WMS request with that dimension may contain, e.g.
-         "... &time=1999-08-11T11:03:07Z/2001-09-21T08:17:56Z& ..."
-    -->
-    <dimension type="time" name="time" default="2010">
-        <dbfile>/path/to/mapcache-time.sqlite</dbfile>
-        <query>
-             SELECT strftime("%Y-%m-%dT%H:%M:%SZ",ts) FROM time
-              WHERE ts &gt;= datetime(:start_timestamp,"unixepoch")
-                AND ts &lt;= datetime(:end_timestamp,"unixepoch")
-           ORDER BY ts DESC
-        </query>
-    </dimension>
+Second level dimensions store values in a dynamic back-end, a SQLite file, a
+PostgreSQL database or an ElasticSearch index. This allows for adding new
+dimension values without modifying MapCache configuration file, which otherwise
+would need to restart the server.
 
 SQLite Dimensions
 +++++++++++++++++
@@ -214,6 +172,18 @@ Querying the back-end may then result in returning multiple sub-dimension
 values, each of which referencing distinct tiles. Assembling these tiles is
 described in `Tile Assembly Policies`_ section below.
 
+A SQLite dimension is configured by specifying three elements:
+
+  - ``<dbfile>``: Location of the SQLite file implementing the dimension
+
+  - ``<list_query>``: SQL query returning all sub-dimension values for the
+    dimension, e.g. **spot-img1**, **spot-img2**, **phr-img1**, **phr-img2**
+    and  **phr-img3** in the "sensor" dimension example.
+
+  - ``<validate_query>``: SQL query returning the list of sub-dimension values
+    for a given dimension value, e.g. **spot-img1** and **spot-img2** for the
+    **spot** dimension value in the "sensor" dimension example.
+
 .. code-block:: xml
 
     <!-- "sqlite" dimension
@@ -226,14 +196,403 @@ described in `Tile Assembly Policies`_ section below.
          "... &dim_sensor=spot& ..."
     -->
     <dimension type="sqlite" name="sensor" default="phr">
+
+       <!-- Access Point -->
        <dbfile>/data/sensor.sqlite</dbfile>
+
+       <!-- All-values Query -->
        <list_query>
           SELECT distinct(product) FROM dim
        </list_query>
+
+       <!-- Selected-values Query -->
        <validate_query>
           SELECT product FROM dim
            WHERE sensor=:dim
        </validate_query>
+
+    </dimension>
+
+PostgreSQL Dimensions
++++++++++++++++++++++
+
+PostgreSQL dimensions are very similar to SQLite dimensions. In particular, the
+sub-dimension feature described in the section above is also available with
+PostgreSQL dimensions. They differ only in the back-end implementation which is
+a PostgreSQL database, and in the way they are configured. A PostgreSQL
+dimension is configured by specifying three elements:
+
+  - ``<connection>``: Connection information of the PostgreSQL database
+    implementing the dimension, as expected by the `PQconnectdb()`_
+    function of the libpq - C library.
+
+  - ``<list_query>``: SQL query returning all sub-dimension values for the
+    dimension, e.g. **spot-img1**, **spot-img2**, **phr-img1**, **phr-img2**
+    and  **phr-img3** in the "sensor" dimension example.
+
+  - ``<validate_query>``: SQL query returning the list of sub-dimension values
+    for a given dimension value, e.g. **spot-img1** and **spot-img2** for the
+    **spot** dimension value in the "sensor" dimension example.
+
+.. code-block:: xml
+
+    <!-- "postgresql" dimension
+
+         This example defines a "sensor" dimension whose possible values are
+         stored in the postgresql://mapcache:mapcache@localhost:5433/mapcache
+         PostgreSQL database. The default value is "phr".
+
+         A WMS request with that dimension may contain, e.g.
+         "... &dim_sensor=spot& ..."
+    -->
+    <dimension type="postgresql" name="sensor" default="phr">
+
+       <!-- Access Point -->
+      <connection>
+        host=localhost user=mapcache password=mapcache dbname=mapcache port=5433
+      </connection>
+
+       <!-- All-values Query -->
+      <list_query>SELECT distinct(product) FROM dim</list_query>
+
+       <!-- Selected-values Query -->
+      <validate_query>SELECT product FROM dim WHERE sensor=:dim</validate_query>
+
+    </dimension>
+
+ElasticSearch Dimensions
+++++++++++++++++++++++++
+
+ElasticSearch dimensions are similar to SQLite or PostgreSQL dimensions. In
+particular, the sub-dimension feature described in the section above is also
+available with ElasticSearch dimensions. ElasticSearch main difference with
+SQLite and PostgreSQL is its query language, Query-DSL, based on JSON instead
+of SQL. Therefore, ``<list_query>`` and ``<validate_query>`` elements shall
+contain queries expressed in that language. Inserting JSON data in XML
+configuration may need to encapsulate it in a ``<![CDATA[ ... ]]>`` element.
+
+In addition, the complex structure of ElasticSearch responses, also expressed
+in JSON, raises the need for extraction instructions to get sub-dimension
+values from query responses.
+
+For example, let’s assume that this ElasticSearch query:
+
+.. code-block:: json
+
+   {   "size": 0,
+       "aggs": { "distinct_product": { "terms": { "field": "product/keyword" } } },
+       "query": { "term": { "sensor": "phr" } }
+   }
+
+returns this response:
+
+.. code-block:: json
+
+   {   "took": 0,
+       "timed_out": false,
+       "_shards": { "total": 5, "successful": 5, "skipped": 0, "failed": 0 },
+       "hits": { "total": 5, "max_score": 0, "hits": [] },
+       "aggregations": {
+           "distinct_product": {
+               "doc_count_error_upper_bound": 0,
+               "sum_other_doc_count": 0,
+               "buckets": [
+                   { "key": "phr_img1", "doc_count": 1 },
+                   { "key": "phr_img2", "doc_count": 1 },
+                   { "key": "phr_img3", "doc_count": 1 }
+               ]
+           }
+       }
+   }
+
+The expected sub-dimension values are then:
+
+.. code-block:: json
+
+   [ "phr_img1", "phr_img2", "phr_img3" ]
+
+This list is obtained by extracting the ``aggregations`` item from the outer
+dictionary, then ``distinct_product`` , then ``buckets``. Finally the ``key``
+item is to be extracted from each dictionary of the ``bucket`` list. The
+extraction instructions take the form of a path-like list of keywords to be
+used to extract sub-dimension values from JSON response provided by
+ElasticSearch:
+
+.. code-block:: json
+
+   [ "aggregations", "distinct_product", "buckets", "key" ]
+
+This is specified in the MapCache configuration file by way of new XML
+elements, namely  ``<list_response>`` and ``<validate_response>``, containing
+extraction instructions respectively for ``<list_query>`` and
+``<validate_query>`` queries.
+
+An ElasticSearch dimensions is defined by specifying five elements:
+
+  - ``<http>``: Connection information of the ElasticSearch index implementing
+    the dimension. This element contains two sub-elements:
+
+      - ``<url>``: Search URL of the ElasticSearch index
+      - ``<headers>``: HTTP headers needed to access the ElasticSearch index.
+        It must contain the tag:
+        ``<Content-Type>application/json</Content-Type>``.
+
+  - ``<list_query>``: `Query DSL`_ query for getting all sub-dimension values
+    for the dimension. This query is expressed in JSON format and may need to
+    be escaped in a ``<![CDATA[ ... ]]>`` tag.
+
+  - ``<validate_query>``: `Query DSL`_ query for getting the list of
+    sub-dimension values for a given dimension value. This query is expressed
+    in JSON format and may need to be escaped in a ``<![CDATA[ ... ]]>`` tag.
+
+  - ``<list_response>``: List of successive keywords needed to extract actual
+    sub-dimension values from the raw ElasticSearch response to the
+    ``<list_query>`` query.
+
+  - ``<validate_response>``: List of successive keywords needed to extract
+    actual sub-dimension values from the raw ElasticSearch response to the
+    ``<validate_query>`` query.
+
+.. code-block:: xml
+
+    <!-- "elasticsearch" dimension
+
+         This example defines a "sensor" dimension whose possible values are
+         stored in the http://localhost:9200/sensor ElasticSearch index. The
+         default value is "phr".
+
+         A WMS request with that dimension may contain, e.g.
+         "... &dim_sensor=spot& ..."
+    -->
+    <dimension type="elasticsearch" name="sensor" default="phr">
+
+      <!-- Access Point -->
+      <http>
+        <url>http://localhost:9200/sensor/_search</url>
+        <headers>
+          <Content-Type>application/json</Content-Type>
+        </headers>
+      </http>
+
+      <!-- Selected-values Query -->
+      <validate_query><![CDATA[
+        { "size": 0,
+          "aggs": {
+            "products": { "terms": { "field": "product.keyword" } }
+          },
+          "query": { "term": { "sensor": ":dim" } }
+        }
+      ]]></validate_query>
+
+      <!-- Selected-values Response Extration Instructions -->
+      <validate_response><![CDATA[
+        [ "aggregations", "products", "buckets", "key" ]
+      ]]></validate_response>
+
+      <!-- All-values Query -->
+      <list_query><![CDATA[
+        { "size": 0,
+          "aggs": {
+            "products": { "terms": { "field": "product.keyword" } }
+          }
+        }
+      ]]></list_query>
+
+      <!-- All-values Response Extration Instructions -->
+      <list_response><![CDATA[
+        [ "aggregations", "products", "buckets", "key" ]
+      ]]></list_response>
+    </dimension>
+
+Time Dimensions
++++++++++++++++
+
+MapCache supports WMTS and WMS requests that include a TIME parameter, for both
+timestamps and time intervals.  See :ref:`MS RFC 96: Time Dimension Support in
+MapCache Tilesets <rfc96>` initial proposal for further details. 
+
+Up to Mapcache 1.6.1, defining a Time dimension involves a SQLite back-end. Two
+elements must be provided:
+
+  - ``<dbfile>``: Location of the SQLite file implementing the time dimension
+
+  - ``<query>``: SQL query returning the list of available timestamp values
+    within a given time interval. In that query, start time and end time are
+    represented by the respective placeholders ``:start_timestamp`` and
+    ``:end_time_stamp``. Returned values shall be in ``yyyy-mm-ddThh:mm:ssZ``
+    time format, as specified in `RFC 3339`_, but restricted to UTC.
+
+From MapCache 1.8 on, dynamic back-ends for Time dimensions can be PostgreSQL
+databases or ElasticSearch indices in addition to SQLite files. Configuring a
+Time dimension with a specific back-end is made by setting a ``time="true"``
+attribute within a SQLite, PostgreSQL or ElasticSearch dimension configuration.
+
+Still, MapCache keeps an (almost) backward compatible configuration of Time
+dimension with an implicit SQLite back-end. Example in the following section
+highlights differences.
+
+Time values in the dynamic back-end are expressed in Unix time, i.e. the number
+of seconds that have elapsed since January 1, 1970 (midnight UTC).
+
+Querying the back-end with an interval may result in returning multiple
+timestamp values, each of which referencing distinct tiles. Assembling these
+tiles is described in `Tile Assembly Policies`_ section below.
+
+Configuring a Time Dimension using a default SQLite back-end
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. list-table::
+
+   * - .. code-block:: xml
+          :emphasize-lines: 12,17
+         
+          <!-- "time" dimension
+
+               This example defines a "time" dimension whose possible values
+               are stored in the /path/to/mapcache-time.sqlite SQLite file. The
+               default value is "2010".
+
+               A WMS request with that dimension may contain, e.g.  "...
+               &time=1999-08-11T11:03:07Z/2001-09-21T08:17:56Z& ..."
+          -->
+          <dimension type="time" name="time" default="2010">
+              <dbfile>/path/to/mapcache-time.sqlite</dbfile>
+              <query>
+                   SELECT strftime("%Y-%m-%dT%H:%M:%SZ",ts) FROM time
+                    WHERE ts &gt;= datetime(:start_timestamp,"unixepoch")
+                      AND ts &lt;= datetime(:end_timestamp,"unixepoch")
+                 ORDER BY ts DESC
+              </query>
+
+          </dimension>
+
+     - .. code-block:: xml
+          :emphasize-lines: 12,17,18
+         
+          <!-- "time" dimension
+
+               This example defines a "time" dimension whose possible values
+               are stored in the /path/to/mapcache-time.sqlite SQLite file. The
+               default value is "2010".
+
+               A WMS request with that dimension may contain, e.g.  "...
+               &time=1999-08-11T11:03:07Z/2001-09-21T08:17:56Z& ..."
+          -->
+          <dimension type="time" name="time" default="2010">
+              <dbfile>/path/to/mapcache-time.sqlite</dbfile>
+              <validate_query>
+                   SELECT strftime("%Y-%m-%dT%H:%M:%SZ",ts) FROM time
+                    WHERE ts &gt;= datetime(:start_timestamp,"unixepoch")
+                      AND ts &lt;= datetime(:end_timestamp,"unixepoch")
+                 ORDER BY ts DESC
+              </validate_query>
+              <list_query>SELECT ts FROM time</list_query>
+          </dimension>
+
+   * - Up to MapCache 1.6.1
+     - From MapCache 1.8 on
+
+Configuring a Time dimension using an explicit back-end
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. code-block:: xml
+   :emphasize-lines: 10
+
+    <!-- "time" dimension, "new-style" definition using a SQLite back-end
+
+         This example defines a "time" dimension whose possible values are
+         stored in the /data/times.sqlite SQLite file. The default value is
+         "d1".
+
+         A WMS request with that dimension may contain, e.g.
+         "... &time=1999-08-11T11:03:07Z/2001-09-21T08:17:56Z& ..."
+    -->
+    <dimension type="sqlite" name="time" default="d1" time="true">
+      <dbfile>/data/times.sqlite</dbfile>
+      <list_query>SELECT ts FROM timedim</list_query>
+      <validate_query>
+           SELECT strftime("%Y-%m-%dT%H:%M:%SZ",ts) FROM timedim
+            WHERE ts &gt;= datetime(:start_timestamp,"unixepoch")
+              AND ts &lt;= datetime(:end_timestamp,"unixepoch")
+         ORDER BY ts DESC
+      </validate_query>
+    </dimension>
+
+.. code-block:: xml
+   :emphasize-lines: 10
+
+    <!-- "time" dimension, "new-style" definition using a PostgreSQL back-end
+
+         This example defines a "time" dimension whose possible values are
+         stored in the postgresql://mapcache:mapcache@localhost:5433/time
+         PostgreSQL database. The default value is "d1".
+
+         A WMS request with that dimension may contain, e.g.
+         "... &time=1999-08-11T11:03:07Z/2001-09-21T08:17:56Z& ..."
+    -->
+    <dimension type="postgresql" name="time" default="d1" time="true">
+      <connection>
+        host=localhost user=mapcache password=mapcache dbname=times port=5433
+      </connection>
+      <list_query>SELECT ts FROM timedim</list_query>
+      <validate_query>
+           SELECT to_char(ts,'YYYY-MM-DD"T"HH24:MI:SS"Z"') FROM timedim
+            WHERE ts &gt;= to_timestamp(:start_timestamp)
+              AND ts &lt;= to_timestamp(:end_timestamp)
+         ORDER BY ts DESC
+      </validate_query>
+    </dimension>
+
+.. code-block:: xml
+   :emphasize-lines: 10
+
+    <!-- "time" dimension, "new-style" definition using an ElasticSearch back-end
+
+         This example defines a "time" dimension whose possible values are
+         stored in the http://localhost:9200/times ElasticSearch index. The
+         default value is "d1".
+
+         A WMS request with that dimension may contain, e.g.
+         "... &time=1999-08-11T11:03:07Z/2001-09-21T08:17:56Z& ..."
+    -->
+    <dimension type="elasticsearch" name="time" default="d1" time="true">
+      <http>
+        <url>http://localhost:9200/times/_search</url>
+        <headers>
+          <Content-Type>application/json</Content-Type>
+        </headers>
+      </http>
+
+      <list_query><![CDATA[
+        { "query": { "match_all": { } } }
+      ]]></list_query>
+      <list_response><![CDATA[
+        [ "hits", "hits", "_source", "ts" ]
+      ]]></list_response>
+
+      <validate_query><![CDATA[
+        { "query": {
+            "range": {
+              "ts": { "gte": :start_timestamp, "lte": :end_timestamp }
+            }
+          },
+          "sort": { "ts": { "order": "desc" } },
+          "script_fields": {
+            "iso_ts": {
+              "lang": "painless",
+              "source": "SimpleDateFormat f=new SimpleDateFormat(params.fmt); f.setTimeZone(params.tz); return (f.format(doc.ts.value.getMillis()))",
+              "params": {
+                "fmt": "yyyy-MM-dd'T'HH:mm:ss'Z'",
+                "tz: "UTC"
+              }
+            }
+          }
+        }
+      ]]></validate_query>
+      <validate_response><![CDATA[
+        [ "hits", "hits", "fields", "iso_ts", 0 ]
+      ]]></validate_response>
+
     </dimension>
 
 Tile Assembly Policies
@@ -308,7 +667,6 @@ Templates can also be used to change Sqlite database names e.g.
       <detect_blank />
    </cache>
    
-
 Accessing Tile Caches with Dimensions
 -------------------------------------
 
@@ -326,7 +684,6 @@ tile-based clients (for example an OpenLayers ``ol.source.XYZ`` layer) can load 
     # so these values need to be swapped
     http://servername/mapcache/wmts/1.0.0/layername/default/dimension/GoogleMapsCompatible/13/2687/3914.png
 
-             
 Seeding Tile Caches with Dimensions
 -----------------------------------
 
@@ -344,4 +701,8 @@ The :ref:`MapCache seeding tool <mapcache_seed>` allows specific dimensions to b
 .. _`WMS 1.1.1 Specification`: http://portal.opengeospatial.org/files/
    ?artifact_id=1081&version=1&format=pdf
 .. _`RFC 3339`: https://tools.ietf.org/html/rfc3339
+.. _`PQconnectdb()`: https://www.postgresql.org/docs/current/static/
+   libpq-connect.html#id-1.7.3.8.2.12.2.1.2
+.. _`Query DSL`: https://www.elastic.co/guide/en/elasticsearch/reference/
+   current/query-dsl.html
 
