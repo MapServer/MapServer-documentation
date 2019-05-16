@@ -1,0 +1,205 @@
+.. _rtf124:
+
+==============================================
+MS RFC 124: Improving SLD Support in MapServer
+==============================================
+
+:Date: 2019-04-10
+:Author: Jérome Boué
+:Contact: jbo-ads@laposte.net
+:Status: Draft
+:Version: TBD
+
+.. note::
+
+   The present document is still a work in progress. Sections will be added
+   over time when they are ready to be published. This aims at collecting
+   comments and advices as early as possible.
+
+
+Overview
+=========
+
+The current implementation of SLD/SE in MapServer has many drawbacks. This RFC
+proposes to address some of them towards a better support. So far, the
+following issues have been identified:
+
+1. **Arithmetic expressions**: MapServer implementation of SLD doesn't handle
+   <Add>, <Sub>, <Mul>, <Div> operations or <Literal> or <PropertyName>
+   elements in <SvgParameter> or in other elements expected to hold arithmetic
+   expressions.
+
+2. **WMS GetStyles request**: A WMS GetStyles request returns a SLD file based
+   only on Mapfile configuration even if a SLD or SLD_BODY parameter is
+   present in the request.
+
+3. **Style layering**: When several styling rules apply to a feature, only the
+   first one is taken into account, instead of appliyng them all by following
+   the *painters model* as described in Symbology Encoding specification.
+
+4. **Mark or ExternalGraphic in LineSymbolizer**: MapServer implementation of
+   SLD doesn’t handle <Mark> or <ExternalGraphic> elements in a
+   <LineSymbolizer> element.
+
+5. **LineSymbolizer and PolygonSymbolizer in Rule**: MapServer implementation
+   of SLD doesn’t handle both <LineSymbolizer> and <PolygonSymbolizer> in the
+   same <Rule> element (which is more expressive than both <Fill> and <Stroke>
+   in the same <PolygonSymbolizer>).
+
+6. **UserLayer**: MapServer implementation of SLD doesn’t handle <UserLayer>
+   element.
+
+The next sections of this RFC develop a description of each issue and the
+proposed solution.
+
+
+Technical solution
+==================
+
+
+1. Literal constants, variables and arithmetic expressions
+----------------------------------------------------------
+
+Currently, MapServer only supports raw constants in <CssParameter> or
+<SvgParameter> tags, e.g.:
+
+.. code-block:: xml
+
+  <SvgParameter name="stroke">#0000ff</SvgParameter>
+  <SvgParameter name="stroke-width">2.0</SvgParameter>
+
+The objective is to support <Literal> and <PropertyName> as well as arithmetic
+expressions, e.g.:
+
+.. code-block:: xml
+
+  <!-- Literal, PropertyName -->
+  <SvgParameter name="stroke"> <Literal>#0000ff</Literal> </SvgParameter>
+  <SvgParameter name="stroke-width"> <PropertyName>LINE_WIDTH</PropertyName> </SvgParameter>
+
+  <!-- Arithmetic expression -->
+  <SvgParameter name="stroke-width"> 
+    <Mul>
+      <PropertyName>CATEGORY</PropertyName>
+      <Literal>3</Literal>
+    </Mul>
+  </SvgParameter>
+
+This RFC proposes to extent this syntax to the following tags:
+
++---------------------------------------------+------------------------------------------------+
+| Parent tag hierarchy                        | Target tags                                    |
++=============================================+================================================+
+| | <PolygonSymbolizer><Fill>                 | | <SvgParameter name="fill">                   |
+| |                                           | | <SvgParameter name="fill-opacity">           |
++---------------------------------------------+------------------------------------------------+
+| | <PolygonSymbolizer><Stroke>               | | <SvgParameter name="stroke">                 |
+| | <LineSymbolizer><Stroke>                  | | <SvgParameter name="stroke-width">           |
+| |                                           | | <SvgParameter name="stroke-opacity">         |
++---------------------------------------------+------------------------------------------------+
+| | <PointSymbolizer><Graphic>                | | <Size>                                       |
+| |                                           | | <Opacity>                                    |
+| |                                           | | <Rotation>                                   |
++---------------------------------------------+------------------------------------------------+
+| | <PointSymbolizer><Graphic><Displacement>  | | <DisplacementX>                              |
+| |                                           | | <DisplacementY>                              |
++---------------------------------------------+------------------------------------------------+
+| | <PointSymbolizer><Graphic><Mark><Fill>    | | <SvgParameter name="fill">                   |
++---------------------------------------------+------------------------------------------------+
+| | <PointSymbolizer><Graphic><Mark><Stroke>  | | <SvgParameter name="stroke">                 |
+| |                                           | | <SvgParameter name="stroke-width">           |
++---------------------------------------------+------------------------------------------------+
+| | <TextSymbolizer>                          | | <Rotation>                                   |
++---------------------------------------------+------------------------------------------------+
+| | <TextSymbolizer><Font>                    | | <SvgParameter name="font-size">              |
++---------------------------------------------+------------------------------------------------+
+| | <TextSymbolizer><Fill>                    | | <SvgParameter name="fill">                   |
++---------------------------------------------+------------------------------------------------+
+| | <TextSymbolizer><Halo><Fill>              | | <SvgParameter name="fill">                   |
++---------------------------------------------+------------------------------------------------+
+
+Adding arithmetic expression support to style and label properties involves the
+creation of a new field array, named ``exprBindings[]``, in ``styleObj`` and
+``labelObj`` data structures. This field array stores expression strings
+converted from SLD syntax to MapFile syntax. It is handled in a way similar to
+existing ``bindings[]`` field array, used to store attribute names.
+
+In addition, a new function is created to parse SLD arithmetic expressions and
+perform syntax conversion: ``msSLDParseOgcExpression()``.
+
+A by-product effect is that adding support for arithmetic expressions in
+MapFile styles would be effortless.
+
+
+2. WMS *GetStyles* request
+--------------------------
+
+.. note:: Work in progress
+
+
+3. Style layering
+-----------------
+
+.. note:: Work in progress
+
+
+4. Mark or ExternalGraphic in LineSymbolizer
+--------------------------------------------
+
+.. note:: Work in progress
+
+
+5. LineSymbolizer and PolygonSymbolizer in Rule
+-----------------------------------------------
+
+.. note:: Work in progress
+
+
+6. UserLayer
+------------
+
+.. note:: Work in progress
+
+
+Testing
+=======
+
+The  ``msautotest/sld`` suite will be created and populated with test cases focusing on these new or improved features.
+
+Moreover the ``msautotest/{gdal,misc,query,renderers,wxs}`` test suites will be
+run during development in order to make sure that no regression occurs.
+
+
+Documentation
+=============
+
+Mapserver :ref:`sld` documentation page will be updated according to the
+proposed features described in this RFC.
+
+
+Backwards compatibility issues
+==============================
+
+No compatibility issues are expected. The goal is to provide a better SLD
+support without changing any other existing behaviour.
+
+
+Affected Files
+==============
+
+  - ``mapcopy.c``
+  - ``mapfile.c``
+  - ``maplayer.c``
+  - ``mapogcsld.c``
+  - ``mapogcsld.h``
+  - ``mapserver.h``
+  - ``maputil.c``
+  - ...
+
+.. note:: Work in progress
+
+
+Voting history
+==============
+
+
