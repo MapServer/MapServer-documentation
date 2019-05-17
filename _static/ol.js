@@ -32,7 +32,7 @@ function olmapinit(){
      
         map = new OpenLayers.Map( 'map' );
 
-        var wms = new OpenLayers.Layer.WMS( "WMS","http://mapserver.org/geocache?",
+        var wms = new OpenLayers.Layer.WMS( "WMS","https://mapserver.org/geocache?",
         
         //var wms = new OpenLayers.Layer.WMS( "WMS","http://demo.mapserver.org/cgi-bin/foss4g?",
         {

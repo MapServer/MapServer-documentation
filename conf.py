@@ -259,7 +259,7 @@ pdf_stylesheets = ['sphinx','kerning','a4']
 # Bibliographic Dublin Core info.
 epub_title = 'MapServer Documentation'
 epub_author = 'The MapServer Team'
-epub_publisher = 'http://mapserver.org'
+epub_publisher = 'https://mapserver.org'
 epub_copyright = copyright
 
 # The language of the text. It defaults to the language option
@@ -271,7 +271,7 @@ epub_scheme = 'URL'
 
 # The unique identifier of the text. This can be a ISBN number
 # or the project homepage.
-epub_identifier = 'http://mapserver.org'
+epub_identifier = 'https://mapserver.org'
 
 # A unique identification for the text.
 #epub_uid = ''
