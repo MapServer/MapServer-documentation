@@ -6,8 +6,9 @@
 
 :Author: Alan Boudreault
 :Contact: aboudreault at mapgears.com
-:Revision: $Revision: 10033 $
-:Date: $Date: 2010-03-30 15:58:30 -0400 (Tue, 30 Mar 2010) $
+:Author: Jeff McKenna
+:Contact: jmckenna at gatewaygeomatics.com
+:Last updated: 2019-05-25
 
 .. contents:: Table of Contents
     :depth: 3
@@ -19,6 +20,45 @@ Introduction
 This document describes the changes that must be made to PHP MapScript
 applications when migrating from one MapServer version to another (i.e. backwards
 incompatibilities), as well as information on some of the new features.
+
+Migrating to 7.4's new SWIG API and PHP 7
+-----------------------------------------
+
+As of the MapServer 7.4.0 release, users are recommended to switch to 
+MapServer's new :ref:`SWIG <swig>` API support of PHP 7+ (reason for 
+recommendation: as we saw with the breaking PHP 7 changes,
+managing PHP through SWIG will be easier on the MapServer maintainers in 
+the long run).  Some important SWIG notes:
+  
+- you will require at least `SWIG-3.0.11 <http://www.swig.org/download.html>`_  
+  (but 4.0.0 is recommended).
+  
+- if you notice any missing functions that were available in the old native PHP MapScript API,
+  first please check the :ref:`SWIG API <swig>` reference document for an alternative function to use,
+  and if there is nothing similar available then `file a ticket <https://github.com/mapserver/mapserver/issues>`_ 
+  for each function that you require.
+  
+- all of your PHP scripts (that leverage MapServer objects and functions) must now always 
+  first include the generated ``mapscript.php`` file containing MapServer constants:
+
+  ::
+  
+   // required SWIG include (contains MapServer constants for PHP7)
+   include("C:/ms4w/apps/phpmapscriptng-swig/include/mapscript.php");    
+  
+- take note of the change in how to declare your new objects:
+
+  ::
+  
+    // open map
+    $oMap = new mapObj("C:/ms4w/apps/phpmapscriptng-swig/sample.map");
+    
+  instead of the former way:
+  
+  ::
+  
+    // open map
+    $oMap = ms_newMapObj("C:/ms4w/apps/phpmapscript/sample.map");
 
 Migrating 5.6 to 6.0
 --------------------
