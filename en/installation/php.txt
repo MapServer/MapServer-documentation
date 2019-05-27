@@ -6,7 +6,7 @@
 
 :Author: Jeff McKenna
 :Contact: jmckenna at gatewaygeomatics.com
-:Last Updated: 2019-05-25
+:Last Updated: 2019-05-27
 
 .. contents:: Table of Contents
     :depth: 2
@@ -142,19 +142,23 @@ NOTE: For UNIX users, see the README.CONFIGURE file in the MapServer source, or
 see the :ref:`unix` HowTo.
 
 - The main MapServer configure script will automatically setup the main makefile 
-  to compile php_mapscript.so if you pass the *--with-php=DIR* argument to the configure script.
+  to compile php_mapscript.so if you pass the *--WITH-PHP=DIR* argument to the configure script.
   
   .. note::
   
-      As of MapServer 7.4.0, you can pass the *--with-phpng=DIR* argument for the
+      As of MapServer 7.4.0, you can pass the *--WITH-PHPNG=DIR* argument for the
       new PHP 7 support through the :ref:`SWIG API <swig>`.
 
 - Copy the php_mapscript.so library to your PHP extensions directory, and then 
   use the dl() function to load the module at the beginning of your PHP scripts. 
   See also the PHP function `extension_loaded()`_ to check whether an extension is 
   already loaded.
+  
+  .. note::
+  
+      The dl() function was deprecated as of PHP 5.3.  
 
-- The file *mapscript/php3/examples/phpinfo_mapscript.phtml* will test that the 
+- The file *mapscript/php/examples/phpinfo_mapscript.phtml* will test that the 
   php_mapscript module is properly installed and can be loaded.
 
 - If you get an error from PHP complaining that it cannot load the library, then 
@@ -180,7 +184,7 @@ see the :ref:`unix` HowTo.
 Installing PHP/MapScript
 ------------------------
 
-Simply copy the file php4_mapscript.dll to your PHP4 extensions directory 
+Simply copy the file php_mapscript.dll to your PHP extensions directory 
 (pathto/php/extensions)
 
 Using phpinfo()
@@ -240,7 +244,7 @@ Example Steps of a Full Windows Installation
 1. Download the `Apache Web Server`_ and extract it to the root of a directory 
    (eg. D:/Apache).
    
-2. Download `PHP4`_ and extract it to your Apache folder (eg. D:/Apache/PHP4).
+2. Download `PHP`_ and extract it to your Apache folder (eg. D:/Apache/PHP).
    
 3. Create a temp directory to store MapServer created GIFs. NOTE: This directory 
    is specified in the IMAGEPATH parameter of the WEB Object in the :ref:`mapfile`
@@ -258,32 +262,32 @@ Example Steps of a Full Windows Installation
       Alias   /ms_tmp/   "path/to/ms_tmp/"
       Alias   /msapps/   "path/to/msapps/"
                         
-   In the *ScriptAlias* section of this file, add an alias for the PHP4 folder.
+   In the *ScriptAlias* section of this file, add an alias for the PHP folder.
 
    ::
    
-      ScriptAlias    /cgi-php4/     "pathto/apache/php4/"                     
+      ScriptAlias    /cgi-php/     "pathto/apache/php/"                     
                                 
-   In the *AddType* section of this file, add a type for php4 files.
+   In the *AddType* section of this file, add a type for php files.
 
    :: 
     
-      AddType application/x-httpd-php4   .php
+      AddType application/x-httpd-php   .php
                                 
    In the *Action* section of this file, add an action for the php.exe file.
 
    ::
     
-      Action application/x-httpd-php4    "/cgi-php4/php.exe"                      
+      Action application/x-httpd-php    "/cgi-php/php.exe"                      
                                 
-5. Copy the file *php4.ini-dist* located in your Apache/php4 directory and 
+5. Copy the file *php.ini-dist* located in your Apache/php directory and 
    paste it into your WindowsNT folder (eg. c:/winnt), and then rename this 
    file to *php.ini* in your WindowsNT folder.
    
 6. If you want specific extensions loaded by default, open the *php.ini* file 
    in a text viewer and uncomment the appropriate extension.
    
-7. Place the file php_mapscript.dll into your Apache/php4/extensions folder. 
+7. Place the file php_mapscript.dll into your Apache/php/extensions folder. 
       
 **Installation Using Microsoft's IIS**
 
@@ -311,7 +315,7 @@ Example Steps of a Full Windows Installation
    
 9. Click on the Configuration button and then click the App Mapping tab.
   
-10. Click Add and in the Executable box type: *path/to/php4/php.exe %s %s*. You 
+10. Click Add and in the Executable box type: *path/to/php/php.exe %s %s*. You 
     MUST have the *%s %s* on the end, PHP will not function properly if you fail 
     to do this. In the Extension box, type the file name extension to be associated 
     with your PHP scripts. Usual extensions needed to be associated are phtml and php. 
@@ -339,8 +343,8 @@ Questions Regarding Documentation
 
 :Q: **Is there any documentation available?**
 
-:A: The main reference document is the :ref:`PHP MapScript reference
-    <php_mapscript>`, which describes all of the current classes,
+:A: The main reference document is the :ref:`SWIG API <swig>` (or the legacy 
+    :ref:`PHP MapScript reference <php_mapscript>`), which describes all of the current classes,
     properties and methods associated with the PHP/MapScript module.
 
     To get a more complete description of each class and the meaning of 
@@ -354,7 +358,7 @@ Questions Regarding Documentation
 
 :Q: **Where can I find sample scripts?**
 
-:A: Some examples are included in directory *mapserver/mapscript/php3/examples/* 
+:A: Some examples are included in directory *mapserver/mapscript/php/examples/* 
     in the MapServer source distribution. A good one to get started is 
     *test_draw_map.phtml*: it's a very simple script that just draws a map, 
     legend and scalebar in an HTML page.
@@ -362,6 +366,10 @@ Questions Regarding Documentation
     A good intermediate example is the :ref:`PHP MapScript By Example guide <php_example>`
     (note that this document was created for an earlier MapServer version 
     but the code might be still useful).
+    
+    As many users rely on `MS4W <https://ms4w.com/>`__ for MapScript, you can also
+    see user-contributed PHP 7 scripts through the SWIG API, on the
+    `MS4W wiki <https://ms4w.com/trac/>`__.    
 
     The original example is the "Gmap demo", download the whole source and 
     data files from the `MapTools.org download page`_. 
@@ -380,10 +388,10 @@ Questions About Installation
        ?>
                                 
     Make sure you replace the php_mapscript.so with the name under which you 
-    installed it, it could be php_mapscript_46.so on Unix, or php_mapscript_46.dll 
+    installed it, it could be php_mapscript_74.so on Unix, or php_mapscript_74.dll 
     on Windows
     
-    You can then try the second test page *mapserver/mapscript/php3/examples/test_draw_map.phtml*. 
+    You can then try the second test page *mapserver/mapscript/php/examples/test_draw_map.phtml*. 
     This page simply opens a MapServer .map file and inserts its map, legend, 
     and scalebar in an HTML page. Modify the page to access one of your own 
     MapServer .map files, and if you get the expected result, then everything 
@@ -395,7 +403,7 @@ Questions About Installation
     shown as it would it Notepad.**
 
 :A: The problem is that your PHP installation does not recognize ".phtml" 
-    as a PHP file extension. Assuming you're using PHP4 under Apache then you 
+    as a PHP file extension. Assuming you're using PHP under Apache then you 
     need to add the following line with the other PHP-related AddType 
     lines in the httpd.conf:
 
@@ -464,6 +472,8 @@ Questions About Installation
 
 :A: The best combinations are:
 
+    - MapScript 7.4.0 with PHP 7.0 and up (through the new :ref:`SWIG API <swig>`)
+
     - MapScript 4.10 with PHP 5.2.1 and up
 
     - MapScript 4.10 with PHP 4.4.6 and up
@@ -485,7 +495,7 @@ Questions About Installation
 .. _`MS4W base package`: https://ms4w.com/download.html
 .. _`MS4W download page`: https://ms4w.com/download.html
 .. _`Apache Web Server`: http://httpd.apache.org/
-.. _`PHP4`: http://www.php.net/
+.. _`PHP`: http://www.php.net/
 .. _`IIS installation procedure`: http://windows.microsoft.com/en-us/windows-vista/install-internet-information-services-iis-7-0
 .. _`MapTools.org download page`: http://www.maptools.org/dl/
 .. _`PHP/MapScript CGI page`: https://trac.osgeo.org/mapserver/wiki/PHPMapScriptCGI
