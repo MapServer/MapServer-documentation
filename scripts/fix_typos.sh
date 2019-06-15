@@ -6,6 +6,7 @@
 #  Project:  GDAL
 #  Purpose:  (Interactive) script to identify and fix typos
 #  Author:   Even Rouault <even.rouault at spatialys.com>
+#  Usage:    (run in docs root) ./scripts/fix_typos.sh
 #
 ###############################################################################
 #  Copyright (c) 2016, Even Rouault <even.rouault at spatialys.com>
