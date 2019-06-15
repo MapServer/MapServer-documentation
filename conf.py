@@ -81,6 +81,9 @@ pygments_style = 'sphinx'
 # Exclude git directories
 exclude_patterns = ['.git', 'howto', 'redirection', 'users-manual']
 
+# check for broken links
+nitpicky = True
+
 # Options for HTML output
 # -----------------------
 
