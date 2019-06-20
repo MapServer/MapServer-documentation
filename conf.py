@@ -436,6 +436,7 @@ def setup(app):
     from sphinx.highlighting import lexers
     lexers['wkt'] = WKTLexer()
     lexers['mapfile'] = MapFileLexer()
+    #app.add_lexer('mapfile', MapFileLexer)
 
 # avoid warnings of "nonlocal image URI found" (this parameter requires Sphinx >=1.4)
 suppress_warnings = ['image.nonlocal_uri']
