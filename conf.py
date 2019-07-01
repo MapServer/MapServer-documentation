@@ -184,8 +184,8 @@ html_theme = "classic"
 # Grouping the document tree into LaTeX files. List of tuples
 # (source start file, target name, title, author, document class [howto/manual]).
 latex_documents = [
-  ('documentation', 'MapServer.tex', ur'MapServer Documentation',
-   ur'The MapServer Team', 'manual', False),
+  ('documentation', 'MapServer.tex', u'MapServer Documentation',
+   u'The MapServer Team', 'manual', False),
 ]
 
 # The name of an image file (relative to this directory) to place at the top of
@@ -317,7 +317,7 @@ class WKTLexer(RegexLexer):
             (r'0x[0-9a-fA-F]+', Number.Hex),
             (r'[0-9]+', Number.Integer),
             (r'"(\\\\|\\"|[^"])*"', String.Double),
-            (r"'(\\\\|\\'|[^'])*'", String.Single),
+            (r"'(\\\\|\\'|[^'])*'", String.Single)
         ]
     }
 
@@ -389,7 +389,7 @@ class MapFileLexer(RegexLexer):
             (keywords, Keyword),
             (builtins, Name.Builtin),
             (r'[0-9][0-9]*\.[0-9]+([eE][0-9]+)?[fd]?', Number.Float),
-            (r'[0-9]+', Number.Integer),
+            (r'[0-9]+', Number.Integer)
 
         ],
         'dqs': [
@@ -428,7 +428,7 @@ class MapFileLexer(RegexLexer):
         'stringescape': [
             (r'\\([\\abfnrtv"\']|\n|N{.*?}|u[a-fA-F0-9]{4}|'
              r'U[a-fA-F0-9]{8}|x[a-fA-F0-9]{2}|[0-7]{1,3})', String.Escape)
-        ],
+        ]
     }
 
 
@@ -436,7 +436,11 @@ def setup(app):
     from sphinx.highlighting import lexers
     lexers['wkt'] = WKTLexer()
     lexers['mapfile'] = MapFileLexer()
-    #app.add_lexer('mapfile', MapFileLexer)
+    #import sphinx
+    #if sphinx.version_info >= (2, 1):
+    #    app.add_lexer('mapfile', MapFileLexer)
+    #else:
+    #    app.add_lexer('mapfile', MapFileLexer())    
 
 # avoid warnings of "nonlocal image URI found" (this parameter requires Sphinx >=1.4)
 suppress_warnings = ['image.nonlocal_uri']
