@@ -436,6 +436,7 @@ def setup(app):
     from sphinx.highlighting import lexers
     lexers['wkt'] = WKTLexer()
     lexers['mapfile'] = MapFileLexer()
+    app.add_lexer('mapfile', MapFileLexer)
     #import sphinx
     #if sphinx.version_info >= (2, 1):
     #    app.add_lexer('mapfile', MapFileLexer)
