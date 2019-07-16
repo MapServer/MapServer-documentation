@@ -5,16 +5,18 @@
 *****************************************************************************
 
 :Author: Bart van den Eijnden
-:Last Updated: 2005/12/12
+:Author: Jeff McKenna
+:Contact: jmckenna at gatewaygeomatics.com
+:Last Updated: 2019-07-16
 
 .. contents:: Table of Contents
-    :depth: 2
+    :depth: 4
     :backlinks: top
 
 
 .. index:: Oracle
 
-Oracle Spatial is a spatial cartridge for the Oracle database. Remember
+Oracle Spatial is a spatial component for the Oracle database. Remember
 that all Oracle databases come with Locator, which has less features than
 Oracle Spatial. The differences between Locator and Spatial can be found in
 the `Oracle Spatial FAQ`_. 
@@ -22,18 +24,8 @@ the `Oracle Spatial FAQ`_.
 You can also see the original `OracleSpatial wiki page <https://github.com/mapserver/mapserver/wiki/OracleSpatial>`__
 that this document was based on.
 
-What MapServer 5.2 with Oracle Spatial
-------------------------------------------------------------------------------
-
-* mode=map 
-* query modes: query, nquery, itemnquery 
-* :ref:`mapscript` query functions such as querybyattributes 
-* :ref:`OGC:WMS <wms_server>`: GetCapabilities, GetMap, GetFeatureInfo, DescribeLayer 
-* :ref:`OGC:WFS <wfs_server>`, GetCapabilities, DescribeFeatureType, GetFeature 
-
-
 Binaries
-------------------------------------------------------------------------------
+--------
 
 MapServer Windows plugins with Oracle spatial support can be downloaded from
 :ref:`MS4W <windows>`. But you need Oracle client software in the server on which you
@@ -47,7 +39,7 @@ same version as your Oracle client, for compiling you need a full client
 install, not just the instant client.
 
 Installation
-------------------------------------------------------------------------------
+------------
 
 See :ref:`oci_install` for more configuration and installation information 
 for MapServer's native Oracle support
@@ -57,7 +49,7 @@ for MapServer's native Oracle support
     MapServer being unable access or locate the ORACLE_HOME.
 
 Two options for using Oracle Spatial with MapServer
-------------------------------------------------------------------------------
+---------------------------------------------------
 
 Oracle Spatial layers in MapServer can be used through 2 interfaces:
 
@@ -68,7 +60,7 @@ Oracle Spatial layers in MapServer can be used through 2 interfaces:
   the new GDAL/OGR !!!!
 
 Mapfile syntax for native Oracle Spatial support
-------------------------------------------------------------------------------
+************************************************
 
 The DATA statement for a LAYER of CONNECTIONTYPE oraclespatial can now have 4
 options. This change is backwards compatible, i.e. the old ways of specifying
@@ -93,14 +85,17 @@ The following options are valid DATA statements:
     ]"
 
 
+Examples
+^^^^^^^^
+
 Example 1
-..............................................................................
+.........
 
 The most simple DATA statement, in this case you only need to define one
 geometry column and one table. This option assumes you do not have an SRID
 defined.
 
-::
+.. code-block:: mapfile
 
     LAYER 
         ... 
@@ -111,14 +106,14 @@ defined.
     
 
 Example 2
-..............................................................................
+.........
 
 It's composed of the first option plus the USING UNIQUE parameter. These new
 features are necessary when you want to use any query function. When it is
 used you must pass a numeric column type. This option assumes you do not have
 an SRID defined.
 
-::
+.. code-block:: mapfile
     
     LAYER 
         ... 
@@ -128,13 +123,13 @@ an SRID defined.
     END 
     
 Example 3
-..............................................................................
+.........
 
 This option is an extension to the first option. In this
 mode you must define the USING SRID parameter when the SRID value in your data
 is different from NULL. 
 
-::
+.. code-block:: mapfile
 
     LAYER 
         ... 
@@ -145,11 +140,11 @@ is different from NULL.
 
 
 Example 4
-..............................................................................
+.........
 
 This option is a combination of examples 2 and 3.
 
-::
+.. code-block:: mapfile
 
     LAYER 
         ... 
@@ -161,7 +156,7 @@ This option is a combination of examples 2 and 3.
 
 
 Using subselects in the DATA statement
-------------------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 It is possible to define the source of the date as a subselect and not only as
 a table. As source of data, used in FROM token, you can define any SQL, table,
@@ -175,16 +170,14 @@ If the LAYER definition contains a CLASSITEM, LABELITEM or FILTER, it is
 necessary that the fields used are returned by the query. When you define
 CLASSITEM you can use an expression without any problems.
 
-
-
 Additional keywords - [FUNCTION]
-------------------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can add three keywords to the DATA statement for [FUNCTION] option that
 influence the query which will be executed in Oracle:
 
 USING FILTER
-..............................................................................
+............
 
 ::
 
@@ -201,7 +194,7 @@ query is not exact you can try the next option.
 
 
 USING RELATE
-..............................................................................
+............
 
 ::
 
@@ -215,7 +208,7 @@ can't readjust the spatial index.
 
 
 USING GEOMRELATE
-..............................................................................
+................
 
 ::
 
@@ -228,7 +221,7 @@ slow than operators but it's very accurate. You can use this mode when you
 can't use the spatial index or when it doesn't exist.
 
 USING NONE
-..............................................................................
+..........
 
 ::
 
@@ -243,14 +236,14 @@ SDO_BUFFER, SDO_XOR, SDO_INTERSECTION...... So this mode is recommended when
 you can't use the spatial index or when it doesn't exist. 
 
 Additional keywords - [VERSION]
-------------------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
 You can define what version of database you are using to improve the internal
 sql. This is very useful when using geodetic SRIDs and MapServer functions
 that retrieve the extent from data.
 
 USING VERSION 8i
-..............................................................................
+................
 
 ::
 
@@ -260,7 +253,7 @@ This indicates MapServer to use a internal SQL that it's compatible with
 Oracle 8i version.
 
 USING VERSION 9i
-..............................................................................
+................
 
 ::
 
@@ -272,7 +265,7 @@ specific spatial functions that is need to retrieve data correctly from 9i
 Oracle Spatial versions. 
 
 USING VERSION 10g
-..............................................................................
+.................
 
 ::
     
@@ -282,7 +275,7 @@ This indicates MapServer to use a internal SQL that it's compatible with
 Oracle 10g version.
 
 More information
-------------------------------------------------------------------------------
+^^^^^^^^^^^^^^^^
 
 * You can define any :ref:`PROJECTION` to your :ref:`LAYER` without problem,
   can be used for data with or without an SRID in Oracle.
@@ -298,9 +291,9 @@ More information
   Spatial User Guide.
 
 Example of a LAYER
-------------------------------------------------------------------------------
+^^^^^^^^^^^^^^^^^^
 
-::
+.. code-block:: mapfile
 
     LAYER 
         NAME kwadranten 
@@ -340,11 +333,11 @@ So after this you can define you layer connection as:
     CONNECTION "user/pwd@MYDB"
 
 Mapfile syntax for OGR Oracle Spatial support
-------------------------------------------------------------------------------
+*********************************************
 
 Syntax for your MAP file: 
 
-::
+.. code-block:: mapfile
 
     CONNECTION "OCI:user/pwd@service" 
     CONNECTIONTYPE OGR 
@@ -353,7 +346,19 @@ Syntax for your MAP file:
 .. note::
     Make sure you set the wms_extent METADATA for the LAYER, as otherwise the
     "Getcapabilities" request takes a lot of time.
+    
+What MapServer Components are related to Oracle Spatial access
+--------------------------------------------------------------
+
+.. note::
+    This list was created back for MapServer 5.2 so it is somewhat outdated.
+
+* mode=map 
+* query modes: query, nquery, itemnquery 
+* :ref:`mapscript` query functions such as querybyattributes 
+* :ref:`OGC:WMS <wms_server>`: GetCapabilities, GetMap, GetFeatureInfo, DescribeLayer 
+* :ref:`OGC:WFS <wfs_server>`, GetCapabilities, DescribeFeatureType, GetFeature     
 
 
 .. _`Oracle Spatial FAQ`: http://www.orafaq.com/faqsdo.htm
-.. _`instant client`: http://www.oracle.com/technology/software/tech/oci/instantclient/index.html
+.. _`instant client`: https://www.oracle.com/database/technologies/instant-client/downloads.html
