@@ -1,3 +1,11 @@
+**2019-07-17 - MapCache 1.8.0-rc2 is released**
+
+The second release candidate of MapCache 1.8.0 is now available.
+See the :ref:`1.8.0-rc2 changelog <changelog-mapcache-1-8-0-rc2>`
+for the full list of changes.  
+
+Head to :ref:`download <dev-release>` to obtain a copy.
+
 **2019-07-12 - MapServer 7.4.1 is released**
 
 The maintenance release of MapServer 7.4.1 is now available.
