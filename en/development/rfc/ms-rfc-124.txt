@@ -154,9 +154,11 @@ Enhancements concern the following items:
      - MapFile
      - SLD (highlighted lines show enhancements)
    * - *SYMBOL* (``<PointSymbolizer>``):
-         - Both color and outline color are generated, including opacity (can
-           be specified in input SLD)
-         - *ANGLE*, *OFFSET* and global *OPACITY* are generated
+
+       Both color and outline color are generated, including opacity (can
+       be specified in input SLD).
+
+       *ANGLE*, *OFFSET* and global *OPACITY* are generated.
      - .. code-block:: text
 
             LAYER
@@ -200,7 +202,8 @@ Enhancements concern the following items:
           </se:PointSymbolizer>                                         
 
    * - *POLYGON* (``<PolygonSymbolizer>``):
-         - Outline opacity is generated
+
+       Outline opacity is generated.
      - .. code-block:: text
 
           LAYER
@@ -231,7 +234,8 @@ Enhancements concern the following items:
           </se:PolygonSymbolizer>                                       
 
    * - *LABEL* (``<TextSymbolizer>``):
-         - Outline color, aka Halo, is generated
+
+       Outline color, aka Halo, is generated.
      - .. code-block:: text
 
           LAYER
@@ -287,12 +291,62 @@ Enhancements concern the following items:
           </se:TextSymbolizer>
 
 
-
-
 3. Style layering
 -----------------
 
 .. note:: Work in progress
+
+Mapserver is designed to use only the first applicable class inside a layer for
+the rendering of a feature (see :ref:`CLASS description in LAYER page
+<layer-class>`).
+
+On the other hand, SLD/SE defines a policy named "*painters model*" in which
+all applicable rules (SLD equivalent of classes) are used for the rendering of
+a feature (see `OpenGIS Symbology Encoding Implementation Specification
+<http://portal.opengeospatial.org/files/?artifact_id=16700>`_, p.7).
+
+Here is a comparison example of both renderings. The same stylesheet is written
+in MapFile and in SLD and applied on a sketch of France regions. Stylesheet
+specification is:
+
+- Class #1: Polygons are filled with green color
+- Class #2: Polygons with 3 to 5 edges are filled with red color
+- Class #3: Polygons with exactly 4 edges are filled with blue color
+
+.. list-table:: *Example of MapFile vs. SLD Style rendering policies*
+    :header-rows: 1
+
+    * - Mapfile
+      - SLD
+    * - Only the first applicable class is used for rendering
+      - All applicable classes are used for rendering, each on top of the
+        previous ones
+    * -
+          .. image:: ../../images/stylefirst.png
+      -
+          .. image:: ../../images/stylepainter.png
+
+In order to handle both rendering modes in their respective contexts, a new
+field named ``rendermode`` is added to ``layerObj`` data structure. This is
+used in ``msDrawVectorLayer()`` function in ``mapdraw.c`` file. The two
+possible values for this field are:
+
+MS_FIRST_CLASS
+   Default rendering mode, set on layers defined in a MapFile. In this mode,
+   ``msDrawVectorLayer()`` fetches the first applicable class for each shape
+   and uses only that class for rendering.
+
+MS_PAINTERS_MODEL
+   SLD rendering mode, set on layers defined in a SLD document. In this mode,
+   ``msDrawVectorLayer()`` iterates over all applicable classes for each shape
+   and uses them one after the other for rendering. Moreover, as
+   ``msDrawShape()`` changes shape coordinates values and as shapes are
+   potentially drawn multiple times, shapes must be saved before calls to
+   ``msDrawShape()`` and restored after.
+
+As for arithmetic expressions, offering choice of rendering mode in MapFiles,
+e.g., by adding a *RENDERMODE* parameter in *LAYER* section, would not be
+technically difficult.
 
 
 4. Mark or ExternalGraphic in LineSymbolizer
@@ -316,7 +370,8 @@ Enhancements concern the following items:
 Testing
 =======
 
-The  ``msautotest/sld`` suite will be created and populated with test cases focusing on these new or improved features.
+The  ``msautotest/sld`` suite will be created and populated with test cases
+focusing on these new or improved features.
 
 Moreover the ``msautotest/{gdal,misc,query,renderers,wxs}`` test suites will be
 run during development in order to make sure that no regression occurs.
@@ -340,15 +395,23 @@ Affected Files
 ==============
 
   - ``mapcopy.c``
+  - ``mapdraw.c``
   - ``mapfile.c``
   - ``maplayer.c``
   - ``mapogcsld.c``
   - ``mapogcsld.h``
   - ``mapserver.h``
   - ``maputil.c``
+  - ``mapwms.c``
   - ...
 
 .. note:: Work in progress
+
+
+Credits
+=======
+
+Thanks to funding from the French Ministry of Defence.
 
 
 Voting history
