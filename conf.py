@@ -293,6 +293,10 @@ epub_identifier = 'https://mapserver.org'
 # Path for sphinx to find *.mo files for translation
 locale_dirs = ['../translated']
 
+rst_epilog = """
+.. |RUNSUB| replace:: This attribute can be replaced using runtime substitution. See :ref:`RUNSUB`.
+"""
+
 from pygments.lexer import RegexLexer, bygroups,combined, include
 from pygments.token import *
 from pygments import highlight
