@@ -153,7 +153,7 @@ Enhancements concern the following items:
    * - Description
      - MapFile
      - SLD (highlighted lines show enhancements)
-   * - *SYMBOL* (``<PointSymbolizer>``):
+   * - *SYMBOL* (<PointSymbolizer>):
 
        Both color and outline color are generated, including opacity (can
        be specified in input SLD).
@@ -201,7 +201,7 @@ Enhancements concern the following items:
             </se:Graphic>                                                 
           </se:PointSymbolizer>                                         
 
-   * - *POLYGON* (``<PolygonSymbolizer>``):
+   * - *POLYGON* (<PolygonSymbolizer>):
 
        Outline opacity is generated.
      - .. code-block:: text
@@ -233,7 +233,7 @@ Enhancements concern the following items:
             </se:Stroke>                                                  
           </se:PolygonSymbolizer>                                       
 
-   * - *LABEL* (``<TextSymbolizer>``):
+   * - *LABEL* (<TextSymbolizer>):
 
        Outline color, aka Halo, is generated.
      - .. code-block:: text
@@ -321,8 +321,10 @@ specification is:
         previous ones
     * -
           .. image:: ../../images/stylefirst.png
+             :align: center
       -
           .. image:: ../../images/stylepainter.png
+             :align: center
 
 In order to handle both rendering modes in their respective contexts, a new
 field named ``rendermode`` is added to ``layerObj`` data structure. This is
@@ -352,11 +354,133 @@ technically difficult.
 
 .. note:: Work in progress
 
+Current implementation of SLD/SE in MapServer fails at rendering symbols
+(<Mark> or <ExternalGraphic> tags) on lines (<LineSymbolizer> tag). As an
+illustration, let's draw a blue line representing the Danube river with
+alterning circles (implemented by <Mark> tag) and boats (implemented by
+<ExternalGraphic> tag) on it. Below, the first picture is produced with a
+MapFile and the second one with a SLD document.
+
+.. list-table::
+   :widths: 1 4
+   :stub-columns: 1
+
+   * - MapFile
+
+       (correct rendering)
+     - .. image:: ../../images/danube-mapfile.png
+          :scale: 80%
+   * - SLD
+
+       (incorrect rendering)
+     - .. image:: ../../images/danube-sld-bug.png
+          :scale: 80%
+
+
+
 
 5. LineSymbolizer and PolygonSymbolizer in Rule
 -----------------------------------------------
 
-.. note:: Work in progress
+Current implementation of SLD/SE in MapServer doesn't expect a mix of
+<LineSymbolizer> and <PolygonSymbolizer> in the same <Rule>, and
+therefore produces an incorrect rendering. As an illustration, let's draw a
+blue polygon with a yellow outline by using two SLD variants.
+
+- The first one is a single <PolygonSymbolizer> containing both
+  <Stroke> section for the outline and <Fill> section for the inner
+  area.
+
+- The second one is a <LineSymbolizer> containing a <Stroke> section
+  for the outline followed by a <PolygonSymbolizer> containing a <Fill>
+  section for the inner area.
+
+.. list-table:: *Illustration of incorrect rendering of LineSymbolizer and
+                 PolygonSymbolizer in Rule*
+    :header-rows: 1
+
+    * - <Stroke> and <Fill> inside <PolygonSymbolizer>
+      - <LineSymbolizer> and <PolygonSymbolizer> inside <Rule>
+    * -
+          .. code-block:: xml
+
+             <FeatureTypeStyle>
+               <Rule>
+                 <PolygonSymbolizer>
+
+                   <Stroke>
+                     <SvgParameter name="stroke">
+                       <Literal>#FFFF00</Literal>
+                     </SvgParameter>
+                   </Stroke>
+
+
+
+                   <Fill>
+                     <SvgParameter name="fill">
+                       <Literal>#0000FF</Literal>
+                     </SvgParameter>
+                   </Fill>
+
+                 </PolygonSymbolizer>
+               </Rule>
+             </FeatureTypeStyle>
+      -
+          .. code-block:: xml
+
+             <FeatureTypeStyle>
+               <Rule>
+
+                 <LineSymbolizer>
+                   <Stroke>
+                     <SvgParameter name="stroke">
+                       <Literal>#FFFF00</Literal>
+                     </SvgParameter>
+                   </Stroke>
+                 </LineSymbolizer>
+
+                 <PolygonSymbolizer>
+                   <Fill>
+                     <SvgParameter name="fill">
+                       <Literal>#0000FF</Literal>
+                     </SvgParameter>
+                   </Fill>
+                 </PolygonSymbolizer>
+
+               </Rule>
+             </FeatureTypeStyle>
+    * -
+          .. figure:: ../../images/stylesinsymb.png
+             :align: center
+             
+             *Correct rendering*
+      -
+          .. figure:: ../../images/symbinrule.png
+             :align: center
+             
+             *Incorrect rendering*
+
+A `source code inspection
+<https://github.com/mapserver/mapserver/blob/branch-7-4/mapogcsld.c#L971-L1014>`_
+shows that all SLD/SE tags are taken into account. The proposed solution
+consists in a simple bug fix aimed at feeding ``mapObj`` data structure the
+same way for both cases.
+
+In the current implementation, a new *STYLE* is generated for each <Stroke>
+or <Fill> tag. But in the first case, <Fill> tags are handled before
+<Stroke> tags, whereas in the second case, <LineSymbolizer> tags, which
+contain only <Stroke> are handled before <PolygonSymbolizer> tags, able
+to contain both <Stroke> and <Fill> tags.
+
+Moreover <LineSymbolizer><Stroke> color is assigned to  *COLOR* variable,
+whereas <PolygonSymbolizer><Stroke> outline color is assigned to
+*OUTLINECOLOR* variable.
+
+The proposed solution consists on one hand to handle <PolygonSymbolizer>
+tags before <LineSymbolizer> tags, and on the second hand to move *COLOR*
+value to *OUTLINECOLOR* for styles defined by <LineSymbolizer> but
+applicable to polygon layers.
+
 
 
 6. UserLayer
