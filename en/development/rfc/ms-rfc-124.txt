@@ -376,7 +376,34 @@ MapFile and the second one with a SLD document.
      - .. image:: ../../images/danube-sld-bug.png
           :scale: 80%
 
+A source code inspection shows:
 
+- <ExternalGraphic> parameter has to be validated against authorized patterns
+  (see `mapogcsld.c
+  <https://github.com/mapserver/mapserver/blob/branch-7-4/mapogcsld.c#L2140-L2145>`_).
+  This involves setting ``"sld_external_graphic"`` attribute in
+  :ref:`validation` block of MapFile's *WEB* section, e.g.:
+
+  .. code-block:: mapfile
+
+     WEB
+       ...
+       VALIDATION
+         ...
+         "sld_external_graphic" "^.*/sld/data/.*"
+         ...
+       END
+       ...
+     END
+
+- Current implementation of <Mark> fails at rendering symbols without <Fill>
+  specification: <Stroke> color color is always assigned to *OUTLINECOLOR*
+  variable (see `mapogcsld.c
+  <https://github.com/mapserver/mapserver/blob/branch-7-4/mapogcsld.c#L1697-L1703>`_).
+  When <Fill> tag is not present, it should be assigned to *COLOR* variable.
+
+The proposed solution consists in a documentation update (in :ref:`sld`
+document) for the first issue and a bug fix for the second one.
 
 
 5. LineSymbolizer and PolygonSymbolizer in Rule
@@ -540,3 +567,6 @@ Voting history
 ==============
 
 
+
+
+.. vi:syntax=rst
