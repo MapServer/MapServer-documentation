@@ -6,12 +6,50 @@
 MapServer Migration Guide
 *****************************************************************************
 
-:Last Updated: 2018-01-04
+:Last Updated: 2019-05-25
 
 .. contents:: Table of Contents
     :depth: 2
     :backlinks: top
    
+MapServer 7.2 to 7.4 Migration
+==============================
+
+- PHP 7 MapScript support: users are recommended to switch to MapServer's new :ref:`SWIG <swig>` API
+  support of PHP 7+ (reason for recommendation: as we saw with the breaking PHP 7 changes,
+  managing PHP through SWIG will be easier on the MapServer maintainers in the long run.)  
+  Some important SWIG notes:
+  
+  - you will require at least `SWIG-3.0.11 <http://www.swig.org/download.html>`_  
+    (but 4.0.0 is recommended).
+    
+  - if you notice any missing functions that were available in the old native PHP MapScript API,
+    first please check the :ref:`SWIG API <swig>` reference document for an alternative function to use,
+    and if there is nothing similar available then `file a ticket <https://github.com/mapserver/mapserver/issues>`_ 
+    for each function that you require.
+    
+  - all of your PHP scripts (that leverage MapServer objects and functions) must now always 
+    first include the generated ``mapscript.php`` file containing MapServer constants:
+
+    ::
+    
+     // required SWIG include (contains MapServer constants for PHP7)
+     include("C:/ms4w/apps/phpmapscriptng-swig/include/mapscript.php");    
+    
+  - take note of the change in how to declare your new objects:
+  
+    ::
+    
+      // open map
+      $oMap = new mapObj("C:/ms4w/apps/phpmapscriptng-swig/sample.map");
+      
+    instead of the former way:
+    
+    ::
+    
+      // open map
+      $oMap = ms_newMapObj("C:/ms4w/apps/phpmapscript/sample.map");
+      
 MapServer 7.0 to 7.2 Migration
 ==============================
 
@@ -148,7 +186,7 @@ Build system changes
 
 If you are building MapServer from source, then the following may be of interest to you:
 
-* Use of libtool: In version 6.2, the Unix/Linux build scripts and Makefiles were converted to use libtool. One impact of this change is that the 'mapserv' file in the main source tree is a libtool wrapper script and not the actual binary. To use 'mapserv' you actually have to use 'make install' and then point to the installed binary. More info is available in the Compiling on Unix document at http://mapserver.org/installation/unix.html#installation
+* Use of libtool: In version 6.2, the Unix/Linux build scripts and Makefiles were converted to use libtool. One impact of this change is that the 'mapserv' file in the main source tree is a libtool wrapper script and not the actual binary. To use 'mapserv' you actually have to use 'make install' and then point to the installed binary. More info is available in the Compiling on Unix document at https://mapserver.org/installation/unix.html#installation
 
 * The --with-php configure option has been changed to point directly to the php-config script instead of to the directory where the PHP headers are located.
 
@@ -237,7 +275,7 @@ values and string literals.
 On the plus side you can now control the number of decimal places, round and even commify
 the area value for annotion.
 
-See http://mapserver.org/development/rfc/ms-rfc-64.html and https://github.com/mapserver/mapserver/issues/3736
+See https://mapserver.org/development/rfc/ms-rfc-64.html and https://github.com/mapserver/mapserver/issues/3736
 for more information.
 
 ------------------------------
@@ -361,7 +399,7 @@ MAP::WEB section::
 
  "ows_enable_request"   "*"
 
-See also: http://mapserver.org/development/rfc/ms-rfc-67.html
+See also: https://mapserver.org/development/rfc/ms-rfc-67.html
 
 ------------------------------
 Mapfile Changes - WCS Metadata
@@ -514,7 +552,7 @@ To access shapes independently of a query use the new resultObj class:
   $shape = $layer->getShape(new mapscript::resultObj(1));  
   $layer->close();
 
-See http://mapserver.org/development/rfc/ms-rfc-65.html for more information.
+See https://mapserver.org/development/rfc/ms-rfc-65.html for more information.
 
 ------------
 OUTPUTFORMAT
@@ -580,7 +618,7 @@ on the data instead of two passes. This is transparent for CGI applications,
 but MapScript scripts must be modified to use the layer.resultsGetShape()
 method instead of layer.getShape().
 
-See also: http://mapserver.org/development/rfc/ms-rfc-52.html
+See also: https://mapserver.org/development/rfc/ms-rfc-52.html
 
 (Note: the new resultsGetShape() method is not yet available for PHP MapScript 
 in 5.6.0-beta1)
@@ -649,7 +687,7 @@ The new requirements are as follows:
 
   * In JavaScript: // MapServer Template
 
-See also: http://mapserver.org/development/rfc/ms-rfc-56.html
+See also: https://mapserver.org/development/rfc/ms-rfc-56.html
 
 
 MapServer 4.10 to 5.0 Migration

@@ -32,7 +32,7 @@ function olmapinit(){
      
         map = new OpenLayers.Map( 'map' );
 
-        var wms = new OpenLayers.Layer.WMS( "WMS","http://mapserver.org/geocache?",
+        var wms = new OpenLayers.Layer.WMS( "WMS","https://mapserver.org/geocache?",
         
         //var wms = new OpenLayers.Layer.WMS( "WMS","http://demo.mapserver.org/cgi-bin/foss4g?",
         {
@@ -57,7 +57,7 @@ function olmapinit(){
         transitionEffect:'resize'} );     
 
         var osm_denver_osmgrid_tms_layer = new OpenLayers.Layer.TMS( "osm-denver-osmgrid-TMS",
-        "http://demo.mapserver.org/geocache/tms",
+        "https://demo.mapserver.org/geocache/tms",
         { layername: 'osm-denver@osmgrid', type: "png", serviceVersion:"1.0.0",
         gutter:0,buffer:0,isBaseLayer:true,transitionEffect:'resize',
         tileOrigin: new OpenLayers.LonLat(-109.060090,36.991292),
