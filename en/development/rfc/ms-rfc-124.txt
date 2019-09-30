@@ -1,5 +1,6 @@
 .. _rtf124:
 
+
 ==============================================
 MS RFC 124: Improving SLD Support in MapServer
 ==============================================
@@ -9,12 +10,6 @@ MS RFC 124: Improving SLD Support in MapServer
 :Contact: jbo-ads@laposte.net
 :Status: Draft
 :Version: TBD
-
-.. note::
-
-   The present document is still a work in progress. Sections will be added
-   over time when they are ready to be published. This aims at collecting
-   comments and advices as early as possible.
 
 
 Overview
@@ -45,9 +40,6 @@ following issues have been identified:
    of SLD doesn’t handle both <LineSymbolizer> and <PolygonSymbolizer> in the
    same <Rule> element (which is more expressive than both <Fill> and <Stroke>
    in the same <PolygonSymbolizer>).
-
-6. **UserLayer**: MapServer implementation of SLD doesn’t handle <UserLayer>
-   element.
 
 The next sections of this RFC develop a description of each issue and the
 proposed solution.
@@ -395,7 +387,7 @@ A source code inspection shows:
      END
 
 - Current implementation of <Mark> fails at rendering symbols without <Fill>
-  specification: <Stroke> color color is always assigned to *OUTLINECOLOR*
+  specification: <Stroke> color is always assigned to *OUTLINECOLOR*
   variable (see `mapogcsld.c
   <https://github.com/mapserver/mapserver/blob/branch-7-4/mapogcsld.c#L1697-L1703>`_).
   When <Fill> tag is not present, it should be assigned to *COLOR* variable.
@@ -409,8 +401,8 @@ document) for the first issue and a bug fix for the second one.
 
 Current implementation of SLD/SE in MapServer doesn't expect a mix of
 <LineSymbolizer> and <PolygonSymbolizer> in the same <Rule>, and
-therefore produces an incorrect rendering. As an illustration, let's draw a
-blue polygon with a yellow outline by using two SLD variants.
+therefore produces an incorrect rendering in that case. As an illustration,
+let's draw a blue polygon with a yellow outline by using two SLD variants.
 
 - The first one is a single <PolygonSymbolizer> containing both
   <Stroke> section for the outline and <Fill> section for the inner
@@ -507,13 +499,6 @@ value to *OUTLINECOLOR* for styles defined by <LineSymbolizer> but
 applicable to polygon layers.
 
 
-
-6. UserLayer
-------------
-
-.. note:: Work in progress
-
-
 Testing
 =======
 
@@ -550,9 +535,6 @@ Affected Files
   - ``mapserver.h``
   - ``maputil.c``
   - ``mapwms.c``
-  - ...
-
-.. note:: Work in progress
 
 
 Credits
