@@ -1,20 +1,15 @@
 .. _rtf124:
 
+
 ==============================================
 MS RFC 124: Improving SLD Support in MapServer
 ==============================================
 
-:Last Updated: 2019-07-24
+:Last Updated: 2019-10-01
 :Author: Jérome Boué
 :Contact: jbo-ads@laposte.net
 :Status: Draft
-:Version: TBD
-
-.. note::
-
-   The present document is still a work in progress. Sections will be added
-   over time when they are ready to be published. This aims at collecting
-   comments and advices as early as possible.
+:Version: (Targeting MapServer 8.0)
 
 
 Overview
@@ -46,15 +41,12 @@ following issues have been identified:
    same <Rule> element (which is more expressive than both <Fill> and <Stroke>
    in the same <PolygonSymbolizer>).
 
-6. **UserLayer**: MapServer implementation of SLD doesn’t handle <UserLayer>
-   element.
-
 The next sections of this RFC develop a description of each issue and the
 proposed solution.
 
 
-Technical solution
-==================
+Proposed solution
+=================
 
 
 1. Literal constants, variables and arithmetic expressions
@@ -153,7 +145,7 @@ Enhancements concern the following items:
    * - Description
      - MapFile
      - SLD (highlighted lines show enhancements)
-   * - *SYMBOL* (``<PointSymbolizer>``):
+   * - *SYMBOL* (<PointSymbolizer>):
 
        Both color and outline color are generated, including opacity (can
        be specified in input SLD).
@@ -201,7 +193,7 @@ Enhancements concern the following items:
             </se:Graphic>                                                 
           </se:PointSymbolizer>                                         
 
-   * - *POLYGON* (``<PolygonSymbolizer>``):
+   * - *POLYGON* (<PolygonSymbolizer>):
 
        Outline opacity is generated.
      - .. code-block:: text
@@ -233,7 +225,7 @@ Enhancements concern the following items:
             </se:Stroke>                                                  
           </se:PolygonSymbolizer>                                       
 
-   * - *LABEL* (``<TextSymbolizer>``):
+   * - *LABEL* (<TextSymbolizer>):
 
        Outline color, aka Halo, is generated.
      - .. code-block:: text
@@ -321,8 +313,10 @@ specification is:
         previous ones
     * -
           .. image:: ../../images/stylefirst.png
+             :align: center
       -
           .. image:: ../../images/stylepainter.png
+             :align: center
 
 In order to handle both rendering modes in their respective contexts, a new
 field named ``rendermode`` is added to ``layerObj`` data structure. This is
@@ -350,19 +344,156 @@ technically difficult.
 4. Mark or ExternalGraphic in LineSymbolizer
 --------------------------------------------
 
-.. note:: Work in progress
+Current implementation of SLD/SE in MapServer fails at rendering symbols
+(<Mark> or <ExternalGraphic> tags) on lines (<LineSymbolizer> tag). As an
+illustration, let's draw a blue line representing the Danube river with
+alterning circles (implemented by <Mark> tag) and boats (implemented by
+<ExternalGraphic> tag) on it. Below, the first picture is produced with a
+MapFile and the second one with a SLD document.
+
+.. list-table::
+   :widths: 1 4
+   :stub-columns: 1
+
+   * - MapFile
+
+       (correct rendering)
+     - .. image:: ../../images/danube-mapfile.png
+          :scale: 80%
+   * - SLD
+
+       (incorrect rendering)
+     - .. image:: ../../images/danube-sld-bug.png
+          :scale: 80%
+
+A source code inspection shows:
+
+- <ExternalGraphic> parameter has to be validated against authorized patterns
+  (see `mapogcsld.c
+  <https://github.com/mapserver/mapserver/blob/branch-7-4/mapogcsld.c#L2140-L2145>`_).
+  This involves setting ``"sld_external_graphic"`` attribute in
+  :ref:`validation` block of MapFile's *WEB* section, e.g.:
+
+  .. code-block:: mapfile
+
+     WEB
+       VALIDATION
+         "sld_external_graphic" "^.*/sld/data/.*"
+       END
+       [...]
+     END
+
+- Current implementation of <Mark> fails at rendering symbols without <Fill>
+  specification: <Stroke> color is always assigned to *OUTLINECOLOR*
+  variable (see `mapogcsld.c
+  <https://github.com/mapserver/mapserver/blob/branch-7-4/mapogcsld.c#L1697-L1703>`_).
+  When <Fill> tag is not present, it should be assigned to *COLOR* variable.
+
+The proposed solution consists in a documentation update (in :ref:`sld`
+document) for the first issue and a bug fix for the second one.
 
 
 5. LineSymbolizer and PolygonSymbolizer in Rule
 -----------------------------------------------
 
-.. note:: Work in progress
+Current implementation of SLD/SE in MapServer doesn't expect a mix of
+<LineSymbolizer> and <PolygonSymbolizer> in the same <Rule>, and
+therefore produces an incorrect rendering in that case. As an illustration,
+let's draw a blue polygon with a yellow outline by using two SLD variants.
+
+- The first one is a single <PolygonSymbolizer> containing both
+  <Stroke> section for the outline and <Fill> section for the inner
+  area.
+
+- The second one is a <LineSymbolizer> containing a <Stroke> section
+  for the outline followed by a <PolygonSymbolizer> containing a <Fill>
+  section for the inner area.
+
+.. list-table:: *Illustration of incorrect rendering of LineSymbolizer and
+                 PolygonSymbolizer in Rule*
+    :header-rows: 1
+
+    * - <Stroke> and <Fill> inside <PolygonSymbolizer>
+      - <LineSymbolizer> and <PolygonSymbolizer> inside <Rule>
+    * -
+          .. code-block:: xml
+
+             <FeatureTypeStyle>
+               <Rule>
+                 <PolygonSymbolizer>
+
+                   <Stroke>
+                     <SvgParameter name="stroke">
+                       <Literal>#FFFF00</Literal>
+                     </SvgParameter>
+                   </Stroke>
 
 
-6. UserLayer
-------------
 
-.. note:: Work in progress
+                   <Fill>
+                     <SvgParameter name="fill">
+                       <Literal>#0000FF</Literal>
+                     </SvgParameter>
+                   </Fill>
+
+                 </PolygonSymbolizer>
+               </Rule>
+             </FeatureTypeStyle>
+      -
+          .. code-block:: xml
+
+             <FeatureTypeStyle>
+               <Rule>
+
+                 <LineSymbolizer>
+                   <Stroke>
+                     <SvgParameter name="stroke">
+                       <Literal>#FFFF00</Literal>
+                     </SvgParameter>
+                   </Stroke>
+                 </LineSymbolizer>
+
+                 <PolygonSymbolizer>
+                   <Fill>
+                     <SvgParameter name="fill">
+                       <Literal>#0000FF</Literal>
+                     </SvgParameter>
+                   </Fill>
+                 </PolygonSymbolizer>
+
+               </Rule>
+             </FeatureTypeStyle>
+    * -
+          .. figure:: ../../images/stylesinsymb.png
+             :align: center
+             
+             *Correct rendering*
+      -
+          .. figure:: ../../images/symbinrule.png
+             :align: center
+             
+             *Incorrect rendering*
+
+A `source code inspection
+<https://github.com/mapserver/mapserver/blob/branch-7-4/mapogcsld.c#L971-L1014>`_
+shows that all SLD/SE tags are taken into account. The proposed solution
+consists in a simple bug fix aimed at feeding ``mapObj`` data structure the
+same way for both cases.
+
+In the current implementation, a new *STYLE* is generated for each <Stroke>
+or <Fill> tag. But in the first case, <Fill> tags are handled before
+<Stroke> tags, whereas in the second case, <LineSymbolizer> tags, which
+contain only <Stroke> are handled before <PolygonSymbolizer> tags, able
+to contain both <Stroke> and <Fill> tags.
+
+Moreover <LineSymbolizer><Stroke> color is assigned to  *COLOR* variable,
+whereas <PolygonSymbolizer><Stroke> outline color is assigned to
+*OUTLINECOLOR* variable.
+
+The proposed solution consists on one hand to handle <PolygonSymbolizer>
+tags before <LineSymbolizer> tags, and on the second hand to move *COLOR*
+value to *OUTLINECOLOR* for styles defined by <LineSymbolizer> but
+applicable to polygon layers.
 
 
 Testing
@@ -401,9 +532,6 @@ Affected Files
   - ``mapserver.h``
   - ``maputil.c``
   - ``mapwms.c``
-  - ...
-
-.. note:: Work in progress
 
 
 Credits
@@ -416,3 +544,6 @@ Voting history
 ==============
 
 
+
+
+.. vi:syntax=rst
