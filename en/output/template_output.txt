@@ -9,10 +9,12 @@
 
 :Author: Chris Hodgson
 :Contact: chodgson at refractions.net
-:Last Updated: 2011-04-13
+:Author: Seth Girvin
+:Contact: sethg at geographika.co.uk
+:Last Updated: 2019-10-04
 
 .. contents:: Table of Contents
-    :depth: 2
+    :depth: 3
     :backlinks: top
 
 
@@ -145,6 +147,11 @@ to simplify the templating to a single file for custom output formats.
 Examples
 ========
 
+Below are some examples of the different kind of outputs that can be achieved with templates. 
+
+Header, Body, Footer
+--------------------
+
 This example shows how to emulate the old 3-file system using the new system,
 to compare the usage:
 
@@ -173,7 +180,8 @@ to compare the usage:
   [/resultset]
   [include src="templates/footer.html"]
 
-A specific GML3 example:
+GML3
+----
 
 ::
 
@@ -212,7 +220,8 @@ A specific GML3 example:
   </MapServerUserMeetings>
   [resultset]
 
-A GeoJSON example.
+GeoJSON
+-------
 
 Could be called using ...&layer=mums&mode=nquery&qformat=geojson
 
@@ -246,6 +255,9 @@ Or by adding &outputformat=geojson to a WFS getfeature request::
     ]
   }
   [/resultset]
+
+KML
+---
 
 A more complicated KML example. Note the use of [shpxy] to support multipolygons
 with holes, and also that a point placemark is included with each feature using
@@ -354,6 +366,41 @@ with holes, and also that a point placemark is included with each feature using
   [/resultset]
   </Document>
   </kml> 
+
+reStructuredText Table
+----------------------
+
+This example creates a reStructuredText table from feature records, making use of the `padding` formatting option. 
+To test from the command line use syntax similar to below:
+
+::
+
+  mapserv -nh "QUERY_STRING=map=./msautotest/query/query.map&mode=nquery&qlayer=bdry_counpy2&qformat=formattmpl"
+
+::
+
+  # MapServer Template
+  [resultset layer=bdry_counpy2]
+  ==================== ============
+  City Name            Abbreviation 
+  ==================== ============
+  [feature][item name="cty_name" padding="20"] [item name="cty_abbr" uc="true" padding="12"]
+  [/feature]
+  ==================== ============
+  [/resultset]
+
+The RST output can then be rendered as a table. 
+
+==================== ============
+City Name            Abbreviation
+==================== ============
+Lake of the Woods    LOTW
+Kittson              KITT
+Roseau               ROSE
+Koochiching          KOOC
+Marshall             MARS
+St. Louis            STLO
+==================== ============
 
 .. warning::
 
