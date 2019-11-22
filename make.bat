@@ -149,4 +149,15 @@ or in _build/linkcheck/output.txt.
 	goto end
 )
 
+REM for installation see https://sphinxcontrib-spelling.readthedocs.io/en/latest/install.html
+if "%1" == "spelling" (
+  FOR  %%L in (%LANGUAGES%) DO (
+  	%SPHINXBUILD% -b spelling  %ALLSPHINXOPTS% %%L _build/spelling/%%L
+	)
+	echo.
+	echo.Spelling complete; look for any errors in the above output ^
+or in _build/spelling/output.txt.
+	goto end
+)
+
 :end
