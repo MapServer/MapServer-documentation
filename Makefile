@@ -250,6 +250,17 @@ linkcheck:
 	@echo "Link check complete; look for any errors in the above output " \
 	      "or in $(BUILDDIR)/linkcheck/<language>/output.txt."
 
+# for installation see https://sphinxcontrib-spelling.readthedocs.io/en/latest/install.html		  
+spelling:
+	@for lang in $(LANGUAGES);\
+	do \
+		mkdir -p $(BUILDDIR)/spelling/$$lang $(BUILDDIR)/doctrees/$$lang; \
+		$(SPHINXBUILD) -b spelling $(ALLSPHINXOPTS) $$lang $(BUILDDIR)/spelling/$$lang;\
+	done
+	@echo
+	@echo "Spelling complete; look for any errors in the above output " \
+	      "or in $(BUILDDIR)/spelling/<language>/output.txt."		  
+
 labels:
 	@for lang in $(LANGUAGES);\
 	do \
