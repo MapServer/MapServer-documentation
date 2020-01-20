@@ -176,6 +176,8 @@ html_theme = "classic"
 # Options for LaTeX output
 # ------------------------
 
+#latex_engine = 'lualatex'
+
 # The paper size ('letter' or 'a4').
 #latex_paper_size = 'letter'
 
@@ -205,8 +207,11 @@ latex_elements = {
 #'pointsize': '10pt',
 
 # necessary for unicode charactacters in pdf output
+# especially the JP glyphs in the file /mapfile/encoding.txt
 'inputenc': '',
-'utf8extra': '',
+'utf8extra': ('\\DeclareUnicodeCharacter{5730}{kanji1}\n'
+              ' \\DeclareUnicodeCharacter{540D}{kanji2}\n'
+             ),
 
 # remove blank pages (between the title page and the TOC, etc.)
 'classoptions': ',openany,oneside',
@@ -215,7 +220,7 @@ latex_elements = {
 # Additional stuff for the LaTeX preamble.
 'preamble': r'''
   \usepackage{hyperref}
-  \setcounter{tocdepth}{3}
+  \setcounter{tocdepth}{3} 
 '''
 }
 
