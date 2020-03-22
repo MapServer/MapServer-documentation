@@ -12,7 +12,7 @@ MapServer Migration Guide
     :depth: 2
     :backlinks: top
    
-MapServer 7.6 to 7.4 Migration
+MapServer 7.4 to 7.6 Migration
 ==============================
 
 - PointZM data support (X,Y,Z,M coordinates) is now enabled by default
@@ -27,14 +27,38 @@ MapServer 7.6 to 7.4 Migration
 	.. code-block:: mapfile
 
 		LAYER
-			NAME "test"
-			CONNECTIONTYPE OGR
-			CONNECTION "./data/nested_attrs.geojson"
-			CONNECTIONOPTIONS
-				"FLATTEN_NESTED_ATTRIBUTES" "YES"
-			END
-			[...]
+		  NAME "test"
+		  CONNECTIONTYPE OGR
+		  CONNECTION "./data/nested_attrs.geojson"
+		  CONNECTIONOPTIONS
+		    "FLATTEN_NESTED_ATTRIBUTES" "YES"
+		  END
+		  [...]
 		END  
+
+- new processing directive `RENDERMODE` (added through :ref:`RFC 124 SLD changes <rfc124>`)
+  to enable a 'painters model' where all classes for a layer are drawn at once with a 
+  `ALL_MATCHING_CLASSES` setting, such as:
+  
+	.. code-block:: mapfile
+
+		LAYER
+		  NAME "test"
+		  CONNECTIONTYPE OGR
+		  CONNECTION "./data/nested_attrs.geojson"
+		  PROCESSING "RENDERMODE=FIRST_MATCHING_CLASS|ALL_MATCHING_CLASSES"
+		  CLASS
+		    ...
+		  END
+		  CLASS
+		    ...
+		  END	
+		  CLASS
+		    ...
+		  END
+		END 
+
+  More information in `issue 5839 <https://github.com/mapserver/mapserver/pull/5839>`__.		
 
 MapServer 7.2 to 7.4 Migration
 ==============================
