@@ -6,12 +6,64 @@
 MapServer Migration Guide
 *****************************************************************************
 
-:Last Updated: 2019-11-21
+:Last Updated: 2020-03-22
 
 .. contents:: Table of Contents
     :depth: 2
     :backlinks: top
    
+MapServer 7.4 to 7.6 Migration
+==============================
+
+- PointZM data support (X,Y,Z,M coordinates) is now enabled by default
+
+- the PROJ 6 API is now supported.  Read about the many changes in PROJ since
+  the `PROJ 6.0 release <https://proj.org/news.html#id147>`_.  Note that older
+  PROJ versions such as 5.2.0 will still work with MapServer.
+
+- CONNECTIONOPTIONS parameter has been added in the mapfile LAYER, to take  
+  advantage of GDAL/OGR driver options. (see :ref:`RFC 125 <rfc125>`) such as:
+
+	.. code-block:: mapfile
+
+		LAYER
+		  NAME "test"
+		  CONNECTIONTYPE OGR
+		  CONNECTION "./data/nested_attrs.geojson"
+		  CONNECTIONOPTIONS
+		    "FLATTEN_NESTED_ATTRIBUTES" "YES"
+		  END
+		  [...]
+		END  
+
+- new processing directive `RENDERMODE` (added through :ref:`RFC 124 SLD changes <rfc124>`)
+  to enable a 'painters model' where all classes for a layer are drawn at once with a 
+  `ALL_MATCHING_CLASSES` setting, such as:
+  
+	.. code-block:: mapfile
+
+		LAYER
+		  NAME "test"
+		  CONNECTIONTYPE OGR
+		  CONNECTION "./data/nested_attrs.geojson"
+		  PROCESSING "RENDERMODE=ALL_MATCHING_CLASSES"
+		  CLASS
+		    ...
+		  END
+		  CLASS
+		    ...
+		  END	
+		  CLASS
+		    ...
+		  END
+		END 
+
+  More information in `issue 5839 <https://github.com/mapserver/mapserver/pull/5839>`__.
+
+  .. note::
+      RFC 124 (SLD improvements) has been implemented except PR#5832:
+      `SLD: Improve WMS GetStyles request <https://github.com/mapserver/mapserver/pull/5832>`__. 
+
 MapServer 7.2 to 7.4 Migration
 ==============================
 
