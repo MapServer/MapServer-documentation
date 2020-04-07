@@ -9,10 +9,10 @@
 
 :Author: Jeff McKenna
 :Contact: jmckenna at gatewaygeomatics.com
-:Last Updated: 2020-01-06
+:Last Updated: 2020-04-07
 
 .. contents:: Table of Contents
-    :depth: 2
+    :depth: 3
     :backlinks: top
 
 Introduction
@@ -123,27 +123,30 @@ ready with WMS/WFS support)
 
 Example 1. On Unix:
 
-::
+.. code-block:: bash
 
    $ ./mapserv -v
-   MapServer version 6.3-dev OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML 
-   SUPPORTS=PROJ SUPPORTS=GD SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO 
-   SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT 
-   SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER 
-   SUPPORTS=SOS_SERVER SUPPORTS=GEOS INPUT=JPEG INPUT=POSTGIS INPUT=OGR 
-   INPUT=GDAL INPUT=SHAPEFILE 
+   MapServer version 7.7-dev OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML 
+   SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO 
+   SUPPORTS=SVG_SYMBOLS SUPPORTS=RSVG SUPPORTS=ICONV SUPPORTS=FRIBIDI 
+   SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER 
+   SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER 
+   SUPPORTS=GEOS SUPPORTS=POINT_Z_M SUPPORTS=PBF INPUT=JPEG 
+   INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE 
 
 Example 2. On Windows:
 
-::
+.. code-block:: bash
 
-   C:\apache\cgi-bin> mapserv -v
-   MapServer version 6.3-dev OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML 
-   SUPPORTS=PROJ SUPPORTS=GD SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO 
-   SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT 
-   SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER 
-   SUPPORTS=SOS_SERVER SUPPORTS=GEOS INPUT=JPEG INPUT=POSTGIS INPUT=OGR 
-   INPUT=GDAL INPUT=SHAPEFILE 
+   C:\ms4w> mapserv -v
+   MapServer version 7.6.0-dev (MS4W 4.0.3) OUTPUT=PNG OUTPUT=JPEG 
+   OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE 
+   SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS SUPPORTS=SVGCAIRO 
+   SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER 
+   SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT 
+   SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER SUPPORTS=FASTCGI 
+   SUPPORTS=THREADS SUPPORTS=GEOS SUPPORTS=POINT_Z_M SUPPORTS=PBF 
+   INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE 
 
 .. index:: 
    pair: WMS Server; Mapfile
@@ -243,7 +246,7 @@ Let's go through each of these parameters in more detail:
   the real PROJ definition of the data's projection.
 
   Here is an example of a server whose data is in an Lambert Conformal
-  Conic projection (42304). It's capabilities output will advertise
+  Conic projection (3978). It's capabilities output will advertise
   EPSG:4269 and EPSG:4326 projections (lat/lon), but the PROJECTION
   object is set to the real projection that the data is in:
 
@@ -262,7 +265,7 @@ Let's go through each of these parameters in more detail:
     END
 
     PROJECTION
-      "init=epsg:42304"
+      "init=epsg:3978"
     END
     ...
     END     
@@ -426,6 +429,13 @@ the WMS spec:
    "STYLES=" with an empty value to use default style(s). Named styles
    are also supported and are controlled by CLASS GROUP names in the
    mapfile.
+   
+   .. note::
+   
+      As of the MapServer 8.0 release, MapServer will strictly require
+      the "STYLES=" parameter (unless SLD & SLD_BODY are specified).  
+      To avoid this requirement, version 8.0 will allow setting 
+      `"wms_allow_getmap_without_styles" "true"` in MAP.WEB.METADATA.
 
    **SRS=namespace:identifier:** Spatial Reference System.
 
@@ -1039,6 +1049,16 @@ wms_postcode, wms_country**
 - *WMS TAG Name:* ContactAddress and family (WMS1.1.1, sect. 7.1.4.2)
 - *Description:* Optional contact address information. If provided
   then all six metadata items are required.
+  
+.. index:: 
+   triple: WMS; METADATA; wms_allow_getmap_without_styles
+
+**wms_allow_getmap_without_styles**
+
+- *Description:* (Optional) "true" or "false".  If true, the "STYLES="
+  GetMap parameter will not be required.  If false (the default as of
+  MapServer 8.0) the "STYLES=" GetMap parameter will be required.
+- Introduced in 8.0.
 
 .. index:: 
    triple: WMS; METADATA; wms_attribution_logourl_format
@@ -1384,7 +1404,7 @@ wms_postcode, wms_country**
   codes that should be advertised as being available for all layers in
   this server. The value can contain one or more EPSG:<code> pairs
   separated by spaces (e.g.  "EPSG:4269 EPSG:4326") This value should
-  be upper case (EPSG:42304.....not epsg:42304) to avoid problems with
+  be upper case (EPSG:3978.....not epsg:3978) to avoid problems with
   case sensitive platforms.
 - See Also: section "Setup a Mapfile / Map PROJECTION and wms_srs
   metadata" above.
@@ -2153,15 +2173,15 @@ The following is a very basic WMS Server mapfile:
         IMAGEPATH "/ms4w/tmp/ms_tmp/"
         IMAGEURL "/ms_tmp/"
         METADATA
-          "wms_title"     "WMS Demo Server"  ##required
+          "wms_title"          "WMS Demo Server"  ##required
           "wms_onlineresource" "http://yourpath/cgi-bin/mapserv.exe?"   ##required
-          "wms_srs"       "EPSG:42304 EPSG:42101 EPSG:4269 EPSG:4326"  ##recommended
+          "wms_srs"            "EPSG:3978 EPSG:4326 EPSG:4269 EPSG:3857"  ##recommended
           "wms_enable_request" "*"   ##necessary
         END
       END # Web
     
       PROJECTION
-        "init=epsg:42304"   ##required
+        "init=epsg:3978"   ##required
       END
 
       SYMBOL
@@ -2183,7 +2203,7 @@ The following is a very basic WMS Server mapfile:
         STATUS OFF
         DATA park
         PROJECTION
-          "init=epsg:42304"   ##recommended
+          "init=epsg:3978"   ##recommended
         END
         CLASS
           NAME "Parks"
@@ -2203,7 +2223,7 @@ The following is a very basic WMS Server mapfile:
         STATUS ON
         DATA popplace
         PROJECTION
-          "init=epsg:42304"   ##recommended
+          "init=epsg:3978"   ##recommended
         END
         CLASS
           NAME "Cities"
@@ -2283,7 +2303,7 @@ FAQ / Common Problems
            "wms_title"            "WMS Demo Server" 
            "wms_onlineresource"   "http://my.host.com/cgi-bin/mapserv?map=wms.map&" 
            "wms_srs"              "AUTO:42001 AUTO:42002" 
-           "wms_enable_request" "*"   ##necessary
+           "wms_enable_request"   "*"   ##necessary
          END # METADATA
        END # WEB
               
@@ -2301,7 +2321,7 @@ FAQ / Common Problems
 .. _`WMS Cookbook`: https://web.archive.org/web/20150117113120/http://www.intl-interfaces.com/cookbook/WMS
 .. old WMS cookbook link: http://www.intl-interfaces.com/cookbook/WMS/
 .. _`MapServer OGC Web Services Workshop`: http://mapserver.github.io/ms-ogc-workshop/
-.. _`MS4W`: http://www.ms4w.com
+.. _`MS4W`: https://ms4w.com
 .. _`QGIS`: http://www.qgis.org/
 .. _`OpenJUMP`: http://www.openjump.org
 .. _`Deegree`: http://www.deegree.org/
