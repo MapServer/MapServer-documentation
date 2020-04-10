@@ -1,6 +1,6 @@
-**2020-04-05 - MapServer 7.6.0-rc1 is released**
+**2020-04-10 - MapServer 7.6.0-rc2 is released**
 
-The first release candidate of 7.6.0 is now available.
+The second release candidate of 7.6.0 is now available.
 See the :ref:`7.6.0-rc1 changelog <changelog-7-6>`
 for the full list of changes.  
 
