@@ -250,43 +250,46 @@ Required Layer Parameters and Metadata
 **************************************
 
 
-- **CONNECTIONTYPE WMS**
+**CONNECTIONTYPE WMS**
 
-- **CONNECTION** 
-  - this is the remote server's online resource URL, just the base URL 
+**CONNECTION**
+
+- *Description:* This is the remote server's online resource URL, just the base URL 
   without any of the WMS parameters. The server version, image format, 
   layer name, etc. will be provided via metadata, see below.
 
-.. note::
+  .. note::
 
-    Note that if the CONNECTION parameter value is not set the the value of 
-    the "wms_onlineresource" metadata will be used. If both CONNECTION and 
-    "wms_onlineresource" are set then the "wms_onlineresource" metadata takes precedence.
+      Note that if the CONNECTION parameter value is not set the the value of 
+      the "wms_onlineresource" metadata will be used. If both CONNECTION and 
+      "wms_onlineresource" are set then the "wms_onlineresource" metadata takes precedence.
 
-- **"wms_format" metadata** 
-  - the image format to use in GetMap requests.
+**"wms_format" metadata** 
 
-.. note:: 
+- *Description:* The image format to use in GetMap requests.
 
-    If wms_formatlist is provided then wms_format is optional and MapServer will 
-    pick the first supported format in wms_formatlist for use in GetMap requests. 
-    If both wms_format and wms_formatlist are provided then wms_format takes precedence.
-    Also note that WMS Servers only advertize supported formats that are part of the GD/GDAL 
-    libraries. 
+  .. note:: 
 
-- **"wms_name" metadata** 
-  - comma-separated list of layers to be fetched from the remote WMS server. This 
+      If wms_formatlist is provided then wms_format is optional and MapServer will 
+      pick the first supported format in wms_formatlist for use in GetMap requests. 
+      If both wms_format and wms_formatlist are provided then wms_format takes precedence.
+      Also note that WMS Servers only advertize supported formats that are part of the GD/GDAL 
+      libraries. 
+
+**"wms_name" metadata**
+ 
+- *Description:* Comma-separated list of layers to be fetched from the remote WMS server. This 
   value is used to set the LAYERS and QUERY_LAYERS WMS URL parameters.  Note that when 
   specifying multiple layers there must not be any spaces between the comma and the layer name.
   
-  
+**"wms_server_version" metadata**
 
-- **"wms_server_version" metadata**
-  - the version of the WMS protocol supported by the remote WMS server and that will be 
+- *Description:* The version of the WMS protocol supported by the remote WMS server and that will be 
   used for issuing GetMap requests.
 
-- **"wms_srs" metadata**
-  - space-delimited list of EPSG projection codes supported by the remote server. 
+**"wms_srs" metadata**
+
+- *Description:* Space-delimited list of EPSG projection codes supported by the remote server. 
   You normally get this from the server's capabilities output. This value should 
   be upper case (EPSG:4236.....not epsg:4236) to avoid problems with case sensitive 
   platforms. The value is used to set the SRS WMS URL parameter.
@@ -294,17 +297,20 @@ Required Layer Parameters and Metadata
 Optional Layer Parameters and Metadata
 **************************************
 
-- **MINSCALE, MAXSCALE** 
-  - if the remote server's capabilities contains a ScaleHint value for this layer 
+**MINSCALE, MAXSCALE** 
+
+- *Description:* If the remote server's capabilities contains a ScaleHint value for this layer 
   then you might want to set the MINSCALE and MAXSCALE in the LAYER object in the mapfile. 
   This will allow MapServer to request the layer only at scales where it makes sense
 
-- **PROJECTION object** 
-  - it is optional at this point. MapServer will create one internally if needed.  Including one may 
+**PROJECTION object** 
+
+- *Description:* It is optional at this point. MapServer will create one internally if needed.  Including one may 
   allow MapServer to avoid looking up a definition in the PROJ init files.
 
-- **"wms_auth_username" metadata**
-  - msEncrypt-style authorization string.  Empty strings are also accepted.
+**"wms_auth_username" metadata**
+
+- *Description:* msEncrypt-style authorization string.  Empty strings are also accepted.
 
   .. code-block:: mapfile
 
@@ -313,9 +319,9 @@ Optional Layer Parameters and Metadata
       "wms_auth_password" "{FF88CFDAAE1A5E33}"
     END
 
-- **"wms_auth_type" metadata**
-  - Authorization type.  Supported types include:
+**"wms_auth_type" metadata**
 
+- *Description:* Authorization type.  Supported types include:
     - basic
     - digest
     - ntlm
@@ -328,8 +334,9 @@ Optional Layer Parameters and Metadata
       "wms_auth_type" "ntlm"
     END
 
-- **"wms_connectiontimeout" metadata** 
-  - the maximum time to wait for a remote WMS layer to load, set in seconds (default is 30 
+**"wms_connectiontimeout" metadata** 
+
+- *Description:* The maximum time to wait for a remote WMS layer to load, set in seconds (default is 30 
   seconds). This metadata can be added at the layer level so that it affects only that layer, 
   or it can be added at the map level (in the web object) so that it affects all of the layers. 
   Note that wms_connectiontimeout at the layer level has priority over the map level.
@@ -342,15 +349,21 @@ Optional Layer Parameters and Metadata
       ...
     END  
 
-- **"wms_essential" metadata**
-  - set this to "1" to mark this WMS layer as essential. Normally, when a request to a WMS layer fails, this layer
+**"wms_essential" metadata**
+
+- *Description:* Set this to "1" to mark this WMS layer as essential. Normally, when a request to a WMS layer fails, this layer
   will be skipped and the map is rendered without the layer. If the layer is essential and fails, the map will not
   be rendered and an exception is thrown.
   
   .. versionadded:: 7.6.0  
 
-- **"wms_exceptions_format" metadata**
-  - set the format for exceptions (as of MapServer 4.6). MapServer defaults to *application/vnd.ogc.se_inimage* (the exception will be in a picture format).  You can check the GetCapabilities of the server to see what formats are available for exceptions.  The *application/vnd.ogc.se_inimage* exception format is actually a non-required exception format in the WMS 1.1.1 spec, so there are servers out there which don't support this format. In that case you would use:
+**"wms_exceptions_format" metadata**
+
+- *Description:* Set the format for exceptions (as of MapServer 4.6). MapServer defaults to 
+  *application/vnd.ogc.se_inimage* (the exception will be in a picture format).  You can 
+  check the GetCapabilities of the server to see what formats are available for exceptions.  
+  The *application/vnd.ogc.se_inimage* exception format is actually a non-required exception 
+  format in the WMS 1.1.1 spec, so there are servers out there which don't support this format. In that case you would use:
 
   .. code-block:: mapfile
 
@@ -378,19 +391,22 @@ Optional Layer Parameters and Metadata
     </ServiceException>
     </ServiceExceptionReport>
 
-- **"wms_force_separate_request" metadata** 
-  - set this to "1" to force this WMS layer to be requested using its own separate GetMap 
+**"wms_force_separate_request" metadata** 
+
+- *Description:* Set this to "1" to force this WMS layer to be requested using its own separate GetMap 
   request. By default MapServer will try to merge multiple adjacent WMS layers from the 
   same server into a single multi-layer GetMap request to reduce the load on remote servers 
   and improve response time. This metadata is used to bypass that behavior. 
 
-- **"wms_formatlist" metadata** 
-  - comma-separated list of image formats supported by the remote WMS server.
+**"wms_formatlist" metadata** 
+
+- *Description:* Comma-separated list of image formats supported by the remote WMS server.
   Note that wms_formatlist is used only if wms_format is not set. If both wms_format and 
   wms_formatlist are provided then wms_format takes precedence.
 
-- **"wms_latlonboundingbox" metadata** 
-  - the bounding box of this layer in geographic coordinates in the format "lon_min lat_min 
+**"wms_latlonboundingbox" metadata**
+
+- *Description:* The bounding box of this layer in geographic coordinates in the format "lon_min lat_min 
   lon_max lat_max". If it is set then MapServer will request the layer only when the map 
   view overlaps that bounding box. You normally get this from the server's capabilities 
   output.
@@ -401,8 +417,9 @@ Optional Layer Parameters and Metadata
       "wms_latlonboundingbox" "-124 48 -123 49"
     END
 
-- **"wms_proxy_auth_type" metadata**
-  - the authorization type to use for a proxy connection.  Supported types include:
+**"wms_proxy_auth_type" metadata**
+
+- *Description:* The authorization type to use for a proxy connection.  Supported types include:
 
     - basic
     - digest
@@ -416,8 +433,9 @@ Optional Layer Parameters and Metadata
       "wms_proxy_auth_type" "ntlm"
     END 
 
-- **"wms_proxy_host" metadata**
-  - the hostname of the proxy to use, in "dot-quad" format, with an optional port component (e.g. '192.168.2.10:8080').
+**"wms_proxy_host" metadata**
+
+- *Description:* The hostname of the proxy to use, in "dot-quad" format, with an optional port component (e.g. '192.168.2.10:8080').
 
   .. code-block:: mapfile
 
@@ -425,8 +443,9 @@ Optional Layer Parameters and Metadata
       "wms_proxy_host" "192.168.2.10"
     END 
 
-- **"wms_proxy_port" metadata**
-  - the port to use for a proxy connection.
+**"wms_proxy_port" metadata**
+
+- *Description:* The port to use for a proxy connection.
 
   .. code-block:: mapfile
 
@@ -434,8 +453,9 @@ Optional Layer Parameters and Metadata
       "wms_proxy_port" "8080"
     END   
 
-- **"wms_proxy_type" metadata**
-  - the type of the proxy connection.  Valid values are 'http' and 'socks5', which are case sensitive.
+**"wms_proxy_type" metadata**
+
+- *Description:* The type of the proxy connection.  Valid values are 'http' and 'socks5', which are case sensitive.
 
   .. code-block:: mapfile
 
@@ -443,8 +463,9 @@ Optional Layer Parameters and Metadata
       "wms_proxy_type" "http"
     END 
 
-- **"wms_proxy_username" metadata**
-  - msEncrypt-style string for a proxy connection.  Empty strings are also accepted.
+**"wms_proxy_username" metadata**
+
+- *Description:* msEncrypt-style string for a proxy connection.  Empty strings are also accepted.
 
   .. code-block:: mapfile
 
@@ -453,17 +474,21 @@ Optional Layer Parameters and Metadata
       "wms_proxy_password" "{FF88CFDAAE1A5E33}"
     END 
 
-- **"wms_sld_body" metadata**
-  -  can be used to specify an inline SLD document.
+**"wms_sld_body" metadata**
 
-- **"wms_sld_url" metadata**
-  - can be used to specify a link to an SLD document.
+- *Description:* Can be used to specify an inline SLD document.
+
+**"wms_sld_url" metadata**
+
+- *Description:* Can be used to specify a link to an SLD document.
           
-- **"wms_style" metadata** 
-  - name of style to use for the STYLES parameter in GetMap requests for this layer.
+**"wms_style" metadata** 
 
-- **"wms_style_<stylename>_sld" metadata** 
-  URL of a SLD to use in GetMap requests. Replace 
+- *Description:* Name of style to use for the STYLES parameter in GetMap requests for this layer.
+
+**"wms_style_<stylename>_sld" metadata**
+ 
+- *Description:* URL of a SLD to use in GetMap requests. Replace 
   <stylename> in the metadta name with the name of the style to which the SLD applies.
 
   .. code-block:: mapfile
@@ -475,40 +500,53 @@ Optional Layer Parameters and Metadata
       ...
     END
           
-
   For more information on SLDs in MapServer see the :ref:`SLD HowTo document <sld>`.
 
-- **"wms_time" metadata** 
-  - value to use for the TIME parameter in GetMap requests for this layer. Please see the 
+**"wms_time" metadata** 
+
+- *Description:* Value to use for the TIME parameter in GetMap requests for this layer. Please see the 
   :ref:`WMS Time HowTo <wms_time>` for more information.
 
-- **"wms_bgcolor" metadata**
-  - specifies the color to be used as the background of the map. The general format of BGCOLOR is a hexadecimal encoding of an RGB value where two hexadecimal characters are used for each of Red, Green, and Blue color values. The values can range between 00 and FF for each (0 and 255, base 10). The format is 0xRRGGBB; either upper or lower case characters are allowed for RR, GG, and BB values. The "0x" prefix shall have a lower case "x".
+**"wms_bgcolor" metadata**
 
-- **"wms_transparent" metadata**
-  - specifies whether the map background is to be made transparent or not. TRANSPARENT can take on two values, "TRUE" or "FALSE".  If not specified, MapServer sets default to "TRUE"
+- *Description:* Specifies the color to be used as the background of the map. The 
+  general format of BGCOLOR is a hexadecimal encoding of an RGB value where two hexadecimal
+  characters are used for each of Red, Green, and Blue color values. The values can range 
+  between 00 and FF for each (0 and 255, base 10). The format is 0xRRGGBB; either upper or 
+  lower case characters are allowed for RR, GG, and BB values. The "0x" prefix shall have 
+  a lower case "x".
+
+**"wms_transparent" metadata**
+
+- *Description:* Specifies whether the map background is to be made transparent or not. 
+  TRANSPARENT can take on two values, "TRUE" or "FALSE".  If not specified, MapServer sets 
+  default to "TRUE".
 
 - **"wms_cache_to_disk" metadata**
-  - set this to "1" to force MapServer to write fetched images to disk.  Writing to disk 
+
+- *Description:* Set this to "1" to force MapServer to write fetched images to disk.  Writing to disk 
   is necessary to take advantage of MapServer's caching logic to avoid refetching WMS
   requests made previously.  This feature is new to MapServer 6.0 - previously results were always written
   to disk.
 
-- **"wms_nonsquare_ok" metadata**
-  - set this to "0" to indicate that the remote WMS only supports requests for square pixels.  In this
+**"wms_nonsquare_ok" metadata**
+
+- *Description:* Set this to "0" to indicate that the remote WMS only supports requests for square pixels.  In this
   case MapServer will be careful to only make square pixel requests even if it means oversampling in one
   dimension compared to the resolution of image data required.  This feature is new to MapServer 6.0.
 
-- **"wms_extent" metadata**
-  - If there is exactly one SRS supported by this layer (as listed in the wms_srs metadata), and if 
+**"wms_extent" metadata**
+
+- *Description:* If there is exactly one SRS supported by this layer (as listed in the wms_srs metadata), and if 
   the wms_extent metadata item (or an extent specified via the EXTENT keyword) is set then MapServer will
   take care to only making requests within this area.  This can short circuit requests completely outside
   the layer, reduce processing for layers that only partially overlap the target map area and avoid poor
   behaviors with reprojection in some areas.  The contents of this metadata item should be of the form
   "minx miny maxx maxy".  This feature is new to MapServer 6.0.
 
-- **"wms_strict_axis_order metadata**
-  - set this to "1" or "true" to force WMS requests to use strict axis order according to the EPSG code,
+**"wms_strict_axis_order metadata**
+
+- *Description:* Set this to "1" or "true" to force WMS requests to use strict axis order according to the EPSG code,
   or "0" or "false" to force WMS requests to always use xy (or lonlat) axis order. This should only be
   necessary if the axis order interpretation of the server for the chosen EPSG code does not conform to
   the standard: In the case of WMS 1.0 and 1.1 the assumption is to always use xy (default 0/false),
