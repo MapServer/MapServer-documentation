@@ -6,7 +6,7 @@
 MapServer Migration Guide
 *****************************************************************************
 
-:Last Updated: 2020-03-22
+:Last Updated: 2020-05-04
 
 .. contents:: Table of Contents
     :depth: 2
@@ -63,6 +63,33 @@ MapServer 7.4 to 7.6 Migration
   .. note::
       RFC 124 (SLD improvements) has been implemented except PR#5832:
       `SLD: Improve WMS GetStyles request <https://github.com/mapserver/mapserver/pull/5832>`__. 
+
+- WMS client layers can be set to essential, with the new `wms_essential` metadata item,
+  which will cause MapServer to fail and report an error (normally MapServer would just
+  ignore that layer).  
+  
+  .. note::
+      `wms_essential` relates to a failed CONNECTION for your WMS layer, meaning that
+      it will not handle incorrect remote layer names or image formats requested.
+      
+  Here is an example of the new `wms_essential` parameter:
+  
+    .. code-block:: mapfile
+  
+        LAYER
+          NAME "country_bounds"
+          TYPE RASTER
+          STATUS ON
+          CONNECTION "https://demo.mapserver.org/cgi-bin/wms?"
+          CONNECTIONTYPE WMS
+          METADATA
+            "wms_srs"             "EPSG:4326"
+            "wms_name"            "country_bounds2"
+            "wms_server_version"  "1.1.1"
+            "wms_format"          "image/png"
+            "wms_essential"       "1"
+          END
+        END
 
 MapServer 7.2 to 7.4 Migration
 ==============================
