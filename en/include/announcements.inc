@@ -1,10 +1,11 @@
-**2020-05-04 - MapServer 7.6.0-rc4 is released**
+**2020-05-08 - MapServer 7.6.0 is released**
 
-The forth release candidate of 7.6.0 is now available.
-See the :ref:`7.6.0-rc4 changelog <changelog-7-6>`
-for the full list of changes.  
+The major version MapServer 7.6.0 has been released. The list of significant
+changes for this release can be found in the :ref:`7.6 announcement <announce-7-6>`.
+See the :ref:`changelog <changelog-7-6>` for the full list
+of changes.
 
-Head to :ref:`download <dev-release>` to obtain a copy.
+Head to :ref:`download` to obtain a copy.
 
 **2020-03-21 - MapServer 7.4.4, and 6.4.6 are released**
 
