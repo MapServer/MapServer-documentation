@@ -12,6 +12,8 @@ MSSQL
 :Author: Jeff McKenna
 :Contact: jmckenna at gatewaygeomatics.com
 :Last Updated: 2012-09-26
+:Contact: sethg at geographika.co.uk
+:Last Updated: 2020-05-29
 
 .. contents::
     :depth: 4
@@ -21,29 +23,30 @@ MSSQL
 Introduction
 ============
 
-Microsoft SQL Server 2008+ supports storing spatial data by using the
+Microsoft SQL Server supports storing spatial data by using the
 built-in geometry/geography data types. MapServer can connect to MSSQL through either: 
 1) an OGR connectiontype, or 2) a driver that accesses these tables containing spatial 
 columns, which is compiled as a plugin ("msplugin_mssql2008.dll").
 
-Creating Spatial Data Tables in MSSQL 2008
-==========================================
+.. note:: Even though the driver refers to ``mssql2008`` all versions of MSSQL since MSSQL 2008 are supported. 
 
-There are several ways to create spatial data tables in MSSQL
-2008. You can easily upload existing data to an MSSQL
+Creating Spatial Data Tables in MSSQL
+=====================================
+
+There are several ways to create spatial data tables in MSSQL. You can easily upload existing data to an MSSQL
 table by using the `ogr2ogr <https://gdal.org/programs/ogr2ogr.html>`__
 commandline tool and the OGR's `MSSQL Spatial driver
-<https://gdal.org/drivers/vector/mssqlspatial.html>`__  Here is an example that uploads 
-a shapefile (province.shp) into an MSSQL 2008 instance:
+<https://gdal.org/drivers/vector/mssqlspatial.html>`__.  Here is an example that uploads 
+a shapefile (province.shp) into an MSSQL instance:
 
 ::
 
   ogr2ogr -f MSSQLSpatial -a_srs EPSG:4326 "MSSQL:server=.\SQLEXPRESS;database=geo;trusted_connection=yes" province.shp
 
-Connecting to Spatial Data in MSSQL 2008
-========================================
+Connecting to Spatial Data in MSSQL
+===================================
 
-In order to connect to the MSSQL 2008 spatial database you should set
+In order to connect to a MSSQL spatial database you should set
 up a valid connection string to the database like the following
 examples:
 
@@ -60,6 +63,17 @@ examples:
 
   Server=55.55.55.55\SQLEXPRESS,1433;uid=a_user;pwd=a_password;
          database=a_database;Integrated Security=True
+         
+If you don't specify Driver in the connection string, it uses the "SQL Server" driver (sqlsrv32.dll)
+which was last updated in 2010. To use a newer driver you can specify this in the connection string:
+
+::
+
+    driver={ODBC Driver 17 for SQL Server};server=55.55.55.55\SQLEXPRESS,1433;uid=a_user;pwd=a_password;
+        database=a_database;Integrated Security=False
+    
+The "SQL Server Native Client" drivers are also supported. 
+
   
 OPTION 1: Connect Through OGR
 -----------------------------
@@ -70,7 +84,7 @@ GDAL/OGR (and therefore MapServer) can read spatial tables in MSSQL 2008 through
 Verify Local Support for MSSQLSpatial
 *************************************
 
-Use the command "ogrinfo --formats" to verify that your local GDAL is built with support for MSSQL; 
+Use the command ``ogrinfo --formats`` to verify that your local GDAL is built with support for MSSQL; 
 the response should contain "MSSQLSpatial" such as:
 
 ::
@@ -86,7 +100,7 @@ the response should contain "MSSQLSpatial" such as:
 Test OGR Connection Parameters
 ******************************
 
-Use the ogrinfo commandline utility to test your connection through the MSSQLSpatial driver, such as:
+Use the ``ogrinfo`` commandline utility to test your connection through the MSSQLSpatial driver, such as:
 
 ::
 
@@ -136,7 +150,7 @@ Create MapServer Layer
 **********************
 
 Once the connection can be established to the server the layer can be
-configured to access MSSQL2008 as follows:
+configured to access MSSQL as follows:
 
 .. code-block:: mapfile
 
