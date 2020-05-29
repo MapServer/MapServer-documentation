@@ -1,0 +1,92 @@
+.. _rfc132:
+
+================================================================================
+MS RFC 132: Update MapScript API Docs
+================================================================================
+
+:Date: 2020-05-29
+:Author: Seth Girvin
+:Contact: sethg@geographika.co.uk
+:Status: In progress
+:Last update: 2020-05-29
+:Version: MapServer 8.0
+
+Overview
+--------
+
+This RFC proposes to add update the current MapScript API documentation at https://mapserver.org/mapscript/mapscript.html
+With PHP MapScript moving to SWIG correct API documentation has becoming increasingly important.
+
+The current MapScript API documentation is currently updated manually. It contains many legacy methods, is missing newer methods, 
+and missing documentation for some classes entirely. 
+
+This RFC proposes to use `SWIG's autodoc <http://www.swig.org/Doc4.0/SWIGDocumentation.html#Python_nn67>`_ and docstring features
+along with Sphinx to update the MapScript API docs. 
+
+Links to sample output are below:
+
++ `API Index Page <http://www.geographika.net/mapserver_docs/mapscript-api/index.html>`_ - with a few sample classes
++ `Generated stub for classObj <http://www.geographika.net/mapserver_docs/mapscript-api/stub/mapscript.classObj.html#mapscript.classObj>`_ - with sample images
+  example code
+
+Features
+--------
+
++ Properties are liked to their relevant Mapfile documentation to avoid duplication and reduce maintenance (made possible due to 
+  this `Sphinx pull request <https://github.com/sphinx-doc/sphinx/pull/7087>`_). 
++ SWIG Python bindings can automatically have typehints generated, which in turn can be linked by Sphinx to automatically
+  document function parameters, and link them to the relevant objects
++ Including comments with the code will improve the chances of mapscript documentation being updated
+
+Documenting the Python bindings will also help IDE auto-completion and help when using the Python mapscript library. 
+
+Proposed Approach
+-----------------
+
++ Document all SWIG functions in the SWIG interface (.i) files
++ Document all properties in structs available to SWIG
++ On each MapServer release a source distribution of the Python MapScript bindings will be pushed to `PyPI <https://pypi.org/>`_ - see 
+  https://github.com/mapserver/mapserver/pull/6011
++ ``mapscript`` will be added to the docs `requirements.txt <https://github.com/mapserver/docs/blob/branch-7-6/requirements.txt>`_ so the bindings
+  are downloaded when building the docs automatically. Mocks will be used to MapServer is not required to import the C mapscript extensions. 
++ The Sphinx extensions `autodoc <https://www.sphinx-doc.org/en/master/usage/extensions/autodoc.html>`_ and 
+  `autosummary <https://www.sphinx-doc.org/en/master/usage/extensions/autosummary.html>`_ will be used to generate the latest mapscript API information
+  from the Python bindings
++ ``autosummary`` class templates will be used to add more prose, examples, and images where required
+
+Possible Drawbacks
+------------------
+
++ May be harder for non-devs to update code comments - however current and suggested approach both require Git knowledge
++ Docs approach differs from GDAL approach (see comments at https://lists.osgeo.org/pipermail/mapserver-dev/2020-May/016191.html) which
+  requires no SWIG changes in the header files. 
++ Header files will require additional SWIG statements to document properties - see as an example 
+  `this pull request <https://github.com/mapserver/mapserver/pull/6074/files#diff-bd9e5c0cb2e2530fb2f50e5d527a58a5>`_
+
+Backward compatibility issues
+-----------------------------
+
++ Changes to the header files will break ABI compatibility so this update be included part of a release (minor or major). 
++ When adding the docs there may be some struct fields made immutable or hidden from SWIG which should have been hidden already, for example 
+  see https://github.com/mapserver/mapserver/pull/5938
+
+Documentation needs
+-------------------
+
+None beyond this RFC. 
+
+Files
+-----
+
+- .i files in mapscripts/swiginc
+- .h files to document struct properties
+- the conf.py, requirements.txt files in the docs project
+
+Ticket ID and reference
+-----------------------
+
+Voting history
+--------------
+
+
+
