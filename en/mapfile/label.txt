@@ -196,7 +196,7 @@ EXPRESSION [string]
 
 FONT [name|attribute]
     - Font alias (as defined in the FONTSET) to use for labeling.
-    - [*Attribute*] was introduced in version 5.6 to specfify the font
+    - [*Attribute*] was introduced in version 5.6 to specify the font
       alias.
     - May contain a comma-separated list of up to MS_MAX_LABEL_FONTS
       (usually 5) font aliases used as fallback fonts in renderers
@@ -211,11 +211,16 @@ FONT [name|attribute]
 
 .. _FORCE:
 
-FORCE [true|false]
+FORCE [true|false|group]
     Forces labels for a particular class on, regardless of collisions.
     Available only for cached labels.  Default is false.  If `FORCE`
     is true and `PARTIALS` is false, `FORCE` takes precedence, and
     partial labels are drawn.
+    
+    The GROUP parameter, added in version 6.2, determines if the label 
+    is allowed to intersect other labels from the same feature. Multiple STYLE blocks 
+    can be used to render graphic symbols instead of 
+    or alongside text. See :ref:`announce-6-2-force-group`. 
 
 .. index::
    pair: LABEL; MAXLENGTH
@@ -542,7 +547,7 @@ SHADOWSIZE [x][y]|[attribute][attribute]|[x][attribute]|[attribute][y]
 
 .. _SIZE:
 
-SIZE [integer]|[tiny|small|medium|large|giant]|[attribute]
+SIZE [integer]|[tiny|small|medium|large|giant]|[attribute]|[expression]
     - Text size. Use a number to give the size in pixels of your
       TrueType font based label, or any of the other 5 listed keywords
       for bitmap fonts.
@@ -571,6 +576,20 @@ SIZE [integer]|[tiny|small|medium|large|giant]|[attribute]
 
       The associated RFC document for this feature is :ref:`RFC19`.
 
+    - [expression] was added in version 7.6 to allow arithmetic expressions
+      returning an integer value as part of :ref:`RFC124`. Attributes can be used
+      as part of this expression:
+   
+      .. code-block:: mapfile
+   
+        LABEL
+          TEXT "[name]"
+          COLOR 255 255 255
+          TYPE TRUETYPE
+          FONT vera-bold
+          SIZE (( [s12] * [s12] ) - 132 )
+        END
+    
     .. note::
          The SIZE value can only be an integer (not a fractional
          value), because the renderer Freetype only accepts integers.
