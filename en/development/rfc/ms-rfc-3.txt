@@ -13,12 +13,12 @@ MS RFC 3: Feature Layer Plug-in Architecture
 Abstract Solution
 -----------------
 
-Implement a virtual table structure for ``layerObj``. This structure
+Implement a virtual table structure for `layerObj`. This structure
 will contain function pointers for all layer specific operations.
 This structure will be populated when the layer is opened or first
 time accessed.  After that all back-end format specific layer
 operations will happen through this vtable which is cached in the
-``layerObj`` struct.
+`layerObj` struct.
 
 
 Technical Solution
@@ -27,7 +27,7 @@ Technical Solution
 All file names and numbers are against released MapServer 4.6.0 source
 code.
 
-1. Add new field to the ``layerObj``. It will be pointer to the vtable,
+1. Add new field to the `layerObj`. It will be pointer to the vtable,
    which will contain function pointers for this layer.
 
 2. Add the virtual table architecture
@@ -39,7 +39,7 @@ code.
    any (e.g. do nothing) or return error by default.
 
 
-   2.1. Standard functions which are found currently from ``maplayer.c``
+   2.1. Standard functions which are found currently from `maplayer.c`
 
         2.1.1. InitItemInfo
 
@@ -72,8 +72,8 @@ code.
                                      const char *pszGMLFilename, 
                                      rectObj *defaultBBOX);
                                      
-               However, these are called from ``msLayerOpen`` with
-               ``NULL`` args, so I think that proposed interface for
+               However, these are called from `msLayerOpen` with
+               `NULL` args, so I think that proposed interface for
                this virtual table function should be fine.
 
 
@@ -148,7 +148,7 @@ code.
                 any connection pooling, this function should be
                 implemented as no-op. Caller should first call layer's
                 "close" function, and finally at the very end
-                ``CloseConnection``.
+                `CloseConnection`.
 
                 The signature of function is
 
@@ -158,15 +158,15 @@ code.
 
 
                 And the main place where this function will be called,
-                is ``mapfile.c: 4822``
+                is `mapfile.c: 4822`
 
                 ::
                    
                    void msCloseConnections(mapObj *map)
 
-                This function is needed because e.g. ``POSTGIS`` is
+                This function is needed because e.g. `POSTGIS` is
                 implementing this usage pattern at the moment
-                ``maplayer.c:599``
+                `maplayer.c:599`
 
                 ::
 
@@ -183,9 +183,9 @@ code.
 
                 This function is used to create a time filter for
                 layer. At the moment we have three special cases
-                (``maplayer.c: 1635``):
+                (`maplayer.c: 1635`):
 
-                1. ``POSTGIS`` with it's own function
+                1. `POSTGIS` with it's own function
                 2. Layers with backticks delimited expressions
                 3. Layers without backticks
 
@@ -198,9 +198,9 @@ code.
                                       const char *timefield,
                                       const bool bBackTicks)
 
-                And the actual layer's ``SetTimeFilter`` could use the
+                And the actual layer's `SetTimeFilter` could use the
                 above, or implement something totally different as
-                ``POSTGIS`` is doing at the moment.
+                `POSTGIS` is doing at the moment.
 
                 The signature for layer's vtable function is
 
@@ -214,16 +214,16 @@ code.
 
    2.3. Extra functions to add to the vtable
 
-        2.3.1. FLTApplyFilterToLayer (``mapogcfilter.c: 1084``)
+        2.3.1. FLTApplyFilterToLayer (`mapogcfilter.c: 1084`)
 
                This is the main filter interface for layers.  We will
                provide two helper functions, one for "SQL" case and
                the another for "non-SQL" case, and set all layers,
-               except ``POSTGIS``, ``ORACLESPATIAL`` and ``OGR`` to
+               except `POSTGIS`, `ORACLESPATIAL` and `OGR` to
                call directly this "non-SQL" version of this helper
                function (else-branch of if).
 
-               ``ORACLESPATIAL``, ``POSTGIS`` and ``OGR`` could use
+               `ORACLESPATIAL`, `POSTGIS` and `OGR` could use
                "SQL" version of the helper function (actual if-branch)
                if the conditions for this are met, otherwise they will
                use Non-SQL version of the function.
@@ -231,8 +231,8 @@ code.
 
         2.3.2. layerObj->items allocation
 
-               There will be vtable function for allocation ``items`` and
-               initialization for ``numitems``. If layer has some
+               There will be vtable function for allocation `items` and
+               initialization for `numitems`. If layer has some
                special needs for these objects it can override default
                function.
 
@@ -245,10 +245,10 @@ code.
                which does the allocation and set numitems to correct
                value.
 
-        2.3.3. msCheckConnection (``mapfile.c: 4779``)
+        2.3.3. msCheckConnection (`mapfile.c: 4779`)
 
                This API is deprecated. It is called only from
-               ``msMYGISLayerOpen``.  We will not provide this
+               `msMYGISLayerOpen`.  We will not provide this
                functionality through vtable.
 
 
@@ -275,7 +275,7 @@ code.
               
               To change the connection type of layer, it has to be
               done by function interface. Accessing directly
-              ``connectiontype`` field is not supported anymore.
+              `connectiontype` field is not supported anymore.
 
               To change the connectiontype and to connect to the new
               layer, there will be following interface function
@@ -285,8 +285,8 @@ code.
                  int msConnectLayer(int connectiontype,
                                     const char *library_str)
 
-              where ``connectiontype`` is the type of new layer, and
-              ``library_str`` is the name of library which will
+              where `connectiontype` is the type of new layer, and
+              `library_str` is the name of library which will
               prodive functionality for this new layer.  For internal
               layer types this second argument is ignored.
 
@@ -295,7 +295,7 @@ code.
 3. Remove unwanted interfaces
    
    Frank Warmerdam proposed [FW1]_ that we remove all layer specific
-   interface functions from ``map.h``.
+   interface functions from `map.h`.
 
       I see each "built-in" module such as mapsde.c providing a
       registration function such as "msSDEInitializeLayerVirtualTable"
@@ -303,10 +303,10 @@ code.
       appear in map.h any more.
 
    .. [FW1] 
-      | ``Frank Warmerdam on the mapserver-dev:``
-      | ``Message-Id: <smtpd.490f.4303f2ee.d8246.1@mtaout-c.tc.umn.edu>``
-      | ``Date:       Wed, 17 Aug 2005 22:31:09 -0400``
-      | ``Subject:    Re: MapServer  Plug-in Infastructure: RFC and PATCH``
+      | `Frank Warmerdam on the mapserver-dev:`
+      | `Message-Id: <smtpd.490f.4303f2ee.d8246.1@mtaout-c.tc.umn.edu>`
+      | `Date:       Wed, 17 Aug 2005 22:31:09 -0400`
+      | `Subject:    Re: MapServer  Plug-in Infastructure: RFC and PATCH`
 
 
 
@@ -316,36 +316,36 @@ Files and objects affected
 
 This proposal will affect at least following files and objects:
 
-* ``map.h``
+* `map.h`
 
-  * ``layerObj`` will contain new fields. There will be a new
-    object ``vtableObj`` in the ``map.h``.
+  * `layerObj` will contain new fields. There will be a new
+    object `vtableObj` in the `map.h`.
 
 
-* ``maplayer.c`` 
+* `maplayer.c` 
 
-  * Various changes, layer specific ``switch``-statements will go
+  * Various changes, layer specific `switch`-statements will go
     away, vtable handling and layers vtable initialization will be
     added.
 
 
-* ``mapfile.c``
+* `mapfile.c`
 
-  * Cleaning of  ``msCheckConnection``
-  * Vtable for ``msCloseConnection``
-
-
-* ``mapogcfilter.c``
-
-  * Remove layer-logic from ``FLTApplyFilterToLayer``
+  * Cleaning of  `msCheckConnection`
+  * Vtable for `msCloseConnection`
 
 
-* ``mapXXX.c``, where ``XXX`` is the name of layer.
+* `mapogcfilter.c`
+
+  * Remove layer-logic from `FLTApplyFilterToLayer`
+
+
+* `mapXXX.c`, where `XXX` is the name of layer.
 
   * Add new initialization function
   * Add all new interface functions
   * Fix existing interface functions, if needed / add wrappers for
-    ``msOGRLayerOpen`` and ``msWFSLayerOpen``. 
+    `msOGRLayerOpen` and `msWFSLayerOpen`. 
 
 
 
@@ -354,11 +354,11 @@ Backwards compatibility issues
 
 This is binary and source code level backward incompatible change. The
 proposal will remove some previously public functions, and add new
-field(s) to the ``layerObj`` struct. 
+field(s) to the `layerObj` struct. 
 
 This proposal is not MapScript backward compatible, it will break
-scripts which change directly ``connectiontype`` field in
-``layerObj``.
+scripts which change directly `connectiontype` field in
+`layerObj`.
 
 The proposal is MAP-file backward compatible.
 
@@ -374,7 +374,7 @@ Implementation Issues
   that this architecture change is feasible thing to do.
 
 * I also like to note that this proposal won't remove all layer
-  specific code from MapServer e.g. ``WMF``, ``WMS`` and ``GRATICULE``
+  specific code from MapServer e.g. `WMF`, `WMS` and `GRATICULE`
   are used as special cases from place to place.
 
 
@@ -409,7 +409,7 @@ Open questions
     accessing directly struct's field.
 
   * expose it as a complete opaque type, vtable pointers will be set
-    by accessing functions ``setLayerOpenFP``, ``setLayerCloseFP`` and
+    by accessing functions `setLayerOpenFP`, `setLayerCloseFP` and
     so on.
 
   The advance of second option is that this way we could easily add

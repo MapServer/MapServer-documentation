@@ -29,19 +29,19 @@ bind it to the running MapServer by layer's virtual table.
 Technical Solution
 -------------------
 
-* New ``CONFIG`` option ``MS_PLUGIN_DIR`` which, if set, tells the base
+* New `CONFIG` option `MS_PLUGIN_DIR` which, if set, tells the base
   path for plugins
 
-* New MAP-file keyword ``PLUGIN`` with string argument.  This
+* New MAP-file keyword `PLUGIN` with string argument.  This
   keywords tells which library dynamically to load for this layer.
 
   The plugins are loaded based on the following algorithm:
 
-  * If plugin string is missing ``.so`` or ``.dll`` extension, append
+  * If plugin string is missing `.so` or `.dll` extension, append
     it to the plugin string
 
-  * If ``MS_PLUGIN_DIR`` is set and plugin string is not an absolute
-    path, prefix plugin string with ``MS_PLUGIN_DIR``
+  * If `MS_PLUGIN_DIR` is set and plugin string is not an absolute
+    path, prefix plugin string with `MS_PLUGIN_DIR`
   
   * otherwise use plugin string directly
 
@@ -49,9 +49,9 @@ Technical Solution
   appropriate plugin to load, if the path is not absolute.
   
 
-* New connection type ``PLUGIN``
+* New connection type `PLUGIN`
 
-* New field ``char* plugin_library`` in layerObj structure, this is
+* New field `char* plugin_library` in layerObj structure, this is
   the name of library to load for this layer.
 
 
@@ -63,8 +63,8 @@ Technical Solution
      static const layerVTableObj *
      getCustomLayerVirtualTable(layerObj *layer)
 
-  where ``layerVTableObj`` is the virtual table and layer is a custom
-  layer. In case of error, function will return ``NULL``.
+  where `layerVTableObj` is the virtual table and layer is a custom
+  layer. In case of error, function will return `NULL`.
 
 
 * Function to get a function pointer from dynamic loaded library. This
@@ -76,7 +76,7 @@ Technical Solution
                                const char *SymbolName)
 
   This is implemented by GDAL project, and I have planned to use their
-  implementation of this (``CPLGetSymbol``).
+  implementation of this (`CPLGetSymbol`).
 
 
 * Cache structure for already loaded libraries. This cache structure
@@ -90,7 +90,7 @@ Technical Solution
   possible to do later without breaking interface.
 
 
-* New lock item (``TLOCK_LAYER_VTABLE``) to protect library cache structure.
+* New lock item (`TLOCK_LAYER_VTABLE`) to protect library cache structure.
 
 
 Files and objects affected
@@ -98,11 +98,11 @@ Files and objects affected
 
 This proposal will affect at least following files and objects:
 
-* ``map.h``
+* `map.h`
 
-  * ``layerObj`` will contain a new field, ``char *plugin_library``.
+  * `layerObj` will contain a new field, `char *plugin_library`.
 
-* New lock token ``TLOCK_LAYER_VTABLE``
+* New lock token `TLOCK_LAYER_VTABLE`
 
 * New files and objects for custom layer handling.
 
@@ -151,7 +151,7 @@ Working Notes
 ------------------------------------------------------------------------------
 
 Plugin library has to implement function 
-``PluginInitializeVirtualTable``
+`PluginInitializeVirtualTable`
 
 ::
     
@@ -159,13 +159,13 @@ Plugin library has to implement function
                                layerObj *);
 
 which is called during library loading.  This function is responsible
-to populate ``layerVTableObj *`` virtual table.  If this function
-leaves some function pointers to ``NULL`` in this virtual table, then
+to populate `layerVTableObj *` virtual table.  If this function
+leaves some function pointers to `NULL` in this virtual table, then
 default actions are used for these missing functions.  The defaults
-are visible in function ``maplayer.c: populateVirtualTable(...)``.
-The function must not populate directly ``layerObj->vtable``, it have
-to use ``layerVTableObj *`` argument for this.  The MapServer is
-holding ``TLOCK_LAYER_VTABLE`` lock during this function call.
+are visible in function `maplayer.c: populateVirtualTable(...)`.
+The function must not populate directly `layerObj->vtable`, it have
+to use `layerVTableObj *` argument for this.  The MapServer is
+holding `TLOCK_LAYER_VTABLE` lock during this function call.
 
 .. 
    Local Variables: 

@@ -6,11 +6,13 @@
 MapServer Migration Guide
 *****************************************************************************
 
-:Last Updated: 2020-03-22
+:Last Updated: 2020-07-23
 
 .. contents:: Table of Contents
     :depth: 2
     :backlinks: top
+    
+.. _migration-7.6:
    
 MapServer 7.4 to 7.6 Migration
 ==============================
@@ -20,6 +22,13 @@ MapServer 7.4 to 7.6 Migration
 - the PROJ 6 API is now supported.  Read about the many changes in PROJ since
   the `PROJ 6.0 release <https://proj.org/news.html#id147>`_.  Note that older
   PROJ versions such as 5.2.0 will still work with MapServer.
+  
+  .. tip::
+      Here are the (as of 2020-05-19) optimal combinations of MapServer with GDAL & PROJ:
+      :: 
+      
+        MapServer 7.6 + GDAL 2.4.4 + PROJ 5.2.0
+        MapServer 7.6 + GDAL 3.1.0 + PROJ 7.0.1        
 
 - CONNECTIONOPTIONS parameter has been added in the mapfile LAYER, to take  
   advantage of GDAL/OGR driver options. (see :ref:`RFC 125 <rfc125>`) such as:
@@ -64,6 +73,47 @@ MapServer 7.4 to 7.6 Migration
       RFC 124 (SLD improvements) has been implemented except PR#5832:
       `SLD: Improve WMS GetStyles request <https://github.com/mapserver/mapserver/pull/5832>`__. 
 
+- WMS client layers can be set to essential, with the new `wms_essential` metadata item,
+  which will cause MapServer to fail and report an error (normally MapServer would just
+  ignore that layer).  
+  
+  .. note::
+      enabling `wms_essential` means that if there is a problem with the connection,
+      (such as the `CONNECTION` url cannot be reached, or an incorrect `wms_name` 
+      or `wms_format`) an XML error will be returned in the browser.  If you are calling 
+      MapServer through commandline, your :ref:`map` setting for `CONFIG "ON_MISSING_DATA"` 
+      will still be leveraged for how that error is handled locally. 
+      
+  Here is an example of the new `wms_essential` parameter:
+  
+    .. code-block:: mapfile
+  
+        LAYER
+          NAME "country_bounds"
+          TYPE RASTER
+          STATUS ON
+          CONNECTION "https://demo.mapserver.org/cgi-bin/wms?"
+          CONNECTIONTYPE WMS
+          METADATA
+            "wms_srs"             "EPSG:4326"
+            "wms_name"            "country_bounds"
+            "wms_server_version"  "1.1.1"
+            "wms_format"          "image/png"
+            "wms_essential"       "1"
+          END
+        END
+        
+- Windows users can now use umlauts (special characters such as ä ö ü) in their 
+  directory paths and filenames, such as:
+  
+    .. code-block:: mapfile
+    
+        LAYER
+          ..	
+          DATA  "ä1-test.tif"
+          ..
+        END #layer
+
 MapServer 7.2 to 7.4 Migration
 ==============================
 
@@ -81,7 +131,7 @@ MapServer 7.2 to 7.4 Migration
     for each function that you require.
     
   - all of your PHP scripts (that leverage MapServer objects and functions) must now always 
-    first include the generated ``mapscript.php`` file containing MapServer constants:
+    first include the generated `mapscript.php` file containing MapServer constants:
 
     ::
     
@@ -429,7 +479,7 @@ dashes.
 CGI Changes
 -----------
 
-Runtime subsitution now *requires* a validation pattern be present before the
+Runtime substitution now *requires* a validation pattern be present before the
 substitution will take place (this had been optional). This can be done via
 a layer metadata tag as before or within layer or web VALIDATION blocks. See
 ticket #3522 for more information.
@@ -549,7 +599,7 @@ PHP MapScript Changes
   - layerObj: getFilter, getShape
 
 * referenceMapObj has new properties: marker, markername, markersize, maxboxsize, minboxsize
-* shapeFileObj is automatically closed/writed on destroy. (At the end of the script or with an explicit unset())
+* shapeFileObj is automatically closed/written on destroy. (At the end of the script or with an explicit unset())
 * layerObj->clearProcessing() method now returns void.
 * mapObj->queryByIndex(): default behavior for the addToQuery parameter was not ok, now it is.
 

@@ -1,0 +1,121 @@
+.. _rfc131:
+
+======================================================================
+MS RFC 131: Allow file paths in MapCache second level dimension values
+======================================================================
+
+:Date: 2020-05-20
+:Author: Jérome Boué
+:Contact: jbo-ads@mailo.com
+:Status: Adopted
+:Last update: 2020-08-06
+:Version: MapCache 1.12
+
+
+Overview
+--------
+
+Dimension values in MapCache are mainly used as a means to identify caches
+where to store or fetch tiles, by using a templating mechanism: "{dim}" or
+"{dim:*dimname*}" (see :ref:`mapcache_dimensions_storing` and
+:ref:`mapcache_cache_multisqlite`). In this pattern, dimension values are
+portions of file names or directory names.
+
+Currently, file paths (portions of directory hierarchy, i.e. containing ``/``
+or ``.`` characters) are forbidden as dimension values in MapCache. This
+prevents a malicious client from potentially exploring server's filesystem.
+
+However, being able to organize caches in an arbitrary filesystem hierarchy
+would be a great feature from a geographic imagery provider viewpoint.
+
+In order to increase flexibility on server side, this RFC proposes to allow a
+limited use of file paths in dimension values without compromising server's
+security.
+
+Incidentally, the need at origin of this RFC arose on SQLite caches. Therefore,
+this feature is proposed on that cache type only.
+
+
+Proposed solution
+-----------------
+
+From preliminary discussions on `[mapserver-dev] mailing list
+<https://lists.osgeo.org/pipermail/mapserver-dev/2019-December/015973.html>`__,
+two main principles have emerged:
+
+1. Don't allow users to directly supply a path; instead provide a
+   keyword-to-path mapping.
+
+2. Allow only paths relative to a *root-dimension-path*, so that only a
+   controlled subset of the filesystem can be accessed; forbid "../" in
+   dimension paths.
+
+First principle: keyword-to-path mapping
+========================================
+
+Indeed this feature is already provided in MapCache: this is the so-called
+:ref:`mapcache_dimensions_second_level` mechanism.
+
+The proposed solution should therefore allow paths only with second level
+dimensions. This shall be implemented by a specific check on dimension type
+when fetching dimension value.
+
+On dimensions that don't allow paths in dimension values, the current behaviour
+applies: replace '.' and '/' characters by '#' character.
+
+Second principle: restrict dimension paths to a subset of filesystem
+====================================================================
+
+The *root-dimension-path* mechanism is already provided in MapCache: templates
+apply on a hard-coded path specified in cache configuration.
+
+Moreover, in order to make clear that a specific cache supports paths as
+dimension values, an attribute is introduced at cache configuration level.
+
+.. code-block:: xml
+   :emphasize-lines: 2
+
+   <cache type="sqlite"
+          allow_path_in_dim="yes"
+          name="foo">
+       <!-- ... -->
+       <dbfile>/path/to/{grid}/{dim}/{tileset}/{z}/{x}-{y}.sqlite3</dbfile>
+    </cache>
+
+In addition, the proposed solution shall implement a "../" sanitization by
+replacing that string by a safe character such as '#'.
+
+On caches that don't explicitely allow paths in dimension values, the current
+behaviour applies: replace '.' and '/' characters by '#' character.
+
+
+Documentation update
+--------------------
+
+Subsection of :ref:`mapcache_cache_multisqlite` shall be modified.
+
+
+Implementation details
+----------------------
+
+Only ``lib/cache_sqlite.c`` is impacted.
+
+
+Backward compatibility
+----------------------
+
+As this is a new feature, no backward compatibility is expected.
+
+
+Voting History
+--------------
+
+Adopted with +1 from JeffM, SethG, TomK, MikeS, EvenR, DanielM, SteveL, JeromeB
+
+
+
+
+
+
+
+

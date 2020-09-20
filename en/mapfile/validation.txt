@@ -85,9 +85,15 @@ generalised blocks. i.e. `CLASS` overrides `LAYER` which overrides
 The same functionality is available using `METADATA` blocks instead of
 `VALIDATION` but this is deprecated as of MapServer 5.4.0.
 
-This behavior is also accessible in the shp2img utility, allowing you
-to test runtime substitution mapfiles without using a webserver.
+Test with Commandline
+---------------------
 
+You can test at the commandline, allowing you to test runtime substitution 
+mapfiles without using a webserver, with the mapserv utility such as:
+
+.. code-block::
+
+    mapserv -nh "QUERY_STRING=map=D:\ms4w\apps\filter-validation\filter-validation.map&mode=map&layers=all&nseats=10" > ttt.png
 
 
 Filter example
@@ -116,3 +122,28 @@ you'd do the following:
 
 The first two limit the value of multimedia and sound to yes or
 no. The third limits the value for nseats to a 2 digit integer.
+
+.. note:: 
+
+  Be careful not to use a variable specifically named *id* as this will cause an error such as:
+  
+    .. code-block::
+    
+        msCGILoadForm(): Web application error. Parameter 'id' value fails to validate
+        
+  Instead use another variable name such as *code* or *myid*.  For example:
+  
+  .. code-block:: mapfile
+
+    LAYER
+      ..
+      VALIDATION
+        "code" "[0-9]"
+      END    
+       ..
+      FILTER ("[reg_code]" IN "%code%")
+      ...
+    END # Layer
+    
+  ..and calling it as: \https://xxx.xx/cgi-bin/mapserv?map=xxx.map&mode=map&code=12,13
+
