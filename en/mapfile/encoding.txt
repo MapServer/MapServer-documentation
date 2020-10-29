@@ -9,7 +9,7 @@
 
 :Author: Jeff McKenna
 :Contact: jmckenna at gatewaygeomatics.com
-:Last Updated: 2020-01-17
+:Last Updated: 2020-10-28
 
 .. contents:: Table of Contents
     :depth: 3
@@ -37,7 +37,15 @@ Requirements
 ============
 
 - MapServer >= 4.4.0 (MapServer >= 7.0 for layer-level encoding)
-- MapServer compiled with the libiconv library
+- MapServer compiled with the `libiconv <https://www.gnu.org/software/libiconv/>`__ library
+
+.. note::
+
+   In terms of map labels with international characters, since the MapServer 7.0 release, 
+   other important dependant libaries besides libiconv are `Freetype <https://www.freetype.org/>`__ 
+   (to get information about glyph sizes), `Fribidi <https://github.com/fribidi/fribidi>`__ 
+   (to handle bidirectional text), and `Harfbuzz <https://github.com/harfbuzz/harfbuzz>`__ 
+   (for text shaping).
 
 How to Enable in Your Mapfile (MapServer >= 7.0)
 ================================================
@@ -56,7 +64,7 @@ accepts the encoding name as its parameter.
 .. index::
    single: libiconv
 
-MapServer uses GNU's `libiconv <http://www.gnu.org/software/libiconv/>`__ 
+MapServer uses GNU's `libiconv <https://www.gnu.org/software/libiconv/>`__ 
 library to deal with encodings.
 The libiconv web site has a list of supported encodings.  One can also
 use the "iconv -l" command on a system with libiconv installed to get
@@ -79,20 +87,21 @@ as:
 
    > mapserv -v
 
-     MapServer version 7.0.1 (MS4W 3.1.3) OUTPUT=PNG OUTPUT=JPEG 
-     OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO 
-     SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT 
-     SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER 
-     SUPPORTS=SOS_SERVER SUPPORTS=FASTCGI SUPPORTS=THREADS SUPPORTS=GEOS 
-     INPUT=JPEG INPUT=POSTGIS INPUT=ORACLESPATIAL INPUT=OGR INPUT=GDAL 
-     INPUT=SHAPEFILE
+     MapServer version 7.7.0-dev (MS4W 4.0.4) OUTPUT=PNG OUTPUT=JPEG 
+     OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE 
+     SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS SUPPORTS=SVGCAIRO 
+     SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER 
+     SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT 
+     SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER SUPPORTS=FASTCGI 
+     SUPPORTS=THREADS SUPPORTS=GEOS SUPPORTS=POINT_Z_M SUPPORTS=PBF 
+     INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE
 
 Step 2: Verify That Your Files' Encoding is Supported by ICONV
 --------------------------------------------------------------
 
 Since MapServer uses the libiconv library to handle encodings, you can
 check the list of supported encodings here:
-http://www.gnu.org/software/libiconv/
+https://www.gnu.org/software/libiconv/
 
 Unix users can also use the *iconv -l* command on a system with
 libiconv installed to get the complete list of supported encodings on
@@ -152,6 +161,12 @@ object, such as:
        END
      END
    END 
+   
+.. note::
+
+   The MapServer 7.6.0 release included an important fix to allow 
+   special characters such as "ä" (umlauts) in filenames and 
+   paths in a mapfile.
 
 Step 4: Test with the shp2img utility
 -------------------------------------
