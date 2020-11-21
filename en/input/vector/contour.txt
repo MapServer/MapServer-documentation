@@ -10,8 +10,8 @@ Contour
 1. Overview
 -----------
 
-MapServer can compute and render a contour layer on the fly from a
-raster source.  The raster source is one band of raster data, which
+MapServer (since version 6.4) can compute and render a contour layer on the 
+fly from a raster source.  The raster source is one band of raster data, which
 represents a digital elevation model (DEM).  More info about DEMs at:
 http://en.wikipedia.org/wiki/Digital_elevation_model
 
@@ -21,9 +21,10 @@ http://en.wikipedia.org/wiki/Digital_elevation_model
 .. index::
    pair: CONNECTIONTYPE; contour
 
-CONNECTIONTYPE CONTOUR. The new type is a hybrid layer, which has a raster data
-source as input and vector features as output. Initially, only the line
-representation of those vector features will be supported. 
+CONNECTIONTYPE CONTOUR. The new (to MapServer 6.4) type is a hybrid layer, which 
+has a raster data source as input and vector features as output. Initially, 
+only the line representation of those vector features will be supported. More 
+detailed information about the original implementation can be found in :ref:`RFC 85 <rfc85>`.
 
 Since the internal layer is of type vector, queries will be supported and
 operate on the vectors (not on the raw raster source). In the future we might
@@ -55,12 +56,21 @@ PROCESSING settings:
   CONTOUR_LEVELS values if you wish to use scale-dependent contour spacing. This
   is done by adding an optional "miscaledenom,maxscaledenom:" prefix to the
   value or list of values. See the example below.
+  
+.. warning::
+    If you only set a single CONTOUR_INTERVAL for all scale ranges, MapServer 
+    will likely crash at outer scale ranges (first example below).  More recent
+    GDAL versions (such as 3.2.0) will output an error message such as: 
+    *"Input values and/or interval settings would lead to too many levels"*. To 
+    avoid this, set multiple CONTOUR_INTERVAL lines to handle various scale ranges 
+    (see the working Copernicus DEM example below, with output map images).
 
 Example of a simple layer definition:
 
 .. code-block:: mapfile
 
-  LAYER NAME "my_contour_layer"
+  LAYER 
+    NAME "my_contour_layer"
     TYPE LINE
     STATUS DEFAULT
     CONNECTIONTYPE CONTOUR
@@ -74,13 +84,15 @@ Example of a simple layer definition:
         COLOR 255 0 0
       END
     END
+  END #layer
 
 
 Example of a layer definition with scale-dependent contour ranges:
 
 .. code-block:: mapfile
 
-  LAYER NAME "my_contour_layer"
+  LAYER 
+    NAME "my_contour_layer"
     TYPE LINE
     STATUS DEFAULT
     CONNECTIONTYPE CONTOUR
@@ -100,12 +112,14 @@ Example of a layer definition with scale-dependent contour ranges:
         ...
       END
     END
+  END #layer    
 
 Example of a layer definition with a tile index and WMS TIME support:
 
 .. code-block:: mapfile
 
-  LAYER NAME "my_contour_layer"
+  LAYER 
+    NAME "my_contour_layer"
     TYPE LINE
     STATUS OFF
     CONNECTIONTYPE CONTOUR
@@ -128,6 +142,44 @@ Example of a layer definition with a tile index and WMS TIME support:
       "wms_timeextent"  "2004-01-01/2004-02-01"
     END # METADATA
   END # LAYER
+  
+Example of a layer definition with scale-dependent contour ranges & Copernicus EU DEM data:
+
+.. code-block:: mapfile
+
+  LAYER
+    NAME "dem-contours"
+    TYPE LINE
+    STATUS ON
+    CONNECTIONTYPE CONTOUR
+    DATA "eu_dem_v11_E40N20_clip.TIF"
+    PROCESSING "BANDS=1"
+    PROCESSING "CONTOUR_ITEM=Band_1"
+    PROCESSING "CONTOUR_INTERVAL=0,25000:5" # interval of 5 for scales of 25000 or less
+    PROCESSING "CONTOUR_INTERVAL=25000,500000:10" # interval of 10 for scales in the 25000 to 500000 range
+    PROCESSING "CONTOUR_LEVELS=500000,0:10,25,50,100,200,300,400,500,600,700,800,900,1000" # explicit list of levels for scales of 500000 and up 
+    CLASS
+      NAME "Contours"
+      STYLE
+        WIDTH 1
+        COLOR 139 69 19
+      END
+    END
+  END # layer
+  
+**Figure: contours zoomed-out to coastline (Corsica island) generated from Copernicus EU DEM**
+
+.. image:: ../../images/contour-coastline.png
+   :height: 400
+   :width: 600
+   :class: no-scaled-link
+   
+**Figure: contours zoomed-in (Corsica island) generated from Copernicus EU DEM**
+
+.. image:: ../../images/contour.png
+   :height: 400
+   :width: 600
+   :class: no-scaled-link
 
 2.1 Data cellsize 
 ------------------
