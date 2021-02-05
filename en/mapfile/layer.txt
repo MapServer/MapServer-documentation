@@ -147,6 +147,9 @@ CONNECTIONOPTIONS
    triple: LAYER; CONNECTIONTYPE; kerneldensity
 
 .. index::
+   triple: LAYER; CONNECTIONTYPE; idw
+
+.. index::
    triple: LAYER; CONNECTIONTYPE; local
 
 .. index::
@@ -176,7 +179,7 @@ CONNECTIONOPTIONS
 .. index::
    triple: LAYER; CONNECTIONTYPE; wms
 
-CONNECTIONTYPE [contour|kerneldensity|local|ogr|oraclespatial|plugin|postgis|sde|union|uvraster|wfs|wms]
+CONNECTIONTYPE [contour|kerneldensity|idw|local|ogr|oraclespatial|plugin|postgis|sde|union|uvraster|wfs|wms]
     Type of connection. Default is local. See additional documentation for
     any other type.
 
@@ -189,6 +192,10 @@ CONNECTIONTYPE [contour|kerneldensity|local|ogr|oraclespatial|plugin|postgis|sde
     .. seealso::
         See :ref:`kerneldensity` for specific connection information
         for kernel density estimation.
+
+    .. seealso::
+        See :ref:`idw` for specific connection information
+        for inverse distance weighted interpolation.
 
     .. note::
 
@@ -991,6 +998,56 @@ PROCESSING [string]
       .. code-block:: mapfile
 
           PROCESSING "KERNELDENSITY_NORMALIZATION=AUTO|numeric"
+
+    .. index::
+       triple: LAYER; PROCESSING; IDW_RADIUS
+
+    - **Inverse distance weight interpolation radius**
+    
+      .. versionadded:: 8.0
+      
+      Radius in pixels of the search radius of features to take into account.
+      Higher values result in increased cpu time needed to compute the filtered data.
+      The default is the dimension of the image to render.
+
+      .. code-block:: mapfile
+
+           PROCESSING "IDW_RADIUS=10"
+
+    .. index::
+       triple: LAYER; PROCESSING; IDW_COMPUTE_BORDERS
+
+    - **Inverse distance weight interpolation compute borders**
+    
+      .. versionadded:: 8.0
+
+      A kernel of radius "r"
+      cannot be applied to "r" pixels along the borders of the image.
+      The default is to extend the search rectangle of the input
+      datasource to include features "r" pixels outside of the current
+      map extent so that the computed result extends to the full
+      extent of the resulting image.  This can be deactivated when
+      tiling if the tiling software applies a metabuffer of "r" pixels
+      to its requests, to avoid the performance overhead of computing
+      this extra information.
+
+      .. code-block:: mapfile
+
+          PROCESSING "IDW_COMPUTE_BORDERS=ON|OFF"
+
+    .. index::
+       triple: LAYER; PROCESSING; IDW_POWER
+
+    - **Inverse distance weight interpolation power**
+    
+      .. versionadded:: 8.0
+
+      Value such that 1 / distance^power is the weight applied when computing
+      pixel values. The default is 1.0.
+
+      .. code-block:: mapfile
+
+          PROCESSING "IDW_POWER=1"
 
     .. index::
        triple: LAYER; PROCESSING; RANGE_COLORSPACE
