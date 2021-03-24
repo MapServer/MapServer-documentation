@@ -7,8 +7,10 @@
  Tile Indexes
 *****************************************************************************
 
-:Author:        HostGIS 
-:Last Updated: 2013/07/04
+:Author: Jeff McKenna
+:Contact: jmckenna at gatewaygeomatics.com
+:Original Author: HostGIS
+:Last Updated: 2021-03-23
 
 .. contents:: Table of Contents
     :depth: 2
@@ -16,37 +18,40 @@
 
 Introduction
 ------------
-An introduction to tileindexes, MapServer's method for doing on-the-fly mosaicing.
+Tileindexes are MapServer's method for doing on-the-fly mosaicing.
 
 What is a tileindex and how do I make one?
 ------------------------------------------
 
-A tileindex is a shapefile that ties together several datasets into a single
-layer. Therefore, you don't need to create separate layers for each piece of
-imagery or each county's road data; make a tileindex and let MapServer piece
-the mosaic together on the fly.
+A tileindex is a dataset (usually a shapefile) that ties together several 
+datasets into a single layer. Therefore, you don't need to create separate 
+layers for each piece of imagery or each county's road data; make a tileindex 
+and let MapServer piece the mosaic together on the fly.
 
-Making a tileindex is easy using `gdaltindex`_ for GDAL data sources (rasters)
-and `ogrtindex`_ for OGR data sources (vectors). You just run them, specifying
+Making a tileindex is easy using `gdaltindex <https://gdal.org/programs/gdaltindex.html>`__ 
+for GDAL data sources (rasters) and `ogrtindex <https://gdal.org/programs/ogrtindex.html>`__ 
+for OGR data sources (vectors). You just run them, specifying
 the index file to create and the list of data sources to add to the index.
 
 .. index::
    single: gdaltindex
 
-For example, to make a mosaic of several TIFFs:
+For example, to make a mosaic of several GeoTIFFs, creating an index file
+named *tileindex-tif.shp*:
 
 ::
 
-    gdaltindex imagery.shp imagery/*.tif
+    gdaltindex tileindex-tif.shp folder/*.tif
     
 .. index::
    single: ogrtindex
 
-And to make a mosaic of vectors:
+And to make a mosaic of vectors, creating an index file
+named *tileindex-tiger.shp*:
 
 ::
 
-    ogrtindex strees.shp tiger/CA/*.shp tiger/NV/*.shp
+    ogrtindex tileindex-tiger.shp tiger/CA/*.shp tiger/NV/*.shp
     
 .. note::
     ogrtindex and gdaltindex **add** the specified files to the index.
@@ -69,7 +74,7 @@ Using a tileindex as a layer is best explained by an example:
         TYPE LINE
         TILEINDEX "tiger/index.shp"
         TILEITEM "LOCATION"
-    END 
+    END   
 
 There are two items of note here: :ref:`TILEINDEX <tileindex_keyword>` and
 :ref:`TILEITEM <tileitem>`. TILEINDEX is simply
@@ -85,9 +90,9 @@ Two important notes about the pathnames:
     the mapfile.
   * The filenames specified on the command line to gdaltindex or ogrtindex will
     be used with the same conventions as well, following the SHAPEPATH or else
-    being relative to the mapfile's location. I find it very useful to change
+    being relative to the mapfile's location. You might find it useful to change
     into the SHAPEPATH directory and then run ogrtindex/gdaltindex from there;
-    this ensures that I specify the correct pathnames.
+    this ensures correct pathnames.
   
 Tileindexes may make your map faster
 ------------------------------------
@@ -100,6 +105,10 @@ A tileindex is often a performance boost for two reasons:
     great savings for a large dataset, especially for use cases where most of
     the time only a very small spatial region of the data is being used. (for
     example, citywide maps with nationwide street imagery)
+    
+.. TIP::
+   You can also run :ref:`shptree` on your tileindex file, so that MapServer
+   can locate the associated feature/record faster.   
   
 A tileindex will not help in the case where all/most of the data sources will
 usually be opened anyway (e.g. street data by county, showing states or larger
@@ -121,9 +130,10 @@ Tileindexes with tiles in different projections
 
 Starting with MapServer 6.4 for raster layers, and MapServer 7.2 for vector
 layers, a tileindex can contain rasters/layers in
-different projections. Such tileindex can be generated with `gdaltindex`_ (GDAL
-1.11 or later) and `ogrtindex`_ (GDAL 2.2 or later), with the -t_srs and
--src_srs_name options. The -t_srs instructs
+different projections. Such tileindex can be generated with 
+`gdaltindex <https://gdal.org/programs/gdaltindex.html>`__ (GDAL
+1.11 or later) and `ogrtindex <https://gdal.org/programs/ogrtindex.html>`__ 
+(GDAL 2.2 or later), with the -t_srs and -src_srs_name options. The -t_srs instructs
 gdaltindex/ogrtindex to write the envelope of each tile into a common target
 projection, so that the geometries written in the tile index are consistent.
 This common projection must be the projection of the raster/vector layer.
@@ -155,14 +165,260 @@ e.g:
 
 MapServer will then be able to proceed to on-the-fly mosaicing and reprojection.
 
+Note for WCS layers
+-------------------
+
 For layers that must be exposed as WCS layers, a few metadata fields
 ("wcs_extent", "wcs_size", "wcs_resolution") must be specified in the LAYER
 definition, so as to define a "virtual dataset" coverage (see :ref:`wcs_server`).
 The GDAL wcs_virtds_params.py sample script can help generating those metadata
 fields.
 
-Note: this support of tileindex with mixed projections is only available for
-raster layers for now.
+Long ogrtindex example
+----------------------
 
-.. _`gdaltindex`: https://gdal.org/programs/gdaltindex.html
-.. _`ogrtindex`: https://gdal.org/programs/ogrtindex.html
+This example uses TIGER Census data, where the data contains files
+divided up by county. In this example we will show how to display
+all lakes for the state of Minnesota.  The TIGER
+Census data for Minnesota is made up of 85 different counties, each
+containing its own lakes file ('xxxx_areawater.shp').
+
+**Figure 1: County lake files displayed in QGIS**
+
+.. image:: ../images/tileindex-qgis-shps.png
+    :width: 800
+    :height: 433
+    :class: no-scaled-link
+
+Our directory structure looks like the following ('tiger2020' contains
+the 85 shapefiles):
+
+::
+
+  - mainfolder
+     - data
+       - tiger2020
+     - tileindex.map
+       
+1. We need to generate the index file with ogrtindex.  First we will change
+   directory into the *data* folder, so that the index file is generated there,
+   then execute ogrtindex:
+   
+   ::
+   
+     cd data
+     ogrtindex lakes-ogrtindex.shp tiger2020/*.shp
+     
+2. We can now load that new index file *lakes-ogrtindex.shp* into QGIS to 
+   examine it.
+   
+   **Figure 2: Index file created by ogrtindex utility**
+
+   .. image:: ../images/tileindex-qgis-shps-index.png
+       :width: 800   
+       :height: 436
+       :class: no-scaled-link
+       
+   **Figure 3: Attributes of index file created by ogrtindex utility**
+
+   .. image:: ../images/tileindex-qgis-shps-index-attributes.png
+       :width: 595   
+       :height: 567
+       :class: no-scaled-link
+
+.. note::
+    Notice the relative paths in the LOCATION field, which is the default
+    (and recommended) for ogrtindex.   If you need full/absolute paths you 
+    can use the *-write_absolute_path* switch. 
+
+3. A protip is to then run :ref:`shptree` on the ogrtindex file and all
+   of the .shp files used, so MapServer can access them quickly.
+
+   ::
+   
+     cd data
+     #windows command:
+     for /R %f in (*.shp) do shptree %f
+     #unix command:
+     find /path/to/data -name "*.shp" -exec shptree {} \;
+
+   You should now see associated *.qix* files created for each shapefile.
+
+4. The final step is to use this in your mapfile.
+
+   - LAYER object's TILEINDEX - must point to the location of the
+     index file
+   - LAYER object's TILEITEM - specify the name of the field in the
+     index file containing the paths (default is 'location')
+   - do not need to use the LAYER's DATA parameter
+   - the location path inside your tileindex file will be relative to
+     the SHAPEPATH, as shown below:
+
+   For example:
+   
+   .. code-block:: mapfile
+
+        MAP
+          NAME "tileindex-map"
+          STATUS ON
+          SIZE 600 400
+          SYMBOLSET "../etc/symbols.txt"
+          EXTENT -99.99 43.13 -86.70 49.60
+          UNITS DD
+          SHAPEPATH "./data"
+          IMAGECOLOR 255 255 255
+          FONTSET "../etc/fonts.txt"
+          PROJECTION
+            "init=epsg:4269"
+          END # projection 
+
+          /* Lakes: Tiger Census 2020 */
+          LAYER
+            NAME "lakes"
+            TYPE POLYGON
+            STATUS OFF
+            TILEITEM "LOCATION"  
+            TILEINDEX "lakes-ogrtindex.shp"
+            PROJECTION
+              "init=epsg:4269"
+            END # projection 
+            CLASS
+              NAME "Lakes"
+              STYLE
+                COLOR 134 204 249
+              END # style
+            END # class
+          END # layer 
+
+        END # Map File
+        
+5. And of course use :ref:`shp2img` to generate your map image.
+
+   ::
+   
+     shp2img -m tileindex.map -o ttt.png -map_debug 3
+     
+   .. image:: ../images/tileindex-lakes.png
+       :width: 600   
+       :height: 400
+       :class: no-scaled-link
+       
+Long gdaltindex example
+-----------------------
+
+This example uses NAIP ortho imagery, for counties in the 
+state of Minnesota.  The format is MrSID.  Since the data is 
+so large, for this exercise 6 counties were used (so 6 MrSID
+raster files).  An example filename in this case is
+*ortho_xxxx.sid*
+
+**Figure 1: MrSID imagery displayed in QGIS**
+
+.. image:: ../images/tileindex-qgis-mrsid.png
+    :width: 800
+    :height: 433
+    :class: no-scaled-link
+
+Our directory structure looks like the following ('naip2019' contains
+the 6 MrSID images):
+
+::
+
+  - mainfolder
+     - data
+       - naip2019
+     - tileindex.map
+       
+1. We need to generate the index file with gdaltindex.  First we will change
+   directory into the *data* folder, so that the index file is generated there,
+   then execute gdaltindex:
+   
+   ::
+   
+     cd data
+     gdaltindex naip-imagery-gdaltindex.shp naip2019/*.sid
+     
+2. We can now load that new index file *naip-imagery-gdaltindex.shp* into QGIS to 
+   examine it.
+   
+   **Figure 2: Index file created by gdaltindex utility**
+
+   .. image:: ../images/tileindex-qgis-mrsid-index.png
+       :width: 800   
+       :height: 436
+       :class: no-scaled-link
+       
+   **Figure 3: Attributes of index file created by gdaltindex utility**
+
+   .. image:: ../images/tileindex-qgis-mrsid-index-attributes.png
+       :width: 448  
+       :height: 342
+       :class: no-scaled-link
+
+.. note::
+    Notice the relative paths in the LOCATION field, which is the default
+    (and recommended) for gdaltindex.   If you need full/absolute paths you 
+    can use the *-write_absolute_path* switch. 
+
+3. A protip is to then run :ref:`shptree` on the gdaltindex file so 
+   MapServer can access it quickly.
+
+   ::
+   
+     cd data
+     shptree naip-imagery-gdaltindex.shp
+
+   You should now see a *.qix* file created.
+
+4. The final step is to use this in your mapfile.
+
+   - LAYER object's TILEINDEX - must point to the location of the
+     index file
+   - LAYER object's TILEITEM - specify the name of the field in the
+     index file containing the paths (default is 'location')
+   - do not need to use the LAYER's DATA parameter
+   - the location path inside your tileindex file will be relative to
+     the SHAPEPATH, as shown below:
+
+   For example:
+   
+   .. code-block:: mapfile
+
+        MAP
+          NAME "tileindex-map"
+          STATUS ON
+          SIZE 600 400
+          SYMBOLSET "../etc/symbols.txt"
+          EXTENT -99.99 43.13 -86.70 49.60
+          UNITS DD
+          SHAPEPATH "./data"
+          IMAGECOLOR 255 255 255
+          FONTSET "../etc/fonts.txt"
+          PROJECTION
+            "init=epsg:4269"
+          END # projection 
+
+          /* Ortho imagery: NAIP 2019 */
+          LAYER
+            NAME "ortho"
+            TYPE RASTER
+            STATUS ON
+            TILEITEM "LOCATION"  
+            TILEINDEX "naip-imagery-gdaltindex.shp"
+            PROJECTION
+              "init=epsg:26915"
+            END # projection 
+          END # layer
+
+        END # Map File
+        
+5. And of course use :ref:`shp2img` to generate your map image.
+
+   ::
+   
+     shp2img -m tileindex.map -o ttt.png -map_debug 3
+     
+   .. image:: ../images/tileindex-mrsid.png
+       :width: 600   
+       :height: 400
+       :class: no-scaled-link       
