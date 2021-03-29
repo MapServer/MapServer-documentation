@@ -47,22 +47,44 @@ This is the recommended way to secure mapfile access if at all possible.
  
 If set, this environment variable is interpreted as regular expression that is used 
 to test the value of the CGI map parameter. If the value does not match then 
-an error is generated. If defined, the MS_MAP_PATTERN variable will be used to 
-test all CGI map parameter values regardless of source. 
+an error is generated.
 
 Care must be taken to craft regular expressions that limit access to specific, 
 trusted directories and limit path traversal:. See the :ref:`environment_variables` 
-guide for examples. 
+guide for examples.  
 
 .. note:: 
-    Regular expression feature sets can vary by operating system and version.
+    If defined, the MS_MAP_PATTERN variable only applies to mapfiles not 
+    already defined through an environment variable.
  
 Setting Environment Variables
 =============================
 
 Mechanisms to set environment variables vary from web server to web server, but all 
-provide the capability.
+provide the capability. (regular expression feature sets can vary by operating system 
+and version)
 
 - **Apache** - https://httpd.apache.org/docs/current/env.html
+
+  Apache's *SetEnv* directive can be used to restrict mapfiles to a
+  specific directory and subdirectories.
+
+  * *Unix users* may set the following expression in Apache to restrict 
+    mapfiles to the */opt/mapserver* directory and subdirectories:
+
+    ::
+
+      SetEnv MS_MAP_PATTERN "^\/opt\/mapserver\/([^\.][_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(map))$" 
+    
+  * *Windows Apache/MS4W users* can set the following expression in the Apache
+    conf file, to limit the possible MAP= paths to the common 
+    *C:/ms4w/apps/* directory (where all MS4W mapfiles and applications live), 
+    allow encoded urls, allow "." in MAP= paths but disallow ".." 
+    directory traversing:
+
+    ::
+
+      SetEnv MS_MAP_PATTERN "^(C:)?\/ms4w\/apps\/((?!\.{2})[_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(map))$"
+    
 - **Nginx** - http://nginx.org/en/docs/ngx_core_module.html#env
 - **IIS** - https://docs.microsoft.com/en-us/iis/configuration/system.applicationhost/applicationpools/add/environmentvariables/
