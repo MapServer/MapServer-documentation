@@ -1,0 +1,91 @@
+.. index::
+   single: Limit mapfile access
+
+.. _limit_mapfile_access:
+
+***************************************************
+ Limit Mapfile Access
+***************************************************
+
+:Author: Stephen Lime
+:Contact: sdlime at gmail.com
+:Author: Jeff McKenna
+:Contact: jmckenna at gatewaygeomatics.com
+:Last Updated: 2021-03-28
+
+The MapServer CGI, by default, will happily attempt to process any mapfile it is 
+asked to. While this might be desireable in a development environment, it is not 
+acceptable for public-facing installations. MapServer supports the use of specific
+**environment variables**, set at the web server tier, to limit access. Use of 
+these environment variables is not required but is **strongly recommended**. 
+Future versions of MapServer will require use by default.
+
+Relevant environment variable support is available for versions: 5.4.0 and newer, 
+5.2.2, and 4.10.4.
+
+.. note:: 
+    Environment variables are only referenced by the MapServer CGI and are not 
+    used by MapScript in any way.
+
+Key Environment Variables
+=========================
+
+.. seealso:: :ref:`environment_variables`
+.. seealso:: :ref:`rfc56` 
+
+**MS_MAP_NO_PATH**
+
+If set, this environment variable limits values for the CGI map parameter to a 
+currated set of mapfiles explicitly defined by additional environment variables. 
+This is the recommended way to secure mapfile access if at all possible. 
+
+.. note:: 
+   Mapfile-based environment variables (such as *MS_MAPFILE*) can be used without 
+   setting MS_MAP_NO_PATH.
+ 
+**MS_MAP_PATTERN**
+ 
+If set, this environment variable is interpreted as regular expression that is used 
+to test the value of the CGI map parameter. If the value does not match then 
+an error is generated.
+
+Care must be taken to craft regular expressions that limit access to specific, 
+trusted directories and limit path traversal:. See the :ref:`environment_variables` 
+guide for examples.  
+
+.. note:: 
+    If defined, the MS_MAP_PATTERN variable only applies to mapfiles not 
+    already defined through an environment variable.
+ 
+Setting Environment Variables
+=============================
+
+Mechanisms to set environment variables vary from web server to web server, but all 
+provide the capability. (regular expression feature sets can vary by operating system 
+and version)
+
+- **Apache** - https://httpd.apache.org/docs/current/env.html
+
+  Apache's `SetEnv <https://httpd.apache.org/docs/current/mod/mod_env.html#setenv>`__ 
+  directive (available through the *mod_env* module) allows you to set 
+  environment variables in the Apache conf file with a single command:
+
+  * *Unix users* may set the following expression in Apache to restrict 
+    mapfiles to the */opt/mapserver* directory and subdirectories:
+
+    ::
+
+      SetEnv MS_MAP_PATTERN "^\/opt\/mapserver\/([^\.][_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(map))$" 
+    
+  * *Windows Apache/MS4W users* can set the following expression in the Apache
+    conf file, to limit the possible MAP= paths to the common 
+    *C:/ms4w/apps/* directory (where all MS4W mapfiles and applications live), 
+    allow encoded urls, allow "." in MAP= paths but disallow ".." 
+    directory traversing:
+
+    ::
+
+      SetEnv MS_MAP_PATTERN "^(C:)?\/ms4w\/apps\/((?!\.{2})[_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(map))$"
+    
+- **Nginx** - http://nginx.org/en/docs/ngx_core_module.html#env
+- **IIS** - https://docs.microsoft.com/en-us/iis/configuration/system.applicationhost/applicationpools/add/environmentvariables/
