@@ -11,20 +11,21 @@
 :Contact:      david.fawcett at gmail.com
 :Author:       Jeff McKenna
 :Contact:      jmckenna at gatewaygeomatics.com
-:Last Updated: 2021-03-27
+:Last Updated: 2021-03-29
 
 .. contents:: Table of Contents
     :depth: 3
     :backlinks: top
 
 Introduction
-------------
+============
 
 The contents of a .map file ('mapfile') are used by MapServer for configuration, data
 access, projection, and more. Because the mapfile is parsed every time a map
 image is requested, it is important to think about what you include in the
 file in order to optimize performance. The optimal mapfile is one that
-doesn't include or reference anything that isn't needed.
+doesn't include or reference anything that isn't needed.  The following steps will
+help you both manage and optimize your mapfiles.
 
 .. index::
    pair: Optimization; Projections
@@ -34,10 +35,107 @@ doesn't include or reference anything that isn't needed.
    for the *MAP=* call to the MapServer executable, by setting *MS_MAP_PATTERN* or 
    *MS_MAP_NO_PATH* or hiding the *MAP=* parameter on public servers, 
    as recommended in the document :ref:`rfc56`.  All possible
-   environment variables to secure your server are listed in :ref:`environment_variables`.   
+   environment variables to secure your server are listed in :ref:`environment_variables`.
 
-1. Projections
-==============
+Steps to Possibly Review
+========================  
+
+1. Use a MapServer Syntax file for your Favorite Text Editor
+------------------------------------------------------------
+
+Although it's maybe not be classed as an 'optimization', using a syntax 
+file to add color-coding to MapServer mapfile parameters in your text editor,
+can help save you time and make your MapServer-mapfile-management-life
+much easier.  You can find a helpful list of these syntax color-coding tools for
+MapServer listed on the page at :ref:`editing`.
+
+.. image:: ../images/mapfile-color-syntax.png
+    :width: 500    
+    :height: 294
+    :class: no-scaled-link
+
+2. Testing your Mapfile for Speed
+---------------------------------
+
+If optimization and performance are important to you, then get to know and love
+the MapServer commandline utility :ref:`shp2img`. *shp2img* will verify that your 
+mapfile creates a valid map image, but it can also display draw times (length of 
+time it takes MapServer to process each layer and the final map image) with the
+*-map_debug 3* setting:
+
+::
+
+  shp2img -m osm.map -o ttt.png -map_debug 3
+  
+  msDrawMap(): rendering using outputformat named png (AGG/PNG).
+  msDrawMap(): WMS/WFS set-up and query, 0.000s
+  msDrawMap(): Layer 95 (land13), 0.001s
+  msDrawMap(): Layer 96 (landuse13), 0.051s
+  msDrawMap(): Layer 97 (transport_areas13), 0.002s
+  msDrawMap(): Layer 98 (waterarea13), 0.003s
+  msDrawMap(): Layer 99 (waterways13), 0.002s
+  msDrawMap(): Layer 100 (railways13), 0.003s
+  msDrawMap(): Layer 101 (roads13), 0.024s
+  msDrawMap(): Layer 102 (aeroways13), 0.002s
+  msDrawMap(): Layer 103 (buildings13), 0.245s
+  msDrawMap(): Layer 104 (borders13), 0.197s
+  msDrawMap(): Layer 105 (places13), 0.078s
+  msDrawLabelCache(): labelcache_map_edge_buffer = 10
+  msDrawMap(): Drawing Label Cache, 0.020s
+  msDrawMap() total time: 0.772s
+  msSaveImage(ttt.png) total time: 0.056s  
+
+The above example generates a map image in *0.772s*.
+
+Hint: If you want maximum (verbose) messages, try the *-all_debug 5* setting
+instead.
+
+You can also just get draw times for a single layer with the *-l layername* switch,
+such as:
+
+::
+
+  shp2img -m osm.map -o ttt.png -map_debug 3 -l buildings13
+  
+  msDrawMap(): rendering using outputformat named png (AGG/PNG).
+  msDrawMap(): WMS/WFS set-up and query, 0.000s
+  msDrawMap(): Layer 103 (buildings13), 0.119s
+  msDrawLabelCache(): labelcache_map_edge_buffer = 10
+  msDrawMap(): Drawing Label Cache, 0.001s
+  msDrawMap() total time: 0.120s
+  msSaveImage(ttt.png) total time: 0.016s
+  
+
+.. NOTE::
+    :ref:`shp2img` should be included in your
+    MapServer installation (`MS4W <http://www.ms4w.com>`__ users
+    need to execute *setenv.bat* before using the utility).
+    
+3. Use the various CONFIG settings for debugging
+------------------------------------------------
+
+Review the :ref:`debugging` document and try setting the CONFIG parameter
+at the MAP-level in your mapfile, to hopefully get more information 
+from various soruces such as from the PROJ library, GDAL library, etc.
+
+.. code-block:: mapfile
+
+   MAP
+     ...
+     CONFIG "CPL_DEBUG" "ON"
+     CONFIG "PROJ_DEBUG" "ON"
+     ...
+     LAYER
+       ...
+     END
+   END
+   
+.. NOTE::
+   You can set *"CPL_DEBUG" "PROJ"* to restrict the information returned to PROJ
+   (and not GDAL in general)
+
+4. Projections
+--------------
 
 There are two ways to define projections in a mapfile. You can either use
 inline projection parameters or specify an EPSG code for that projection. If
@@ -75,14 +173,67 @@ using EPSG codes in a mapfile.
 
 - Use inline projection parameter definitions in place of EPSG codes.
 
+- It should be stated that for optimal performance you could have MapServer
+  not do any projections on-demand (in other words, have all of your source
+  data in the same projection, and have MapServer output requests in that 
+  same projection) but obviously this is not always possible for all scenarios.
+
 - If you want to use EPSG codes, remove all unneeded projection definition
   records from the PROJ :term:`EPSG` database.
+  
+  .. NOTE::
+       This was a common trick for PROJ versions <6 (and its *epsg* file), 
+       but for PROJ >= 6 a *proj.db* SQLite database is used to store
+       these EPSG lookup codes, and optimizations for that will take some 
+       time to be developed and shared).
   
 .. index::
    pair: Optimization; Layers
 
-2. Layers
-==============
+5. Use INCLUDEs
+---------------
+
+Implemented back in MapServer 4.10, the mapfile :ref:`include` parameter is 
+possibly one of the best ways to help manage your large mapfiles (you might 
+argue that this is not 'optimization' for speed again, but for it is very 
+important for managing large mapfiles with many layers).
+
+Any part of the mapfile can be referenced through an INCLUDE, besides the 
+obvious layers.  
+
+.. NOTE::
+     Common file extensions for includes are: *.lyr*, *.include*, or even *.map* 
+     . You can name them any file extension that you wish.
+     
+You could have something like:
+
+.. code-block:: mapfile
+
+   MAP
+     ...
+     WEB
+       INCLUDE "metadata.include"
+     END
+     ...
+     INCLUDE "elevation.lyr"
+     INCLUDE "country.lyr"
+     INCLUDE "city.lyr"
+     ...
+   END
+   
+Where *metadata.include* could contain:
+
+.. code-block:: mapfile
+
+    METADATA
+      "wms_title"          "WMS Demo Server"  ##required
+      "wms_onlineresource" "http://yourpath/cgi-bin/mapserv.exe?"   ##required
+      "wms_srs"            "EPSG:3857 EPSG:4326 EPSG:4269 EPSG:3978"  ##recommended
+      "wms_enable_request" "*"   ##necessary
+    END
+
+6. Layers
+---------
 
 For every layer in a mapfile that has a status of ON or DEFAULT, MapServer
 will load that layer and prepare it for display, even if that layer never gets
@@ -156,9 +307,71 @@ matched on the first try:
 
 .. index::
    pair: Optimization; Symbols
+   
+7. Yes Data Formats Matter
+--------------------------
 
-3. Symbols
-==============
+This is often not written in documents, yet is often taught in hands-on 
+workshops (as maybe readers or developers can be reading the document here
+and become offended if it differs in their thinking or the purpose of
+their software design, as some formats may be deemed 'uncool' by some crowds, 
+but in reality, we don't care about coolness here, we care about making MapServer 
+fast).  So the following advice is by the authors of this 
+document (disclaimer), and may offend some readers, therefore 'viewer discretion 
+is advised'.
+
+Although MapServer can read any GDAL supported `vector <https://gdal.org/drivers/vector/index.html>`__ 
+or `raster <https://gdal.org/drivers/raster/index.html>`__ source (and the 
+fact that not all users will be setting up tile caching beforehand), the following
+is still recommended for MapServer for optimal performance in terms of data formats.
+
+**Optimization Suggestions**
+
+- The best/optimal data sources for MapServer in terms of speed-of-display
+  is `.shp <https://gdal.org/drivers/vector/shapefile.html#vector-shapefile>`__ 
+  (for vectors) and `GeoTIFF <https://gdal.org/drivers/raster/gtiff.html>`__ 
+  (for rasters).
+- For databases, MapServer displays `PostGIS <https://gdal.org/drivers/vector/pg.html>`__ 
+  layers very fast, and some custom tricks are included in the MapServer source 
+  specifically for PostGIS + MapServer draw speed.  PostGIS is therefore recommended.
+- `SpatiaLite <https://gdal.org/drivers/vector/sqlite.html>`__ is recommended
+  for those who require a portable format, and works very well with MapServer.
+- For whatever formats you choose, definitely review the associated GDAL format 
+  (driver) page for that specific format, and enable indexing (spatial or also attribute
+  indexing).
+- Rasters, and of course GeoTIFFs, should also have overviews included, through the
+  `gdaladdo <https://gdal.org/programs/gdaladdo.html>`__ utility.
+- If you do use .shp files (and many still do) you must always enable fast quadtree
+  index lookups in MapServer through the :ref:`shptree` utility.
+- Wherever possible, making your source dataset as lightweight as possible, will
+  assist MapServer in processing your data (for vectors, this could mean removing
+  unused data fields).
+- As mentioned earlier, if you must display various rasters or vectors as a 'mosaic'
+  together, implement :ref:`tileindex`, to implement the mosaic as a single layer
+  in MapServer.
+- GDAL's virtual format (VRT) is very 
+  powerful also for mosaicing or transforming data on-demand, and has specific VRT
+  driver instructions for `vector <https://gdal.org/drivers/vector/vrt.html>`__
+  and `raster <https://gdal.org/drivers/raster/vrt.html#raster-vrt>`__ .
+- There are times when splitting .shp files (shapefiles) into smaller files, make it
+  more efficient to display in MapServer; the `shp2tile <https://github.com/woodbri/imaptools.com>`__
+  utility is a wonderful commandline tool for this.
+  
+.. NOTE::
+    For Windows users, `MS4W <https://ms4w.com>`__ includes the shp2tile utility, and 
+    all utilities mentioned above.
+
+8. Enable Caching through MapCache
+----------------------------------
+
+If your mapfile serves any OGC-related service (such as WMS, WFS, etc.) you should 
+consider enabling :ref:`MapCache <mapcache>`, an Apache module, for your services. Caching 
+common map results (as an image file, or inside a SQLite db for example) for common
+map extents, will obviously drastically improve speed, and cancel-out any format 
+discussions/benefits/arguments mentioned above.
+
+9. Symbols
+----------
 
 When the mapfile is loaded, each raster symbol listed in the symbols file is
 located on the filesystem and loaded.
@@ -171,8 +384,8 @@ located on the filesystem and loaded.
 .. index::
    pair: Optimization; Fonts
 
-4. Fonts
-==============
+10. Fonts
+---------
 
 To load a font, MapServer opens up a lookup file (often named fonts.list or fonts.txt) 
 :ref:`fontset` which contains an alias for the font and the path for that font file. If you have a
@@ -181,4 +394,32 @@ MapServer to locate and load the font that you need.
 
 **Optimization Suggestions**
 
-- Limit the entries in fonts.list to fonts that you actually use.  
+- Limit the entries in fonts.list to fonts that you actually use. 
+
+11. Use MapScript
+-----------------
+
+MapScript, in your favorite language such as PHP or Python, can be used to manipulate 
+mapfiles on-the-fly.  Some common use cases are:
+
+- adding a layer into an existing mapfile
+- modifying an existing layer
+- generating a new mapfile/service on-demand
+
+The options here are limitless, for what you can do with MapScript.  The full list
+of available parameters and functions (methods) are listed in the :ref:`swig`.
+
+12. Don't expose your MAP path
+------------------------------
+
+This is more obvious if your mapfile serves OGC services, such as set in the 
+*wms_onlineresource* metadata parameter in your WEB object, which by default 
+must contain the *MAP=path/to/your/mapfile*, but exposing paths on your public
+server can open you to possible malicious attacks on your filesystem.  You should 
+take some time to review the possible steps in the document :ref:`limit_mapfile_access`.
+
+At the minimum, you should enable the *MS_MAPFILE* :ref:`environment variable <environment_variables>` 
+so that your CGI mapserv requests, and your onlineresource OGC requests, do not require
+a visible MAP= path.
+
+
