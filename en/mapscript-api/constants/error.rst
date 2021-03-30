@@ -53,8 +53,8 @@
    * .. autodata:: mapscript.MS_JOINERR
         :annotation: 17
 
-   * .. autodata:: mapscript.MS_SHPERR
-        :annotation: 19
+   * .. autodata:: mapscript.MS_NOTFOUND
+        :annotation: 18
 
    * .. autodata:: mapscript.MS_PARSEERR
         :annotation: 20

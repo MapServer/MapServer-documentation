@@ -11,7 +11,7 @@ mapscript.imageObj
    
    .. rubric:: Attributes
 
-Hello57
+Hello63
 
    .. autosummary::
    

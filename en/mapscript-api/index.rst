@@ -8,24 +8,59 @@ MapScript API
 .. autodata:: mapscript.MS_SUCCESS
    :annotation: 1
 
+..
+    Missing items
+
+    DBF field types:
+
+    FTDouble
+    FTInteger
+    FTInvalid
+    FTString
+
+    MESSAGELENGTH
+
+    fromstring
+    inspect
+    intarray
+    intarray_frompointer
+    key
+    shapeObj_fromWKT
+    wkp_gmerc
+    wkp_lonlat
+    wkp_none
+    MapServerChildError
+    MapServerError
+    ROUTINELENGTH
+    SHX_BUFFER_PAGE
+
+    mapscript.msGetErrorObj - doesn't exist? Perl only?
+
 .. rubric:: Classes
 
 .. autosummary::
     :toctree: stub 
     :template: class.rst
     
-    mapscript.cgiRequestObj
+    mapscript.CompositingFilter
+    mapscript.DBFInfo
+    mapscript.LayerCompositer
+    mapscript.MapServerChildError
+    mapscript.MapServerError
+    mapscript.OWSRequest
     mapscript.classObj
     mapscript.clusterObj
     mapscript.colorObj
-    mapscript.DBFInfo
     mapscript.errorObj
+    mapscript.fontSetObj
     mapscript.hashTableObj
     mapscript.imageObj
-    mapscript.labelObj
-    mapscript.labelCacheObj
+    mapscript.intarray
     mapscript.labelCacheMemberObj
+    mapscript.labelCacheObj
     mapscript.labelCacheSlotObj
+    mapscript.labelLeaderObj
+    mapscript.labelObj
     mapscript.layerObj
     mapscript.legendObj
     mapscript.lineObj
@@ -37,8 +72,10 @@ MapScript API
     mapscript.queryMapObj
     mapscript.rectObj
     mapscript.referenceMapObj
-    mapscript.resultObj
     mapscript.resultCacheObj
+    mapscript.resultObj
+    mapscript.scaleTokenEntryObj
+    mapscript.scaleTokenObj
     mapscript.scalebarObj
     mapscript.shapeObj
     mapscript.shapefileObj
@@ -51,22 +88,26 @@ MapScript API
    
 .. autosummary::
 
+    mapscript.msCleanup
     mapscript.msConnPoolCloseUnreferenced
+    mapscript.msFreeImage
     mapscript.msGetErrorObj
     mapscript.msGetErrorString
     mapscript.msGetVersion
     mapscript.msGetVersionInt
-    mapscript.msIO_resetHandlers
-    mapscript.msIO_installStdoutToBuffer
-    mapscript.msIO_installStdinFromBuffer
-    mapscript.msIO_stripStdoutBufferContentType
-    mapscript.msIO_stripStdoutBufferContentHeaders
-    mapscript.msIO_getStdoutBufferString
-    mapscript.msIO_getStdoutBufferBytes
     mapscript.msIO_getAndStripStdoutBufferMimeHeaders
-    mapscript.msIO_getStdoutBufferString
     mapscript.msIO_getStdoutBufferBytes
+    mapscript.msIO_getStdoutBufferString
+    mapscript.msIO_installStdinFromBuffer
+    mapscript.msIO_installStdoutToBuffer
+    mapscript.msIO_resetHandlers
+    mapscript.msIO_stripStdoutBufferContentHeaders
+    mapscript.msIO_stripStdoutBufferContentType
+    mapscript.msLoadMapFromString
     mapscript.msResetErrorList
+    mapscript.msSaveImage
+    mapscript.msSetup
+
 
 ..
     https://github.com/sphinx-doc/sphinx/pull/6423/files - reverted

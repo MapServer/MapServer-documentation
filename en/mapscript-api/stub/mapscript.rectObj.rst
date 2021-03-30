@@ -11,7 +11,7 @@ mapscript.rectObj
    
    .. rubric:: Attributes
 
-Hello57
+Hello63
 
    .. autosummary::
    

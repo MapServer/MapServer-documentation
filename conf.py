@@ -35,11 +35,6 @@ import mapscript
 
 mapscript_docs_root = os.path.abspath("./mapscript")
 mapscript_root = os.path.dirname(mapscript.__file__)
-if not os.path.exists(mapscript_docs_root):
-    shutil.copytree(mapscript_root, mapscript_docs_root)
-
-
-sys.path.insert(0, 'C:/VirtualEnvs/mapscript-docs/Lib/site-packages/mapscript')
 
 #mapscript_source = r"/"
 # If your extensions are in another directory, add it here. If the directory
