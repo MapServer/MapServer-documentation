@@ -4,14 +4,14 @@
 .. _mapfile_tuning:
 
 *****************************************************************************
- Mapfile 
+ Mapfile Tuning & Management
 *****************************************************************************
 
 :Author:       David Fawcett
 :Contact:      david.fawcett at gmail.com
 :Author:       Jeff McKenna
 :Contact:      jmckenna at gatewaygeomatics.com
-:Last Updated: 2021-03-29
+:Last Updated: 2021-03-30
 
 .. contents:: Table of Contents
     :depth: 3
@@ -34,7 +34,7 @@ help you both manage and optimize your mapfiles.
    As you optimize your setup, it is strongly recommended to review the security steps 
    for the *MAP=* call to the MapServer executable, by setting *MS_MAP_PATTERN* or 
    *MS_MAP_NO_PATH* or hiding the *MAP=* parameter on public servers, 
-   as recommended in the document :ref:`rfc56`.  All possible
+   as recommended in the document :ref:`limit_mapfile_access`.  All possible
    environment variables to secure your server are listed in :ref:`environment_variables`.
 
 Steps to Possibly Review
@@ -116,7 +116,7 @@ such as:
 
 Review the :ref:`debugging` document and try setting the CONFIG parameter
 at the MAP-level in your mapfile, to hopefully get more information 
-from various soruces such as from the PROJ library, GDAL library, etc.
+from various sources such as from the PROJ library, GDAL library, etc.
 
 .. code-block:: mapfile
 
@@ -134,7 +134,39 @@ from various soruces such as from the PROJ library, GDAL library, etc.
    You can set *"CPL_DEBUG" "PROJ"* to restrict the information returned to PROJ
    (and not GDAL in general)
 
-4. Projections
+4. Test the full Map Request through the mapserv Executable
+-----------------------------------------------------------
+
+There are times when your mapfile generates a valid map image with a local
+shp2img command, but then the same mapfile will cause an error in a map
+request through the web server, such as Apache.  It is these times when
+you should try the same request, that was sent through your web server, at 
+the commandline with the actual *mapserv* (or on Windows, the *mapserv.exe*) 
+utility.
+
+The following request will take a full *MAP=...&MODE=map* request, and try to save
+the request to an image, or report an error:
+
+::
+
+  mapserv -nh "QUERY_STRING=MAP=/ms4w/apps/local-demo/local.map&MODE=map" > test.png
+  
+You can use this to also test problematic WMS GetMap requests as well:
+
+::
+
+  mapserv -nh "QUERY_STRING=SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&BBOX=41.42710000000000292,-173.4329999999999927,83.74660000000000082,-13.04809999999999981&CRS=EPSG:4326&WIDTH=369&HEIGHT=98&LAYERS=park&STYLES=&FORMAT=image/png&DPI=96&MAP_RESOLUTION=96&FORMAT_OPTIONS=dpi:96&TRANSPARENT=TRUE" > test.png
+  
+.. NOTE::
+   Besides checking your web server logs, you can also use QGIS to get the exact 
+   request to your OWS (WMS/WFS etc.) service: see https://github.com/mapserver/mapserver/wiki/Get-the-Raw-WMS-Request-Generated-by-QGIS
+   
+   .. image:: ../images/qgis-network-logger.png
+    :width: 800    
+    :height: 207
+    :class: no-scaled-link
+  
+5. Projections
 --------------
 
 There are two ways to define projections in a mapfile. You can either use
@@ -190,7 +222,7 @@ using EPSG codes in a mapfile.
 .. index::
    pair: Optimization; Layers
 
-5. Use INCLUDEs
+6. Use INCLUDEs
 ---------------
 
 Implemented back in MapServer 4.10, the mapfile :ref:`include` parameter is 
@@ -232,7 +264,7 @@ Where *metadata.include* could contain:
       "wms_enable_request" "*"   ##necessary
     END
 
-6. Layers
+7. Layers
 ---------
 
 For every layer in a mapfile that has a status of ON or DEFAULT, MapServer
@@ -308,7 +340,7 @@ matched on the first try:
 .. index::
    pair: Optimization; Symbols
    
-7. Yes Data Formats Matter
+8. Yes Data Formats Matter
 --------------------------
 
 This is often not written in documents, yet is often taught in hands-on 
@@ -361,7 +393,7 @@ is still recommended for MapServer for optimal performance in terms of data form
     For Windows users, `MS4W <https://ms4w.com>`__ includes the shp2tile utility, and 
     all utilities mentioned above.
 
-8. Enable Caching through MapCache
+9. Enable Caching through MapCache
 ----------------------------------
 
 If your mapfile serves any OGC-related service (such as WMS, WFS, etc.) you should 
@@ -370,8 +402,8 @@ common map results (as an image file, or inside a SQLite db for example) for com
 map extents, will obviously drastically improve speed, and cancel-out any format 
 discussions/benefits/arguments mentioned above.
 
-9. Symbols
-----------
+10. Symbols
+-----------
 
 When the mapfile is loaded, each raster symbol listed in the symbols file is
 located on the filesystem and loaded.
@@ -384,7 +416,7 @@ located on the filesystem and loaded.
 .. index::
    pair: Optimization; Fonts
 
-10. Fonts
+11. Fonts
 ---------
 
 To load a font, MapServer opens up a lookup file (often named fonts.list or fonts.txt) 
@@ -396,7 +428,7 @@ MapServer to locate and load the font that you need.
 
 - Limit the entries in fonts.list to fonts that you actually use. 
 
-11. Use MapScript
+12. Use MapScript
 -----------------
 
 MapScript, in your favorite language such as PHP or Python, can be used to manipulate 
@@ -409,7 +441,7 @@ mapfiles on-the-fly.  Some common use cases are:
 The options here are limitless, for what you can do with MapScript.  The full list
 of available parameters and functions (methods) are listed in the :ref:`swig`.
 
-12. Don't expose your MAP path
+13. Don't expose your MAP path
 ------------------------------
 
 This is more obvious if your mapfile serves OGC services, such as set in the 
@@ -420,6 +452,8 @@ take some time to review the possible steps in the document :ref:`limit_mapfile_
 
 At the minimum, you should enable the *MS_MAPFILE* :ref:`environment variable <environment_variables>` 
 so that your CGI mapserv requests, and your onlineresource OGC requests, do not require
-a visible MAP= path.
+a visible MAP= path.  The WMS Server document has several :ref:`examples <online_resource_wms>` 
+of how to enable these environment variables. 
+
 
 
