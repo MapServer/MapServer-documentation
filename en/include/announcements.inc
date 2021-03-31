@@ -1,3 +1,10 @@
+.. warning::
+    **2021-03-30 - Security Advisory – Limiting Mapfile Access**
+
+    It is important to limit MapServer CGI access to mapfiles, to 
+    prevent malicious attacks to your file system.  Please see details 
+    in the announcement at :ref:`2021-03-30-limit-mapfile-access`.
+
 **2020-12-07 - MapServer 7.6.2 is released**
 
 The maintenance release of MapServer 7.6.2 is now available.
