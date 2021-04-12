@@ -4,25 +4,50 @@
 .. _raster_optimization:
 
 *****************************************************************************
- Raster
+ Raster Management & Optimization
 *****************************************************************************
 
-:Author:        HostGIS 
-:Last Updated: 2008/08/08
+:Author: Jeff McKenna
+:Contact: jmckenna at gatewaygeomatics.com
+:Original Author: HostGIS
+:Last Updated: 2021-04-12
 
 .. contents:: Table of Contents
-    :depth: 2
+    :depth: 3
     :backlinks: top
+    
+.. seealso::
+    :ref:`raster`
 
+Choose the right raster format for your needs
+---------------------------------------------
+
+The best/optimal data sources for MapServer in terms of speed-of-display
+is `GeoTIFF <https://gdal.org/drivers/raster/gtiff.html>`__ for rasters.
+
+Here are some other points to consider:
+
+- The GeoTIFF image format is the fastest to "decipher", but once you get beyond a
+  certain point, the disk reading (since GeoTIFF is very large) may become slow
+  enough to make it worthwhile to consider other image formats.
+
+- For GeoTIFFs larger than 1 GB, ECW images tend to render faster than GeoTIFFs, since
+  decompressing the data (CPU and RAM) is faster than reading the uncompressed
+  data (disk). The downside is that ECW is not open-source, and the licensing is
+  often prohibitive.  MrSID is another compressed image format that can be used.
+
+- JPEG2000 is a very slow image format, as is JPEG.
 
 
 Overviews
 ---------
-TIFF supports the creation of "overviews" within the file, which is basically a
+
+GeoTIFF supports the creation of "overviews" within the file, which is basically a
 downsampled version of the raster data suitable for use at lower resolutions.
-Use the "gdaladdo" program to add overviews to a TIFF, and MapServer (via GDAL)
+Use the `gdaladdo <https://gdal.org/programs/gdaladdo.html>`__ program to add overviews 
+to a GeoTIFF, and MapServer (via GDAL)
 will automagically choose which downsampled layer to use. Note that overviews
-significantly increase the disk space required by a TIFF, and in some cases the
+significantly increase the disk space required by a GeoTIFF, and in some cases the
 extra disk reading may offset the performance gained by MapServer not having to
 resample the image. You'll just have to try it for yourself and see how it
 works.
@@ -32,6 +57,7 @@ works.
 
 Tileindexes and Internal Tiling
 -------------------------------
+
 Tiling is mostly effective for cases where one commonly requests only a very
 small area of the image. 
 
@@ -52,20 +78,11 @@ TILED=YES" to gdal_translate, e.g.:
     
 .. index::
    pair: Optimization; Image formats
+   
+Handling your raster LAYERS in the mapfile
+------------------------------------------
 
-Image formats
--------------
-
-The TIFF image format is the fastest to "decipher", but once you get beyond a
-certain point, the disk reading (since TIFF is very large) may become slow
-enough to make it worthwhile to consider other image formats.
-
-For TIFFs larger than 1 GB, ECW images tend to render faster than TIFFs, since
-decompressing the data (CPU and RAM) is faster than reading the uncompressed
-data (disk). The downside is that ECW is not open-source, and the licensing is
-often prohibitive.
-
-JPEG2000 is a very slow image format, as is JPEG.
+Please review the notes in the document :ref:`mapfile_tuning`.   
 
 Remote WMS
 ----------
@@ -80,8 +97,4 @@ states to orient the user. You could then have the WMS layer come on at a
 certain scale, or have the layer always available but turned off so the user
 can choose when to turn it on.
 
-.. seealso::
-    :ref:`raster`
-
-.. #### rST Link Section ####
 
