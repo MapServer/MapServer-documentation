@@ -4,25 +4,179 @@
 .. _raster_optimization:
 
 *****************************************************************************
- Raster
+ Raster Management & Optimization
 *****************************************************************************
 
-:Author:        HostGIS 
-:Last Updated: 2008/08/08
+:Author: Jeff McKenna
+:Contact: jmckenna at gatewaygeomatics.com
+:Original Author: HostGIS
+:Last Updated: 2021-04-13
 
 .. contents:: Table of Contents
-    :depth: 2
+    :depth: 3
     :backlinks: top
+    
+.. seealso::
+    :ref:`raster`
 
+Choose the right raster format for your needs
+---------------------------------------------
 
+The best/optimal data sources for MapServer in terms of speed-of-display
+is `GeoTIFF <https://gdal.org/drivers/raster/gtiff.html>`__ for rasters.
+
+Here are some other points to consider:
+
+- The GeoTIFF image format is the fastest to "decipher", but once you get beyond a
+  certain point, the disk reading may become slow
+  enough to make it worthwhile to consider other image formats.
+
+- For GeoTIFFs larger than 1 GB, ECW images tend to render faster than GeoTIFFs, since
+  decompressing the data (CPU and RAM) is faster than reading the uncompressed
+  data (disk). The downside is that ECW is not open-source, and the licensing is
+  often prohibitive.  `MrSID <https://gdal.org/drivers/raster/mrsid.html#raster-mrsid>`__ 
+  is another compressed image format that can be used.
+
+- JPEG2000 is a very slow image format, as is JPEG.
+
+Spend time to review GDAL's associated driver page for your chosen format
+-------------------------------------------------------------------------
+
+This is a critical step, as MapServer relies on GDAL for raster data access.  
+Each driver (GDAL format) has its own set of abilities and switches. Find 
+your raster format and review its options 
+`here <https://gdal.org/drivers/raster/index.html>`__.
+
+Connect to your data through GDAL
+---------------------------------
+
+For data management in MapServer, this should always be one of your first steps.
+Sometimes desktop GIS programs will display a format in a certain 
+way but your data might not display in MapServer; checking
+how GDAL reads your raster file, will help you manage and understand 
+the data.  Here is an example using *gdalinfo* to read and return 
+various important metadata regarding a specific raster, in this case a
+MrSID raster: ::
+
+  gdalinfo ortho_1-1_hc_s_mn163_2019_1.sid
+  
+        Driver: MrSID/Multi-resolution Seamless Image Database (MrSID)
+        Files: ortho_1-1_hc_s_mn163_2019_1.sid
+               ortho_1-1_hc_s_mn163_2019_1.sid.aux.xml
+        Size is 50249, 116781
+        Coordinate System is:
+        PROJCS["NAD83 / UTM zone 15N",
+            GEOGCS["NAD83",
+                DATUM["North_American_Datum_1983",
+                    SPHEROID["GRS 1980",6378137,298.257222101,
+                        AUTHORITY["EPSG","7019"]],
+                    TOWGS84[0,0,0,0,0,0,0],
+                    AUTHORITY["EPSG","6269"]],
+                PRIMEM["Greenwich",0,
+                    AUTHORITY["EPSG","8901"]],
+                UNIT["degree",0.0174532925199433,
+                    AUTHORITY["EPSG","9122"]],
+                AUTHORITY["EPSG","4269"]],
+            PROJECTION["Transverse_Mercator"],
+            PARAMETER["latitude_of_origin",0],
+            PARAMETER["central_meridian",-93],
+            PARAMETER["scale_factor",0.9996],
+            PARAMETER["false_easting",500000],
+            PARAMETER["false_northing",0],
+            UNIT["metre",1,
+                AUTHORITY["EPSG","9001"]],
+            AXIS["Easting",EAST],
+            AXIS["Northing",NORTH],
+            AUTHORITY["EPSG","26915"]]
+        Origin = (494792.400000000023283,5018068.799999999813735)
+        Pixel Size = (0.600000000000000,-0.600000000000000)
+        Metadata:
+          GEOTIFF_CHAR__GeogAngularUnitsGeoKey=Angular_Degree
+          GEOTIFF_CHAR__GTModelTypeGeoKey=ModelTypeProjected
+          GEOTIFF_CHAR__GTRasterTypeGeoKey=RasterPixelIsArea
+          GEOTIFF_CHAR__ProjectedCSTypeGeoKey=PCS_NAD83_UTM_zone_15N
+          GEOTIFF_CHAR__ProjLinearUnitsGeoKey=Linear_Meter
+          GEOTIFF_NUM__1024__GTModelTypeGeoKey=1
+          GEOTIFF_NUM__1025__GTRasterTypeGeoKey=1
+          GEOTIFF_NUM__1026__GTCitationGeoKey=NAD83 / UTM zone 15N
+          GEOTIFF_NUM__2049__GeogCitationGeoKey=NAD83
+          GEOTIFF_NUM__2054__GeogAngularUnitsGeoKey=9102
+          GEOTIFF_NUM__2062__GeogTOWGS84GeoKey=0.000000,0.000000,0.000000
+          GEOTIFF_NUM__3072__ProjectedCSTypeGeoKey=26915
+          GEOTIFF_NUM__3076__ProjLinearUnitsGeoKey=9001
+          IMAGE__ENCODING_APPLICATION=GeoExpress 10.0.1.5035
+          IMAGE__FORMAT=MrSID/MG3
+          IMAGE__INPUT_FILE_SIZE=30104685840.000000
+          IMAGE__INPUT_FORMAT=GeoTIFF
+          IMAGE__LTI_ESDK_VERSION=9.5.4.5035.Bob_5011_br win64-vc15/Release_md
+
+          IMAGE__MODIFICATIONS=COMPRESSED CROPPED EMBEDDED REORDERED-BANDS MOSAICKED REPROJECTED
+          IMAGE__PRINT_DENSITY_UNIT=in
+          IMAGE__PRINT_X_DENSITY=200.000000
+          IMAGE__PRINT_Y_DENSITY=200.000000
+          VERSION=MG3
+        Image Structure Metadata:
+          INTERLEAVE=PIXEL
+        Corner Coordinates:
+        Upper Left  (  494792.400, 5018068.800) ( 93d 3'59.18"W, 45d18'57.98"N)
+        Lower Left  (  494792.400, 4948000.200) ( 93d 3'56.57"W, 44d41' 7.27"N)
+        Upper Right (  524941.800, 5018068.800) ( 92d40'54.44"W, 45d18'56.45"N)
+        Lower Right (  524941.800, 4948000.200) ( 92d41' 6.94"W, 44d41' 5.78"N)
+        Center      (  509867.100, 4983034.500) ( 92d52'29.30"W, 45d 0' 2.48"N)
+        Band 1 Block=1024x128 Type=Byte, ColorInterp=Red
+          Min=0.000 Max=228.000
+          Minimum=0.000, Maximum=228.000, Mean=86.853, StdDev=53.485
+          Overviews: 25125x58391, 12563x29196, 6282x14598, 3141x7299, 1571x3650, 786x1825, 393x913, 197x457, 99x229, 50x115, 25x58, 13x29, 7x15, 4x8
+          Metadata:
+            STATISTICS_APPROXIMATE=YES
+            STATISTICS_MAXIMUM=228
+            STATISTICS_MEAN=86.853391304348
+            STATISTICS_MINIMUM=0
+            STATISTICS_STDDEV=53.485489960597
+            STATISTICS_VALID_PERCENT=100
+        Band 2 Block=1024x128 Type=Byte, ColorInterp=Green
+          Min=0.000 Max=224.000
+          Minimum=0.000, Maximum=224.000, Mean=81.011, StdDev=45.552
+          Overviews: 25125x58391, 12563x29196, 6282x14598, 3141x7299, 1571x3650, 786x1825, 393x913, 197x457, 99x229, 50x115, 25x58, 13x29, 7x15, 4x8
+          Metadata:
+            STATISTICS_APPROXIMATE=YES
+            STATISTICS_MAXIMUM=224
+            STATISTICS_MEAN=81.010782608696
+            STATISTICS_MINIMUM=0
+            STATISTICS_STDDEV=45.552372785005
+            STATISTICS_VALID_PERCENT=100
+        Band 3 Block=1024x128 Type=Byte, ColorInterp=Blue
+          Min=0.000 Max=211.000
+          Minimum=0.000, Maximum=211.000, Mean=90.109, StdDev=48.708
+          Overviews: 25125x58391, 12563x29196, 6282x14598, 3141x7299, 1571x3650, 786x1825, 393x913, 197x457, 99x229, 50x115, 25x58, 13x29, 7x15, 4x8
+          Metadata:
+            STATISTICS_APPROXIMATE=YES
+            STATISTICS_MAXIMUM=211
+            STATISTICS_MEAN=90.109217391304
+            STATISTICS_MINIMUM=0
+            STATISTICS_STDDEV=48.70795205406
+            STATISTICS_VALID_PERCENT=100
+            
+.. NOTE::
+    You can use the extent values returned from gdalinfo (using Lower Left and
+    Upper Right values) to paste into your
+    mapfile's EXTENT parameter.  You can also notice in that summary
+    the *PROJCS/AUTHORITY* line, which states that this data is currently
+    in the `EPSG:26915 <http://epsg.io/26915>`__ projection. 
+
+.. NOTE::
+    For Windows users, `MS4W <https://ms4w.com>`__ includes the gdalinfo utility, 
+    and all utilities mentioned here.    
 
 Overviews
 ---------
-TIFF supports the creation of "overviews" within the file, which is basically a
+
+GeoTIFF supports the creation of "overviews" within the file, which is basically a
 downsampled version of the raster data suitable for use at lower resolutions.
-Use the "gdaladdo" program to add overviews to a TIFF, and MapServer (via GDAL)
+Use the `gdaladdo <https://gdal.org/programs/gdaladdo.html>`__ program to add overviews 
+to a GeoTIFF, and MapServer (via GDAL)
 will automagically choose which downsampled layer to use. Note that overviews
-significantly increase the disk space required by a TIFF, and in some cases the
+significantly increase the disk space required by a GeoTIFF, and in some cases the
 extra disk reading may offset the performance gained by MapServer not having to
 resample the image. You'll just have to try it for yourself and see how it
 works.
@@ -32,14 +186,15 @@ works.
 
 Tileindexes and Internal Tiling
 -------------------------------
+
 Tiling is mostly effective for cases where one commonly requests only a very
 small area of the image. 
 
 A tileindex is how one creates an on-the-fly mosaic from many rasters. This is
-described in the :ref:`tileindex`. That document describes common cases where
-a tileindex makes sense. In particular, if you have a very large raster and
-most requests are for a very small spatial area within it, you may want t
-consider slicing it and tileindexing it.
+described in the :ref:`tileindex` MapServer document. That document describes 
+common cases where a tileindex makes sense. In particular, if you have a very 
+large raster and most requests are for a very small spatial area within it, 
+you may want to consider slicing it and tileindexing it.
 
 As an alternative to slicing and mosaicing, TIFFs do support a concept of
 internal tiling. Like a tileindex, this is mostly effective when the requests
@@ -52,36 +207,40 @@ TILED=YES" to gdal_translate, e.g.:
     
 .. index::
    pair: Optimization; Image formats
+   
+Learn & Review the various GDAL utilities to manage your rasters
+----------------------------------------------------------------
 
-Image formats
--------------
+GDAL raster commandline utilities are very powerful, and the more processing 
+that you can do offline, the faster and easier it will be for MapServer 
+to display your raster.  For example, you might need a colorful 'shaded relief' 
+from a raw DEM raster, in which case you could use the 
+`gdaldemo <https://gdal.org/programs/gdaldem.html>`__ utility, and then 
+point your MapServer layer to that shaded relief raster.  Or you might 
+want to reproject all of your rasters to the desired output/display projection 
+beforehand, by using the `gdalwarp <https://gdal.org/programs/gdalwarp.html#gdalwarp>`__ 
+utility.  Review all of the available GDAL raster utilities 
+`here <https://gdal.org/programs/index.html#raster-programs>`__.
+   
+Handling your raster LAYERS in the mapfile
+------------------------------------------
 
-The TIFF image format is the fastest to "decipher", but once you get beyond a
-certain point, the disk reading (since TIFF is very large) may become slow
-enough to make it worthwhile to consider other image formats.
-
-For TIFFs larger than 1 GB, ECW images tend to render faster than TIFFs, since
-decompressing the data (CPU and RAM) is faster than reading the uncompressed
-data (disk). The downside is that ECW is not open-source, and the licensing is
-often prohibitive.
-
-JPEG2000 is a very slow image format, as is JPEG.
+Please review the notes in the document :ref:`mapfile_tuning`.   
 
 Remote WMS
 ----------
 
-Remote WMS servers are often slow, especially the public ones such as
-TerraServer or NASA's Landsat server. There's nothing you can do about that,
-except to reconsider when the remote WMS layer should be used.
+Some remote WMS/OGC services (as WMS actually returns an image from 
+a request sent to a remote server) can be slow or unreliable. Optionally
+you can use a monitoring service, such as 
+`GeoHealthCheck <https://demo.geohealthcheck.org/resources?lang=en&resource_type=OGC%3AWMS>`__, 
+to keep track of the service's reliability for you.
 
-For example, there may be a different WMS server (or a different set of
-imagery, or even vector outline maps) suitable for drawing the countries or
-states to orient the user. You could then have the WMS layer come on at a
-certain scale, or have the layer always available but turned off so the user
-can choose when to turn it on.
+You can also consider when the remote WMS layer or remote service 
+should be used.  For example, there may be a different WMS server 
+(or a different set of imagery, or even vector outline maps) suitable 
+for drawing the countries or states to orient the user. You could then 
+have the WMS layer come on at a certain scale, or have the layer always 
+available but turned off so the user can choose when to turn it on.
 
-.. seealso::
-    :ref:`raster`
-
-.. #### rST Link Section ####
 
