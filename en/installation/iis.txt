@@ -1,11 +1,11 @@
 .. _iis:
 
-IIS Setup for MapServer
-=======================
+Running MapServer on IIS
+========================
 
 :Author: Seth Girvin
 :Contact: sgirvin at compass.ie
-:Last Updated: 2017-06-26
+:Last Updated: 2021-04-22
 
 .. contents::
    :local:
@@ -13,10 +13,10 @@ IIS Setup for MapServer
 .. index:: IIS
 
 This document details how to configure a pre-built version of MapServer to run on IIS (Microsoft's web server - Internet Information Services). 
-These steps have a minimum requirement of IIS 7 and Windows 7, and should work for all release since up to IIS 10 and Windows 10. 
+These steps have a minimum requirement of IIS 7 and Windows 7, and have been tested on IIS 10 running on Windows 10.
 
 MapServer can also be run on Windows using `MS4W <http://www.ms4w.com>`_ (MapServer for Windows) - which installs its 
-own preconfigured Apache web server, and other related tools such as PHP, TinyOWS, and MapCache (which doesn't currently run under IIS). 
+own preconfigured Apache web server, and other related tools such as PHP, TinyOWS, and MapCache. 
 Running MapServer under IIS may be necessary when deploying to servers where the installation of an additional web server is restricted, or where 
 system administrators have more experience maintaining IIS. 
 
@@ -26,34 +26,34 @@ system administrators have more experience maintaining IIS.
         information see the section in MS4W's `README <https://ms4w.com/README_INSTALL.html#installing-the-ms4w-mapserver-binaries-in-other-environments>`__, 
         or ask the MS4W community for assistance (`subscribe <https://lists.ms4w.com/mailman/listinfo/ms4w-users>`_).
 
-MapServer Setup
----------------
+MapServer Set-up
+----------------
 
-Precompiled versions of MapServer and GDAL (a required dependency) can be downloaded from http://www.gisinternals.com/release.php.
+Pre-compiled versions of MapServer and GDAL (a required dependency) can be downloaded from http://www.gisinternals.com/release.php.
 These downloads are built and maintained by Tamas Szekeres a long term contributor to MapServer, and Project Steering 
 Committee (PSC) member.
 
 .. note:: 
 
-	Which version should I download?
-	
-	+ Unless you are using deprecated features in your Mapfiles you should download the latest stable release. 
-	+ Nearly all servers will now have a x64 (64-bit) architecture, so unless you are restricted to a win32 (32-bit) server
-	  download a x64 release. 
-	+ Unless you have a good reason you should use the latest compiler version. MSVC 2013 means the binaries were compiled with
-	  using Visual C++ 2013. If you rely on Python2 Mapscript you will need to use the MSVC 2008 version so that it matches the version Python2 was compiled with. 
-	+ This installation guide uses the *"Compiled binaries in a single .zip package"* download (release-1800-x64-gdal-2-1-3-mapserver-7-0-4). There is 
-	  also a *"MapServer installer with IIS registration support"* option but at the time of writing this did not install successfully. 
-   
+    Which version should I download?
+    
+    + Unless you are using deprecated features in your Mapfiles you should download the latest stable release. 
+    + Nearly all servers will now have a x64 (64-bit) architecture, so unless you are restricted to a win32 (32-bit) server
+      download a x64 rather than a win32 release. 
+    + Unless you have a good reason you should use the latest compiler version. MSVC 2017 means the binaries were compiled with
+      using Visual C++ 2017. 
+    + This installation guide uses the *"Compiled binaries in a single .zip package"* download (release-1911-x64-gdal-3-2-1-mapserver-7-6-2.zip). There is 
+      also a *"MapServer installer with IIS registration support"* option, which has an inbuilt installer.
+
 Once you have downloaded the zip file follow the steps below. 
 
-#. Unzip the folder to your machine. In this example we will assume it has been unzipped to `C:\MapServer`. 
-   Make sure that have "unblocked" the zip, to avoid and security related issues later. Right-click on the zip file,
+#. Unzip the folder to your machine. In this example we will assume it has been unzipped to ``C:\MapServer``. 
+   Make sure that you have "unblocked" the zip, to avoid and security related issues later. Right-click on the zip file,
    select properties and click the "Unblock" button on the General tab. 
-   
-   .. image:: ../images/unblock_zip.png
-   
-#. Test that MapServer is working by double clicking `C:\MapServer\SDKShell.bat` to start a new Windows command 
+
+   .. image:: ../images/iis-unblock-zip.png
+
+#. Test that MapServer is working by double clicking ``C:\MapServer\SDKShell.bat`` to start a new Windows command 
    session configured with MapServer environment settings, and then type:
 
    .. code-block:: bat
@@ -65,9 +65,22 @@ Once you have downloaded the zip file follow the steps below.
 Configuring with IIS
 --------------------
 
-These steps assume IIS 7 or higher is installed on the development machine, and MapServer will use the default website
-location at `C:\Inetpub\wwwroot`. All command line steps should be "Run as Administrator" (to select this option this right-click on the Windows command line icon). 
-Make sure IIS is on the machine - if you have a folder named `C:\Inetpub` then it is likely IIS is already installed. 
+These steps assume IIS 7 or higher is installed on the development machine, and MapServer is using the default website
+location of ``C:\Inetpub\wwwroot``. MapServer is installed as a :ref:`fastcgi` application, which improves performance by allowing 
+MapServer to share objects such as database connections between requests. 
+
+All command line steps should be "Run as Administrator" (to select this option this right-click on the 
+Windows command line icon). 
+Make sure IIS is on the machine - if you have a folder named ``C:\Inetpub`` then it is likely IIS is already installed. 
+
+You can install IIS (for Windows 10) from the command line with:
+
+   .. sourcecode:: bat
+
+    dism /online /enable-feature /featurename:IIS-WebServer
+
+More details on setting up a FastCGI application with IIS can be found in the 
+`Microsoft FastCGI documentation <https://docs.microsoft.com/en-us/iis/configuration/system.webserver/fastcgi/application/>`_.
 
 #. First copy the required .exes into the same folder as the MapServer DLLs. This can be done using the command below:
 
@@ -75,22 +88,29 @@ Make sure IIS is on the machine - if you have a folder named `C:\Inetpub` then i
 
         xcopy C:\MapServer\bin\ms\apps\* C:\MapServer\bin
 
-#. Create a new folder `C:\Inetpub\wwwroot\mapserver`
+#. Create a new folder ``C:\Inetpub\wwwroot\mapserver``
 
    .. code-block:: bat
 
         md C:\Inetpub\wwwroot\mapserver
 
-#. Create a new, empty `C:\Inetpub\wwwroot\mapserver\web.config` file:
+#. Create a new, empty ``C:\Inetpub\wwwroot\mapserver\web.config`` file, and open it (as an administrator) in Notepad:
+
+   .. code-block:: bat
+
+        copy NUL C:\Inetpub\wwwroot\mapserver\web.config
+        notepad C:\Inetpub\wwwroot\mapserver\web.config
+
 #. Paste in the following configuration:
 
    .. code-block:: xml
-   
+
         <?xml version="1.0" encoding="UTF-8"?>
         <configuration>
             <system.webServer>
                 <handlers>
-                    <add name="MapServerFastCgi" path="*" verb="*" type="" modules="FastCgiModule" scriptProcessor="C:\Mapserver\bin\mapserv.exe" resourceType="Unspecified" requireAccess="Script" allowPathInfo="false" preCondition=""  />
+                    <add name="MapServerFastCgi" path="*" verb="*" type="" modules="FastCgiModule" scriptProcessor="C:\Mapserver\bin\mapserv.exe" 
+                    resourceType="Unspecified" requireAccess="Script" allowPathInfo="false" preCondition=""  />
                 </handlers>
                 <caching enabled="true" enableKernelCache="true" />
             </system.webServer>
@@ -102,14 +122,20 @@ Make sure IIS is on the machine - if you have a folder named `C:\Inetpub` then i
 
         "%systemroot%\system32\inetsrv\appcmd" add app /site.name:"Default Web Site" /path:/mapserver /physicalPath:"C:\Inetpub\wwwroot\mapserver"
 
-#. Next make sure the required ISAPI and CGI modules are installed in IIS with the following command:
+#. Allow request handlers to be set in the web.config file (above), rather than just at the web site level. 
 
    .. code-block:: bat
 
-        start /w pkgmgr /iu:IIS-CGI;IIS-ISAPIExtensions;IIS-ISAPIFilter;
+        %windir%\system32\inetsrv\appcmd.exe unlock config -section:system.webServer/handlers
 
-   .. note:: You can enable IIS modules through the user interface as follows:
-     
+#. Next make sure the required IIS CGI module (which includes FastCGI) is installed in IIS with the following command:
+
+   .. code-block:: bat
+
+        Dism /Online /Enable-Feature /FeatureName:IIS-CGI
+
+   .. note:: You can also enable IIS modules through the user interface as follows:
+
      #. Click "Start button"
      #. In the Search box, enter "Turn windows features on or off"
      #. In the Features window, Click: "Internet Information Services"
@@ -127,7 +153,11 @@ Make sure IIS is on the machine - if you have a folder named `C:\Inetpub` then i
         "%systemroot%\system32\inetsrv\appcmd" set config -section:system.webServer/fastCgi /+"[fullPath='C:\Mapserver\bin\mapserv.exe']" /commit:apphost
         "%systemroot%\system32\inetsrv\appcmd" set config /section:isapiCgiRestriction /+"[path='C:\MapServer\bin\mapserv.exe',description='MapServer',allowed='True']"
 
-#. Test the setup was successful by entering the following URL in a browser: http://localhost/mapserver/. If the following text is displayed then MapServer has 
+   These settings can also be viewed and configured using IIS Manager:
+
+   .. image:: ../images/iis-cgi-settings.png
+
+#. Test the set-up was successful by entering the following URL in a browser: http://localhost/mapserver/. If the following text is displayed then MapServer has 
    been successfully configured as a FastCGI application in IIS. 
    
    .. code-block:: bat
@@ -138,7 +168,7 @@ Setting up Applications
 -----------------------
 
 MapServer applications consist of a Mapfile, and additional optional files for data, symbols, logs, and images. The same instance of MapServer
-can be used to serve many applications. In this example we will create a new `test` subfolder for a test application in a `C:\MapServer\apps` folder. 
+can be used to serve many applications. In this example we will create a new ``test`` subfolder for a test application in a ``C:\MapServer\apps`` folder. 
 
 .. code-block:: bat
 
@@ -146,12 +176,17 @@ can be used to serve many applications. In this example we will create a new `te
     
 Now create a new `test.map` file in this folder and paste in the test Mapfile below. 
 
+.. code-block:: bat
+
+    copy NUL C:\MapServer\apps\test\test.map
+    notepad C:\MapServer\apps\test\test.map
+
 .. code-block:: mapfile
 
     MAP
         EXTENT -180 -90 180 90
         # Set the path to where the map projections are stored
-        CONFIG "PROJ_LIB" "C:\MapServer\bin\proj\SHARE"    
+        CONFIG "PROJ_LIB" "C:\MapServer\bin\proj\SHARE"
         NAME "TestMap"
         WEB
           METADATA
@@ -164,62 +199,153 @@ Now create a new `test.map` file in this folder and paste in the test Mapfile be
         LAYER
           NAME "country_bounds"
           TYPE RASTER
-          CONNECTION "https://demo.mapserver.org/cgi-bin/wms?"
+          CONNECTION "http://demo.mapserver.org/cgi-bin/wms?"
           CONNECTIONTYPE WMS
           METADATA
-            "wms_srs"             "EPSG:4326"
+            "wms_srs"             "epsg:4326"
             "wms_name"            "country_bounds"
             "wms_server_version"  "1.1.1"
-            "wms_format"          "image/gif"
+            "wms_format"          "image/png"
           END
         END
     END
     
 You should now be able to test the application is accessible through IIS using the following URL to retrieve an image via WMS: 
 http://localhost/mapserver/mapserv?map=C:/MapServer/apps/test/test.map&SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=country_bounds&STYLES=&CRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=400&HEIGHT=300&FORMAT=image/png
-    
+
+.. image:: ../images/iis-working.png
+
 Setting up Logging
 ------------------
 
-You can setup MapServer logging by adding the following lines to your `MAP` block.
+You can set-up MapServer logging by adding the following lines to your ``MAP`` block.
 
 .. code-block:: mapfile
 
     DEBUG 5 # a value from 0 (OFF) to 5 (detailed)
     CONFIG "MS_ERRORFILE" "logs\ms.log"
 
-The path to the log file is relative to the Mapfile, so in this example you need to create a new `C:\MapServer\apps\test\logs` folder:
+The path to the log file is relative to the Mapfile, so in this example you need to create a new ``C:\MapServer\apps\test\logs`` folder:
 
 .. code-block:: bat
 
     md C:\MapServer\apps\test\logs
    
-You will then need to set read-write permissions on the log file to the IIS application pool user (in this example we are using the default `IIS AppPool\DefaultAppPool` account
-that the MapServer FastCGI runs under):
+You may need to set read-write permissions on the log file to the IIS application pool user (in this example we are using the default `IIS AppPool\DefaultAppPool` account
+under which the MapServer FastCGI runs). In IIS10 the "Authenticated Users" group normally has Modify access to all folders on the C drive, so this step may
+not be necessary. 
 
 .. code-block:: bat
 
     icacls "C:\MapServer\apps\test\logs" /grant "IIS AppPool\DefaultAppPool":(OI)(CI)RW
-    
+
 If a different application pool is used, or you don't set the permissions you will receive the following message 
-(also check that the `C:\MapServer\apps\test\logs` folder exists as it will not be created automatically). 
-    
+(also check that the ``C:\MapServer\apps\test\logs`` folder exists as it will not be created automatically). 
+
 .. code-block:: bat
-   
-    msSetErrorFile(): General error message. Failed to open MS_ERRORFILE C:/MapServer/apps/test/logs/ms.log    
+
+    msSetErrorFile(): General error message. Failed to open MS_ERRORFILE C:/MapServer/apps/test/logs/ms.log
+
+Further Configuration
+---------------------
+
+MapServer makes use of :ref:`environment_variables` to create application-wide settings. When using IIS these need to be set
+as FastCGI environment settings, rather than standard system-wide environment variables. Each FastCGI application can be configured
+with different environment variables and can be modified by IIS Manager, or using the command line.
+
+.. image:: ../images/iis-environ-settings.png
+
+FastCGI configurations are stored in ``C:\Windows\System32\inetsrv\config\applicationHost.config`` in the format below:
+
+  .. code-block:: xml
+
+      <environmentVariables>
+         <environmentVariable name="CURL_CA_BUNDLE" value="C:\MapServer\bin\curl\curl-ca-bundle.crt" />
+      </environmentVariables>
+
+Setting a Default Mapfile
++++++++++++++++++++++++++
+
+The ``MS_MAPFILE`` environment variable can be set to a default map as follows:
+
+  .. code-block:: bat
+
+    %windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='C:\Mapserver\bin\mapserv.exe'].environmentVariables.[name='MS_MAPFILE',value='C:\MapServer\apps\test\test.map']" /commit:apphost
+
+You can make then make a request without the query string requiring ``map=C:/MapServer/apps/test/test.map``: http://localhost/mapserver/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=country_bounds&STYLES=&CRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=400&HEIGHT=300&FORMAT=image/png
+
+In addition to this method the `URL Rewrite module <https://www.iis.net/downloads/microsoft/url-rewrite>`_ 
+can be used to set different Mapfiles dependent on query string parameters or domain names. 
+
+Setting a Certificates File
++++++++++++++++++++++++++++
+
+To access remote data sources via HTTPS (for example when cascading a WMS), you may need to point to a 
+certificates file. This can be set using the ``CURL_CA_BUNDLE`` environment variable:
+
+.. code-block:: bat
+
+  %windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='C:\Mapserver\bin\mapserv.exe'].environmentVariables.[name='CURL_CA_BUNDLE',value='C:\MapServer\bin\curl\curl-ca-bundle.crt']" /commit:apphost
+
+See :ref:`wxs_secure` for further details.
+
+Securing MapServer in IIS
+--------------------------
+
+MapServer has two environment variables that can be used to restrict which Mapfiles can be accessed. 
+
+``MS_MAP_NO_PATH`` can be used to ensure that users can't provide their own ``map=`` parameter to the query string. This can
+be set to any value ("True" in this example) so that only the ``MS_MAPFILE`` environment value can be used (see "Setting a Default Mapfile" above). 
+
+.. code-block:: bat
+
+  %windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='C:\Mapserver\bin\mapserv.exe'].environmentVariables.[name='MS_MAP_NO_PATH',value='True']" /commit:apphost
+
+``MS_MAP_PATTERN`` can be set to limit the folders from which Mapfiles can be accessed using a regular expression. For example to limit
+to the ``C:\MapServer\apps\test`` folder use the following regular expression: ``"^^(C:)?\/MapServer\/apps\/test\/((?!\.{2})[_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(map))$"``
+
+.. code-block:: bat
+
+  %windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='C:\Mapserver\bin\mapserv.exe'].environmentVariables.[name='MS_MAP_PATTERN',value='"^(C:)?\/MapServer\/apps\/test\/((?!\.{2})[_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(map))$"']" /commit:apphost
+
+In addition to these methods IIS itself can be used to block or filter query string parameters. The 
+`denyQueryStringSequences <https://docs.microsoft.com/en-us/iis/configuration/system.webserver/security/requestfiltering/denyquerystringsequences/>`_ 
+element can be set to block a Mapfile being set by a URL. Both `map=` and the encoded `map%3d` are blocked. 
+
+
+.. code-block:: xml
+
+    <?xml version="1.0" encoding="UTF-8"?>
+    <configuration>
+        <system.webServer>
+            <security>
+                <requestFiltering>
+                    <denyQueryStringSequences>
+                         <add sequence="map=" /> <!-- will return HTTP Error 404.18 - Not Found -->
+                     </denyQueryStringSequences>
+                </requestFiltering>
+            </security>
+            <handlers>
+                <add name="MapServerFastCgi" path="*" verb="*" type="" modules="FastCgiModule" scriptProcessor="C:\Mapserver\bin\mapserv.exe" resourceType="Unspecified" requireAccess="Script" allowPathInfo="false" preCondition="" responseBufferLimit="4194304" />
+            </handlers>
+            <httpErrors errorMode="Detailed" />
+        </system.webServer>
+    </configuration>
 
 Troubleshooting
 ---------------
 
+Common error messages and how to resolve them are listed below. 
+
 + Check that the file exists if you receive the following error. If it does exist then check the file permissions. 
 
   .. code-block:: bat
-   
+
     msLoadMap(): Unable to access file. (C:/MapServer/apps/test/test.map)
-     
-+ MapServer projections are stored in `C:\MapServer\bin\proj\SHARE`. When the projection is specified in the following form `"init=epsg:3857"`, MapServer
-  will try to find this code in the `epsg` file, where it is listed as `<3857> +proj=merc +a=6378137...`. If you receive the error below then
-  make sure the `CONFIG "PROJ_LIB" "C:\MapServer\bin\proj\SHARE"` setting is pointing to the correct path. 
+
++ MapServer projections are stored in ``C:\MapServer\bin\proj\SHARE`` (or ``C:\MapServer\bin\proj6\SHARE`` when using PROJ 6). When the projection is specified 
+  in the following form `"init=epsg:3857"`, MapServer will try to find this code in the `epsg` file, where it is listed as `<3857> +proj=merc +a=6378137...`. 
+  If you receive the error below then make sure the ``CONFIG "PROJ_LIB" "C:\MapServer\bin\proj\SHARE"`` setting is pointing to the correct path. 
   *Note on one installation this message was shown as forward slashes rather than backslashes were used.*
 
   .. code-block:: bat
@@ -239,20 +365,21 @@ Troubleshooting
     overrideMode="Deny" or the legacy allowOverride="false". 
 
   Run the following in a command window (with administrator permissions). This enables the handlers section in the /mapserver/web.config
-  file to override the ones set at the machine level. See http://stackoverflow.com/questions/9794985/iis-this-configuration-section-cannot-be-used-at-this-path-configuration-lock
+  file to override the ones set at the machine level. 
+  See http://stackoverflow.com/questions/9794985/iis-this-configuration-section-cannot-be-used-at-this-path-configuration-lock
 
   .. code-block:: bat
 
     %windir%\system32\inetsrv\appcmd.exe unlock config -section:system.webServer/handlers
 
-+ Check `C:\MapServer\bin\mapserv.exe` exists if you encounter the error below. 
++ Check ``C:\MapServer\bin\mapserv.exe`` exists if you encounter the error below. 
 
   .. code-block:: bat
 
     HTTP Error 500.0 - Internal Server Error
     The FastCGI executable could not be found
 
-+ To view the CGI applications registered with IIS you can use the command below (this reads the `C:\Windows\System32\inetsrv\config`):
++ To view the CGI applications registered with IIS you can use the command below (this reads the ``C:\Windows\System32\inetsrv\config``):
 
   .. code-block:: bat
 
