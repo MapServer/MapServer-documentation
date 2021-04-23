@@ -1,8 +1,6 @@
 {{ fullname | escape | underline}}
 
-.. currentmodule:: {{ module }}
-
-.. autoclass:: {{ objname }}
+.. autoclass:: {{ module }}.{{ objname }}
 
    .. include:: ../includes/{{ objname }}.rst
 
@@ -10,20 +8,16 @@
    {% if attributes %}
    .. rubric:: {{ _('Attributes') }}
 
-Hello63
-
    .. autosummary::
    {% for item in attributes %}
-      ~{{ name }}.{{ item }}
+      {{ item }}
    {%- endfor %}
    {% endif %}
    {% endblock %}
-   
+
    {% block methods %}
-   
    {% if methods %}
    .. rubric:: {{ _('Methods') }}
-   
    {% for item in methods %}
    .. automethod:: {{ name }}.{{ item }}
    {%- endfor %}

@@ -33,10 +33,6 @@ sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 import mapscript
 
-mapscript_docs_root = os.path.abspath("./mapscript")
-mapscript_root = os.path.dirname(mapscript.__file__)
-
-#mapscript_source = r"/"
 # If your extensions are in another directory, add it here. If the directory
 # is relative to the documentation root, use os.path.abspath to make it
 # absolute, like shown here.
@@ -59,10 +55,10 @@ autodoc_default_options = {
 
 autoclass_content = 'class'
 add_module_names = False # does not seem to have an effect
-
+#nitpick_ignore = [('py:obj', 'mapscript')]
 # Add any paths that contain templates here, relative to this directory.
 
-templates_path = ['_templates', r'D:\GitHub\docs\en\mapscript-api\templates'] # D:\GitHub\docs\en\mapscript-api\templates
+templates_path = ['_templates', 'mapscript-api/templates'] # en is automatically added
 
 # The suffix of source filenames.
 

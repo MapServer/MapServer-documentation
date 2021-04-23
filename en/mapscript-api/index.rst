@@ -1,10 +1,12 @@
 MapScript API
 =============
 
-Test
+Test2
+
+.. currentmodule:: mapscript
+
 ..
     .. py:currentmodule:: mapscript
-
 
 .. autodata:: mapscript.MS_SUCCESS
    :annotation: 1
@@ -40,56 +42,56 @@ Test
 .. rubric:: Classes
 
 .. autosummary::
-    :toctree: stub 
+    :toctree: stub
     :template: class.rst
     
-    mapscript.CompositingFilter
-    mapscript.DBFInfo
-    mapscript.LayerCompositer
-    mapscript.MapServerChildError
-    mapscript.MapServerError
-    mapscript.OWSRequest
-    mapscript.classObj
-    mapscript.clusterObj
-    mapscript.colorObj
-    mapscript.errorObj
-    mapscript.fontSetObj
-    mapscript.hashTableObj
-    mapscript.imageObj
-    mapscript.intarray
-    mapscript.labelCacheMemberObj
-    mapscript.labelCacheObj
-    mapscript.labelCacheSlotObj
-    mapscript.labelLeaderObj
-    mapscript.labelObj
-    mapscript.layerObj
-    mapscript.legendObj
-    mapscript.lineObj
-    mapscript.mapObj
-    mapscript.markerCacheMemberObj
-    mapscript.outputFormatObj
-    mapscript.pointObj
-    mapscript.projectionObj
-    mapscript.queryMapObj
-    mapscript.rectObj
-    mapscript.referenceMapObj
-    mapscript.resultCacheObj
-    mapscript.resultObj
-    mapscript.scaleTokenEntryObj
-    mapscript.scaleTokenObj
-    mapscript.scalebarObj
-    mapscript.shapeObj
-    mapscript.shapefileObj
-    mapscript.styleObj
-    mapscript.symbolObj
-    mapscript.symbolSetObj
-    mapscript.webObj
+    CompositingFilter
+    DBFInfo
+    LayerCompositer
+    MapServerChildError
+    MapServerError
+    OWSRequest
+    classObj
+    clusterObj
+    colorObj
+    errorObj
+    fontSetObj
+    hashTableObj
+    imageObj
+    intarray
+    labelCacheMemberObj
+    labelCacheObj
+    labelCacheSlotObj
+    labelLeaderObj
+    labelObj
+    layerObj
+    legendObj
+    lineObj
+    mapObj
+    markerCacheMemberObj
+    outputFormatObj
+    pointObj
+    projectionObj
+    queryMapObj
+    rectObj
+    referenceMapObj
+    resultCacheObj
+    resultObj
+    scaleTokenEntryObj
+    scaleTokenObj
+    scalebarObj
+    shapeObj
+    shapefileObj
+    styleObj
+    symbolObj
+    symbolSetObj
+    webObj
 
 .. rubric:: MapScript Functions
-   
+
 .. autosummary::
 
-    mapscript.msCleanup
+    ~msCleanup
     mapscript.msConnPoolCloseUnreferenced
     mapscript.msFreeImage
     mapscript.msGetErrorObj
