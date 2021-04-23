@@ -1,6 +1,7 @@
 MapScript API
 =============
 
+
 ..
     .. py:currentmodule:: mapscript
 
