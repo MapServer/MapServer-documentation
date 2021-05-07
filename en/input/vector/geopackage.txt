@@ -1,0 +1,182 @@
+.. _geopackage:
+
+.. index::
+   single: GeoPackage
+
+*****************************************************************************
+GeoPackage
+*****************************************************************************
+
+:Author:       Jeff McKenna
+:Contact:      jmckenna at gatewaygeomatics.com
+:Last Updated: 2021-05-06
+
+GeoPackage, also written as "GPKG", is a standards-based wrapper for the 
+file-based SQLite database.  GPKG is an encoding standard adopted by the Open 
+Geospatial Consortium back in 2014, and has since gained popularity for 
+distributing both vector & raster data, inside one compact file. 
+
+.. image:: ../../images/gpkg.png
+ :width: 200   
+ :height: 150
+ :class: no-scaled-link
+
+More Information
+----------------
+
+More information about GPKG is available at:
+
+* Official page: http://www.geopackage.org/
+* OGC's GeoPackage Encoding Standard: https://www.ogc.org/standards/geopackage
+
+File listing
+--------------
+
+Similar to other database formats, the *.gpkg* file consists of
+several tables.  The geometry is held in a BLOB table column.
+
+.. note::
+
+    Windows users who want to follow along, can convert `MS4W <https://ms4w.com>`__'s 
+    included *demo.db* SpatiaLite database into a GPKG file (for the *countries* 
+    table) with the command (executed inside */ms4w/apps/local-demo/data/*) : ::
+    
+      ogr2ogr -f GPKG countries.gpkg demo.db countries
+
+Data Access / Connection Method
+---------------------------------
+
+GPKG access is available in MapServer through OGR's `GPKG driver <https://gdal.org/drivers/vector/gpkg.html>`__.  
+It is recommended to use GDAL/OGR version 2.2 or later for GPKG access.
+
+OGR uses the names of spatial tables within the GPKG database
+(tables with a geometry column that are registered in the
+geometry_columns table) as layers.
+
+The CONNECTION parameter must include the *.gpkg* extension, and the
+DATA parameter should be the name of the spatial table (or OGR layer).
+
+.. code-block:: mapfile
+
+  CONNECTIONTYPE OGR
+  CONNECTION "name.gpkg"
+  DATA "layername"
+  
+.. tip::
+
+    The MapServer 7.4.x series contained a few critical fixes for GPKG 
+    access, therefore at the minimum, at least MapServer 7.6.0 is 
+    recommended.    
+    
+Step 1: Use ogrinfo to examine
+------------------------------
+
+First you should make sure that your local GDAL/OGR build contains both the
+"GPKG" driver & the "SQLite / Spatialite" driver, by using the 
+*--formats* command:
+
+::
+
+  >ogrinfo --formats
+  
+     Supported Formats:
+          ...
+          GPKG -raster,vector- (rw+vs): GeoPackage
+          SQLite -vector- (rw+v): SQLite / Spatialite
+          ...
+
+Once you have confirmed that you have the GPKG driver you are ready
+to try an ogrinfo command on your database to get a list of spatial
+tables:
+
+::
+
+  >ogrinfo countries.gpkg
+  
+    INFO: Open of `countries.gpkg'
+          using driver `GPKG' successful.
+    1: countries (Multi Polygon)
+
+Now use ogrinfo to get information on the structure of the spatial
+'countries' table:
+
+::
+
+  >ogrinfo countries.gpkg countries -summary
+  
+        INFO: Open of `countries.gpkg'
+              using driver `GPKG' successful.
+
+        Layer name: countries
+        Geometry: Multi Polygon
+        Feature Count: 177
+        Extent: (-180.000000, -90.000000) - (180.000000, 83.645130)
+        Layer SRS WKT:
+        GEOGCS["WGS 84",
+            DATUM["WGS_1984",
+                SPHEROID["WGS 84",6378137,298.257223563,
+                    AUTHORITY["EPSG","7030"]],
+                AUTHORITY["EPSG","6326"]],
+            PRIMEM["Greenwich",0,
+                AUTHORITY["EPSG","8901"]],
+            UNIT["degree",0.0174532925199433,
+                AUTHORITY["EPSG","9122"]],
+            AUTHORITY["EPSG","4326"]]
+        FID Column = ogc_fid
+        Geometry Column = GEOMETRY
+        featurecla: String (0.0)
+        scalerank: Integer (0.0)
+        labelrank: Integer (0.0)
+        sovereignt: String (0.0)
+        sov_a3: String (0.0)
+        adm0_dif: Integer (0.0)
+        ...
+
+
+Step 2: Add the layer in your mapfile
+-------------------------------------
+
+For OGR connections, it is always recommended to set CONNECTIONTYPE,
+CONNECTION, and DATA, as follows:
+
+.. code-block:: mapfile
+
+    /* Countries */
+    LAYER
+      NAME "countries"
+      TYPE POLYGON
+      STATUS ON
+      CONNECTIONTYPE OGR
+      CONNECTION "countries.gpkg"
+      DATA "countries"            # the OGR layername, found through ogrinfo
+      CLASS
+        NAME "World Countries"
+        STYLE
+          COLOR 200 200 200
+          OUTLINECOLOR 0 0 0
+          WIDTH 0.1
+        END #style 
+      END #class
+    END #layer
+     
+Step 3: Test your Mapfile with shp2img
+--------------------------------------
+
+Use the MapServer commandline utility :ref:`shp2img` to verify that your 
+mapfile creates a valid map image, and also display draw times, such as:
+
+::
+
+  shp2img -m geopackage.map -o ttt.png -map_debug 3
+  
+  msDrawMap(): rendering using outputformat named png (AGG/PNG).
+  msDrawMap(): WMS/WFS set-up and query, 0.000s
+  msDrawMap(): Layer 0 (countries), 0.078s
+  msDrawMap(): Drawing Label Cache, 0.000s
+  msDrawMap() total time: 0.079s
+  msSaveImage(ttt.png) total time: 0.008s
+  
+.. image:: ../../images/countries-shp2img.png
+ :width: 600   
+ :height: 400
+ :class: no-scaled-link
