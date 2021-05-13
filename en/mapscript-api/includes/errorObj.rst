@@ -3,4 +3,4 @@
 Error Return Codes
 ------------------
 
-.. include:: ../constants/errors.rst
+.. include:: ../constants/error.rst

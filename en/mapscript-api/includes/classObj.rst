@@ -12,11 +12,11 @@ The classObj has the following relationships:
 
 .. rubric:: Examples
 
-Have some Python code here.
+Class creation:
 
-.. literalinclude:: /../mapscript/tests/class_test.py
+.. literalinclude:: /mapscript-api/mapscript/tests/class_test.py
     :language: python
-    :dedent: 4
-    :start-after: def testGetSetKeyImage(self):
-    :end-before: assert c.keyimage == fn
+    :dedent: 8
+    :start-after: def testConstructorWithArg(self):
+    :end-before: def 
 

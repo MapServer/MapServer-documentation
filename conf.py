@@ -114,10 +114,10 @@ show_authors = True
 pygments_style = 'sphinx'
 
 # Exclude git directories
-exclude_patterns = ['.git', 'howto', 'redirection', 'users-manual']
+exclude_patterns = ['.git', 'howto', 'redirection', 'users-manual', 'mapscript-api/constants']
 
 # check for broken reference targets
-nitpicky = True
+nitpicky = False
 
 # Options for HTML output
 # -----------------------
@@ -547,6 +547,11 @@ def setup(app):
     app.add_lexer('mapfile', MapFileLexer)
     app.connect('autodoc-before-process-signature', convert_mapscript_annotations)    
     app.connect('autodoc-process-docstring', add_property_annotations)  
+
+    dst_folder =  "./en/mapscript-api/mapscript"
+    if os.path.exists(dst_folder) == False:
+        os.symlink(os.path.dirname(mapscript.__file__), dst_folder)
+
 # avoid warnings of "nonlocal image URI found" (this parameter requires Sphinx >=1.4)
 suppress_warnings = ['image.nonlocal_uri']
 

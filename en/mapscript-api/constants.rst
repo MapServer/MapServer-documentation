@@ -4,5 +4,5 @@ MapScript Constants
 Position Enumerations
 ---------------------
 
-.. include:: constants/positions.rst
+.. include:: constants/position.rst
 
