@@ -1,4 +1,4 @@
-{{ fullname | escape | underline}}
+{{ fullname | escape | underline(line='-')}}
 
 .. autoclass:: {{ module }}.{{ objname }}
 

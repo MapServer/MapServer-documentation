@@ -54,8 +54,9 @@ autodoc_default_options = {
 }
 
 autoclass_content = 'class'
-add_module_names = False # does not seem to have an effect
-#nitpick_ignore = [('py:obj', 'mapscript')]
+#nitpick_ignore = [('py:obj', 'mapscript.webObj.validation')]
+nitpick_ignore_regex = [('py:obj', 'mapscript.*')] # New in Sphinx version 4.1
+
 # Add any paths that contain templates here, relative to this directory.
 
 templates_path = ['_templates', 'mapscript-api/templates'] # en is automatically added
@@ -76,6 +77,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'MapServer'
+
 copyright = u'2021, Open Source Geospatial Foundation'
 
 # The version info for the project you're documenting, acts as replacement for
@@ -114,7 +116,7 @@ show_authors = True
 pygments_style = 'sphinx'
 
 # Exclude git directories
-exclude_patterns = ['.git', 'howto', 'redirection', 'users-manual', 'mapscript-api/constants']
+exclude_patterns = ['.git', 'howto', 'redirection', 'users-manual', 'mapscript-api/constants', 'mapscript-api/mapscript']
 
 # check for broken reference targets
 nitpicky = False
@@ -545,8 +547,8 @@ def setup(app):
     lexers['wkt'] = WKTLexer()
     lexers['mapfile'] = MapFileLexer()
     app.add_lexer('mapfile', MapFileLexer)
-    app.connect('autodoc-before-process-signature', convert_mapscript_annotations)    
-    app.connect('autodoc-process-docstring', add_property_annotations)  
+    app.connect('autodoc-before-process-signature', convert_mapscript_annotations)
+    app.connect('autodoc-process-docstring', add_property_annotations)
 
     dst_folder =  "./en/mapscript-api/mapscript"
     if os.path.exists(dst_folder) == False:
@@ -554,4 +556,3 @@ def setup(app):
 
 # avoid warnings of "nonlocal image URI found" (this parameter requires Sphinx >=1.4)
 suppress_warnings = ['image.nonlocal_uri']
-

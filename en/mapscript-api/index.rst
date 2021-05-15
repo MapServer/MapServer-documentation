@@ -1,50 +1,15 @@
 MapScript API
 =============
 
-Test2
-
 .. currentmodule:: mapscript
 
-..
-    .. py:currentmodule:: mapscript
-
-.. autodata:: mapscript.MS_SUCCESS
-   :annotation: 1
-
-..
-    Missing items
-
-    DBF field types:
-
-    FTDouble
-    FTInteger
-    FTInvalid
-    FTString
-
-    MESSAGELENGTH
-
-    fromstring
-    inspect
-    intarray
-    intarray_frompointer
-    key
-    shapeObj_fromWKT
-    wkp_gmerc
-    wkp_lonlat
-    wkp_none
-    MapServerChildError
-    MapServerError
-    ROUTINELENGTH
-    SHX_BUFFER_PAGE
-
-    mapscript.msGetErrorObj - doesn't exist? Perl only?
-
-.. rubric:: Classes
+MapScript Classes
+-----------------
 
 .. autosummary::
     :toctree: stub
     :template: class.rst
-    
+
     CompositingFilter
     DBFInfo
     LayerCompositer
@@ -87,29 +52,30 @@ Test2
     symbolSetObj
     webObj
 
-.. rubric:: MapScript Functions
+MapScript Functions
+-------------------
 
 .. autosummary::
 
     ~msCleanup
-    mapscript.msConnPoolCloseUnreferenced
-    mapscript.msFreeImage
-    mapscript.msGetErrorObj
-    mapscript.msGetErrorString
-    mapscript.msGetVersion
-    mapscript.msGetVersionInt
-    mapscript.msIO_getAndStripStdoutBufferMimeHeaders
-    mapscript.msIO_getStdoutBufferBytes
-    mapscript.msIO_getStdoutBufferString
-    mapscript.msIO_installStdinFromBuffer
-    mapscript.msIO_installStdoutToBuffer
-    mapscript.msIO_resetHandlers
-    mapscript.msIO_stripStdoutBufferContentHeaders
-    mapscript.msIO_stripStdoutBufferContentType
-    mapscript.msLoadMapFromString
-    mapscript.msResetErrorList
-    mapscript.msSaveImage
-    mapscript.msSetup
+    msConnPoolCloseUnreferenced
+    msFreeImage
+    msGetErrorObj
+    msGetErrorString
+    msGetVersion
+    msGetVersionInt
+    msIO_getAndStripStdoutBufferMimeHeaders
+    msIO_getStdoutBufferBytes
+    msIO_getStdoutBufferString
+    msIO_installStdinFromBuffer
+    msIO_installStdoutToBuffer
+    msIO_resetHandlers
+    msIO_stripStdoutBufferContentHeaders
+    msIO_stripStdoutBufferContentType
+    msLoadMapFromString
+    msResetErrorList
+    msSaveImage
+    msSetup
 
 
 ..
@@ -121,3 +87,8 @@ Test2
        :members:
        :undoc-members:
        :ignore-module-all:
+
+MapScript Constants
+-------------------
+
+.. include:: constants/index.rst
