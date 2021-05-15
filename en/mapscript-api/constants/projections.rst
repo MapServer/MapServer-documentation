@@ -1,3 +1,5 @@
+Projections
++++++++++++
 
 .. hlist::
    :columns: 3

@@ -1,3 +1,5 @@
+Connection
+++++++++++
 
 .. hlist::
    :columns: 3
@@ -52,3 +54,6 @@
 
    * .. autodata:: mapscript.MS_KERNELDENSITY
         :annotation: 17
+
+   * .. autodata:: mapscript.MS_IDW
+        :annotation: 18

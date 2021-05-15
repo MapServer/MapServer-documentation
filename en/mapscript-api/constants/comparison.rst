@@ -1,3 +1,5 @@
+Comparison
+++++++++++
 
 .. hlist::
    :columns: 3

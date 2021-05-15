@@ -1,3 +1,5 @@
+Querymode
++++++++++
 
 .. hlist::
    :columns: 3

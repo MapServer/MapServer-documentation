@@ -1,3 +1,5 @@
+Parse
++++++
 
 .. hlist::
    :columns: 3
@@ -10,3 +12,6 @@
 
    * .. autodata:: mapscript.MS_PARSE_TYPE_SHAPE
         :annotation: 2
+
+   * .. autodata:: mapscript.MS_PARSE_TYPE_SLD
+        :annotation: 3

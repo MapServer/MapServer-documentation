@@ -1,3 +1,5 @@
+Labelbinding
+++++++++++++
 
 .. hlist::
    :columns: 3
@@ -29,5 +31,14 @@
    * .. autodata:: mapscript.MS_LABEL_BINDING_SHADOWSIZEY
         :annotation: 8
 
-   * .. autodata:: mapscript.MS_LABEL_BINDING_LENGTH
+   * .. autodata:: mapscript.MS_LABEL_BINDING_OFFSET_X
         :annotation: 9
+
+   * .. autodata:: mapscript.MS_LABEL_BINDING_OFFSET_Y
+        :annotation: 10
+
+   * .. autodata:: mapscript.MS_LABEL_BINDING_ALIGN
+        :annotation: 11
+
+   * .. autodata:: mapscript.MS_LABEL_BINDING_LENGTH
+        :annotation: 12

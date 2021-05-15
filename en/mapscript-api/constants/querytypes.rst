@@ -1,3 +1,5 @@
+Querytypes
+++++++++++
 
 .. hlist::
    :columns: 3
