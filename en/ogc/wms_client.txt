@@ -9,7 +9,7 @@
 
 :Author: Jeff McKenna
 :Contact: jmckenna at gatewaygeomatics.com
-:Last Updated: 2020-06-09
+:Last Updated: 2021-05-17
 
 .. contents:: Table of Contents
     :depth: 4
@@ -40,8 +40,9 @@ WMS-Related Information
 -----------------------
 
 - :ref:`MapServer WMS Server HowTo <wms_server>`
-- `WMS 1.1.1 specification`_
 - `WMS 1.3.0 specification`_
+- `WMS 1.1.1 specification`_
+- OGC's `WMS homepage <https://www.ogc.org/standards/wms>`__
 - `MapServer OGC Web Services Workshop package`_ 
 
 Compilation / Installation
@@ -97,40 +98,6 @@ Example 2. Mapserv Version Info on Windows:
    SUPPORTS=THREADS SUPPORTS=GEOS SUPPORTS=POINT_Z_M SUPPORTS=PBF 
    INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE 
  
-Install Optional PROJ EPSG Codes
----------------------------------
-
-(Note: installing these PROJ codes is optional, install only if you need them)
-
-Some Canadian WMS servers will use some non-standard projection codes not included 
-in the default distribution (e.g. EPSG:42304, etc.). If you are planning to use 
-MapServer to connect to Canadian WMS servers then you might want to `download a custom 
-Canadian epsg file`_ with those codes, and unzip it in the /usr/local/share/proj 
-directory (or /ms4w/proj/nad/ for MS4W users).
-
-.. note::
-
-   The non-standard projection codes for Canadian WMS servers are no longer needed,
-   because in year 2009 the custom 42304 projection was submitted to the EPSG Registry, to
-   create the official `EPSG:3978 <https://epsg.io/3978>`__, which is now widely distributed 
-   and served as the default Canada Atlas projection. (42304 should no longer be referenced)
-
-Finally, ESRI WMS servers also come with their own series of non-standard codes. If you 
-are planning to connect to ESRI WMS servers then you might want to get a custom epsg file 
-that contains the canadian codes and the ESRI codes, allowing you to connect to any server. 
-Download the `custom ESRI epsg file`_  and unzip it in /usr/local/share/proj (or 
-/ms4w/proj/nad/ for MS4W users).  
-
-:Q: But why not always install and distribute the proj4-epsg-with-42xxx-and-esri.zip file 
-    then since it's more complete?
-
-:A: You should install only the epsg projection codes that you need, the epsg file with all 
-    ESRI codes in it is 20% larger than the default one, so it comes with extra overhead 
-    that you may not need. Also note that when creating WMS servers, in order to be really 
-    interoperable, only EPSG codes that are part of the standard EPSG list should be used. 
-    i.e. it is a bad idea for interoperability to use the custom canadian codes or the custom 
-    ESRI codes and we do not want to promote their use too much. 
-
 .. index:: 
    pair: WMS Client; Mapfile
 
@@ -140,7 +107,7 @@ MapFile Configuration
 
 .. note::
 
-    A PROJECTION must be set in the mapfile for the MAP unless you are sure that all your 
+    A :ref:`projection` must be set in the mapfile for the MAP unless you are sure that all your 
     WMS layers support only a single projection which is the same as the PROJECTION of the map. 
     The MAP PROJECTION can be set using "init=epsg:xxxx" codes or using regular PROJ parameters. 
     Failure to set a MAP PROJECTION may result in blank maps coming from remote WMS servers 
@@ -149,8 +116,8 @@ MapFile Configuration
 Storing Temporary Files
 -----------------------
 
-Before version 6.0, and in version 6.0 when `wms_cache_to_disk` metadata is turned on, 
-you have to set the `IMAGEPATH` value in the `WEB` object of your mapfile to point to a valid and 
+Since MapServer version 6.0 when `wms_cache_to_disk` metadata is turned on (and for MapServer 
+< 6.0), you have to set the `IMAGEPATH` value in the `WEB` object of your mapfile to point to a valid and 
 writable directory. MapServer will use this directory to store temporary files downloaded from 
 the remote servers. The temporary files are automatically deleted by MapServer so you won't 
 notice them.
