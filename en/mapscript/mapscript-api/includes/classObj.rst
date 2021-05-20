@@ -14,7 +14,7 @@ The classObj has the following relationships:
 
 Class creation:
 
-.. literalinclude:: /mapscript-api/mapscript/tests/class_test.py
+.. literalinclude:: /mapscript/mapscript-api/mapscript/tests/class_test.py
     :language: python
     :dedent: 8
     :start-after: def testConstructorWithArg(self):
