@@ -59,7 +59,7 @@ nitpick_ignore_regex = [('py:obj', 'mapscript.*')] # New in Sphinx version 4.1
 
 # Add any paths that contain templates here, relative to this directory.
 
-templates_path = ['_templates', 'mapscript-api/templates'] # en is automatically added
+templates_path = ['_templates', 'mapscript/mapscript-api/templates'] # en is automatically added
 
 # The suffix of source filenames.
 
@@ -116,7 +116,7 @@ show_authors = True
 pygments_style = 'sphinx'
 
 # Exclude git directories
-exclude_patterns = ['.git', 'howto', 'redirection', 'users-manual', 'mapscript-api/constants', 'mapscript-api/mapscript']
+exclude_patterns = ['.git', 'howto', 'redirection', 'users-manual', 'mapscript/mapscript-api/constants', 'mapscript/mapscript-api/mapscript']
 
 # check for broken reference targets
 nitpicky = False
@@ -550,7 +550,7 @@ def setup(app):
     app.connect('autodoc-before-process-signature', convert_mapscript_annotations)
     app.connect('autodoc-process-docstring', add_property_annotations)
 
-    dst_folder =  "./en/mapscript-api/mapscript"
+    dst_folder =  "./en/mapscript/mapscript-api/mapscript"
     if os.path.exists(dst_folder) == False:
         os.symlink(os.path.dirname(mapscript.__file__), dst_folder)
 
