@@ -1,5 +1,7 @@
-Querytype
-+++++++++
+.. _mapfile-constants-querytype:
+
+Query Type
+++++++++++
 
 .. hlist::
    :columns: 3
@@ -9,6 +11,12 @@ Querytype
 
    * .. autodata:: mapscript.MS_QUERY_SINGLE
         :annotation: 0
+
+   * .. autodata:: mapscript.MS_SINGLE
+        :annotation: 0
+
+   * .. autodata:: mapscript.MS_MULTIPLE
+        :annotation: 1
 
    * .. autodata:: mapscript.MS_QUERY_BY_POINT
         :annotation: 1

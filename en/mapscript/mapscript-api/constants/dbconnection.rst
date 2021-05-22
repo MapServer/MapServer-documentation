@@ -1,5 +1,7 @@
-Dbconnection
-++++++++++++
+.. _mapfile-constants-dbconnection:
+
+Db Connection
++++++++++++++
 
 .. hlist::
    :columns: 3

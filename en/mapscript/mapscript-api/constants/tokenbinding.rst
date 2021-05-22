@@ -1,5 +1,7 @@
-Tokenbinding
-++++++++++++
+.. _mapfile-constants-tokenbinding:
+
+Token Binding
++++++++++++++
 
 .. hlist::
    :columns: 3

@@ -1,5 +1,7 @@
-Labelbinding
-++++++++++++
+.. _mapfile-constants-labelbinding:
+
+Label Binding
++++++++++++++
 
 .. hlist::
    :columns: 3

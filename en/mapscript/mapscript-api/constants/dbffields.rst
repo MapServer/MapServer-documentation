@@ -1,5 +1,7 @@
-Dbffields
-+++++++++
+.. _mapfile-constants-dbffields:
+
+Dbf Fields
+++++++++++
 
 .. hlist::
    :columns: 3

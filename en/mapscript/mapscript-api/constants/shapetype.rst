@@ -1,5 +1,7 @@
-Shapetype
-+++++++++
+.. _mapfile-constants-shapetype:
+
+Shape Type
+++++++++++
 
 .. hlist::
    :columns: 3

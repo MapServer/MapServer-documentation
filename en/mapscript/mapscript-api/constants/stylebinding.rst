@@ -1,5 +1,7 @@
-Stylebinding
-++++++++++++
+.. _mapfile-constants-stylebinding:
+
+Style Binding
++++++++++++++
 
 .. hlist::
    :columns: 3

@@ -27,7 +27,6 @@
 .. include:: constants/projections.rst
 .. include:: constants/querymode.rst
 .. include:: constants/querytype.rst
-.. include:: constants/querytypes.rst
 .. include:: constants/render.rst
 .. include:: constants/requesttype.rst
 .. include:: constants/returncodes.rst

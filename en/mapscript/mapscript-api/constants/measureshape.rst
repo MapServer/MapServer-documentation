@@ -1,5 +1,7 @@
-Measureshape
-++++++++++++
+.. _mapfile-constants-measureshape:
+
+Measure Shape
++++++++++++++
 
 .. hlist::
    :columns: 3

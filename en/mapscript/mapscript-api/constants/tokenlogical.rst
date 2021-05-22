@@ -1,5 +1,7 @@
-Tokenlogical
-++++++++++++
+.. _mapfile-constants-tokenlogical:
+
+Token Logical
++++++++++++++
 
 .. hlist::
    :columns: 3

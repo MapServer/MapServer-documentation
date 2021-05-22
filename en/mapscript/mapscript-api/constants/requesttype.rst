@@ -1,5 +1,7 @@
-Requesttype
-+++++++++++
+.. _mapfile-constants-requesttype:
+
+Request Type
+++++++++++++
 
 .. hlist::
    :columns: 3

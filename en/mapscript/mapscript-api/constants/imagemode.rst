@@ -1,5 +1,7 @@
-Imagemode
-+++++++++
+.. _mapfile-constants-imagemode:
+
+Image Mode
+++++++++++
 
 .. hlist::
    :columns: 3

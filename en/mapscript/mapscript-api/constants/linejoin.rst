@@ -1,5 +1,7 @@
-Linejoin
-++++++++
+.. _mapfile-constants-linejoin:
+
+Line Join
++++++++++
 
 .. hlist::
    :columns: 3

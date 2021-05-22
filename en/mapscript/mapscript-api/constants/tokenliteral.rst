@@ -1,5 +1,7 @@
-Tokenliteral
-++++++++++++
+.. _mapfile-constants-tokenliteral:
+
+Token Literal
++++++++++++++
 
 .. hlist::
    :columns: 3

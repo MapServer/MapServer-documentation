@@ -1,5 +1,7 @@
-Logicalcontrol
-++++++++++++++
+.. _mapfile-constants-logicalcontrol:
+
+Logical Control
++++++++++++++++
 
 .. hlist::
    :columns: 3

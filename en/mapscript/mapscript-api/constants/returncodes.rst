@@ -1,5 +1,7 @@
-Returncodes
-+++++++++++
+.. _mapfile-constants-returncodes:
+
+Return Codes
+++++++++++++
 
 .. hlist::
    :columns: 3

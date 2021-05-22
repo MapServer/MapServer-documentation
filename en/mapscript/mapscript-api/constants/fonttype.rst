@@ -1,5 +1,7 @@
-Fonttype
-++++++++
+.. _mapfile-constants-fonttype:
+
+Font Type
++++++++++
 
 .. hlist::
    :columns: 3

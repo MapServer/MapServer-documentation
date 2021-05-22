@@ -1,3 +1,5 @@
+.. _mapfile-constants-limiters:
+
 Limiters
 ++++++++
 

@@ -1,5 +1,7 @@
-Labelsize
-+++++++++
+.. _mapfile-constants-labelsize:
+
+Label Size
+++++++++++
 
 .. hlist::
    :columns: 3

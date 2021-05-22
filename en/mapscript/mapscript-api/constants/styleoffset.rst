@@ -1,5 +1,7 @@
-Styleoffset
-+++++++++++
+.. _mapfile-constants-styleoffset:
+
+Style Offset
+++++++++++++
 
 .. hlist::
    :columns: 3

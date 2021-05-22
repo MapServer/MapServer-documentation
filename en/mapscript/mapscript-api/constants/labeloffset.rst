@@ -1,5 +1,7 @@
-Labeloffset
-+++++++++++
+.. _mapfile-constants-labeloffset:
+
+Label Offset
+++++++++++++
 
 .. hlist::
    :columns: 3

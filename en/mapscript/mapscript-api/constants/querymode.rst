@@ -1,5 +1,7 @@
-Querymode
-+++++++++
+.. _mapfile-constants-querymode:
+
+Query Mode
+++++++++++
 
 .. hlist::
    :columns: 3
