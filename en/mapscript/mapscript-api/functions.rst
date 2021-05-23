@@ -1,9 +1,11 @@
 
+
+.. currentmodule:: mapscript
+
 .. autosummary::
 
     mapscript.add_dll_path
     mapscript.fromstring
-    mapscript.intarray_frompointer
     mapscript.msCleanup
     mapscript.msConnPoolCloseUnreferenced
     mapscript.msFreeImage

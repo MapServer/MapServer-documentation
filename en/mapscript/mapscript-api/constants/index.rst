@@ -21,13 +21,13 @@
 .. include:: constants/linejoin.rst
 .. include:: constants/logicalcontrol.rst
 .. include:: constants/measureshape.rst
-.. include:: constants/missing.rst
 .. include:: constants/parse.rst
 .. include:: constants/position.rst
 .. include:: constants/projections.rst
 .. include:: constants/querymode.rst
 .. include:: constants/querytype.rst
 .. include:: constants/render.rst
+.. include:: constants/rendermode.rst
 .. include:: constants/requesttype.rst
 .. include:: constants/returncodes.rst
 .. include:: constants/shapefile.rst

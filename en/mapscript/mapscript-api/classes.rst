@@ -1,13 +1,11 @@
 
+.. currentmodule:: mapscript
+
 .. autosummary::
     :toctree: stub
     :template: class.rst
 
-    CompositingFilter
     DBFInfo
-    LayerCompositer
-    MapServerChildError
-    MapServerError
     OWSRequest
     classObj
     clusterObj
@@ -16,7 +14,6 @@
     fontSetObj
     hashTableObj
     imageObj
-    intarray
     labelCacheMemberObj
     labelCacheObj
     labelCacheSlotObj

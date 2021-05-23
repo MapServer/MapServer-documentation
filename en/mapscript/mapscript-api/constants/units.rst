@@ -6,6 +6,9 @@ Units
 .. hlist::
    :columns: 3
     
+   * .. autodata:: mapscript.MS_INHERIT
+        :annotation: -1
+
    * .. autodata:: mapscript.MS_INCHES
         :annotation: 0
 
