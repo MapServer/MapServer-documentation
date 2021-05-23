@@ -5,7 +5,7 @@ This folder contains scripts to regenerate various MapScript documentation pages
 using the Python MapScript module. When there are new classes, global functions, or
 constant values these scripts should be re-run.
 
-To run first setup a virtual environment (code here is for Windows, but Linux commands
+To run first set-up a virtual environment (code here is for Windows, but Linux commands
 should be similar):
 
 .. code-block:: bat
@@ -49,4 +49,12 @@ This script updates the include files listing the functions and classes availabl
 
 .. code-block:: bat
 
+    python objects.py
+
+Run all scripts:
+
+.. code-block:: bat
+
+    python constants.py
+    python diagrams.py
     python objects.py

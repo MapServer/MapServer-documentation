@@ -210,6 +210,7 @@ for p in constants:
             "MS_PIXELS",
             "MS_KILOMETERS",
             "MS_PERCENTAGES",
+            "MS_INHERIT",
         ):
             enumerations["units"].append((val, p))
 
@@ -230,6 +231,12 @@ for p in constants:
             "MS_FOLLOW",
         ):
             enumerations["position"].append((val, p))
+
+        elif p in (
+            "MS_ALL_MATCHING_CLASSES",
+            "MS_FIRST_MATCHING_CLASS",
+        ):
+            enumerations["render-mode"].append((val, p))
 
         else:
             enumerations["missing"].append((val, p))

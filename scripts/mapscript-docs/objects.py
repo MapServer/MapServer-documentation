@@ -27,6 +27,9 @@ def get_properties():
         if p not in constants
         and not p.endswith("_swigregister")
         and not p.startswith("_")
+        # the following don't have docstrings and are hidden for now
+        and p not in ("MapServerError", "MapServerChildError", "intarray", "CompositingFilter", 
+                      "LayerCompositer", "intarray_frompointer")
     ]
 
     return properties
@@ -42,6 +45,8 @@ def output_classes(output_file):
         print("    {}".format(c))
 
     header = """
+.. currentmodule:: mapscript
+
 .. autosummary::
     :toctree: stub
     :template: class.rst
@@ -65,6 +70,9 @@ def output_functions(output_file):
         print("    {}".format(f))
 
     header = """
+
+.. currentmodule:: mapscript
+
 .. autosummary::
 
 """
