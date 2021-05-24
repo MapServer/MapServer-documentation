@@ -12,24 +12,27 @@
 # serve to show the default.
 
 import sys, os, shutil
+import inspect
 from unittest.mock import MagicMock #py3 only
+
 
 # see https://docs.readthedocs.io/en/stable/faq.html#i-get-import-errors-on-libraries-that-depend-on-c-modules
 class Mock(MagicMock):
     @classmethod
     def __getattr__(cls, name):
-        #print(cls.__dir__, name)
         mm = MagicMock()
         if name.startswith("MS_"):
+            # don't document enums - we handle these separately
             mm.__doc__ = ""
         else:
-            # don't document enums
+            # add a TODO for any methods/properties missing docstrings
             mm.__doc__ = "**TODO** Add documentation"
 
         return mm
         
 MOCK_MODULES = ['mapscript._mapscript']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
+
 
 import mapscript
 
@@ -54,7 +57,6 @@ autodoc_default_options = {
 }
 
 autoclass_content = 'class'
-#nitpick_ignore = [('py:obj', 'mapscript.webObj.validation')]
 nitpick_ignore_regex = [('py:obj', 'mapscript.*')] # New in Sphinx version 4.1
 
 # Add any paths that contain templates here, relative to this directory.
@@ -480,46 +482,51 @@ class MapFileLexer(RegexLexer):
 
 
 def clean_variable(arg, convert_ref):
-    # adds mapscript. but will not make links
+    """
+    Strips whitespace and asterisks from variable names
+    Adds mapscript. but will not make links
+    """
     arg = arg.replace("*", "").strip()
     if convert_ref and arg[-3:] == "Obj":
         arg = arg.split(" ")[-1] # remove any struct etc.
         arg = ":class:`" + arg + "`"
-#        arg = "mapscript." + arg
     return arg
 
-import inspect
+
 
 def clean_type_hints(obj, convert_ref=False):
-
+    """
+    Convert C typehints to mapscriptObj typehints
+    """
     if hasattr(obj, "__annotations__"):
         clean = {}
-        # convert C typehints to mapscriptObj typehints
+        
         for k, v in obj.__annotations__.items():
-            #k = k.replace("*", "").strip()
-            #v = v.replace("*", "").strip()
             v = clean_variable(v, convert_ref)
             clean[k] = v
             
         setattr(obj, "__annotations__", clean)
-        
-def convert_mapscript_annotations(app, obj, bound_method):
 
-    # need these cleaned up before docstrings
+
+def convert_mapscript_annotations(app, obj, bound_method):
+    """
+    Need these cleaned up before docstrings
+    """
     clean_type_hints(obj)
 
 
 def add_property_annotations(app, what, name, obj, options, lines):
-           
+    """
+    For struct properties add the immutable flag, highlight the property
+    name in bold, and clean variable names
+    """
     if inspect.isclass(obj) == True and hasattr(obj, "__annotations__"):
-        # for classes add property annotation to their doc strings           
-        if hasattr(obj, "__autodocupdated") == False:    
-        
+        # for classes add property annotation to their doc strings
+        if hasattr(obj, "__autodocupdated") == False:
             clean_type_hints(obj, convert_ref=True)
-            
+
             # add to doc string for properties
             for name, v in vars(obj).items():
-                #print(name, v)
                 if isinstance(v, property):
                     if name in obj.__annotations__:
 
@@ -534,13 +541,13 @@ def add_property_annotations(app, what, name, obj, options, lines):
                             
                         t = obj.__annotations__[name]
                         if ":class:" not in t:
-                            # highlight the type in bold
-                            t = "**{}**".format(t)
+                            t = "**{}**".format(t) # highlight the type in bold
 
                         v.__doc__ = "{} {}{}".format(t, immutable, v.__doc__)
 
             # only clean and update the docstrings once by setting a hidden flag
             obj.__autodocupdated = True
+
 
 def setup(app):
     from sphinx.highlighting import lexers
@@ -550,6 +557,8 @@ def setup(app):
     app.connect('autodoc-before-process-signature', convert_mapscript_annotations)
     app.connect('autodoc-process-docstring', add_property_annotations)
 
+    # copy the mapscript sourcecode so it can be used 
+    # for doc examples with literalinclude
     dst_folder =  "./en/mapscript/mapscript-api/mapscript"
     if os.path.exists(dst_folder) == False:
         os.symlink(os.path.dirname(mapscript.__file__), dst_folder)
