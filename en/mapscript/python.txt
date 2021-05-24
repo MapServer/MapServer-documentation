@@ -5,6 +5,9 @@
 *****************************************************************************
 
 :Author: Sean Gillies
+:Author: Seth Girvin
+:Contact: sethg at geographika.co.uk
+:Last Updated: 2021-05-24
 
 .. contents::
     :depth: 2
@@ -36,48 +39,23 @@ References to sections below will be added here as the documentation grows.
  imageObj
 -----------------------------------------------------------------------------
 
-The Python Imaging Library, http://www.pythonware.com/products/pil/, is an
-indispensable tool for image manipulation.  The extensions to imageObj are
-all geared towards better integration of PIL in MapScript applications.
+Pillow (a fork of the Python Imaging Library), https://pillow.readthedocs.io/, is an
+indispensable tool for image manipulation.  The extensions to :class:`imageObj` are
+all geared towards better integration of Pillow in MapScript applications.
 
-imageObj Methods
-----------------
-
-imageObj( PyObject arg1, PyObject arg2 [, PyObject arg3 ] ) : imageObj_
-    Create a new instance which is either empty or read from a Python
-    file-like object that refers to a GD format image.
-    
-    The constructor has 2 different modes.  In the blank image mode, arg1
-    and arg2 should be the desired width and height in pixels, and the 
-    optional arg3 should be either an instance of outputFormatObj or
-    a GD driver name as a shortcut to a format.  In the image file mode,
-    arg1 should be a filename or a Python file or file-like object.  If
-    the file-like object does not have a "seek" attribute (such as a
-    urllib resource handle), then a GD driver name *must* be provided as
-    arg2.
-    
-    Here's an example of creating a 320 pixel wide by 240 pixel high JPEG
-    using the constructor's blank image mode::
-
-        image = mapscript.imageObj(320, 240, 'GD/JPEG')
-        
-    In image file mode, interesting values of *arg1* to try are instances
-    of *StringIO*::
-
-        s = StringIO()
-        pil_image.save(s)    # Save an image manipulated with PIL
-        ms_image = imageObj(s)
-
-    Or the file-like object returned from *urlopen*
-
-    ::
-        
-        url = urllib.urlopen('http://mapserver.gis.umn.edu/bugs/ant.jpg')
-        ms_image = imageObj(url, 'GD/JPEG')
+imageObj Extended Methods
+-------------------------
 
 
-write( [ PyObject file ] ) : void
-    Write image data to a Python file-like object.  Default is stdout.
+
++ :func:`imageObj.write` - 1rite image data to a Python file-like object.  Default is stdout.
+
+.. code-block:: python
+
+        url = urllib.urlopen('https://mapserver.org/_static/banner.png')
+        ms_image = imageObj(url, 'AGG/JPEG')
+
+See :ref:`ms_imagery` for further examples.
 
 .. index::
     triple: MapScript; Python; pointObj
@@ -94,16 +72,16 @@ __str__() : string
 
     ::
 
-        { 'x': %f , 'y': %f }
+        { 'x': %f , 'y': %f, 'z': %f }
 
     
     with the coordinate values substituted appropriately.  Usage example:
 
     ::
 
-        >>> p = mapscript.pointObj(1, 1)
+        >>> p = mapscript.pointObj(1, 1, 1)
         >>> str(p)
-        { 'x': 1.000000 , 'y': 1.000000 }
+        { 'x': 1 , 'y': 1, 'z': 1 }
 
 
     Note that the return value can be conveniently eval'd into a Python
@@ -113,7 +91,7 @@ __str__() : string
 
         >>> p_dict = eval(str(p))
         >>> p_dict['x']
-        1.000000
+        1
 
 
 .. index::
@@ -153,7 +131,7 @@ __str__() : string
 
         >>> r = mapscript.rectObj(0, 0, 1, 1)
         >>> str(r)
-        { 'minx': 0.000000 , 'miny': 0.000000 , 'maxx': 1.000000 , 'maxy': 1.000000 }
+        { 'minx': 0 , 'miny': 0 , 'maxx': 1 , 'maxy': 1 }
 
 
     Note that the return value can be conveniently eval'd into a Python
@@ -163,7 +141,7 @@ __str__() : string
 
         >>> r_dict = eval(str(r))
         >>> r_dict['minx']
-        0.000000
+        0
 
 
 .. index::
@@ -174,7 +152,7 @@ __str__() : string
 =============================================================================
 
 The Python MapScript module maps a few MapServer errors into Python exceptions.  
-Attempting to load a non-existent mapfile raises an 'IOError', for example
+Attempting to load a non-existent Mapfile raises an 'IOError', for example
 
 ::
 
