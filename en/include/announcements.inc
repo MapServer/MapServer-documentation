@@ -1,7 +1,7 @@
 **2021-04-30 - MapServer 7.6.3, 7.4.5, 7.2.3, and 7.0.8 are released**
 
 Several maintenance releases of MapServer have been issued in order to fix
-a security flaw for processing the MAP parameter (CVE is unassigned currently).
+a security flaw for processing the MAP parameter (`CVE-2021-32062 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-32062>`_).
 See the :ref:`7.6.3 changelog <changelog-7-6-3>`,
 :ref:`7.4.5 changelog <changelog-7-4-5>`,
 :ref:`7.2.3 changelog <changelog-7-2-3>`,
