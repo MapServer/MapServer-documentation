@@ -9,7 +9,7 @@
 
 :Author: Jeff McKenna
 :Contact: jmckenna at gatewaygeomatics.com
-:Last Updated: 2021-05-17
+:Last Updated: 2021-06-03
 
 .. contents:: Table of Contents
     :depth: 3
@@ -139,14 +139,13 @@ Example 2. On Windows:
 .. code-block:: bash
 
    C:\ms4w> mapserv -v
-   MapServer version 7.6.0-dev (MS4W 4.0.3) OUTPUT=PNG OUTPUT=JPEG 
-   OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE 
-   SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS SUPPORTS=SVGCAIRO 
-   SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER 
-   SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT 
-   SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER SUPPORTS=FASTCGI 
-   SUPPORTS=THREADS SUPPORTS=GEOS SUPPORTS=POINT_Z_M SUPPORTS=PBF 
-   INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE 
+   MapServer version 7.7.0-dev (MS4W 4.0.5) OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML 
+   SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO 
+   SUPPORTS=SVG_SYMBOLS SUPPORTS=SVGCAIRO SUPPORTS=ICONV SUPPORTS=FRIBIDI 
+   SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER 
+   SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER 
+   SUPPORTS=FASTCGI SUPPORTS=THREADS SUPPORTS=GEOS SUPPORTS=POINT_Z_M 
+   SUPPORTS=PBF INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE 
 
 .. index:: 
    pair: WMS Server; Mapfile
@@ -217,8 +216,8 @@ Let's go through each of these parameters in more detail:
 
   WMS servers have to advertise the projection in which they are able
   to serve data using EPSG projection codes (see `The EPSG web page`_
-  for more background on EPSG codes). Recent versions of the PROJ
-  library come with a table of EPSG initialization codes and allow
+  for more background on EPSG codes). The `PROJ <https://proj.org/>`__
+  library come with a table of EPSG initialization codes and allows
   users to define a projection like this:
 
   .. code-block:: mapfile
@@ -245,10 +244,10 @@ Let's go through each of these parameters in more detail:
   that the data can be served in, and the PROJECTION object contains
   the real PROJ definition of the data's projection.
 
-  Here is an example of a server whose data is in an Lambert Conformal
-  Conic projection (3978). It's capabilities output will advertise
-  EPSG:4269 and EPSG:4326 projections (lat/lon), but the PROJECTION
-  object is set to the real projection that the data is in:
+  Here is an example of a server whose data is in a Lambert Conformal
+  Conic projection (3978). Its capabilities output will advertise
+  EPSG:3857 (web mercator), EPSG:4269 and EPSG:4326 projections (lat/lon), 
+  but the PROJECTION object is set to the real projection that the data is in:
 
   .. code-block:: mapfile
   
@@ -259,8 +258,8 @@ Let's go through each of these parameters in more detail:
       ...
       METADATA
         "wms_title"           "WMS Demo Server"
-        "wms_onlineresource"  "http://my.host.com/cgi-bin/mapserv?map=wms.map&"
-        "wms_srs"             "EPSG:4269 EPSG:4326"
+        "wms_onlineresource"  "http://my.host.com/cgi-bin/mapserv?map=/path/to/your-mapfile.map" #must change mapfile path
+        "wms_srs"             "EPSG:3857 EPSG:4269 EPSG:4326"
       END
     END
 
@@ -317,7 +316,7 @@ Let's go through each of these parameters in more detail:
 
   ::
   
-    http://my.host.com/cgi-bin/mapserv?map=mywms.map&
+    http://my.host.com/cgi-bin/mapserv?map=/path/to/your-mapfile.map" #must change mapfile path
           
 
   By creating a wrapper script on the server it is possible to hide
@@ -372,7 +371,7 @@ you add the parameters
 
 ::
 
-  http://my.host.com/cgi-bin/mapserv?map=mywms.map&SERVICE=WMS&VERSION=1.1.1
+  http://my.host.com/cgi-bin/mapserv?map=/path/to/your-mapfile.map&SERVICE=WMS&VERSION=1.1.1
                                                   &REQUEST=GetCapabilities
         
 
@@ -458,7 +457,9 @@ A valid example would therefore be:
 ::
 
 
-  http://my.host.com/cgi-bin/mapserv?map=mywms.map&SERVICE=WMS&VERSION=1.1.1
+  http://my.host.com/cgi-bin/mapserv?
+       map=/path/to/your-mapfile.map
+       &SERVICE=WMS&VERSION=1.1.1
        &REQUEST=GetMap&LAYERS=prov_bound&STYLES=&SRS=EPSG:4326
        &BBOX=-173.537,35.8775,-11.9603,83.8009&WIDTH=400&HEIGHT=300
        &FORMAT=image/png
@@ -567,7 +568,7 @@ An example request might look like:
 ::
 
 
-  http://127.0.0.1/cgi-bin/mapserv.exe?SERVICE=WMS&VERSION=1.1.1&layer=park&
+  http://127.0.0.1/cgi-bin/mapserv.exe?map=/path/to/your-mapfile.map&SERVICE=WMS&VERSION=1.1.1&layer=park&
   REQUEST=getlegendgraphic&FORMAT=image/png            
 
 .. index::
@@ -594,7 +595,7 @@ specification:
 
 ::
 
-  http://my.host.com/cgi-bin/mapserv?map=mywms.map&
+  http://my.host.com/cgi-bin/mapserv?map=/path/to/your-mapfile.map
       
 However, some people will argue that the above URL contains mandatory
 vendor-specific parameters and that this is illegal. First we would
@@ -2189,9 +2190,9 @@ The following is a very basic WMS Server mapfile:
         IMAGEPATH "/ms4w/tmp/ms_tmp/"
         IMAGEURL "/ms_tmp/"
         METADATA
-          "wms_title"          "WMS Demo Server"  ##required
-          "wms_onlineresource" "http://yourpath/cgi-bin/mapserv.exe?"   ##required
-          "wms_srs"            "EPSG:3978 EPSG:4326 EPSG:4269 EPSG:3857"  ##recommended
+          "wms_title"     "WMS Demo Server"  ##required
+          "wms_onlineresource" "http://yourpath/cgi-bin/mapserv.exe?map=/path/to/your-mapfile.map"   ##required (must change mapfile path)
+          "wms_srs"       "EPSG:3978 EPSG:3857 EPSG:4269 EPSG:4326"  ##recommended
           "wms_enable_request" "*"   ##necessary
         END
       END # Web
@@ -2330,7 +2331,7 @@ FAQ / Common Problems
          ... 
          METADATA 
            "wms_title"            "WMS Demo Server" 
-           "wms_onlineresource"   "http://my.host.com/cgi-bin/mapserv?map=wms.map&" 
+           "wms_onlineresource"   "http://my.host.com/cgi-bin/mapserv?map=/path/to/your-mapfile.map" #must change mapfile path
            "wms_srs"              "AUTO:42001 AUTO:42002" 
            "wms_enable_request"   "*"   ##necessary
          END # METADATA
