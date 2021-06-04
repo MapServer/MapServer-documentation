@@ -11,17 +11,20 @@
 :Contact: sdlime at gmail.com
 :Author: Jeff McKenna
 :Contact: jmckenna at gatewaygeomatics.com
-:Last Updated: 2021-03-31
+:Last Updated: 2021-06-03
 
 The MapServer CGI, by default, will happily attempt to process any mapfile it is 
 asked to. While this might be desireable in a development environment, it is not 
 acceptable for public-facing installations. MapServer supports the use of specific
-**environment variables**, set at the web server tier, to limit access. Use of 
-these environment variables is not required but is **strongly recommended**. 
-Future versions of MapServer will require use by default.
+**environment variables**, set at the web server tier, to limit access. Since 
+the MapServer 7.6.3 release, you are **required** to use (a combination of) 
+these environment variables to secure your installation; for earlier MapServer 
+versions these environment variables are **strongly recommended**.
 
-Relevant environment variable support is available for versions: 5.4.0 and newer, 
-5.2.2, and 4.10.4.
+.. warning:: 
+    The vulnerability `CVE-2021-32062 <https://cve.mitre.org/cgi-bin/cvename.cgi?name=CVE-2021-32062>`_
+    was fixed through the MapServer 7.6.3 release, through requiring the use of
+    the environment variables described in this MapServer document.
 
 .. note:: 
     Environment variables are only referenced by the MapServer CGI and are not 
@@ -31,9 +34,44 @@ Key Environment Variables
 =========================
 
 .. seealso:: :ref:`environment_variables`
-.. seealso:: :ref:`rfc56` 
+.. seealso:: :ref:`rfc56`
+.. seealso:: Associated `Pull Request <https://github.com/MapServer/MapServer/pull/6314>`_ for the 7.6.3 release
+
+.. tip:: 
+    The online tools `RegExr <https://regexr.com/>`__ & `RegEx101 <https://regex101.com/>`__ 
+    are great for testing regular expressions. 
+
+**MS_MAP_BAD_PATTERN**
+
+.. versionadded:: 7.6.3
+
+If set, this environment variable is interpreted as regular expression that is used 
+to test the value of the CGI map parameter, by specifying which problematic 
+character sequences to avoid. If the value matches then an error is 
+generated.  By default all MapServer installations (since 7.6.3) set a 
+hardcoded value for *MS_MAP_BAD_PATTERN* of:
+::
+
+  [/\\]{2}|[/\\]?\\.+[/\\]|,
+  
+which will therefore not allow "/../" or "//" in the map value.
+
+.. note:: 
+    For Windows users, MS4W uses the PCRE regex library (which requires a 
+    slightly different regex syntax), so all future MS4W releases will 
+    contain the following default *MS_MAP_BAD_PATTERN* enabled 
+    (to not allow "/../" or "//" in the map value) :
+    
+    ::
+    
+      [\/\\\\]{2}|[\/\\\\]?\.{2,}[\/\\\\]|,
+      
+    For more information see `Securing your MS4W Installation <https://ms4w.com/README_INSTALL.html#securing-your-ms4w-installation>`_
+  
 
 **MS_MAP_NO_PATH**
+
+.. versionadded:: 5.4.0
 
 If set, this environment variable limits values for the CGI map parameter to a 
 curated (prepared) set of mapfiles explicitly defined by additional environment 
@@ -44,6 +82,8 @@ variables. This is the recommended way to secure mapfile access if at all possib
    setting MS_MAP_NO_PATH.
  
 **MS_MAP_PATTERN**
+
+.. versionadded:: 5.4.0
  
 If set, this environment variable is interpreted as regular expression that is used 
 to test the value of the CGI map parameter. If the value does not match then 
@@ -97,10 +137,7 @@ and version)
 
     ::
 
-      SetEnv MS_MAP_PATTERN "^(C:)?\/ms4w\/apps\/((?!\.{2})[_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(map))$"
-      
-  .. tip:: 
-      The online tool `RegExr <https://regexr.com/>`__ is great for testing regular expressions.      
+      SetEnv MS_MAP_PATTERN "^(C:)?\/ms4w\/apps\/((?!\.{2})[_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(map))$"     
     
 - **Nginx** - http://nginx.org/en/docs/ngx_core_module.html#env
 - **IIS** - https://docs.microsoft.com/en-us/iis/configuration/system.applicationhost/applicationpools/add/environmentvariables/
