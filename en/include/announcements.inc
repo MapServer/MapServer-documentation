@@ -1,3 +1,8 @@
+**2021-06-11 - Community Condolences - Håvard Tveite & Olivier Courtin**
+
+The MapServer community mourns the loss of 2 major contributors, 
+:ref:`Håvard Tveite & Olivier Courtin <2021-06-11-community-condolences>`.
+
 **2021-06-11 - TinyOWS 1.2.0 is released**
 
 The major version TinyOWS 1.2.0 has been released. This release is in honor
