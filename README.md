@@ -1,6 +1,6 @@
 | |Build Status|
 
-<img src="https://github.com/MapServer/MapServer-documentation/blob/main/_static/logo/logo.svg" width="300" alt="MapServer logo">
+<img src="https://github.com/MapServer/MapServer-documentation/blob/main/_static/banner-large.png" width="702" alt="MapServer logo">
 
 
 
