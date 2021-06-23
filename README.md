@@ -19,4 +19,4 @@ or enhancement.  Please create a new pull request with your change.  Thank-you!
 # Communication
 
 If you are looking for general advice on how to proceed, send your note or 
-questions to the MapServer-dev list: [subscribe](https://lists.osgeo.org/listinfo/mapserver-dev_
+questions to the MapServer-dev list: [subscribe](https://lists.osgeo.org/listinfo/mapserver-dev)
