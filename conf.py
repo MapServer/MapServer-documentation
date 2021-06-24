@@ -25,7 +25,7 @@ sys.path.append(os.path.abspath('.'))
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 #extensions = ['labels' ,'rst2pdf.pdfbuilder']
 #extensions = ['labels', 'sphinxcontrib.spelling']
-extensions = ['labels', 'sphinx_removed_in']
+extensions = ['labels', 'sphinx_removed_in', 'sphinxemoji.sphinxemoji']
 
 # Add any paths that contain templates here, relative to this directory.
 templates_path = ['_templates']
