@@ -1,0 +1,423 @@
+.. _rfc134:
+
+================================================
+MS RFC 134: OGC API Support
+================================================
+
+:Author:      Steve Lime
+:Contact:     steve.lime@state.mn.us
+:Author:      Tom Kralidis
+:Contact:     tomkralidis@gmail.com
+:Author:      Jeff McKenna
+:Contact:     jmckenna@gatewaygeomatics.com
+:Status:      In progress
+:Last update: 2021-06-23
+:Version:     MapServer 8.0
+
+Overview
+========
+
+OGC is undergoing a revolutionary effort around modernizing their API 
+specifications to align with current technology and design patterns:
+
+ - REST
+ - JSON
+ - OpenAPI (and Swagger)
+
+The `OGC API <https://ogcapi.ogc.org/>`__ efforts represent a clean break 
+from the first generation WxS specifications. This RFC is an attempt describe 
+MapServer support for (initially) the OGC API - Features server specifications.  
+The modular nature of OGC API will allow for reuse of shared functionality 
+(landing pages, conformance, collections, queryables, filtering, etc.) across 
+various OGC APIs implemented in MapServer.
+
+OGC API request/response design patterns consist of HTTP operations with GET 
+(KVP) or POST (JSON) methods to specific query parameters.  HTTP methods 
+beyond GET/POST (PUT, DELETE, etc.) are envisioned as optional extensions 
+for transactional capability.
+
+Below are mappings between WxS specifications implemented in the MapServer suite 
+and the relevant emerging OGC API standards.
+
+.. table:: 
+   :align: left
+   
+   +------------+---------------------+
+   | WxS        | OGC API             |          
+   +============+=====================+
+   | OWS Common | OGC API - Common    |
+   +------------+---------------------+   
+   | WMS        | OGC API - Maps      |
+   +------------+---------------------+
+   | WMTS       | OGC API - Tiles     |
+   +------------+---------------------+   
+   | WFS        | OGC API - Features  |
+   +------------+---------------------+   
+   | WCS        | OGC API - Coverages |
+   +------------+---------------------+   
+   | SLD        | OGC API - Styles    |
+   +------------+---------------------+
+
+Proposed Approach
+=================
+
+Much of the underlying functionality needed to support the OGC API 
+specifications already exists in MapServer and is exposed via WxS support. 
+WxS support is complex owing mostly to the various versions of the service 
+specifications that are supported. The code is full of conditionals so things 
+behave differently or expose new functionality depending on version. The WxS 
+specifications rely heavily on query strings (GET/POST) to configure requests 
+and XML for responses.
+
+While there will most certainly be opportunities to leverage portions of the 
+existing OWS/WxS code, it doesn't make sense to further complicate the main 
+WxS functions. We can also develop the new functionality using C++ and can take 
+advantage of modern C++ libraries such as nlohmann/json and Inja.  Working in 
+"clean break" mode also follows the OGC API approach to modernizing the APIs.
+
+CGI/FastCGI Integration
+-----------------------
+
+In order to support a RESTful, resource/path-based approach to requests we 
+need to rely on additional CGI components beyond the query string or post-body: 
+specifically information stored in the *PATH_INFO* environment variable. 
+We also need a mapfile and some indication of what API specification is 
+being used. We propose the following approach:
+
+::
+
+  http(s)://maps.dnr.state.mn.us/cgi-bin/mapserv/mapfile/api/route
+
+Where:
+
+1. /mapfile/api/route = PATH_INFO
+2. mapfile = the environment variable referencing the full-path mapfile name
+3. api = the API signature (e.g. ogcapi), allowing for support of multiple APIs
+4. route = the API route (e.g. /collections/layer/id)
+
+The PATH_INFO variable is part of the CGI standard and (at least with Apache) 
+is already available to MapServer. In addition, MapServer already supports 
+environment variable-based mapfile definition. It turns out to be relatively 
+simple to check for the presence of PATH_INFO and redirect processing to a 
+API dispatcher if necessary. The standard workflow is largely unaffected by 
+this change so there should be no backwards compatibility issues.
+
+This setup also allows for the query string to be utilized by APIs so you can 
+combine things like so:
+
+::
+
+  http(s)://maps.dnr.state.mn.us/cgi-bin/mapserv/mapfile/ogcapi/conformance?f=html
+
+Configuration
+-------------
+
+Like the other OGC WxS services, OGC API support will be configured via WEB and 
+LAYER object metadata. A new namespace - *oga* (OGC Geospatial API) will be 
+recognized and wherever possible OGC API support will leverage existing 
+ows|wfs|wms|gml metadata. The oga namespace will take precedence in metadata 
+lookups.
+
+Also like other OGC WxS services, OGC API support would need to be explicitly 
+enabled using the metadata "oga_enable_request" (or "ows_enable_request") 
+value at the MAP and LAYER level. Currently all or nothing 
+("oga_enable_request" "OGCAPI").
+
+Metadata element naming should mirror API specifications to spare a new 
+implementation from legacy naming conventions. However, WxS metadata should 
+also be referenced as a fallback in order to leverage existing configurations. 
+An example the API description where we would look for oga_description at 
+the MAP level and fallback to ows|wfs_abstract if not found.
+
+New metadata keys (oga namespace):
+
+.. table:: 
+   :align: left
+
+   +------------------------+---------------------+---------------------------------------------------------------------------------------------+
+   | Key                    | Level               | Meaning                                                                                     |
+   +========================+=====================+=============================================================================================+
+   | onlineresource         | Map                 | API root url, can't reuse WxS values                                                        |
+   +------------------------+---------------------+---------------------------------------------------------------------------------------------+   
+   | html_template_directory| Map                 | full path or relative (to mapfile) of html template directory                               |
+   +------------------------+---------------------+---------------------------------------------------------------------------------------------+   
+   | description            | Map                 | service description, fall back to ows/wfs_abstract                                          |
+   +------------------------+---------------------+---------------------------------------------------------------------------------------------+
+   | links                  | Map, Layer          | comma delimited list of link keys - references to other metadata                            |
+   +------------------------+---------------------+---------------------------------------------------------------------------------------------+   
+   | link_{key}_title       | Map, Layer          | link title                                                                                  |
+   +------------------------+---------------------+---------------------------------------------------------------------------------------------+
+   | link_{key}_href        | Map, Layer          | link href (url)                                                                             |
+   +------------------------+---------------------+---------------------------------------------------------------------------------------------+   
+   | html_tags              | Map                 | comma delimited list of tag keys to expose to HTML templates - references to other metadata |
+   +------------------------+---------------------+---------------------------------------------------------------------------------------------+
+   | tag_{key}              | Map                 | value associated with the tag, added to JSON data in template.tags object                   |
+   +------------------------+---------------------+---------------------------------------------------------------------------------------------+   
+   | keywords               | Layer               | comma delimited list of keywords, fall back to ows/wfs_keywordlist                          |
+   +------------------------+---------------------+---------------------------------------------------------------------------------------------+
+   | max_limit              | Map, Layer          | map or layer-level maximum limit value (integer)                                            |
+   +------------------------+---------------------+---------------------------------------------------------------------------------------------+
+
+JSON Support
+------------
+
+OGC API specifications rely heavily on JSON. The excellent `nlohmann/json <https://github.com/nlohmann/json/>`__ 
+C++ library will be used to construct response objects for each request type. 
+The library is best-of-breed and widely used by other OSGeo projects such as PROJ. 
+More importantly, integration is simple: just include a single *.hpp* file. 
+I propose actually distributing the *nlohmann/json.hpp* file with MapServer 
+and then upgrading it as necessary. No complicated cmake configuration 
+is necessary in that case.
+
+nlohmann/json has a MIT license.
+
+HTML Support
+------------
+
+While not required, HTML support is strongly encouraged. Instead of somehow 
+trying to store and output HTML from inside MapServer, I propose using a 
+series of templates to support HTML responses. This gives us (and users) a 
+great deal of flexibility to control the look and feel of API documentation. 
+Base OGC API templates would be shipped with MapServer and are constructed 
+using Bootstrap 4 by default. A second set of plain HTML templates will 
+also be provided and will provide a stable base for msautotest support. 
+The templates live in the MapServer distribution in a new *share* directory and 
+are organized by API signature (so *share/ogcapi/templates*). All a user needs 
+to do to configure HTML responses is to note the base path of the templates 
+as a metadata value (*oga_html_template_directory*) or environment variable 
+(*OGCAPI_HTML_TEMPLATE_DIRECTORY*).
+
+The C++ `Inja templating library <https://github.com/pantor/inja>`__ is used 
+to process HTML responses. Inja depends on nlohman/json so API responses will 
+always be composed first in JSON and then rendered as HTML using Inja. Inja 
+is full-featured and supports expressions, conditionals, loops and includes, 
+amongst other things. Like nlohmann/json, Inja is easy to integrate using a 
+single *.hpp file*. Again I propose distributing Inja with MapServer.
+
+Inja also has a MIT license.
+
+MapScript Support
+-----------------
+
+*For consideration:* should the SWIG MapScript class `OWSRequest <https://mapserver.org/mapscript/mapscript.html#owsrequest>`__ 
+be enhanced to also allow to dynamically modify OGC API services?
+
+New Source Files
+----------------
+
+* :mapogcapi.cpp/mapogcapi.h: core implementation.
+* :third-party/include_nlohmann_json.hpp: wrapper for nhlohmann/json library.
+* :third-party/include_pantor_inja.hpp: wrapper for Inja library. 
+
+  .. NOTE::
+       will need to edit to reference the local instance of nlohmann/json.
+
+Source Files Changed
+--------------------
+
+* :mapserv.c/mapserv.h: add call to msCGIIsAPIRequest() to main CGI workflow. Added function prototypes for msIsAPIRequest() and msCGIDispatchAPIRequest(). Added command-line hook to set PATH_INFO.
+* :mapservutil.c: add msIsAPIRequest() and msCGIDispatchAPIRequest() functions. Update msCGILoadMap() to load a mapfile defined by API - basically the environment variable use case.
+* :cgiutil.c: updated to use msSetError() rather than writing error messages directly. Extend cgiRequestObj init/free functions as appropriate.
+* :cgiutil.h: add path_info, api_path and api_path_length attributes to cgiRequestObj.
+* :maperror.c/maperror.h: added OGC API support to msGetVersion(). Added new API error code and error message. Note that specific OGC API error handling is handled locally within mapogcapi.cpp.
+
+Build Files Changed
+-------------------
+
+* :CMakeLists.txt: typical integration of new functionality.
+* :mapserver-config.h.in: added USE_OGCAPI_SVR.
+
+Limitations/Caveats
+===================
+
+* Input/output SRS are EPSG:4326 only.
+* Feature properties support GML item and constant configuration. 
+  Groups are not implemented.
+
+Backwards Compatibility Issues
+==============================
+
+None anticipated - new functionality.
+
+Security Considerations
+=======================
+
+API Route Handling
+------------------
+
+Most complex route:
+
+::
+
+  /{mapfile}/ogcapi/collection/{collectionId}/item/{itemId}
+
+Fixed API route elements must match precisely and are case sensitive. 
+Any deviation will result in error.
+
+Variable API route elements are handled as follows:
+
+* :{mapfile}: references a mapfile defined in the environment. If the mapfile 
+              is not found a standard CGI error message is returned.
+* :{collectionId}: references layer name and must match exactly. If the layer 
+                 is not found or if the layer is not eligible (e.g. raster) a 404 
+                 error is thrown (as JSON).
+* :{itemId}: references a feature ID as defined by *gml_featureid* metadata. 
+             Optionally the value is validated using a regex supplied in the layer validation 
+             block. If the validation fails a 404 error is thrown (as JSON). (the namepaces 
+             oga, ows, and wfs are also checked, such as oga_featureid)
+
+.. code-block:: mapfile
+
+    METADATA
+      "gml_featureid" "myid"
+      ...
+    END
+    VALIDATION
+      "myid" "^[0-9]{2}$" # limit to 2-digit integers
+      ...
+    END
+
+.. NOTE:: 
+    We could consider extending validation like this to OGC services that 
+    accept filters._
+
+Parameter Handling
+------------------
+
+Relatively few parameters are supported in this initial implementation:
+
+* :f: format of the response, supported values are json and html. Error 
+      is return with any other value. Default is html. 
+* :bbox: bounding box filter. Error is returned with malformed values, 
+         more/less than 4 numbers, degenerate bounds or if values are not given in 
+         lat/lon. Default is the map's default extent is used.
+* :limit: number of results to return. Error is returned with malformed 
+          value. Other values are clipped to the range 1 to 10,000 (per spec).
+* :start: page number. Error is returned with a malformed value.
+
+Template Handling
+-----------------
+
+Templates contain `Inja template markup <https://github.com/pantor/inja>`__. 
+The filenames are fixed in code (e.g. collection-items.html). The directory 
+containing the templates is given in webObj metadata or (optionally) via 
+environment variable. The directory specification is either absolute 
+(e.g. /opt/mapserver/ogcapi/templates) or relative to the location of the 
+mapfile. As present the implementation allows the use of the Inja *{{ include "file" }}* 
+tag. It's really impractical to maintain templates with common elements 
+(e.g. header, footer, etc...) without that functionality. The current 
+Inja implementation allows any value for the file attribute which represents 
+a security risk if access to the templates is not limited. There are existing 
+enhancement requests for Inja to add this functionality, or we'll need to update 
+the library to limit includes to the specified directory or sub-directories.
+
+Large Dataset Handling
+----------------------
+
+It is not clear how large of datasets can be handled via nlohmann/json and/or 
+Inja (see above). The default maximum limit value of 10,000 may not be 
+appropriate in many cases. It is possible to set a map and/or layer limit 
+using *oga_max_limit* metadata. The layer value takes precedence. Paging is 
+available for drivers the support it, leveraging the work done for WFS.
+
+Performance Implications
+========================
+
+There should be very little overall performance impact. A single function is 
+added to the *mapserv.c* workflow to detect an API request. The function 
+inspects the *PATH_INFO* environment variable to see if the value (if any) 
+matches the minimum pattern for an API call as described earlier. If so, 
+elements in the *cgiRequestObj* are set and the request is quickly pushed into 
+the OGC API processing workflow once a mapfile is loaded.
+
+Ticket ID and References
+========================
+
+* `Proof-of-concept branch <https://github.com/sdlime/mapserver/tree/ogcapi>`__
+* `OGC API Background <https://github.com/mapserver/mapserver/wiki/OGC-API>`__
+* `OGC API Implementation Notes <https://github.com/mapserver/mapserver/wiki/OGC-API-implementation>`__
+* `nlohmann/json <https://github.com/nlohmann/json>`__
+* `Inja C++ Templating Library <https://github.com/pantor/inja>`__
+
+----
+
+Current Status
+==============
+
+.. table:: 
+   :align: left
+
+   +-------------------------------------------------------------+----------------------+
+   | Support                                                     | Status               |
+   +=============================================================+======================+
+   | Features: Landing page                                      | |:construction:|     |
+   +-------------------------------------------------------------+----------------------+
+   | Features: JSON & HTML output                                | |:heavy_check_mark:| |
+   +-------------------------------------------------------------+----------------------+
+   | Features: Collections (layer listing)                       | |:construction:|     |
+   +-------------------------------------------------------------+----------------------+
+   | Features: Collections (single layer: links (summary)        | |:construction:|     |
+   +-------------------------------------------------------------+----------------------+   
+   | Features: Collections (single layer: query)                 | |:construction:|     |
+   +-------------------------------------------------------------+----------------------+   
+   | Features: Collections (single layer: list queryable fields) | |:stop_sign:|        |
+   +-------------------------------------------------------------+----------------------+   
+   | Features: Collections (single layer: map)                   | |:stop_sign:|        |
+   +-------------------------------------------------------------+----------------------+      
+   | Features: API docs                                          | |:stop_sign:|        |
+   +-------------------------------------------------------------+----------------------+   
+   | Features: msautotests                                       | |:construction:|     |
+   +-------------------------------------------------------------+----------------------+   
+   | Features: user docs on mapserver.org                        | |:stop_sign:|        |
+   +-------------------------------------------------------------+----------------------+   
+
+Issues / Tasks / Wishlist
+=========================
+
+* :issue: cleaning the onlineresource of "?" or "/" ending characters, as it causes problems in HTML landing pages (double-slashes in links, or the "?" will actually break all links)
+* :issue: compile fails without enabling `-DUSE_WFS_SVR` (as well as the obvious `-DUSE_OGCAPI_SVR`)
+* :task: add ows_contact* information to the landing page (from the associated values set in the mapfile)
+* :wishlist: besides the "/ogcapi" API signature (for features, maps..support), also allow "/features" (to allow developers to only request vector collections), for example:
+
+    ::
+  
+       http://127.0.0.1/cgi-bin/mapserv.exe/demo-ogcapi/features
+
+  (Note that is how the GeoServer implementation works)
+* :wishlist: include MapServer logo on landing page
+* :wishlist: set MapServer favicon for all HTML pages
+* :wishlist: allow other link types for collection item (set through mimetype/outputformats in mapfile?)
+* :wishlist: instead of text links, use a dropdown for types (JSON, HTML, KML, etc.)
+* :wishlist: for the single layer map, include a dropdown to set the default number of features displayed in the map: 
+
+    ::
+  
+      10 [default]
+      100
+      1000 
+
+* :wishlist: for the single layer map, display the current MapServer scale value below the map (as user zooms in, update the scale with the CGI [scale] value)
+
+Initial Screencaptures
+======================
+
+Landing Page
+------------
+
+.. image:: ../../images/ogcapi-draft-ms4w-landing.png
+    :width: 600    
+    :class: no-scaled-link
+    
+Collections
+-----------
+    
+.. image:: ../../images/ogcapi-draft-ms4w-collections.png
+    :width: 600    
+    :class: no-scaled-link
+    
+Collection
+----------
+
+.. image:: ../../images/ogcapi-draft-ms4w-collection.png
+    :width: 600    
+    :class: no-scaled-link

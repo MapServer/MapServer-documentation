@@ -48,7 +48,9 @@ sys.path.append(os.path.abspath('.'))
 # coming with Sphinx (named 'sphinx.ext.*') or your custom ones.
 #extensions = ['labels' ,'rst2pdf.pdfbuilder']
 #extensions = ['labels', 'sphinxcontrib.spelling']
-extensions = ['labels', 'sphinx_removed_in', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.viewcode']
+
+extensions = ['labels', 'sphinx_removed_in', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.viewcode',
+             'sphinxemoji.sphinxemoji']
 
 autosummary_generate = True # when True create a page for each mapscript class
 
@@ -58,6 +60,7 @@ autodoc_default_options = {
 
 autoclass_content = 'class'
 nitpick_ignore_regex = [('py:obj', 'mapscript.*')] # New in Sphinx version 4.1
+
 
 # Add any paths that contain templates here, relative to this directory.
 
