@@ -6,7 +6,7 @@
 
 :Author:       Jeff McKenna
 :Contact:      jmckenna at gatewaygeomatics.com
-:Last Updated: 2021-05-05
+:Last Updated: 2021-07-09
 
 .. contents:: Table of Contents
     :depth: 3
@@ -49,10 +49,28 @@ features, but using them improves performance. If you want to make
 MapServer query calls to a PostGIS layer, your DATA parameter must
 include "using unique". Omitting it will cause the query to fail.
 
+.. tip::
+
+   If you are trying to execute a query and receive the message 
+   `"ERROR:  column oid does not exist at character..."` it is likely 
+   that you are missing the `using unique` part in your DATA parameter.  
+   If you don't specify a unique ID column, then MapServer will try to 
+   look for one.  It is best to *always* specify a unique ID column 
+   in your DATA statement.  If your table does not have a unique ID column,
+   you can add one such as::
+   
+     ALTER TABLE mytable ADD COLUMN unique_id SERIAL PRIMARY KEY;
+    
+.. warning::
+
+   OIDs were removed from PostgreSQL as of the PostgreSQL 12.0 release.  
+   It is recommended to specify a different unique ID column instead, 
+   in your layer's DATA statement, of your mapfile.
+
 .. note:: 
 
-    Variable binding is supported by using :ref:`BINDVALS <mapfile-layer-bindvals>`
-    and name value pairs.
+   Variable binding is supported by using :ref:`BINDVALS <mapfile-layer-bindvals>`
+   and name value pairs.
 
 Here is a simple generic example:
 
