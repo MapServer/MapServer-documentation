@@ -10,7 +10,7 @@
 :Author: Jeff McKenna
 :Contact: jmckenna at gatewaygeomatics.com
 :Original Author: HostGIS
-:Last Updated: 2021-04-14
+:Last Updated: 2021-07-09
 
 .. contents:: Table of Contents
     :depth: 3
@@ -206,6 +206,8 @@ and have memory to throw at caching.
 PostGIS Notes
 -------------
 
+.. seealso:: :ref:`PostGIS Input in MapServer <input_postgis>`
+
 Indexing with PostGIS
 ^^^^^^^^^^^^^^^^^^^^^
 
@@ -235,6 +237,34 @@ itself, aside from the geospatial component. The easiest is to increase
 more memory for caching. It is worth the time to investigate the various options
 in the `Resource Consumption <https://www.postgresql.org/docs/current/runtime-config-resource.html>`__
 section of the PostgreSQL documentation.
+
+.. _uniqueid_postgis:
+
+Specifying a Unique ID column
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To handle queries, MapServer requires a unique ID column, as part of your
+PostgreSQL table.  MapServer will try to guess the unique ID column, but that 
+is costly as several more database queries have to be made; instead, you should
+always specify a unique ID column in your DATA statement of the layer, with the
+*using unique* syntax, such as:
+
+.. code-block:: mapfile 
+
+   DATA "geom FROM mydata USING UNIQUE myid USING SRID=3857"
+   
+If your table does not have a unique ID column, you can add one such as:
+
+::
+
+   ALTER TABLE mytable ADD COLUMN unique_id SERIAL PRIMARY KEY;
+   
+.. warning::
+
+   In older PostgreSQL versions, a (dirty) trick was to use the existing *OID* as 
+   the unique ID, however OIDs were removed from PostgreSQL as of the PostgreSQL 12.0 release.  
+   So always specify an actual unique ID column instead, in your layer's 
+   DATA statement, of your mapfile.
 
 .. _debugging_postgis:
 
