@@ -1,3 +1,10 @@
+**2021-07-12 - MapServer 7.6.4 is released**
+
+The maintenance release of MapServer 7.6.4 is now available.
+See the :ref:`7.6 changelog <changelog-7-6>` for the full list of changes.  
+
+Head to :ref:`download` to obtain a copy.
+
 **2021-06-11 - Community Condolences - Håvard Tveite & Olivier Courtin**
 
 The MapServer community mourns the loss of 2 major contributors, 
