@@ -59,7 +59,9 @@ autodoc_default_options = {
 }
 
 autoclass_content = 'class'
-nitpick_ignore_regex = [('py:obj', 'mapscript.*')] # New in Sphinx version 4.1
+# new in Sphinx version 4.1 - hide erroneous warnings for mapscript generated references
+nitpick_ignore_regex = [('py:obj', 'mapscript.*'), ('py:class', '.*'), 
+                        ('py:data', '.*'), ('py:func', '.*'), ('py:attr', '.*')]
 
 
 # Add any paths that contain templates here, relative to this directory.
@@ -124,7 +126,7 @@ pygments_style = 'sphinx'
 exclude_patterns = ['.git', 'howto', 'redirection', 'users-manual', 'mapscript/mapscript-api/constants', 'mapscript/mapscript-api/mapscript']
 
 # check for broken reference targets
-nitpicky = False
+nitpicky = True
 
 # Options for HTML output
 # -----------------------

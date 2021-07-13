@@ -108,7 +108,6 @@
 	mapfile_tuning                 :ref:`Mapfile <mapfile_tuning>`
 	mapinfo                        :ref:`MapInfo <mapinfo>`
 	mapscript                      :ref:`MapScript <mapscript>`
-	mapscript_introduction         :ref:`Introduction <mapscript_introduction>`
 	mapscript_ows                  :ref:`MapScript Wrappers for WxS Services <mapscript_ows>`
 	mapscript_tests                :ref:`MapScript Unit Testing <mapscript_tests>`
 	mapserv                        :ref:`mapserv <mapserv>`
