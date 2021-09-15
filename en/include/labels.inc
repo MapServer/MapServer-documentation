@@ -77,6 +77,7 @@
 	lists                          :ref:`Mailing Lists <lists>`
 	management                     :ref:`File Management <management>`
 	map                            :ref:`MAP <map>`
+    map2img                        :ref:`map2img <map2img>`
 	map_context                    :ref:`Map Context <map_context>`
 	mapcache_formats               :ref:`MapCache Image Formats <mapcache_formats>`
 	mapcache_jpeg_format           :ref:`MapCache JPEG Format <mapcache_jpeg_format>`
@@ -200,7 +201,6 @@
 	section1                       :ref:`Section 1: Static Maps and the MapFile <tutorial_section1>`
 	section2                       :ref:`Section 2: CGI variables and the User Interface <tutorial_section2>`
 	shapefiles                     :ref:`ESRI Shapefiles (SHP) <shapefiles>`
-	shp2img                        :ref:`shp2img <shp2img>`
 	shptree                        :ref:`shptree <shptree>`
 	shptreevis                     :ref:`shptreevis <shptreevis>`
 	sld                            :ref:`SLD <sld>`
