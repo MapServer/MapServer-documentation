@@ -51,7 +51,7 @@
 	fontset                        :ref:`FONTSET <fontset>`
 	format_types                   :ref:`Data Format Types <format_types>`
 	genindex                       :ref:`genindex`
-        git                            :ref:`GitHub <git>`	
+	git                            :ref:`GitHub <git>`	
 	gloss                          :ref:`Glossary <gloss>`
 	gml                            :ref:`GML <gml>`
 	gpx                            :ref:`GPS Exchange Format (GPX) <gpx>`
@@ -77,7 +77,7 @@
 	lists                          :ref:`Mailing Lists <lists>`
 	management                     :ref:`File Management <management>`
 	map                            :ref:`MAP <map>`
-    map2img                        :ref:`map2img <map2img>`
+	map2img                        :ref:`map2img <map2img>`
 	map_context                    :ref:`Map Context <map_context>`
 	mapcache_formats               :ref:`MapCache Image Formats <mapcache_formats>`
 	mapcache_jpeg_format           :ref:`MapCache JPEG Format <mapcache_jpeg_format>`
