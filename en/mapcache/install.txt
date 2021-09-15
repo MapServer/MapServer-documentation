@@ -12,7 +12,9 @@ Compilation & Installation
 :Contact: jmckenna at gatewaygeomatics.com
 :Author: Mathieu Coudert
 :Contact: mathieu.coudert at gmail.com
-:Last Updated: 2021-05-27
+:Author: Seth Girvin
+:Contact: sgirvin at compass.ie
+:Last Updated: 2021-08-31
 
 .. contents:: Table of Contents
     :depth: 3
@@ -285,8 +287,8 @@ spawning the MapCache processes.
 
 .. $ sudo ln -s /usr/local/bin/mapcache /usr/lib/cgi-bin/mapcache
 
-For Apache with mod_cgi:
-
+Apache with mod_cgi
+*******************
 
 .. code-block:: apache
 
@@ -321,6 +323,72 @@ MapCache could be:
 
 The MapCache service would then be accessible at http://myserver/map.fcgi[/demo]
 
+IIS and FastCGI
+***************
+
+First ensure FastCGI has been installed - see the notes on configuring :ref:`MapServer in IIS<iis-configuration>`. 
+MapCache relies on the ``MAPCACHE_CONFIG_FILE`` environment variable to be set in IIS. See the MapServer
+:ref:`further configuration <iis-environ-settings>` on how to set this.
+
+To create the variable from the command line you can use the following (which requires administrator privileges):
+
+.. code-block:: bat
+
+  %windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='C:\Mapserver\bin\mapcache.fcgi.exe'].environmentVariables.[name='MAPCACHE_CONFIG_FILE',value='C:\MapServer\apps\cache1.xml']" /commit:apphost
+
+Often you will want to use different MapCache configuration files for different web applications on the same server. To set these
+up you need to set a unique argument that will be passed to ``mapcache.fcgi.exe``. 
+
+.. code-block:: bat
+
+  %windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='C:\Mapserver\bin\mapcache.fcgi.exe',arguments='cache2']" /commit:apphost
+  %windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='C:\Mapserver\bin\mapcache.fcgi.exe',arguments='cache2'].environmentVariables.[name='MAPCACHE_CONFIG_FILE',value='C:\MapServer\apps\cache2.xml']" /commit:apphost
+
+.. note::
+
+    It appears the command has to be run in two parts or the following error is returned
+    ``ERROR ( message:Cannot find requested collection element. )``.
+
+FastCGI configurations are stored in ``C:\Windows\System32\inetsrv\config\applicationHost.config``. The commands creates
+the following XML:
+
+.. code-block:: xml
+
+    <application fullPath="C:\Mapserver\bin\mapcache.fcgi.exe" arguments="cache2">
+        <environmentVariables>
+            <environmentVariable name="MAPCACHE_CONFIG_FILE" value="C:\MapServer\apps\cache2.xml" />
+        </environmentVariables>
+    </application>
+
+Now we have set ``MAPCACHE_CONFIG_FILE`` we can configure a web application to use MapCache. This can all be done through the web application's
+``web.config`` file. Below is a sample configuration:
+
+.. code-block:: xml
+
+    <?xml version="1.0" encoding="UTF-8"?>
+    <configuration>
+        <system.webServer>
+        <handlers>
+            <add name="mapcache"
+            path="/*" verb="*" modules="FastCgiModule"
+            scriptProcessor="C:\MapServer\bin\mapcache.fcgi.exe|cache2"
+            resourceType="Unspecified"
+            requireAccess="Script"
+            allowPathInfo="true" />
+        </handlers>
+        </system.webServer>
+    </configuration>
+
+Key points to note are:
+
+* ``allowPathInfo`` must be set to ``true`` so IIS handles the ``PATH_INFO`` in the same way as other web servers (otherwise
+  IIS duplicates the ``SCRIPT_NAME`` in ``PATH_INFO`` breaking how MapCache handles URLs).
+* ``scriptProcessor`` should be set to match the ``fullPath`` set when creating the FastCGI configuration. The ``|cache2`` should
+  match the argument for the FastCGI application, separated from the path with a pipe (|) character.
+* If you have a FastCGI application without any arguments (when running a single instance of MapCache) you do not need to add the pipe and argument
+  to ``scriptProcessor``.
+
+The MapCache service should then be accessible at http://localhost/mapcache/demo/
 
 Customizing the Build, Or If Something Went Wrong
 -------------------------------------------------
