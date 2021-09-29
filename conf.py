@@ -220,6 +220,10 @@ html_show_sourcelink = False
 # Set the theme explicitly
 html_theme = "classic"
 
+# Add the branch name as a variable that can be used in templates
+# this can be set as a sphinx-build option using `-A BRANCH=main`
+html_context = {'branch': release}
+
 # Options for LaTeX output
 # ------------------------
 
