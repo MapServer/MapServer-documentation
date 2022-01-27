@@ -1,3 +1,11 @@
+**2022-01-27 - MapCache 1.12.0-rc1 is released**
+
+The first release candidate of MapCache 1.12.0 is now available.
+See the :ref:`1.12.0-rc1 changelog <changelog-mapcache-1-12-0-rc1>`
+for the full list of changes.  
+
+Head to :ref:`download <dev-release>` to obtain a copy.
+
 **2021-07-12 - MapServer 7.6.4 is released**
 
 The maintenance release of MapServer 7.6.4 is now available.
