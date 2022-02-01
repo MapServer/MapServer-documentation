@@ -1546,7 +1546,7 @@ Layer Object Metadata
   file that depends on that layer.
 
   For GDAL drivers that support band-specific metadata (e.g GeoTIFF, netCDF),
-  it is also possible to use a MapServer  metadata item named
+  it is also possible to use a MapServer metadata item named
   **wcs_outputformat_{OUTPUTFORMATNAME}_mdi_BAND_{bandnumber}_{DOMAIN}_{KEY}**.
   bandnumber will be automatically adjusted when passed to GDAL so that the
   WCS band subsetting is properly taken into account.
@@ -1572,6 +1572,39 @@ Layer Object Metadata
   the output of the WCS request too, and no manual wcs_outputformat_netCDF_mdi_*
   item is defined, then MapServer will automatically forward metadata from the
   input dataset to the output file.
+
+  For netCDF output, if the input dataset has multiple bands, it is possible to
+  generate a 3D dataset with the extra dimension being typically time or Z.
+
+  For each band, the MapServer metadata item
+  **wcs_outputformat_{OUTPUTFORMATNAME}_mdi_BAND_{bandnumber}_default__NETCDF_DIM_{DIMNAME}**
+  must be defined, where DIMNAME is the name of the extra dimension (e.g. "time")
+
+  In addition to that, netCDF attributes can be defined on the extra
+  dimension by setting metadata items of the form
+
+  **wcs_outputformat_{OUTPUTFORMATNAME}_mdi_default_{DIMNAME}#{ATTRNAME}**
+
+  where {ATTRNAME} is substituted with the name of the attribute to set on
+  the extra dimension (e.g. "standard_name", "units", etc.)
+
+  Example::
+
+       # Metadata items to apply to the "time" extra dimension.
+       "wcs_outputformat_netCDF_mdi_default_time#calendar" "standard"
+       "wcs_outputformat_netCDF_mdi_default_time#standard_name" "time"
+       "wcs_outputformat_netCDF_mdi_default_time#units" "hours since 1900-01-01 00:00:00"
+
+       # Values of each band along the "time" extra dimension.
+       "wcs_outputformat_netCDF_mdi_BAND_1_default_NETCDF_DIM_time" "10"
+       "wcs_outputformat_netCDF_mdi_BAND_2_default_NETCDF_DIM_time" "20"
+       "wcs_outputformat_netCDF_mdi_BAND_3_default_NETCDF_DIM_time" "30"
+       "wcs_outputformat_netCDF_mdi_BAND_4_default_NETCDF_DIM_time" "40"
+
+  In the special case of the DATA of the layer being a netCDF 3D dataset and
+  the output of the WCS request is netCDF too, and no manual wcs_outputformat_netCDF_mdi_*
+  item is defined, then MapServer will automatically forward metadata from the
+  input dataset to the output file to generate a netCDF 3D dataset.
 
 
 *Axes Descriptions* (WCS 1.x only)
