@@ -25,7 +25,7 @@ you use pattern validation (since version 6.0).
   The pattern for %myvar% was then provided in `METADATA` using
   "myvar_validation_pattern".
   
-.. NOTE::
+.. note::
    It is also strongly recommended to review the security steps for the *MAP=*
    call to the MapServer executable, by setting *MS_MAP_PATTERN* or 
    *MS_MAP_NO_PATH* or hiding the *MAP=* parameter on public servers, 
@@ -116,7 +116,7 @@ variables named multimedia, nseats and sound with values defined by
 the user in an HTML form.
 
 You must define validation expressions on these variables to guard
-against unintentional SQL being submitted to postgis. Within the layer
+against unintentional SQL being submitted to your server. Within the layer
 you'd do the following:
 
 .. code-block:: mapfile
@@ -153,4 +153,88 @@ no. The third limits the value for nseats to a 2 digit integer.
     END # Layer
     
   ..and calling it as: \https://xxx.xx/cgi-bin/mapserv?map=xxx.map&mode=map&code=12,13
+
+Expression Example
+------------------
+
+You can also use runtime substitutions to change values within a CLASS 
+EXPRESSION, such as `EXPRESSION ([year] < %year%)`.
+
+Again you must define validation expressions on these variables to guard
+against unintentional requests being submitted to your server. Within the layer
+you'd do the following:
+
+.. code-block:: mapfile
+
+    VALIDATION
+      'year' '^[0-9]{4}$'
+      'default_year' '1976'
+    END
+    
+The first limits the possible values to 4 digits, with each a valid number.
+The second sets the default value.
+
+The entire layer may appear as:
+
+.. code-block:: mapfile
+
+    LAYER
+      NAME 'yearly-data'
+      TYPE POINT
+      CONNECTIONTYPE OGR
+      CONNECTION "data.vrt"
+      VALIDATION
+        'year' '^[0-9]{4}$'
+        'default_year' '1976'
+      END #validation
+      STATUS ON
+      CLASS
+        NAME "Passed"
+        EXPRESSION ([year] < %year%)
+        STYLE
+          SYMBOL "circlef"
+          COLOR 0 0 255
+          SIZE 4
+        END # STYLE
+      END # CLASS
+      CLASS
+        NAME "Current"
+        EXPRESSION ([year] = %year%)
+        STYLE
+          SYMBOL "circlef"
+          COLOR 255 0 0
+          SIZE 4
+        END # STYLE
+      END # CLASS
+    END # LAYER
+    
+.. tip:: 
+
+   For the expression syntax, be sure to check the `ogrinfo <https://gdal.org/programs/ogrinfo.html>`_ 
+   response on your data layer, to see if OGR/GDAL reads the data 
+   value as an integer or as a string, such as::
+   
+     ogrinfo data.vrt data -summary
+     
+           using driver `OGR_VRT' successful.
+
+                Layer name: data
+                Geometry: Point
+                Feature Count: 3590
+                Extent: (136.852100, -43.533900) - (153.550600, -17.253900)
+                Layer SRS WKT:
+                ...
+                year: Integer (0.0)
+                
+   From above we can see that `year` is read by OGR as a number, so therefore
+   our expression should check for a number on both sides, such as
+   `EXPRESSION ([year] = %year%)`.  Alternatively, if the field was treated
+   as a string the expression might be: `EXPRESSION ("[year]" = "%year%")`
+    
+You can test this at the commandline, allowing you to test runtime substitution 
+mapfiles without using a webserver, with the mapserv utility such as:
+
+.. code-block::
+
+    mapserv -nh "QUERY_STRING=map=D:\ms4w\apps\validation-expression\validation.map&mode=map&year=1976" > out.png
 
