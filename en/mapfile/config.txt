@@ -7,9 +7,29 @@
  CONFIG
 *****************************************************************************
 
-MapServer has its own global configuration file. This was introduced in MapServer 8.0, and is described in
-:ref:`RFC 135 <rfc135>`. The configuration file can be set using the environment variable ``MAPSERVER_CONFIG_FILE``. 
-A default location can also be set when MapServer is compiled for different distributions.
+As of MapServer 8.0, MapServer has a required global configuration file, implemented through 
+:ref:`RFC 135 <rfc135>`, which aims to make configuring MapServer both more secure 
+and straight forward. The configuration file path can be set using the environment variable ``MAPSERVER_CONFIG_FILE``. 
+A default location can also be set at compile time, for different distributions.
+
+.. TIP::
+   For example, compiling from source on Ubuntu, by default MapServer will install 
+   a sample config file at */usr/local/etc/mapserver-sample.conf*, and you must 
+   rename that file to *mapserver.conf*.
+
+.. TIP::  
+   For MS4W users (version >= 5), the config 
+   file can be found at */ms4w/ms4w.conf*
+   
+If MapServer cannot find the config file, an error is returned such as:
+
+::
+
+  msLoadConfig(): Unable to access file.
+  
+.. TIP::
+   The commandline utility map2img has a switch *-conf* to set the name of the
+   config file.
 
 The configuration file is loaded by the MapServer CGI at runtime and provides site-level configuration
 for all Mapfiles. The configuration file has 3 sections detailed below.
@@ -40,6 +60,7 @@ MAPS
     The use of keys also helps to simplify OGC API URLs, for example the key ``itasca`` can be
     used in the place of a Mapfile path in a URL for example: http://localhost/mapserver/itasca/ogcapi/collections
     Keys are case-insensitive - "ITASCA" and "Itasca" are handled identically.
+    
     .. code-block:: mapfile
 
       MAPS
@@ -79,7 +100,8 @@ A full sample config file is shown below:
       #
       # MS_MAP_NO_PATH "1"
       MS_MAP_PATTERN "^/opt/mapserver" ## required
-
+      # MS_MAP_BAD_PATTERN "[/\\]{2}|[/\\]?\\.+[/\\]|,"
+      
       #
       # Global Log/Debug Setup
       #
@@ -98,7 +120,10 @@ A full sample config file is shown below:
 
       # disable POST requests (allowed by default, any value will do)
       # MS_NO_POST "1"
-    
+
+      # do not display mapserv version info for OGC requests etc.
+      # MS_NO_VERSION "1"
+          
       #
       # Other Options
       #
