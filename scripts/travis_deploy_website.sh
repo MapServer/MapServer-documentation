@@ -25,6 +25,5 @@ git config user.name "MapServer deploybot"
 #rm -rf .doctrees */.doctrees */.buildinfo
 
 git add -A
-git commit -m "update with results of commit https://github.com/mapserver/docs/commit/$TRAVIS_COMMIT"
+git commit -m "update with results of commit https://github.com/mapserver/MapServer-documentation/commit/$TRAVIS_COMMIT"
 git push origin master
-

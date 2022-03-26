@@ -85,7 +85,7 @@ master_doc = 'index'
 # General information about the project.
 project = u'MapServer'
 
-copyright = u'2021, Open Source Geospatial Foundation'
+copyright = u'2022, Open Source Geospatial Foundation'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -161,6 +161,10 @@ html_static_path = ['_static']
 # using the given strftime format.
 html_last_updated_fmt = '%Y-%m-%d'
 
+html_css_files = [
+    'ribbon.css'
+]
+
 # If true, SmartyPants will be used to convert quotes and dashes to
 # typographically correct entities.
 html_use_smartypants = True
@@ -215,6 +219,10 @@ html_show_sourcelink = False
 
 # Set the theme explicitly
 html_theme = "classic"
+
+# Add the branch name as a variable that can be used in templates
+# this can be set as a sphinx-build option using `-A BRANCH=main`
+html_context = {'branch': release}
 
 # Options for LaTeX output
 # ------------------------
