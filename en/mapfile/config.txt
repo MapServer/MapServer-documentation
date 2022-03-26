@@ -1,0 +1,149 @@
+.. index::
+   single: CONFIG
+
+.. _config:
+
+*****************************************************************************
+ CONFIG
+*****************************************************************************
+
+As of MapServer 8.0, MapServer has a required global configuration file, implemented through 
+:ref:`RFC 135 <rfc135>`, which aims to make configuring MapServer both more secure 
+and straight forward. The configuration file path can be set using the environment variable ``MAPSERVER_CONFIG_FILE``. 
+A default location can also be set at compile time, for different distributions.
+
+.. TIP::
+   For example, compiling from source on Ubuntu, by default MapServer will install 
+   a sample config file at */usr/local/etc/mapserver-sample.conf*, and you must 
+   rename that file to *mapserver.conf*.
+
+.. TIP::  
+   For MS4W users (version >= 5), the config 
+   file can be found at */ms4w/ms4w.conf*
+   
+If MapServer cannot find the config file, an error is returned such as:
+
+::
+
+  msLoadConfig(): Unable to access file.
+  
+.. TIP::
+   The commandline utility map2img has a switch *-conf* to set the name of the
+   config file.
+
+The configuration file is loaded by the MapServer CGI at runtime and provides site-level configuration
+for all Mapfiles. The configuration file has 3 sections detailed below.
+
+.. index::
+   pair: CONFIG; ENV
+   :name: mapfile-config-env
+
+ENV
+    This block allows for environment variables to be stored as name value pairs - see
+    :ref:`Environment Variables<environment_variables>` page for all available options.
+    Prior to the introduction of the configuration file support of environment variables varied
+    between different platforms. 
+
+    .. code-block:: mapfile
+
+      ENV
+        MS_MAP_PATTERN "^/opt/mapserver" ## required
+      END
+
+.. index::
+   pair: CONFIG; MAPS
+   :name: mapfile-config-maps
+
+MAPS
+    This block allows for keys values to be mapped to Mapfile paths. If the ``MS_MAP_NO_PATH`` environment
+    variable is set then **only** these keys can be used in the ``map=`` CGI parameter.
+    The use of keys also helps to simplify OGC API URLs, for example the key ``itasca`` can be
+    used in the place of a Mapfile path in a URL for example: http://localhost/mapserver/itasca/ogcapi/collections
+    Keys are case-insensitive - "ITASCA" and "Itasca" are handled identically.
+    
+    .. code-block:: mapfile
+
+      MAPS
+        ITASCA "/opt/mapserver/mapserver-demo/itasca.map"
+        TEST_MAPFILE "/opt/mapserver/test/test.map"
+      END
+
+.. index::
+   pair: CONFIG; PLUGINS
+   :name: mapfile-config-plugins
+
+PLUGINS
+    This block allows for keys values to be mapped to plugin library paths. For example the :ref:`MS SQL Plugin<mssql-plugin>`.
+    This registry of plugins avoids possible unsafe libraries being loaded by a Mapfile.
+
+    .. code-block:: mapfile
+
+      PLUGINS
+        "mssql" "C:\MapServer\bin\ms\plugins\mssql2008\msplugin_mssql2008.dll"
+      END
+
+A full sample config file is shown below:
+
+.. code-block:: mapfile
+
+  #
+  # Sample MapServer 8.0 Config File
+  #
+  CONFIG
+  
+    #
+    # Environment variables
+    #
+    ENV
+      #
+      # Limit Mapfile Access
+      #
+      # MS_MAP_NO_PATH "1"
+      MS_MAP_PATTERN "^/opt/mapserver" ## required
+      # MS_MAP_BAD_PATTERN "[/\\]{2}|[/\\]?\\.+[/\\]|,"
+      
+      #
+      # Global Log/Debug Setup
+      #
+      # MS_DEBUGLEVEL "5"
+      # MS_ERRORFILE "/opt/mapserver/logs/mapserver.log"
+  
+      #
+      # Proj Library
+      #
+      # PROJ_LIB "/usr/local/share/proj"
+    
+      #
+      # Default Map
+      #
+      # MS_MAPFILE "/opt/mapserver/test/test.map"
+
+      # disable POST requests (allowed by default, any value will do)
+      # MS_NO_POST "1"
+
+      # do not display mapserv version info for OGC requests etc.
+      # MS_NO_VERSION "1"
+          
+      #
+      # Other Options
+      #
+      # MS_ENCRYPTION_KEY "/opt/mapserver/mykey.txt"
+      # MS_USE_GLOBAL_FT_CACHE 1 # use a global font cache
+      # MS_PDF_CREATION_DATE "01/02/2022" # PDF create date metadata
+      # MS_MAPFILE_PATTERN "\.map$"
+      # MS_XMLMAPFILE_XSLT "/path/to/mapfile.xsl"
+      # MS_MODE "BROWSE" # default mode for CGI calls
+      # MS_OPENLAYERS_JS_URL "http://openlayers.org/api/OpenLayers.js"
+      # MS_TEMPPATH "/tmp"
+      # MS_MAX_OPEN_FILES 200 # maximum number of open files allowed on Windows
+    END
+
+    #
+    # Map aliases
+    #
+    MAPS
+      TEST_MAPFILE "/opt/mapserver/test/test.map"
+    END
+
+  END
+
