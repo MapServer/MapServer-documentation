@@ -10,7 +10,7 @@
 :Author: Jeff McKenna
 :Contact: jmckenna at gatewaygeomatics.com
 :Original Author: HostGIS
-:Last Updated: 2022-01-25
+:Last Updated: 2022-04-02
 
 .. contents:: Table of Contents
     :depth: 3
@@ -150,7 +150,42 @@ Index your data
 ---------------
 
 This of course is an important step for any vector layer, for fast display 
-in MapServer.  See :ref:`tileindex` for more detailed information. 
+in MapServer.  There are several types of indexes that you can enable to 
+speed up the display of your vector data with MapServer:
+
+Tileindexing
+^^^^^^^^^^^^
+
+See :ref:`tileindex` for more detailed information about 
+on-the-fly mosaicing with MapServer.
+
+Add a Spatial Index to your data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Make sure that your geometry has a spatial index.
+
+- Shapefile: see :ref:`shptree`
+- See below for databases (and GPKG)
+
+Add an Attribute Index to your data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you will be querying or filtering by a specific column in your 
+data, you should setup an attribute index on your vector data.
+
+Shapefiles:
+
+::
+
+  ogrinfo -sql  "CREATE INDEX ON province USING NAME_E" province.shp
+  
+2 files should be created with extensions: *.ind & .idm*
+  
+GeoPackage:
+
+::
+
+  ogrinfo -sql "CREATE INDEX IDXnewindexname ON yourtable (yourcolumn)" file.gpkg
 
 Splitting your data
 -------------------
@@ -367,8 +402,8 @@ The following steps will help you examine the issue (using a WFS case) :
 .. index::
    pair: Optimization; Databases
 
-Databases in General (PostGIS, Oracle, SpatiaLite, Microsoft SQL Server, MySQL)
--------------------------------------------------------------------------------
+Databases in General (PostGIS, Oracle, SpatiaLite, GeoPackage, Microsoft SQL Server, MySQL)
+-------------------------------------------------------------------------------------------
 
 Enable Connection Pooling
 ^^^^^^^^^^^^^^^^^^^^^^^^^
@@ -429,3 +464,98 @@ are serving through OGC services), such as:
       ----------------------------------------------------
           BOX(-2340603.75 -719746.0625,3009430.5 3836605.25)
       (1 row) 
+      
+Verify that your table has a Spatial Index
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+PostgreSQL/PostGIS example
+**************************
+
+Once connected through psql commandline, describe the table and 
+look for an "Indexes" section, mentioning geometry, such as:
+
+::
+
+  Indexes:
+      "province_pkey" PRIMARY KEY, btree (ogc_fid)
+      "province_wkb_geometry_geom_idx" gist (wkb_geometry)
+      
+GeoPackage example
+******************
+
+You can use *ogrinfo* to verify that your GPKG table's geometry 
+has a spatial index, which is very important for performance 
+(look for `HasSpatialIndex (Integer) = 1` to confirm that the spatial 
+index exists) :
+
+::
+
+  ogrinfo -sql "SELECT HasSpatialIndex('countries', 'GEOMETRY')" countries.gpkg
+
+    Layer name: SELECT
+    Geometry: Unknown (any)
+    Feature Count: 1
+    Layer SRS WKT:
+    (unknown)
+    HasSpatialIndex: Integer (0.0)
+    OGRFeature(SELECT):0
+      HasSpatialIndex (Integer) = 1
+      
+and then add a spatial index with ogrinfo :
+
+::
+
+  ogrinfo -sql "SELECT CreateSpatialIndex('parcelle_graphique', 'geom')" PARCELLES_GRAPHIQUES.gpkg
+
+For WFS services, prevent using default/full extent 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For your database connections, MapServer may (by default) use the full 
+extents of your data while performing a query (which can cause slow responses
+>30seconds).  You should likely set the following layer METADATA to 
+disable this:
+
+.. code-block:: mapfile
+
+    METADATA
+      "wfs_use_default_extent_for_getfeature" "false" 
+    END
+    
+Here is a fully enhanced layer example:
+
+.. code-block:: mapfile
+   
+  LAYER
+    NAME "CLUS"
+    METADATA
+      "ows_title"                   "CLUS"		
+      "ows_srs"                     "EPSG:3857 EPSG:4326 EPSG:2154"		
+      "wfs_getfeature_formatlist"   "geojson"
+      "wfs_geomtype"                "MultiPolygon"			
+      "gml_featureid"               "fid"
+      "gml_include_items"           "all"
+      "wfs_extent"                  "115134 6049690 1242200 7108930" #set to improve performance for all DB layers     
+      "wfs_use_default_extent_for_getfeature" "false" #set to improve performance for all DB layers
+      "ows_enable_request"          "*"	
+    END #metadata
+    TYPE POLYGON		
+    CONNECTIONTYPE OGR
+    CONNECTION "C:/ms4w/apps/RPG_2-0_GPKG_LAMB93_FR-2019/PARCELLES_GRAPHIQUES.gpkg"
+    DATA "parcelle_graphique"
+    EXTENT 115134 6049690 1242200 7108930 #set to improve performance for all DB layers
+    PROCESSING "CLOSE_CONNECTION=DEFER" #set to improve performance for all DB layers
+    STATUS ON
+    PROJECTION
+      "init=epsg:2154"
+    END #proj
+    COMPOSITE
+      OPACITY 100
+    END #composite    
+    CLASS
+      NAME "CLUS"
+      STYLE
+        OUTLINECOLOR 255 0 255
+      END #style
+    END #class
+  END #layer
+     

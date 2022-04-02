@@ -9,7 +9,7 @@ GeoPackage
 
 :Author:       Jeff McKenna
 :Contact:      jmckenna at gatewaygeomatics.com
-:Last Updated: 2021-05-06
+:Last Updated: 2022-04-02
 
 GeoPackage, also written as "GPKG", is a standards-based wrapper for the 
 file-based SQLite database.  GPKG is an encoding standard adopted by the Open 
@@ -26,7 +26,7 @@ More Information
 
 More information about GPKG is available at:
 
-* Official page: http://www.geopackage.org/
+* Official page: https://www.geopackage.org/
 * OGC's GeoPackage Encoding Standard: https://www.ogc.org/standards/geopackage
 
 File listing
@@ -77,7 +77,7 @@ First you should make sure that your local GDAL/OGR build contains both the
 
 ::
 
-  >ogrinfo --formats
+  ogrinfo --formats
   
      Supported Formats:
           ...
@@ -91,7 +91,7 @@ tables:
 
 ::
 
-  >ogrinfo countries.gpkg
+  ogrinfo countries.gpkg
   
     INFO: Open of `countries.gpkg'
           using driver `GPKG' successful.
@@ -102,7 +102,7 @@ Now use ogrinfo to get information on the structure of the spatial
 
 ::
 
-  >ogrinfo countries.gpkg countries -summary
+  ogrinfo countries.gpkg countries -summary
   
         INFO: Open of `countries.gpkg'
               using driver `GPKG' successful.
@@ -131,6 +131,40 @@ Now use ogrinfo to get information on the structure of the spatial
         sov_a3: String (0.0)
         adm0_dif: Integer (0.0)
         ...
+        
+You can also use ogrinfo to verify that your GPKG table's geometry 
+has a spatial index, which is very important for performance 
+(look for `HasSpatialIndex (Integer) = 1` to confirm that the spatial 
+index exists) :
+
+::
+
+  ogrinfo -sql "SELECT HasSpatialIndex('countries', 'GEOMETRY')" countries.gpkg
+
+    Layer name: SELECT
+    Geometry: Unknown (any)
+    Feature Count: 1
+    Layer SRS WKT:
+    (unknown)
+    HasSpatialIndex: Integer (0.0)
+    OGRFeature(SELECT):0
+      HasSpatialIndex (Integer) = 1
+      
+If you need to create add a spatial index to your GPKG, you can also
+use ogrinfo :
+
+::
+
+  ogrinfo -sql "SELECT CreateSpatialIndex('parcelle_graphique', 'geom')" PARCELLES_GRAPHIQUES.gpkg
+
+      
+If you are going to have MapServer filter or query a specific field in 
+your GPKG, you should also consider adding an attribute index for that 
+field:
+
+::
+
+  ogrinfo -sql "CREATE INDEX IDXnewindexname ON yourtable (yourcolumn)" file.gpkg
 
 
 Step 2: Add the layer in your mapfile
