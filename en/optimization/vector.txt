@@ -507,4 +507,54 @@ and then add a spatial index with ogrinfo :
 
   ogrinfo -sql "SELECT CreateSpatialIndex('parcelle_graphique', 'geom')" PARCELLES_GRAPHIQUES.gpkg
 
+For WFS services, prevent using default/full extent 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For your database connections, MapServer may using the full extents 
+of your data, while performing a query (which can cause slow responses
+>30seconds.  You must therefore set the layer METADATA to disable this:
+
+.. code-block:: mapfile
+
+    METADATA
+      "wfs_use_default_extent_for_getfeature" "false" 
+    END
+    
+Here is a fully enhanced layer example:
+
+.. code-block:: mapfile
+   
+  LAYER
+    NAME "CLUS"
+    METADATA
+      "ows_title"                   "CLUS"		
+      "ows_srs"                     "EPSG:3857 EPSG:4326 EPSG:900913"		
+      "wfs_getfeature_formatlist"   "geojson"
+      "wfs_geomtype"                "MultiPolygon"			
+      "gml_featureid"               "fid"
+      "gml_include_items"           "all"
+      "wfs_extent"                  "115134 6049690 1242200 7108930" #set to improve performance for all DB layers     
+      "wfs_use_default_extent_for_getfeature" "false" #set to improve performance for all DB layers
+      "ows_enable_request"          "*"	
+    END #metadata
+    TYPE POLYGON		
+    CONNECTIONTYPE OGR
+    CONNECTION 	"C:/ms4w/apps/RPG_2-0_GPKG_LAMB93_FR-2019/PARCELLES_GRAPHIQUES.gpkg"
+    DATA "parcelle_graphique"
+    EXTENT 115134 6049690 1242200 7108930 #set to improve performance for all DB layers
+    PROCESSING "CLOSE_CONNECTION=DEFER" #set to improve performance for all DB layers
+    STATUS ON
+    PROJECTION
+      "init=epsg:2154"
+    END #proj
+    COMPOSITE
+      OPACITY 100
+    END #composite    
+    CLASS
+      NAME "CLUS"
+      STYLE
+        OUTLINECOLOR 255 0 255
+      END #style
+    END #class
+  END #layer
      
