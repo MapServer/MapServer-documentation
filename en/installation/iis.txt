@@ -5,7 +5,7 @@ Running MapServer on IIS
 
 :Author: Seth Girvin
 :Contact: sgirvin at compass.ie
-:Last Updated: 2021-04-22
+:Last Updated: 2022-04-04
 
 .. contents::
    :local:
@@ -40,8 +40,8 @@ Committee (PSC) member.
     + Unless you are using deprecated features in your Mapfiles you should download the latest stable release. 
     + Nearly all servers will now have a x64 (64-bit) architecture, so unless you are restricted to a win32 (32-bit) server
       download a x64 rather than a win32 release. 
-    + Unless you have a good reason you should use the latest compiler version. MSVC 2017 means the binaries were compiled with
-      using Visual C++ 2017. 
+    + Unless you have a good reason you should use the latest compiler version. MSVC 2022 means the binaries were compiled with
+      using Visual C++ 2022. 
     + This installation guide uses the *"Compiled binaries in a single .zip package"* download (release-1911-x64-gdal-3-2-1-mapserver-7-6-2.zip). There is 
       also a *"MapServer installer with IIS registration support"* option, which has an inbuilt installer.
 
@@ -166,6 +166,62 @@ More details on setting up a FastCGI application with IIS can be found in the
       
     No query information to decode. QUERY_STRING is set, but empty. 
 
+MapServer Configuration File
+----------------------------
+
+The MapServer 8.0 release introduced a new :ref:`config` file. This allows all MapServer global environment variables to be set in a single place, which is
+easier to manage than IIS FastCGI variables, and more portable between different environments and operating systems.
+
+For this example we will create an empty configuration file at ``C:\MapServer\apps\mapserver.config``. Once the file is created the following sample configuration can be
+copied in:
+
+.. code-block:: bat
+
+    CONFIG
+      ENV
+
+        # allow any map from any location - suitable for development only
+        MS_MAP_PATTERN "."
+        
+        # allow maps from anywhere in C:/MapServer/apps/ or subfolders
+        # MS_MAP_PATTERN "^(C:)?\/MapServer\/apps\/((?!\.{2})[_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(map))$"
+        
+        # path to the Proj4 projection files
+        PROJ_LIB "C:/MapServer/bin/proj7/SHARE" 
+        
+        # point to the certs file for HTTPS access to OWS servers
+        CURL_CA_BUNDLE "C:\MapServer\bin\curl\curl-ca-bundle.crt"
+        
+        # to set a default Mapfile uncomment below
+        # MS_MAPFILE "C:/MapServer/apps/test/test.map"
+        
+        # to block MapServer from accesssing Mapfile by path uncomment below
+        # MS_MAP_NO_PATH TRUE
+      END
+
+      # allow Mapfiles to be accessed by key
+      MAPS
+        "test" "C:/MapServer/apps/tests/test.map"
+      END
+      
+      PLUGINS
+        # new keyed approach to plugins
+        "mssql" "C:/MapServer/bin/ms/plugins/mssql2008/msplugin_mssql2008.dll"
+        "oci" "C:/MapServer/bin/ms/plugins/oci/msplugin_oracle.dll"
+      END
+    END
+
+An IIS FastCGI environment variable ``MAPSERVER_CONFIG_FILE`` however still needs to be created to point to this configuration file. This can be set using IIS Manager, and selecting 
+Server > FastCGI Settings > ``C:\MapServer\bin\mapserv.exe`` > Environment Variables:
+
+.. image:: ../images/iis-config-file.png
+
+Alternatively it can beset from the command line with the following command:
+
+.. code-block:: bat
+
+    %windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='C:\MapServer\bin\mapserv.exe'].environmentVariables.[name='MAPSERVER_CONFIG_FILE',value='C:\MapServer\apps\mapserver.conf']" /commit:apphost
+
 Setting up Applications
 -----------------------
 
@@ -253,6 +309,10 @@ If a different application pool is used, or you don't set the permissions you wi
 Further Configuration
 ---------------------
 
+.. note::
+
+    As of MapServer 8.0 :ref:`environment_variables` can be set in the :ref:`config` file rather than as variables in IIS
+
 MapServer makes use of :ref:`environment_variables` to create application-wide settings. When using IIS these need to be set
 as FastCGI environment settings, rather than standard system-wide environment variables. Each FastCGI application can be configured
 with different environment variables and can be modified by IIS Manager, or using the command line.
@@ -261,20 +321,20 @@ with different environment variables and can be modified by IIS Manager, or usin
 
 FastCGI configurations are stored in ``C:\Windows\System32\inetsrv\config\applicationHost.config`` in the format below:
 
-  .. code-block:: xml
+.. code-block:: xml
 
-      <environmentVariables>
-         <environmentVariable name="CURL_CA_BUNDLE" value="C:\MapServer\bin\curl\curl-ca-bundle.crt" />
-      </environmentVariables>
+    <environmentVariables>
+       <environmentVariable name="CURL_CA_BUNDLE" value="C:\MapServer\bin\curl\curl-ca-bundle.crt" />
+    </environmentVariables>
 
 Setting a Default Mapfile
 +++++++++++++++++++++++++
 
 The ``MS_MAPFILE`` environment variable can be set to a default map as follows:
 
-  .. code-block:: bat
+.. code-block:: bat
 
-    %windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='C:\Mapserver\bin\mapserv.exe'].environmentVariables.[name='MS_MAPFILE',value='C:\MapServer\apps\test\test.map']" /commit:apphost
+  %windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='C:\Mapserver\bin\mapserv.exe'].environmentVariables.[name='MS_MAPFILE',value='C:\MapServer\apps\test\test.map']" /commit:apphost
 
 You can make then make a request without the query string requiring ``map=C:/MapServer/apps/test/test.map``: http://localhost/mapserver/mapserv?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetMap&LAYERS=country_bounds&STYLES=&CRS=EPSG:4326&BBOX=-180,-90,180,90&WIDTH=400&HEIGHT=300&FORMAT=image/png
 
@@ -298,6 +358,10 @@ Securing MapServer in IIS
 
 MapServer has two environment variables that can be used to restrict which Mapfiles can be accessed. 
 
+.. note::
+
+    As of MapServer 8.0 these variables can be set in the :ref:`config` file rather than as variables in IIS
+
 ``MS_MAP_NO_PATH`` can be used to ensure that users can't provide their own ``map=`` parameter to the query string. This can
 be set to any value ("True" in this example) so that only the ``MS_MAPFILE`` environment value can be used (see "Setting a Default Mapfile" above). 
 
@@ -306,11 +370,11 @@ be set to any value ("True" in this example) so that only the ``MS_MAPFILE`` env
   %windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='C:\Mapserver\bin\mapserv.exe'].environmentVariables.[name='MS_MAP_NO_PATH',value='True']" /commit:apphost
 
 ``MS_MAP_PATTERN`` can be set to limit the folders from which Mapfiles can be accessed using a regular expression. For example to limit
-to the ``C:\MapServer\apps\test`` folder use the following regular expression: ``"^^(C:)?\/MapServer\/apps\/test\/((?!\.{2})[_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(map))$"``
+to the ``C:\MapServer\apps`` (note this path is case-sensitive) folder use the following regular expression: ``"^(C:)?\/MapServer\/apps\/((?!\.{2})[_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(map))$"``
 
 .. code-block:: bat
 
-  %windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='C:\Mapserver\bin\mapserv.exe'].environmentVariables.[name='MS_MAP_PATTERN',value='"^(C:)?\/MapServer\/apps\/test\/((?!\.{2})[_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(map))$"']" /commit:apphost
+  %windir%\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+"[fullPath='C:\Mapserver\bin\mapserv.exe'].environmentVariables.[name='MS_MAP_PATTERN',value='"^(C:)?\/MapServer\/apps\/((?!\.{2})[_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(map))$"']" /commit:apphost
 
 In addition to these methods IIS itself can be used to block or filter query string parameters. The 
 `denyQueryStringSequences <https://docs.microsoft.com/en-us/iis/configuration/system.webserver/security/requestfiltering/denyquerystringsequences/>`_ 
@@ -340,6 +404,37 @@ Troubleshooting
 ---------------
 
 Common error messages and how to resolve them are listed below. 
+
++ If the ``MAPSERVER_CONFIG_FILE`` environment variable has not been set in IIS, or it points to a missing or inaccessible file, you will receive the following message:
+
+  .. code-block:: bat
+
+    msLoadConfig(): Unable to access file. See mapserver.org/config_file.html for more information.
+
++ If the ``MAPSERVER_CONFIG_FILE`` is empty or doesn't begin with ``CONFIG`` you will receive the following message:
+
+  .. code-block:: bat
+
+    msLoadConfig(): Unknown identifier. First token must be CONFIG, this doesn't look like a mapserver config file.
+
++ If the ``MAPSERVER_CONFIG_FILE`` has invalid syntax you will receive a message similar to the following:
+
+  .. code-block:: bat
+  
+    msLoadConfig(): Unknown identifier. Parsing error near (ENVS):(line 2)
+
++ The following error is returned (from MapServer 8.0) if ``allowPathInfo="false"`` is set in the ``handlers`` section
+  for MapServer in the ``web.config`` file. This should be set to ``true``.
+
+  .. code-block:: bat
+
+    msLoadMap(): Regular expression error. MS_DEFAULT_MAPFILE_PATTERN validation failed.
+
++ If the ``CONFIG`` file security regular expressions used to limit access to Mapfiles do not match the supplied Mapfile you will receive the following:
+
+  .. code-block:: bat
+  
+    msCGILoadMap(): Web application error. CGI variable &quot;map&quot; fails to validate.
 
 + Check that the file exists if you receive the following error. If it does exist then check the file permissions. 
 
@@ -400,11 +495,3 @@ Common error messages and how to resolve them are listed below.
         </isapiCgiRestriction>
       </security>
     </system.webServer>
-
-+ The following error is returned (from MapServer 8.0) if ``allowPathInfo="false"`` is set in the ``handlers`` section
-  for MapServer in the ``web.config`` file. This should be set to ``true``.
-
-  .. code-block:: bat
-
-    msLoadMap(): Regular expression error. MS_DEFAULT_MAPFILE_PATTERN validation failed.
-
