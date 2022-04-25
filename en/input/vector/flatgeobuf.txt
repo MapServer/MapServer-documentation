@@ -1,0 +1,285 @@
+.. _flatgeobuf:
+
+.. index::
+   single: FlatGeobuf
+
+*****************************************************************************
+FlatGeobuf
+*****************************************************************************
+
+:Author:       Jeff McKenna
+:Contact:      jmckenna at gatewaygeomatics.com
+:Last Updated: 2022-04-25
+
+FlatGeobuf is an optimized binary encoding for vectors based on 
+`Flatbuffers <https://google.github.io/flatbuffers/>`__, 
+that focuses on read/query performance by leveraging a 
+`Packed Hilbert R-Tree <https://en.wikipedia.org/wiki/Hilbert_R-tree#Packed_Hilbert_R-trees>`__
+spatial index, that enables fast bounding box spatial filtering.  
+FlatGeobuf performance has helped make it become one of the
+chosen formats for streaming spatial data through HTTP / "the cloud". 
+
+.. image:: ../../images/flatgeobuf.jpg
+ :width: 200   
+ :height: 150
+ :class: no-scaled-link
+
+More Information
+----------------
+
+More information about FlatGeobuf is available at:
+
+* GitHub repository: https://github.com/flatgeobuf/flatgeobuf
+* Twitter: https://twitter.com/flatgeobuf
+
+File listing
+--------------
+
+FlatGeobuf files are usually a single binary file with a FGB filename extension, 
+such as:
+
+::
+	
+	countries.fgb
+
+.. note::
+
+    Windows users who want to follow along, can convert `MS4W <https://ms4w.com>`__'s 
+    included *demo.db* SpatiaLite database into a FlatGeobuf file (for the *countries* 
+    table) with the command (executed inside */ms4w/apps/local-demo/data/*) : ::
+    
+      ogr2ogr -f FlatGeobuf countries.fgb demo.db countries
+
+Data Access / Connection Method
+---------------------------------
+
+FlatGeobuf access is available in MapServer through OGR's `FlatGeobuf driver <https://gdal.org/drivers/vector/flatgeobuf.html>`__.  
+You must use GDAL version 3.1.0 or later for FlatGeobuf access.
+
+OGR uses the names of spatial layers within the FlatGeobuf file
+as layers.
+
+The CONNECTION parameter must include the *.fgb* extension, and the
+DATA parameter should be the name of the OGR layer.
+
+.. code-block:: mapfile
+
+  CONNECTIONTYPE OGR
+  CONNECTION "name.fgb"
+  DATA "layername"
+  
+.. tip::
+
+    Since the MapServer 7.6.0 release, you can also specify OGR driver options, 
+    and for the FlatGeobuf driver you can disable checking for invalid 
+    data, which is critical for maximum performance ::
+    
+      CONNECTIONOPTIONS
+        "VERIFY_BUFFERS" "NO" # for maximum performance
+      END    
+    
+Step 1: Use ogrinfo to examine
+------------------------------
+
+First you should make sure that your local GDAL/OGR build contains the
+"FlatGeobuf" driver, by using the *--formats* command:
+
+::
+
+  ogrinfo --formats
+  
+     Supported Formats:
+          ...
+          FlatGeobuf -vector- (rw+v): FlatGeobuf
+          ...
+
+Once you have confirmed that you have the FlatGeobuf driver, you are ready
+to try an ogrinfo command on your file to get a list of spatial
+layers:
+
+::
+
+  ogrinfo countries.fgb
+  
+    INFO: Open of `countries.fgb'
+        using driver `FlatGeobuf' successful.
+    1: countries (Multi Polygon)
+
+Now use ogrinfo to get information on the structure of the spatial
+'countries' layer:
+
+::
+
+  ogrinfo countries.fgb countries -summary
+  
+        INFO: Open of `countries.fgb'
+              using driver `FlatGeobuf' successful.
+
+        Layer name: countries
+        Geometry: Multi Polygon
+        Feature Count: 177
+        Extent: (-180.000000, -90.000000) - (180.000000, 83.645130)
+        Layer SRS WKT:
+        GEOGCRS["WGS 84",
+            ENSEMBLE["World Geodetic System 1984 ensemble",
+                MEMBER["World Geodetic System 1984 (Transit)"],
+                MEMBER["World Geodetic System 1984 (G730)"],
+                MEMBER["World Geodetic System 1984 (G873)"],
+                MEMBER["World Geodetic System 1984 (G1150)"],
+                MEMBER["World Geodetic System 1984 (G1674)"],
+                MEMBER["World Geodetic System 1984 (G1762)"],
+                MEMBER["World Geodetic System 1984 (G2139)"],
+                ELLIPSOID["WGS 84",6378137,298.257223563,
+                    LENGTHUNIT["metre",1]],
+                ENSEMBLEACCURACY[2.0]],
+            PRIMEM["Greenwich",0,
+                ANGLEUNIT["degree",0.0174532925199433]],
+            CS[ellipsoidal,2],
+                AXIS["geodetic latitude (Lat)",north,
+                    ORDER[1],
+                    ANGLEUNIT["degree",0.0174532925199433]],
+                AXIS["geodetic longitude (Lon)",east,
+                    ORDER[2],
+                    ANGLEUNIT["degree",0.0174532925199433]],
+            USAGE[
+                SCOPE["Horizontal component of 3D system."],
+                AREA["World."],
+                BBOX[-90,-180,90,180]],
+            ID["EPSG",4326]]
+        Data axis to CRS axis mapping: 2,1
+        featurecla: String (0.0)
+        scalerank: Integer (0.0)
+        labelrank: Integer (0.0)
+        sovereignt: String (0.0)
+        sov_a3: String (0.0)
+        adm0_dif: Integer (0.0)
+        level: Integer (0.0)
+        type: String (0.0)
+        ...
+
+Step 2: Add the layer in your mapfile
+-------------------------------------
+
+For OGR connections, it is always recommended to set CONNECTIONTYPE,
+CONNECTION, and DATA, as follows:
+
+.. code-block:: mapfile
+
+    /* Countries */
+    LAYER
+      NAME "countries"
+      TYPE POLYGON
+      STATUS ON
+      CONNECTIONTYPE OGR
+      CONNECTION "countries.fgb"
+      DATA "countries"            # the OGR layername, found through ogrinfo
+      CONNECTIONOPTIONS
+        "VERIFY_BUFFERS" "NO"     # for maximum performance (requires MapServer >=7.6.0)
+      END #connectionoptions
+      EXTENT -180.000000 -90.000000 180.000000 83.645130 # for maximum performance      
+      PROCESSING "CLOSE_CONNECTION=DEFER" # for maximum performance
+      CLASS
+        NAME "World Countries"
+        STYLE
+          COLOR 200 200 200
+          OUTLINECOLOR 0 0 0
+          WIDTH 0.1
+        END #style 
+      END #class
+    END #layer
+     
+Step 3: Test your Mapfile with shp2img
+--------------------------------------
+
+Use the MapServer commandline utility :ref:`shp2img` to verify that your 
+mapfile creates a valid map image, and also display draw times, such as:
+
+::
+
+  shp2img -m flatgeobuf.map -o ttt.png -map_debug 3
+  
+  msDrawMap(): rendering using outputformat named png (AGG/PNG).
+  msDrawMap(): WMS/WFS set-up and query, 0.000s
+  msDrawMap(): Layer 0 (countries), 0.012s
+  msDrawMap(): Drawing Label Cache, 0.002s
+  msDrawMap() total time: 0.015s
+  msSaveImage(flatgeobuf.png) total time: 0.008s
+  
+.. image:: ../../images/countries-shp2img.png
+   :width: 600   
+   :height: 400
+   :class: no-scaled-link
+ 
+Optional: Configure your WFS service to Output FlatGeoBuf
+---------------------------------------------------------
+ 
+Since MapServer 6.0, you can configure an OUTPUTFORMAT for your WFS 
+(or WMS) service, for an OGR connection.  See the :ref:`ogr_output`
+document for more information.
+
+First, you must specify the OUTPUTFORMAT in your mapfile, for FlatGeobuf
+such as:
+
+.. code-block:: mapfile
+
+    OUTPUTFORMAT
+      NAME "OGRFLATGEOBUF"
+      DRIVER "OGR/FlatGeoBuf"
+      FORMATOPTION "STORAGE=filesystem"
+      FORMATOPTION "FORM=simple"
+      FORMATOPTION "FILENAME=result.fgb"
+      FORMATOPTION "LCO:VERIFY_BUFFERS=NO" 
+    END
+    
+Next, you must specify that OUTPUTFORMAT using the *wfs_getfeature_formatlist*
+metadata parameter, at the LAYER level, such as:
+
+.. code-block:: mapfile
+
+  METADATA
+    "ows_title"         "World Countries"
+    "ows_abstract"      "World Countries, served by MS4W"
+    "ows_include_items" "all"
+    "gml_include_items" "all"
+    "gml_featureid"     "ogc_fid"
+    "wfs_getfeature_formatlist" "OGRGML,OGRFLATGEOBUF"
+    "ows_geomtype"      "MultiPolygon"
+  END
+  
+Verify that OUTPUTFORMAT through a GetCapilities request, and look for the 
+GetFeature/ResultFormat section, such as:
+
+.. code-block::
+
+  http://127.0.0.1/cgi-bin/mapserv.exe?
+     map=/ms4w/apps/local-demo/flatgeobuf.map
+     &SERVICE=wfs
+     &VERSION=1.0.0
+     &REQUEST=GetCapabilities
+     
+Which gives a response containing:
+
+.. image:: ../../images/wfs-outputformat-flatgeobuf.png
+   :width: 600   
+   :height: 400
+   :class: no-scaled-link
+   
+Once we see the *OGRFLATGEOBUF* in the GetCapabilities response, then we
+can add *&OUTPUTFORMAT=OGRFLATGEOBUF* to the end of any WFS GetFeature request,
+such as:
+
+.. code-block::
+
+  http://127.0.0.1/cgi-bin/mapserv.exe?
+     map=/ms4w/apps/local-demo/flatgeobuf.map
+     &SERVICE=WFS
+     &REQUEST=GetFeature
+     &VERSION=2.0.0
+     &TYPENAMES=ms:countries
+     &STARTINDEX=0
+     &COUNT=1000
+     &SRSNAME=urn:ogc:def:crs:EPSG::4326
+     &BBOX=-333.02127061643835759,-189,326.66640061643835224,189,urn:ogc:def:crs:EPSG::4326
+     &OUTPUTFORMAT=OGRFLATGEOBUF
+     
+and a file named *result.fgb* will be returned.
