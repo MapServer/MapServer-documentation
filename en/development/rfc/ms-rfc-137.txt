@@ -8,7 +8,7 @@ MS RFC 137: Native FlatGeobuf support
 :Contact: 	bjorn.harrtell@gmail.com
 :Author: 	Jeff McKenna
 :Contact: 	jmckenna@gatewaygeomatics.com
-:Last Updated:  2022-04-30
+:Last Updated:  2022-05-16
 :Version: 	MapServer 8.0
 :Status: 	Draft
 
@@ -65,6 +65,7 @@ chosen formats for streaming spatial data through HTTP / "the cloud".
 
   .. code-block:: mapfile
 
+    CONNECTIONTYPE flatgeobuf
     DATA "name.fgb"
 
 - FlatGeobuf C++ implementation is small and doesn't require any
@@ -82,7 +83,22 @@ Not applicable
 
 As mentioned above, this should give a performance boost by reading 
 direct from the FlatGeobuf file.  More benchmarks will be included here 
-during the testing of this Pull Request.
+during the testing of this Pull Request.  For example, here is an 
+updated benchmark run on 2022-05-16 (note that this is for world extents, 
+with country labels) :
+
+::
+  
+     FlatGeobuf (native) 0.008s
+     Shapefile (native)  0.010s
+     FlatGeobuf (OGR)    0.013s
+     Shapefile (OGR)     0.023s
+     GeoPackage (OGR)    0.042s
+     SpatiaLite (OGR)    0.045s
+     PostGIS (native)    0.053s
+     GeoJSON (OGR)       0.089s
+     
+     environment: MapServer-main + GDAL 3.4.3 (MS4W/Windows)
 
 3.3 Limitations
 ===============
@@ -91,7 +107,9 @@ during the testing of this Pull Request.
    setting an OUTPUTFORMAT for direct FlatGeobuf output from MapServer, will
    only work through OGR, for now.
    
-2. 
+2. The *VERIFY_BUFFERS* driver option of FlatGeobuf is not implemented 
+   through this native driver (it is exposed through the OGR connection 
+   in MapServer, if need be). 
    
 4. Implementation Details
 =========================
