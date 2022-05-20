@@ -9,7 +9,7 @@
 
 :Author: Jeff McKenna
 :Contact: jmckenna at gatewaygeomatics.com
-:Last Updated: 2022-01-25
+:Last Updated: 2022-05-20
 
 .. contents:: Table of Contents
     :depth: 3
@@ -340,9 +340,21 @@ Let's go through each of these parameters in more detail:
 - **Configuring for GetFeatureInfo Requests:**
 
   You must set the layer TEMPLATE parameter for the layer to be
-  queryable by GetFeatureInfo requests (see :ref:`template`).  For
+  queryable by GetFeatureInfo requests (see :ref:`template`), with a value
+  such as *"empty"* or the name of your html template file.  For
   requests of type "text/html" you should also set the layer HEADER
   and FOOTER parameters.
+  
+  .. code-block:: mapfile
+  
+    MAP
+      ...
+      LAYER
+        ...
+        TEMPLATE "empty"
+        ...
+      END #layer
+    END #map
   
   As of MapServer 4.6 you must set the *gml_\** metadata for the layer
   attributes to be served (see the Layer Object metadata in the
@@ -480,6 +492,10 @@ few pointers:
 
 - `QGIS`_ is a full GIS package which includes WMS client
   support. (recommended)
+  
+  .. tip::
+    You can/should use the `QGIS Network Logger <https://github.com/MapServer/MapServer/wiki/Get-the-Raw-WMS-Request-Generated-by-QGIS>`__ 
+    to get the exact GetMap or GetCapabilities requests sent by QGIS.
 
 - `OpenJUMP`_ is a desktop GIS package which includes WMS client
   support.
@@ -2181,23 +2197,25 @@ The following is a very basic WMS Server mapfile:
     :linenos:
 
     MAP
-      NAME "WMS-test"
+      NAME "WMS-test" ##no special characters or spaces
       STATUS ON
       SIZE 400 300
       EXTENT -2200000 -712631 3072800 3840000
       UNITS METERS
-      SHAPEPATH "../data"
+      SHAPEPATH "./data"
       IMAGECOLOR 255 255 255
-      FONTSET ../etc/fonts.txt
+      FONTSET "../etc/fonts.txt"
     
       WEB
         IMAGEPATH "/ms4w/tmp/ms_tmp/"
         IMAGEURL "/ms_tmp/"
         METADATA
-          "wms_title"     "WMS Demo Server"  ##required
+          "wms_title"          "WMS Demo Server"  ##required
+          "wms_abstract"       "Longer description of your service" ##recommended         
           "wms_onlineresource" "http://yourpath/cgi-bin/mapserv.exe?map=/path/to/your-mapfile.map"   ##required (must change mapfile path)
-          "wms_srs"       "EPSG:3978 EPSG:3857 EPSG:4269 EPSG:4326"  ##recommended
-          "wms_enable_request" "*"   ##necessary
+          "wms_srs"            "EPSG:3978 EPSG:3857 EPSG:4269 EPSG:4326"  ##recommended
+          "wms_enable_request" "*"   ##required
+          "wms_getfeatureinfo_formatlist" "text/plain,text/html,application/vnd.ogc.gml,gml" ##recommended      
         END
       END # Web
     
@@ -2216,13 +2234,19 @@ The following is a very basic WMS Server mapfile:
       #
     
       LAYER
-        NAME "park"
+        NAME "park" ##no special characters or spaces
         METADATA
-          "wms_title"    "Parks"   ##required
+          "wms_title"         "Parks"   ##required
+          "wms_abstract"      "Longer description of your layer" ##recommended
+          "wms_include_items" "all" ##optional
+          "gml_include_items" "all" ##optional
+          "gml_featureid"     "ogc_fid" ##optional
+          "gml_geometries"    "msgeom" ##optional
+          "gml_msgeom_type"   "multipolygon" ##optional         
         END
         TYPE POLYGON
-        STATUS OFF
-        DATA park
+        STATUS ON
+        DATA "park.shp"
         PROJECTION
           "init=epsg:3978"   ##recommended
         END
@@ -2233,16 +2257,23 @@ The following is a very basic WMS Server mapfile:
             OUTLINECOLOR 120 120 120
           END # Style
         END # Class
+        TEMPLATE "empty" ##recommended (enable GetFeatureInfo / can point to valid .html template)
       END # Layer
     
       LAYER
-        NAME popplace
+        NAME "cities" ##no special characters or spaces
         METADATA
-          "wms_title"    "Cities"  ##required
+          "wms_title"         "Cities"  ##required
+          "wms_abstract"      "Longer description of your layer" ##recommended
+          "wms_include_items" "all" ##optional
+          "gml_include_items" "all" ##optional
+          "gml_featureid"     "ogc_fid" ##optional
+          "gml_geometries"    "msgeom" ##optional
+          "gml_msgeom_type"   "point" ##optional
         END
         TYPE POINT
         STATUS ON
-        DATA popplace
+        DATA "popplace.shp"
         PROJECTION
           "init=epsg:3978"   ##recommended
         END
@@ -2254,9 +2285,10 @@ The following is a very basic WMS Server mapfile:
             COLOR 0 0 0
           END # Style
         END # Class
+        TEMPLATE "empty" ##recommended (enable GetFeatureInfo / can point to valid .html template)
       END # Layer
 
-    END # Map File      
+    END # mapfile      
       
 FAQ / Common Problems
 =====================
