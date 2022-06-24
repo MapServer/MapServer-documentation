@@ -9,7 +9,11 @@ FlatGeobuf
 
 :Author:       Jeff McKenna
 :Contact:      jmckenna at gatewaygeomatics.com
-:Last Updated: 2022-04-26
+:Last Updated: 2022-06-24
+
+.. contents:: Table of Contents
+    :depth: 2
+    :backlinks: top
 
 FlatGeobuf is an optimized binary encoding for vectors based on 
 `Flatbuffers <https://google.github.io/flatbuffers/>`__, 
@@ -51,9 +55,34 @@ such as:
       ogr2ogr -f FlatGeobuf countries.fgb demo.db countries
 
 Data Access / Connection Method
----------------------------------
+-------------------------------
 
-FlatGeobuf access is available in MapServer through OGR's `FlatGeobuf driver <https://gdal.org/drivers/vector/flatgeobuf.html>`__.  
+Method 1: Direct connection (native access)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. seealso::
+    
+    :ref:`rfc137` 
+
+Native access is available since the MapServer 8.0.0 release, 
+that uses code within the MapServer source to access the FGB file 
+directly, as follows:
+
+.. code-block:: mapfile
+
+  CONNECTIONTYPE flatgeobuf
+  DATA "file.fgb"
+  
+.. tip::
+
+    For MapScript, you can use the `setConnectionType()`` method, such as ::
+    
+    $layer->setConnectionType(MS_FLATGEOBUF, "");
+
+Method 2: Connect through OGR
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+FlatGeobuf access is also available in MapServer through OGR's `FlatGeobuf driver <https://gdal.org/drivers/vector/flatgeobuf.html>`__.  
 You must use GDAL version 3.1.0 or later for FlatGeobuf access.
 
 OGR uses the names of spatial layers within the FlatGeobuf file
@@ -160,6 +189,38 @@ Now use ogrinfo to get information on the structure of the spatial
 Step 2: Add the layer in your mapfile
 -------------------------------------
 
+Method 1: Direct connection (native access)
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Available since the 8.0.0 release, MapServer can access the FGB file 
+directly, as follows:
+
+.. code-block:: mapfile
+
+    /* Countries */
+    LAYER
+      NAME "countries"
+      TYPE POLYGON
+      STATUS ON
+      CONNECTIONTYPE flatgeobuf
+      DATA "countries.fgb"
+      EXTENT -180.000000 -90.000000 180.000000 83.645130 # for maximum performance      
+      PROCESSING "CLOSE_CONNECTION=DEFER" # for maximum performance
+      CLASS
+        NAME "World Countries"
+        STYLE
+          COLOR 200 200 200
+          OUTLINECOLOR 0 0 0
+          WIDTH 0.1
+        END #style 
+      END #class
+    END #layer
+
+
+
+Method 2: Connect through OGR
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
 For OGR connections, it is always recommended to set CONNECTIONTYPE,
 CONNECTION, and DATA, as follows:
 
@@ -212,6 +273,10 @@ mapfile creates a valid map image, and also display draw times, such as:
  
 Optional: Configure your WFS service to Output FlatGeoBuf
 ---------------------------------------------------------
+
+.. note::
+
+    The following is not available through native FlatGeoBuf access.
  
 Since MapServer 6.0, you can configure an OUTPUTFORMAT for your WFS 
 (or WMS) service, for an OGR connection.  See the :ref:`ogr_output`
