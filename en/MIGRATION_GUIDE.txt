@@ -6,13 +6,88 @@
 MapServer Migration Guide
 *****************************************************************************
 
-:Last Updated: 2021-07-13
+:Last Updated: 2022-08-09
 
 .. contents:: Table of Contents
     :depth: 2
     :backlinks: top
     
-.. _migration-7.6:
+.. _migration-8-0:
+   
+MapServer 7.6 to 8.0 Migration
+==============================
+    
+- The former `shp2img` commandline utility has been renamed to :ref:`map2img`
+
+- Every MapServer installation as of the 8.0.0 release will require a 
+  :ref:`config` file.
+
+  .. TIP::
+     For example, compiling from source on Ubuntu, by default MapServer will install 
+     a sample config file at */usr/local/etc/mapserver-sample.conf*, and you must 
+     rename that file to *mapserver.conf*.
+
+  .. TIP::  
+     For MS4W users (version >= 5), the config 
+     file can be found at */ms4w/ms4w.conf*
+
+- old native PHP MapScript has been removed, in place of PHPNG (SWIG) MapScript.
+  Follow the MapScript :ref:`SWIG API <swig>` documentation.  Compiling SWIG `master` 
+  from `GitHub <https://github.com/swig/swig>`_ is recommended.
+
+  .. TIP::  
+     The MS4W community has produced many code examples of PHPNG (SWIG) MapScript:
+     https://ms4w.com/trac/wiki/MigrationGuide5.x
+
+- several deprecrated mapfile parameters have been removed, and will throw an
+  error if you still specify them now.  The following are specific examples 
+  to be aware of (but be sure to review the :ref:`full list <rfc133>`), taken from the 
+  MS4W `migration guide <https://ms4w.com/trac/wiki/MigrationGuide5.x>`_:
+
+  - **DUMP TRUE**
+
+    Instead, you can configure querying of your layer by using METADATA instead, such as:
+
+    .. code-block:: mapfile
+    
+        LAYER
+          ...
+          METADATA
+            "wms_title"         "Populated Places"
+            "wms_include_items" "all"
+            "gml_include_items" "all"
+            "gml_featureid"     "ogc_fid"	
+          END #metadata
+          ...
+        END #layer
+
+  - **OPACITY** at the **LAYER-level** 
+
+    Instead it must be inside a ​COMPOSITE object:
+    
+    .. code-block:: mapfile
+
+        LAYER
+          ...
+          COMPOSITE
+            OPACITY 40
+          END #composite
+        END #layer
+
+  - **COLOR** at the **LAYER-level** 
+
+    Instead it must be inside a ​STYLE object:
+    
+    .. code-block:: mapfile
+
+        LAYER
+          ...
+          STYLE
+            COLOR 120 120 120
+          END #style
+        END #layer
+    
+.. _migration-7-6:
    
 MapServer 7.4 to 7.6 Migration
 ==============================
