@@ -9,8 +9,9 @@
 
 As of MapServer 8.0, MapServer has a required global configuration file, implemented through 
 :ref:`RFC 135 <rfc135>`, which aims to make configuring MapServer both more secure 
-and straight forward. The configuration file path can be set using the environment variable ``MAPSERVER_CONFIG_FILE``. 
-A default location can also be set at compile time, for different distributions.
+and straight forward. The configuration file path can be set using the environment variable 
+``MAPSERVER_CONFIG_FILE``. A default location can also be set at compile time, 
+for different distributions.
 
 .. TIP::
    For example, compiling from source on Ubuntu, by default MapServer will install 
@@ -31,8 +32,9 @@ If MapServer cannot find the config file, an error is returned such as:
    The commandline utility :ref:`map2img` has a switch *-conf* to set the name of the
    config file.
 
-The configuration file is loaded by the MapServer CGI at runtime and provides site-level configuration
-for all Mapfiles. The configuration file has 3 sections detailed below.
+The configuration file is loaded by the MapServer CGI at runtime and provides 
+site-level configuration for all mapfiles. The configuration file has 3 sections 
+detailed below.
 
 .. index::
    pair: CONFIG; ENV
@@ -40,26 +42,37 @@ for all Mapfiles. The configuration file has 3 sections detailed below.
 
 ENV
     This block allows for environment variables to be stored as name value pairs - see
-    :ref:`Environment Variables<environment_variables>` page for all available options.
+    the :ref:`Environment Variables<environment_variables>` page for all available options.
     Prior to the introduction of the configuration file support of environment variables varied
     between different platforms. 
 
     .. code-block:: mapfile
 
       ENV
-        MS_MAP_PATTERN "^/opt/mapserver" ## required
+        MS_MAP_PATTERN "^/opt/mapserver" ## required when referencing mapfiles by path
       END
+      
+    .. TIP::
+    
+       As of the MapServer 8.0 release, there are 2 scenarios where you won't have to 
+       specify *MS_MAP_PATTERN* :
+       
+         1. If using a map alias (set in the *MAPS* section of this config file).
+         2. If MS_MAP_PATTERN is set in the underlying environment - that is, by
+            the Web server. MapServer will fall back to the environment variables
+            if they exist for any of the :ref:`MS* variables<environment_variables>`.
 
 .. index::
    pair: CONFIG; MAPS
    :name: mapfile-config-maps
 
 MAPS
-    This block allows for keys values to be mapped to Mapfile paths. If the ``MS_MAP_NO_PATH`` environment
-    variable is set then **only** these keys can be used in the ``map=`` CGI parameter.
-    The use of keys also helps to simplify OGC API URLs, for example the key ``itasca`` can be
-    used in the place of a Mapfile path in a URL for example: http://localhost/mapserver/itasca/ogcapi/collections
-    Keys are case-insensitive - "ITASCA" and "Itasca" are handled identically.
+    This block allows for aliases to be mapped to mapfile paths. If the ``MS_MAP_NO_PATH`` environment
+    variable is set then **only** these aliases can be used in the ``map=`` CGI parameter.
+    The use of aliases also helps to simplify :ref:`ogcapi` URLs, for example the alias 
+    ``itasca`` can be used in the place of a mapfile path in a URL for example: 
+    http://localhost/mapserver/itasca/ogcapi/collections
+    Aliases are case-insensitive - "ITASCA" and "Itasca" are handled identically.
     
     .. code-block:: mapfile
 
@@ -73,8 +86,8 @@ MAPS
    :name: mapfile-config-plugins
 
 PLUGINS
-    This block allows for keys values to be mapped to plugin library paths. For example the :ref:`MS SQL Plugin<mssql-plugin>`.
-    This registry of plugins avoids possible unsafe libraries being loaded by a Mapfile.
+    This block allows for keys to be mapped to plugin library paths. For example the :ref:`MS SQL Plugin<mssql-plugin>`.
+    This registry of plugins avoids possible unsafe libraries being loaded by a mapfile.
 
     .. code-block:: mapfile
 
@@ -99,7 +112,7 @@ A full sample config file is shown below:
       # Limit Mapfile Access
       #
       # MS_MAP_NO_PATH "1"
-      MS_MAP_PATTERN "^/opt/mapserver" ## required
+      MS_MAP_PATTERN "^/opt/mapserver" ## required when referencing mapfiles by path
       # MS_MAP_BAD_PATTERN "[/\\]{2}|[/\\]?\\.+[/\\]|,"
       
       #
