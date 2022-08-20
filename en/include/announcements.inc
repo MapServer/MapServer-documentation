@@ -1,3 +1,10 @@
+**2022-08-19 - MapServer 8.0.0-rc1 is released**
+
+The first release candidate for MapServer 8.0 has been released. The list of
+major changes for this release can be found in the :ref:`8.0 announcement <announce-8-0>`.
+See the :ref:`changelog <changelog-8-0-0-rc1>`
+for the full list of changes and head to :ref:`download` to obtain a copy.
+
 **2022-08-09 - MapServer 8.0.0-beta2 is released**
 
 The second beta for MapServer 8.0 has been released. The list of
@@ -74,42 +81,3 @@ Head to :ref:`download` to obtain a copy.
     prevent malicious attacks to your file system.  Please see details 
     in the announcement at :ref:`2021-03-30-limit-mapfile-access`.
 
-**2020-12-07 - MapServer 7.6.2 is released**
-
-The maintenance release of MapServer 7.6.2 is now available.
-See the :ref:`7.6 changelog <changelog-7-6>` for the full list of changes.  
-
-Head to :ref:`download` to obtain a copy.
-
-**2020-07-31 - MapServer 7.6.1 is released**
-
-The maintenance release of MapServer 7.6.1 is now available.
-See the :ref:`7.6 changelog <changelog-7-6>` for the full list of changes.  
-
-Head to :ref:`download` to obtain a copy.
-
-**2020-05-08 - MapServer 7.6.0 is released**
-
-The major version MapServer 7.6.0 has been released. The list of significant
-changes for this release can be found in the :ref:`7.6 announcement <announce-7-6>`.
-See the :ref:`changelog <changelog-7-6>` for the full list
-of changes.
-
-Head to :ref:`download` to obtain a copy.
-
-**2020-03-21 - MapServer 7.4.4, and 6.4.6 are released**
-
-The maintenance releases of MapServer have been issued in order to fix
-CVE-2020-10872, CVE-2020-10873 vulnerabilities in PHPMapScript error handling.
-See the :ref:`7.4.4 changelog <changelog-7-4-4>`,
-:ref:`6.4.6 changelog <changelog-6-4-6>`
-for the full list of changes.
-
-Head to :ref:`download` to obtain a copy.
-
-**2020-02-24 - MapCache 1.10.0 is released**
-
-The major version MapCache 1.10.0 has been released. The list of significant
-changes for this release can be found in the :ref:`changelog <changelog-mapcache-1-10>`.
-
-Head to :ref:`download` to obtain a copy.
