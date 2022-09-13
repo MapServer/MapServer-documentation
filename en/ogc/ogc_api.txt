@@ -4,12 +4,12 @@
 .. _ogcapi:
 
 *****************************************************************************
- OGC API
+ OGC API : Features
 *****************************************************************************
 
 :Author:       Jeff McKenna
 :Contact:      jmckenna at gatewaygeomatics.com
-:Last Updated: 2022-08-14
+:Last Updated: 2022-09-12
 :Status:       Draft in-progress
 
 .. contents:: Table of Contents
@@ -27,11 +27,11 @@ specifications to align with current technology and design patterns:
  - OpenAPI (and Swagger)
 
 The `OGC API <https://ogcapi.ogc.org/>`__ efforts represent a clean break 
-from the first generation WxS specifications. This RFC is an attempt describe 
-MapServer support for (initially) the OGC API - Features server specifications.  
-The modular nature of OGC API will allow for reuse of shared functionality 
-(landing pages, conformance, collections, queryables, filtering, etc.) across 
-various OGC APIs implemented in MapServer.
+from the first generation WxS specifications. This document is an 
+attempt to describe MapServer support for (initially) the **OGC API - Features** 
+server specifications.  The modular nature of OGC API will allow for reuse of 
+shared functionality (landing pages, conformance, collections, queryables, 
+filtering, etc.) across various OGC APIs implemented in MapServer.
 
 OGC API request/response design patterns consist of HTTP operations with GET 
 (KVP) or POST (JSON) methods to specific query parameters.  HTTP methods 
@@ -70,15 +70,14 @@ This document assumes that you are already familiar with certain
 aspects of MapServer:
 
 - MapServer application development and setting up .map files.
-- Familiarity with the WMS spec would be an asset. A link to the WMS
-  specification document is included in the "WMS-Related Information"
-  section below.
+- Familiarity with the OGCAPI: Features spec would be an asset.
 
 Links to OGC API-Related Information
 ------------------------------------
 
 - :ref:`rfc134`
-- `OGC API homepage <https://ogcapi.ogc.org/>`__
+- OGC API: Features `specification <https://ogcapi.ogc.org/features/>`__
+- OGC's e-Learning `Introduction to OGC API - Features <https://opengeospatial.github.io/e-learning/ogcapi-features/text/basic-main.html>`__ 
 - pygeoapi OGCAPI demo `landing page <https://demo.pygeoapi.io/master>`__
 - pygeoapi OGCAPI `Swagger API docs <https://demo.pygeoapi.io/master/openapi?f=html>`__ 
 
@@ -333,11 +332,15 @@ Landing Page
 
     http://127.0.0.1/cgi-bin/mapserv.exe/ + your mapfile alias + /ogcapi/
   
-  or in the above example, it would be: http://127.0.0.1/cgi-bin/mapserv.exe/localdemo/ogcapi/
+  or in the above example, it would be: ``http://127.0.0.1/cgi-bin/mapserv.exe/localdemo/ogcapi/``
   
   .. image:: ../images/ogcapi-ms4w-landing.png
     :width: 400    
     :class: no-scaled-link
+    
+  .. TIP::
+     See a live MapServer 8.0 `OGCAPI: Features` landing page at 
+     https://demo.mapserver.org/cgi-bin/mapserv/localdemo/ogcapi     
 
 .. index:: 
    pair: OGCAPI; Collections
@@ -350,21 +353,25 @@ Collections
 
     http://127.0.0.1/cgi-bin/mapserv.exe/ + your mapfile alias + /ogcapi/collections?f=html
   
-  or in the above example, it would be: http://127.0.0.1/cgi-bin/mapserv.exe/localdemo/ogcapi/collections?f=html
+  or in the above example, it would be: ``http://127.0.0.1/cgi-bin/mapserv.exe/localdemo/ogcapi/collections?f=html``
   
   .. image:: ../images/ogcapi-ms4w-collections.png
       :width: 400    
       :class: no-scaled-link
       
+  .. TIP::
+     See a live MapServer 8.0 `OGCAPI: Features` collection at 
+     https://demo.mapserver.org/cgi-bin/mapserv/localdemo/ogcapi/collections?f=html      
+      
 Collection Items
 ****************
 
-- you can access your OGC API collection items in GeoJSON such as *ogcapi/collections/layername/items?f=json* 
+- you can access a specific OGC API collection item in GeoJSON such as *ogcapi/collections/layername/items?f=json* 
   such as::
 
     http://127.0.0.1/cgi-bin/mapserv.exe/ + your mapfile alias + /ogcapi/collections/ + layername + /items?f=json
   
-  or in the above example, it would be: http://127.0.0.1/cgi-bin/mapserv.exe/localdemo/ogcapi/collections/lakes/items?f=json
+  or in the above example, it would be: ``http://127.0.0.1/cgi-bin/mapserv.exe/localdemo/ogcapi/collections/lakes/items?f=json``
   
   .. TIP::
      Another clear reason to **never** use spaces or special characters in your
@@ -374,34 +381,46 @@ Collection Items
       :width: 400    
       :class: no-scaled-link
       
+  .. TIP::
+     See a live MapServer 8.0 `OGCAPI: Features` collection item (as GeoJSON) at 
+     https://demo.mapserver.org/cgi-bin/mapserv/localdemo/ogcapi/collections/lakes/items?f=json     
+      
 - you can access your OGC API collection items in HTML such as *ogcapi/collections/layername/items?f=html* 
   such as::
 
     http://127.0.0.1/cgi-bin/mapserv.exe/ + your mapfile alias + /ogcapi/collections/ + layername + /items?f=html
   
-  or in the above example, it would be: http://127.0.0.1/cgi-bin/mapserv.exe/localdemo/ogcapi/collections/lakes/items?f=html     
+  or in the above example, it would be: ``http://127.0.0.1/cgi-bin/mapserv.exe/localdemo/ogcapi/collections/lakes/items?f=html``     
   
   .. image:: ../images/ogcapi-ms4w-collections-items-html.png
       :width: 400    
       :class: no-scaled-link
       
+  .. TIP::
+     See a live MapServer 8.0 `OGCAPI: Features` collection item (in HTML) at 
+     https://demo.mapserver.org/cgi-bin/mapserv/localdemo/ogcapi/collections/lakes/items?f=html     
+      
 API Document
 ************
 
 - you can access your OGC API document with a url such as *ogcapi/api?f=json* 
-  (JSON) such as::
+  (JSON) or *ogcapi/api?f=html* (HTML) such as::
 
     http://127.0.0.1/cgi-bin/mapserv.exe/ + your mapfile alias + /ogcapi/api?f=json
   
-  or in the above example, it would be: http://127.0.0.1/cgi-bin/mapserv.exe/localdemo/ogcapi/api?f=json
+  or in the above example, it would be: ``http://127.0.0.1/cgi-bin/mapserv.exe/localdemo/ogcapi/api?f=json``
   
   .. image:: ../images/ogcapi-ms4w-api-json.png
       :width: 400    
       :class: no-scaled-link
       
-      
+  .. TIP::
+     See a live MapServer 8.0 `OGCAPI: Features` API document (in HTML) at 
+     https://demo.mapserver.org/cgi-bin/mapserv/localdemo/ogcapi/api?f=html    
 
-
+  .. image:: ../images/ogcapi-ms4w-api-html.png
+      :width: 400    
+      :class: no-scaled-link
 
 
 
