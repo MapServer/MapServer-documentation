@@ -963,15 +963,38 @@ OPACITY [integer|alpha]
 
 PLUGIN [filename]
     Additional library to load by MapServer, for this layer.  This is commonly
-    used to load specific support for SDE and Microsoft SQL Server layers,
+    used to load specific support for Oracle and Microsoft SQL Server layers,
     such as:
+    
+    **For MapServer >=8:**
 
       .. code-block:: mapfile
 
         CONNECTIONTYPE PLUGIN
-        CONNECTION "hostname,port:xxx,database,username,password"
-        PLUGIN "C:/ms4w/Apache/specialplugins/msplugin_sde_92.dll"
-        DATA "layername,geometrycolumn,SDE.DEFAULT"
+        CONNECTION "username/password@hostname:port/database"
+        PLUGIN "oci"
+        DATA "geometrycolumn FROM schema.table USING UNIQUE column SRID 4326"
+	
+    Where "oci" is an alias mapped in the global :ref:`CONFIG <config>` 
+    file:
+    
+      .. code-block:: mapfile
+      
+        PLUGINS
+          # new keyed approach to plugins
+          "mssql" "C:/apps/gisinternals/bin/ms/plugins/mssql2008/msplugin_mssql2008.dll"
+          "oci" "C:/apps/gisinternals/bin/ms/plugins/oci/msplugin_oracle.dll"
+          "mssql_ms4w" "C:/ms4w/msplugins/mssql/msplugin_mssql2008.dll"
+        END
+        
+    **For MapServer <8:**
+    
+      .. code-block:: mapfile    
+    
+        CONNECTIONTYPE PLUGIN
+        CONNECTION "server=mysqlserver2008.com;uid=dbusername;pwd=dbpassword;database=Roads Database;Integrated Security=false"
+        PLUGIN "C:/ms4w/msplugins/mssql/msplugin_mssql2008.dll"
+        DATA "the_geom from roads"    
 
 .. index::
    pair: LAYER; POSTLABELCACHE
