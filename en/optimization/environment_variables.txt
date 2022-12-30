@@ -163,7 +163,7 @@ MS_MAPFILE_PATTERN
    The default value for this variable is::
 
      MS_MAPFILE_PATTERN='\.map$'
-     
+
 .. index::
    pair: Environment variables; MS_MAP_BAD_PATTERN
 
@@ -194,6 +194,78 @@ MS_MAP_BAD_PATTERN
    For more Windows information see `Securing your MS4W Installation <https://ms4w.com/README_INSTALL.html#securing-your-ms4w-installation>`_
 
    .. seealso:: :ref:`limit_mapfile_access` & Associated `Pull Request <https://github.com/MapServer/MapServer/pull/6314>`_ for the 7.6.3 release
+
+.. index::
+   pair: Environment variables; MS_CONTEXT_BAD_PATTERN
+
+.. _ms_context_bad_pattern:
+
+MS_CONTEXT_BAD_PATTERN
+   .. versionadded:: 8.0.1
+   
+   The `MS_CONTEXT_BAD_PATTERN` environment variable can be used to specify a
+   Regular Expression to catch & not allow problematic character sequences 
+   in any map context paths passed to the mapserv CGI in the context=... URL parameter.
+   If the value matches then an error is generated.  By default all 
+   MapServer installations (since 8.0.1) set a hardcoded value for 
+   *MS_CONTEXT_BAD_PATTERN* of:
+   ::
+
+    [/\\]{2}|[/\\]?\\.+[/\\]|,
+  
+   which will therefore not allow "/../" or "//" in the map context value.
+
+   For Windows users, MS4W uses the PCRE regex library (which requires a 
+   slightly different regex syntax), so all future MS4W releases will 
+   contain the following default *MS_MAP_BAD_CONTEXT_PATTERN* enabled 
+   (to not allow "/../" or "//" in the map context value) :
+   
+   ::
+   
+     [\/\\\\]{2}|[\/\\\\]?\.{2,}[\/\\\\]|,
+     
+   For more Windows information see `Securing your MS4W Installation <https://ms4w.com/README_INSTALL.html#securing-your-ms4w-installation>`_
+
+   .. seealso:: :ref:`limit_mapfile_access`
+
+.. index::
+   pair: Environment variables; MS_CONTEXT_PATTERN
+
+.. _ms_context_pattern:
+
+MS_CONTEXT_PATTERN
+   .. versionadded:: 8.0.1
+
+   The `MS_CONTEXT_PATTERN` environment variable can be used to specify a
+   Regular Expression that must be matched by all file paths passed
+   to the mapserv CGI in the context=... URL parameter.
+
+   If `MS_CONTEXT_PATTERN` is not set then no map context can be loaded.
+
+   Apache's SetEnv directive can be used to restrict mapfiles to a
+   specific directory and subdirectories.
+   
+   * *Unix users* may set the following expression in Apache to restrict 
+     mapfiles to the */opt/mapserver* directory and subdirectories:
+
+     ::
+
+       SetEnv MS_CONTEXT_PATTERN "^\/opt\/mapserver\/([^\.][_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(xml))$" 
+     
+   * *Windows Apache/MS4W users* can set the following expression in the Apache
+     conf file, to limit the possible MAP= paths to the common 
+     *C:/ms4w/apps/* directory (where all MS4W mapfiles and applications live), 
+     allow encoded urls, allow "." or "_" or "-" in MAP= paths but disallow ".." 
+     directory traversing:
+
+     ::
+
+       SetEnv MS_CONTEXT_PATTERN "^(C:)?\/ms4w\/apps\/((?!\.{2})[_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(xml))$"
+  
+     .. NOTE::
+        MS4W users can see specific examples at: https://ms4w.com/README_INSTALL.html#securing-your-ms4w-installation    
+
+   .. seealso:: :ref:`limit_mapfile_access`
 
 .. index::
    pair: Environment variables; MS_MAP_PATTERN
