@@ -177,6 +177,59 @@ threads all try to insert new tiles concurrently.
    </cache>
 
 
+.. _mapcache_cache_lmdb:
+
+Lightning Memory-Mapped Database Caches
+---------------------------------------
+
+The Lightning Memory-Mapped Database cache backend is similar to the Berkeley
+DB backend. It stores tiles in a key-value flat-file database, and therefore
+does not have the disadvantages of disk caches with regards to the number of
+files stored on the filesystem.
+
+Note that for a given LMDB cache, only a single database file is created, which
+will store the tiles of its associated tilesets (i.e. there is not a database
+file created per tileset, grid, and/or dimension). If you need to store different
+tilesets to different files, then use multiple LMDB cache entries. It is not
+possible to use multiple database files for tileset grids or dimensions.
+
+LMDB is a memory-mapped database thus it will show up as a memory used by
+the process. Note that LMDB might not work with remote file systems as they
+must support flock(), memory map sync etc. and should not be accessed from
+multiple hosts.
+
+.. code-block:: xml
+
+   <cache name="lmdb" type="lmdb">
+      <!-- base (required)
+         absolute filesystem path where the LMDB database file is to be stored.
+         this directory must exist, and be writable
+      -->
+      <base>/tmp/foo/</base>
+
+      <!-- key_template (optional)
+         string template used to create the key for a tile entry in the database.
+         defaults to the value below. you should include {tileset}, {grid} and {dim} here
+         unless you know what you are doing, or you will end up with mixed tiles
+      <key_template>{tileset}-{grid}-{dim}-{z}-{y}-{x}.{ext}</key_template>
+      -->
+      <!-- max_size (optional)
+         maximum size of database in thousands of _SC_PAGESIZE.
+         defaults to 64 that equals 250MiB on most of systems with 4k pagesize.
+         database can only be grown larger (requires a restart).
+         when db size will reach the max_size setting, any write attempt will
+         result in an error message.
+      <max_size>64</max_size>
+      -->
+      <!-- max_readers (optional)
+         maximum simultaneous reader count. should be higher than web server
+         process / thread count.
+         defaults to 126.
+      <max_readers>126</max_readers>
+      -->
+   </cache>
+
+
 .. _mapcache_cache_sqlite:
 
 SQLite Caches
