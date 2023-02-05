@@ -4,6 +4,8 @@ MapServer Documentation Licensing
 Copyright (c) 2008-2023 Open Source Geospatial Foundation.  
 Copyright (c) 1996-2008 Regents of the University of Minnesota.
 
+See general summary of CC BY 4.0 license: https://creativecommons.org/licenses/by/4.0/
+
 # Creative Commons Attribution 4.0 International
 
 Creative Commons Corporation (“Creative Commons”) is not a law firm and does not provide legal services or legal advice. Distribution of Creative Commons public licenses does not create a lawyer-client or other relationship. Creative Commons makes its licenses and related information available on an “as-is” basis. Creative Commons gives no warranties regarding its licenses, any material licensed under their terms and conditions, or any related information. Creative Commons disclaims all liability for damages resulting from their use to the fullest extent possible.
