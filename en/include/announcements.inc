@@ -1,3 +1,12 @@
+**2023-04-18 - MapServer 8.0.1 and 7.6.5 are released**
+
+The maintenance release of MapServer 8.0.1 and 7.6.5 are now available.
+See the :ref:`8.0.1 changelog <changelog-8-0-1>`,
+:ref:`7.6.5 changelog <changelog-7-6-5>`
+for the full list of changes.
+
+Head to :ref:`download` to obtain a copy.
+
 **2023-01-30 - MapCache 1.14.0 is released**
 
 MapCache 1.14.0 has been released. This is a security release to handle 
