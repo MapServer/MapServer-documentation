@@ -24,7 +24,7 @@
 :Contact: jmckenna at gatewaygeomatics.com
 :Author: Seth Girvin
 :Contact: sethg at geographika.co.uk
-:Last Updated: 2022-08-15
+:Last Updated: 2023-06-13
 
 =============================================================================
  Introduction
@@ -51,7 +51,8 @@ meaningless, and even dangerous attributes might be exposed by objects.
    
  .. note::
 
-    PHP 7 support is included in the SWIG API as of the MapServer 7.4.0 release.   
+    PHP support is included in the SWIG API as of the MapServer 7.4.0 release. 
+    PHP 8.2 and PHP 8.1 are supported.    
 
 =============================================================================
  Appendices
