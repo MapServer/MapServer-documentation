@@ -52,7 +52,7 @@ meaningless, and even dangerous attributes might be exposed by objects.
  .. note::
 
     PHP support is included in the SWIG API as of the MapServer 7.4.0 release. 
-    PHP 8.2 and PHP 8.1 are supported.    
+    PHP 8.2 and PHP 8.1 are supported with MapServer 8.0.1.    
 
 =============================================================================
  Appendices
