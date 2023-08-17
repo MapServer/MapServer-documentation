@@ -162,6 +162,7 @@ html_static_path = ['_static']
 html_last_updated_fmt = '%Y-%m-%d'
 
 html_css_files = [
+    'custom.css',
     'ribbon.css'
 ]
 
