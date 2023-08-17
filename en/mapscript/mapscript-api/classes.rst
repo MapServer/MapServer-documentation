@@ -30,6 +30,7 @@
     queryMapObj
     rectObj
     referenceMapObj
+    reprojectionObj
     resultCacheObj
     resultObj
     scaleTokenEntryObj
