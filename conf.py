@@ -49,8 +49,7 @@ sys.path.append(os.path.abspath('.'))
 #extensions = ['labels' ,'rst2pdf.pdfbuilder']
 #extensions = ['labels', 'sphinxcontrib.spelling']
 
-extensions = ['labels', 'sphinx_removed_in', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.viewcode',
-             'sphinxemoji.sphinxemoji']
+extensions = ['labels', 'sphinx_removed_in', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.viewcode']
 
 autosummary_generate = True # when True create a page for each mapscript class
 
