@@ -132,5 +132,11 @@ Error
    * .. autodata:: mapscript.MS_V8ERR
         :annotation: 43
 
-   * .. autodata:: mapscript.MS_NUMERRORCODES
+   * .. autodata:: mapscript.MS_OGCAPIERR
         :annotation: 44
+
+   * .. autodata:: mapscript.MS_FGBERR
+        :annotation: 45
+
+   * .. autodata:: mapscript.MS_NUMERRORCODES
+        :annotation: 46

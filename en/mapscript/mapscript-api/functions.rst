@@ -25,5 +25,3 @@
     mapscript.msResetErrorList
     mapscript.msSaveImage
     mapscript.msSetup
-    mapscript.shapeObj_fromWKT
-    mapscript.value
