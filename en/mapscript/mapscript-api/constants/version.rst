@@ -6,14 +6,14 @@ Version
 .. hlist::
    :columns: 3
     
-   * .. autodata:: mapscript.MS_VERSION_REV
+   * .. autodata:: mapscript.MS_VERSION_MINOR
         :annotation: 0
 
-   * .. autodata:: mapscript.MS_VERSION_MAJOR
-        :annotation: 7
+   * .. autodata:: mapscript.MS_VERSION_REV
+        :annotation: 1
 
-   * .. autodata:: mapscript.MS_VERSION_MINOR
-        :annotation: 7
+   * .. autodata:: mapscript.MS_VERSION_MAJOR
+        :annotation: 8
 
    * .. autodata:: mapscript.MS_VERSION_NUM
-        :annotation: 70700
+        :annotation: 80001

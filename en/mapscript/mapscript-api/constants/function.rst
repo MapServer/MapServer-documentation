@@ -42,17 +42,29 @@ Function
    * .. autodata:: mapscript.MS_TOKEN_FUNCTION_SMOOTHSIA
         :annotation: 361
 
-   * .. autodata:: mapscript.MS_TOKEN_FUNCTION_JAVASCRIPT
+   * .. autodata:: mapscript.MS_TOKEN_FUNCTION_CENTERLINE
         :annotation: 362
 
-   * .. autodata:: mapscript.MS_TOKEN_FUNCTION_UPPER
+   * .. autodata:: mapscript.MS_TOKEN_FUNCTION_DENSIFY
         :annotation: 363
 
-   * .. autodata:: mapscript.MS_TOKEN_FUNCTION_LOWER
+   * .. autodata:: mapscript.MS_TOKEN_FUNCTION_OUTER
         :annotation: 364
 
-   * .. autodata:: mapscript.MS_TOKEN_FUNCTION_INITCAP
+   * .. autodata:: mapscript.MS_TOKEN_FUNCTION_INNER
         :annotation: 365
 
-   * .. autodata:: mapscript.MS_TOKEN_FUNCTION_FIRSTCAP
+   * .. autodata:: mapscript.MS_TOKEN_FUNCTION_JAVASCRIPT
         :annotation: 366
+
+   * .. autodata:: mapscript.MS_TOKEN_FUNCTION_UPPER
+        :annotation: 367
+
+   * .. autodata:: mapscript.MS_TOKEN_FUNCTION_LOWER
+        :annotation: 368
+
+   * .. autodata:: mapscript.MS_TOKEN_FUNCTION_INITCAP
+        :annotation: 369
+
+   * .. autodata:: mapscript.MS_TOKEN_FUNCTION_FIRSTCAP
+        :annotation: 370
