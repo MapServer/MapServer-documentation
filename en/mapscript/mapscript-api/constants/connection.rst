@@ -59,3 +59,6 @@ Connection
 
    * .. autodata:: mapscript.MS_IDW
         :annotation: 18
+
+   * .. autodata:: mapscript.MS_FLATGEOBUF
+        :annotation: 19
