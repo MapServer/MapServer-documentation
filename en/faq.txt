@@ -240,41 +240,11 @@ width you want. A 'circle' symbol can be defined as
         POINTS 1 1 END
       END
 
-Why do my JPEG input images look different via MapServer?
--------------------------------------------------------------------------------
-
-You must be using an old version of MapServer  (where GD was the
-default library for rendering).
-
-Newer versions of MapServer  use AGG for rendering, and the default
-output formats is 24 bit colour, so there should not be a problem.
-
-The default output format for MapServer with GD was 8bit
-pseudo-colored PNG or GIF.  Inherently there will be some color
-degradation in converting a 24bit image (16 million colors) image into
-8bit (256 colors).
-
-With GD output, MapServer used quite a simple method to do the
-transformation, converting pixels to the nearest color in a 175 color
-colorcube. This would usually result in blotchy color in a fairly
-smoothly varying image.
-
-For GD, solutions used to be:
-
-- Select 24bit output.  This might be as easy as "IMAGETYPE JPEG" in your MAP
-  section.
-- Enable dithering (PROCESSING "DITHER=YES") to produce a better color
-  appearance.
-- Preprocess your image to 8bit before using it in MapServer with an external
-  application like the GDAL rgb2pct.py script.
-
-For more information review the :ref:`raster`.
-
 Which image format should I use?
 -------------------------------------------------------------------------------
 
 Although MapScript can generate the map in any desired image format it is
-sufficient to only consider the three most prevalent ones: JPEG, PNG, and GIF.
+sufficient to only consider the most prevalent ones: JPEG and PNG.
 
 JPEG is an image format that uses a lossy compression algorithm to reduce an
 image's file size and is mostly used when loss of detail through compression
@@ -284,73 +254,32 @@ which is something JPEG is not known for displaying very well. In addition,
 maps, unless they include some aerial or satellite imagery, generally only use
 very few different colours. JPEG with its 24bit colour depth capable of
 displaying around 16.7 million colours is simple not suitable for this
-purpose. GIF and PNG however use an indexed colour palette which can be
+purpose. PNG8 however use an indexed colour palette which can be
 optimized for any number (up to 256) of colours which makes them the perfect
 solution for icons, logos, charts or maps. The following comparison (generated
 file sizes only; not file generation duration) will therefore only include
 these two file formats:
 
-.. table:: GIF vs. PNG vs. PNG24 Generated Map File Sizes                   
+.. table:: PNG8 vs. PNG24 Generated Map File Sizes                   
 
-    +------------------------------------------+-------+-------+-------+
-    |                                          | GIF   | PNG   | PNG24 |
-    +==========================================+=======+=======+=======+
-    |Vector Data only                          | 59kb  | 26kb  | 69kb  |
-    +------------------------------------------+-------+-------+-------+
-    |Vector Data & Satellite Image coloured    | 156kb | 182kb | 573kb |
-    +------------------------------------------+-------+-------+-------+
-    |Vector Data & Satellite Image monochrome  | 142kb | 134kb | 492kb |
-    +------------------------------------------+-------+-------+-------+
+    +------------------------------------------+-------+-------+
+    |                                          | PNG8  | PNG24 |
+    +==========================================+=======+=======+
+    |Vector Data only                          | 26kb  | 69kb  |
+    +------------------------------------------+-------+-------+
+    |Vector Data & Satellite Image coloured    | 182kb | 573kb |
+    +------------------------------------------+-------+-------+
+    |Vector Data & Satellite Image monochrome  | 134kb | 492kb |
+    +------------------------------------------+-------+-------+
 
 (results based on an average 630x396 map with various colours, symbols,
 labels/annotations etc.)
 
-Although GIF shows a quantitative as well as qualitative advantage over PNG
-when generating maps that contain full coloured remote sensing imagery, PNG is
-the clear quantitative winner in terms of generated file sizes for maps with
-or without additional monochrome imagery and should therefore be the
-preferred image format. If the mapping application however can also display
-fullcolour aerial or satellite imagery, the output file format can be changed
-dynamically to either GIF or even PNG24 to achieve the highest possible image
-quality.
-
-Why doesn't PIL (Python Imaging Library) open my PNGs?
--------------------------------------------------------------------------------
-
-`PIL <https://pillow.readthedocs.io/en/stable/>`__ does not support interlaced
-PNGs at this time (no timetable on when it actually will either). To be able
-to read PNGs in PIL, they must not be interlaced. Modify your OUTPUTFORMAT with
-a FORMATOPTION like so:
-
-.. code-block:: mapfile
-
-      OUTPUTFORMAT
-        NAME png
-        DRIVER "GD/PNG"
-        MIMETYPE "image/png"
-        IMAGEMODE RGB
-        EXTENSION "png"
-        FORMATOPTION "INTERLACE=OFF"
-      END
-
-Why do my symbols look poor in JPEG output?
--------------------------------------------------------------------------------
-
-When I render my symbols to an 8bit output (PNG, GIF) they look fine, but in
-24bit jpeg output they look very blocky and gross.
-
-You must be using an old version of MapServer .  This should not be
-problem with newer versions.  The following explains the old (GD)
-behaviour.
-
-In order to render some classes of symbols properly in 24bit output, such as
-symbols from true type fonts, it is necessary to force rendering to occur in
-RGBA. This can be accomplished by including the "TRANSPARENCY ALPHA" line in
-the layer definition. Don't use this unnecessarily as there is a performance
-penalty.
-
-This problem also affects PNG24 output or any RGB output format. 8bit (PC256)
-or RGBA output types are already ok.
+PNG8 is the clear quantitative winner in terms of generated file sizes for maps with
+or without additional monochrome imagery.
+If the mapping application however can also display fullcolour aerial or
+satellite imagery, the output file format can be changed dynamically to PNG24
+to achieve the highest possible image quality.
 
 How do I add a copyright notice on the corner of my map?
 -------------------------------------------------------------------------------
@@ -425,68 +354,6 @@ in your class.
       WIDTH 3
     END
 
-How can I create simple antialiased line features?
--------------------------------------------------------------------------------
-
-With AGG (used in recent MapServer  version), antialiased lines is the
-default, and can't be turned off.
-
-With GD, the easiest way to produce antialiased lines is to:
-
-- use a 24-bit output image type (IMAGEMODE RGB (or RGBA))
-- set TRANSPARENCY ALPHA in the layer using antialiased lines
-- set ANTIALIAS TRUE in the STYLE element of the CLASS with antialiased lines
-
-The following mapfile snippets enable antialiased county borders for
-GD:
-
-.. code-block:: mapfile
-
-  ...
-  IMAGETYPE "png24"
-  ...
-  OUTPUTFORMAT
-    NAME "png24"
-    DRIVER "GD/PNG"
-    MIMETYPE "image/png"
-    IMAGEMODE RGB
-    EXTENSION "png"
-  END
-  ...
-  LAYER
-    NAME "counties"
-    TYPE line
-    STATUS default
-    DATA "bdry_counln2.shp"
-    TRANSPARENCY alpha
-    SYMBOLSCALE 5000000
-    CLASS
-      STYLE
-         WIDTH 3
-         COLOR 1 1 1
-         ANTIALIAS true
-      END
-    END
-  END
-  ...
- 
-.. note::
-    The bdry_counln2 shapefile referenced in the counties layer is a line
-    shapefile. A polygon shapefile could be substituted with roughly the same
-    results, though owing to the nature of shapefiles each border would be
-    rendered twice and the resulting output line would likely appear to be
-    slightly thicker. Alternatively, one could use a polygon shapefile, set
-    TYPE to POLYGON, and use OUTLINECOLOR in place of COLOR in the STYLE
-    element.
- 
-.. note::
-    You can tweak the combination of STYLE->WIDTH and SYMBOLSCALE to modify
-    line widths in your output images.
-
-.. seealso::
-    :ref:`Cartoline <sym_construction>` symbols can be used to achieve fancier
-    effects.
- 
 Which OGC Specifications does MapServer support?
 -------------------------------------------------------------------------------
 
