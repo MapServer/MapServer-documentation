@@ -2,6 +2,7 @@
 .. include:: constants/allocations.rst
 .. include:: constants/comparison.rst
 .. include:: constants/compop.rst
+.. include:: constants/config.rst
 .. include:: constants/connection.rst
 .. include:: constants/dbconnection.rst
 .. include:: constants/dbffields.rst
@@ -17,10 +18,12 @@
 .. include:: constants/labeloffset.rst
 .. include:: constants/labelsize.rst
 .. include:: constants/layer.rst
+.. include:: constants/legend.rst
 .. include:: constants/limiters.rst
 .. include:: constants/linejoin.rst
 .. include:: constants/logicalcontrol.rst
 .. include:: constants/measureshape.rst
+.. include:: constants/missing.rst
 .. include:: constants/parse.rst
 .. include:: constants/position.rst
 .. include:: constants/projections.rst
@@ -30,6 +33,7 @@
 .. include:: constants/rendermode.rst
 .. include:: constants/requesttype.rst
 .. include:: constants/returncodes.rst
+.. include:: constants/scalebar.rst
 .. include:: constants/shapefile.rst
 .. include:: constants/shapetype.rst
 .. include:: constants/stylebinding.rst
