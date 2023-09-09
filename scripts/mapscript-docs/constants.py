@@ -88,6 +88,9 @@ patterns = {
     "parse": "MS_PARSE_TYPE",
     "dbf-fields": "FT",
     "projections": "wkp_",
+    "scalebar": "MS_SCALEBAR_",
+    "config": "MS_CONFIG_",
+    "legend": "MS_LEGEND_"
 }
 
 constants = [p for p in props if isinstance(getattr(mapscript, p), int)]
@@ -179,6 +182,7 @@ for p in constants:
             "MS_UNUSED_2",
             "MS_UVRASTER",
             "MS_IDW",
+            "MS_FLATGEOBUF",
         ]:
             enumerations["connection"].append((val, p))
 

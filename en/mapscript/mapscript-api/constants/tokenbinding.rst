@@ -7,22 +7,22 @@ Token Binding
    :columns: 3
     
    * .. autodata:: mapscript.MS_TOKEN_BINDING_DOUBLE
-        :annotation: 370
+        :annotation: 380
 
    * .. autodata:: mapscript.MS_TOKEN_BINDING_INTEGER
-        :annotation: 371
+        :annotation: 381
 
    * .. autodata:: mapscript.MS_TOKEN_BINDING_STRING
-        :annotation: 372
+        :annotation: 382
 
    * .. autodata:: mapscript.MS_TOKEN_BINDING_TIME
-        :annotation: 373
+        :annotation: 383
 
    * .. autodata:: mapscript.MS_TOKEN_BINDING_SHAPE
-        :annotation: 374
+        :annotation: 384
 
    * .. autodata:: mapscript.MS_TOKEN_BINDING_MAP_CELLSIZE
-        :annotation: 375
+        :annotation: 385
 
    * .. autodata:: mapscript.MS_TOKEN_BINDING_DATA_CELLSIZE
-        :annotation: 376
+        :annotation: 386
