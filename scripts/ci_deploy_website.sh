@@ -2,6 +2,7 @@
 
 builddir=$1
 destdir=$2
+sha=$3
 
 if [ -f $builddir/latex/en/MapServer.pdf ]; then
   set -x
@@ -11,7 +12,7 @@ fi
 
 
 if [ ! -d $destdir/mapserver.github.io ]; then
-  git clone git@github.com:mapserver/mapserver.github.io.git $destdir/mapserver.github.io
+  git clone git@github.com:geographika/mapserver.github.io.git $destdir/mapserver.github.io
 fi
 
 cd $builddir/html
@@ -25,5 +26,5 @@ git config user.name "MapServer deploybot"
 #rm -rf .doctrees */.doctrees */.buildinfo
 
 git add -A
-git commit -m "update with results of commit https://github.com/mapserver/MapServer-documentation/commit/$TRAVIS_COMMIT"
+git commit -m "update with results of commit https://github.com/mapserver/MapServer-documentation/commit/$sha"
 git push origin master
