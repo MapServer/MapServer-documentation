@@ -1,0 +1,37 @@
+name: Build Documentation
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository contents
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Build docs
+        run: |
+          pip install -r requirements.txt
+          echo "GIT_BRANCH=$(echo $GITHUB_REF | cut -d '/' -f 3)" >> $GITHUB_ENV
+          ./scripts/ci_build_docs.sh
+          
+      - name: After success steps
+        if: ${{ success() }}
+        run: |
+          sha=$(git rev-parse --short ${{ github.sha }})
+          echo "COMMIT_SHORT_SHA=$sha" >> $GITHUB_ENV
+          touch ./build/html/.nojekyll              
+          if [ "${{ github.event_name }}" = "push" ] && [ "$GIT_BRANCH" = "main" ]; then
+            echo "publish website"            
+            ./scripts/ci_add_deploy_key.sh
+            ./scripts/ci_deploy_website.sh build /tmp
+          fi
