@@ -1,0 +1,43 @@
+name: Build Documentation
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository contents
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.9
+
+      - name: Build docs
+        run: |
+          pip install -r requirements.txt
+          echo "GIT_BRANCH=$(echo $GITHUB_REF | cut -d '/' -f 3)" >> $GITHUB_ENV
+          ./scripts/ci_build_docs.sh
+          
+      - name: After success steps
+        if: ${{ success() }}
+        run: |
+          # setup the SSH key
+          mkdir -p ~/.ssh
+          echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
+          chmod 600 ~/.ssh/id_rsa
+          echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config  
+          
+          touch ./build/html/.nojekyll   
+          
+          if [ "${{ github.event_name }}" = "push" ] && [ "$GIT_BRANCH" = "main" ]; then
+            # get the short commit tag
+            sha=$(git rev-parse --short ${{ github.sha }})          
+            echo "publish website using $GIT_BRANCH branch and commit $sha"
+            ./scripts/ci_deploy_website.sh build /tmp $sha
+          fi
