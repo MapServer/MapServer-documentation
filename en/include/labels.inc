@@ -207,7 +207,6 @@
 	sortshp                        :ref:`sortshp <sortshp>`
 	sos_server                     :ref:`SOS Server <sos_server>`
 	source                         :ref:`Source <source>`
-	sponsors                       :ref:`Sponsors <sponsors>`
 	style                          :ref:`STYLE <style>`
 	styleitemauto-label-styles     :ref:`Accessing OGR STYLEITEMAUTO Label Styles Through MapScript <styleitemauto-label-styles>`
 	svg                            :ref:`SVG <svg>`
