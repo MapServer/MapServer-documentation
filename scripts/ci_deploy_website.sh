@@ -11,7 +11,7 @@ fi
 
 
 if [ ! -d $destdir/mapserver.github.io ]; then
-  git clone git@github.com:geographika/mapserver.github.io.git $destdir/mapserver.github.io
+  git clone git@github.com:mapserver/mapserver.github.io.git $destdir/mapserver.github.io
 fi
 
 cd $builddir/html
