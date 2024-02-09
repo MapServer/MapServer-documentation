@@ -1,0 +1,144 @@
+.. _rfc138:
+
+================================================
+MS RFC 138: Reference SLD files in Mapfiles
+================================================
+
+:Author: 	Seth Girvin
+:Contact: 	sethg@geographika.co.uk
+:Last Updated:  2024-02-08
+:Version: 	Targeting MapServer 8.4
+:Status: 	Draft
+
+1. Overview
+===========
+
+This proposal outlines how Styled Layer Descriptor (SLD) files could be referenced directly in a Mapfile, allowing styles
+to be applied using SLD files rather than MapServer's ``CLASS`` and ``STYLE`` blocks.
+
+This would allow easier creation of Mapfiles from other applications, such as QGIS, which could export a Mapfile referencing
+SLD files, rather than attempting to translate QGIS styles directly to MapServer Mapfile syntax. It would make it easier to reuse
+styles between different applications.
+
+It is proposed that the LAYER's :ref:`STYLEITEM <mapfile-layer-styleitem>` keyword is used to reference the SLD files, as in
+the example below:
+
+.. code-block:: mapfile
+
+    LAYER
+      STYLEITEM "sld://mysldfile.xml" # uses SHAPEPATH and if not set then relative path to the Mapfile or absolute path
+      CLASS # define an empty CLASS here
+      END
+    END
+
+The mechanisms to load and apply a file from disk referenced in a Mapfile could also be used in the future to apply future
+styling formats for example e.g. OGC styling could use file://style.json. 
+
+2.1 Proposed Solution
+=====================
+
+In MapServer 6.6 the LAYER :ref:`STYLEITEM <mapfile-layer-styleitem>` property was updated to allow a path to a JavaScript file
+that would return a string containing a STYLE or CLASS definition. See :ref:`STYLEITEM JavaScript <styleitemjs>` for more details. 
+The same approach will be taken for SLD files, so no new Mapfile keywords or concepts are required. 
+
+MapServer currently supports drawing layers in a Mapfile using SLD files in the following scenarios:
+
++ When applying SLD from a client application using the ``SLD_URL`` and ``SLD_BODY``
+  parameters to a MapServer layer - see the :ref:`SLD docs <sld>`
++ When using the :ref:`WMS client <wms_client>` - ``wms_sld_body`` can be used to specify SLD to apply to the WMS
++ When using the :ref:`WMS client <wms_client>` - ``wms_sld_url`` can be used to specify a URL pointing to an SLD file
+
+Currently ``msSLDApplySLDURL`` saves an SLD file a URL to a temporary file, and then applies this SLD to the layer. 
+Much of the code is already available and can be reused to implement applying SLD directly from a file.
+
+2.2 Limitations
+===============
+
+Currently all uses of SLD rely on the NamedLayer Name property matching the LAYER NAME. For example
+``popplace`` in the SLD file:
+
+.. code-block:: xml
+
+     <NamedLayer>
+        <Name>popplace</Name>
+
+Will only be applied if the LAYER NAME, or WMS name are also ``popplace``:
+
+.. code-block:: mapfile
+
+    LAYER "popplace"
+    METADATA
+        "wms_title" "popplace" # this property is also checked for a match
+    END
+
+If an SLD file is defined within a layer, it is proposed there is no need for the NamedLayer property to match the LAYER NAME.
+This would allow SLD files to be more easily reused, and would avoid confusion as to why the SLD isn't being applied when specified
+in the Mapfile. 
+
+MapServer supports applying multiple NamedLayers to a LAYER, by creating a copy of the layer and applying subsequent NamedLayer styles
+to these copies. It is proposed only one NamedLayer will be applied to a LAYER when defined as a file in the STYLEITEM property. 
+Cloning layers already containing a STYLEITEM will make the code overly complex, and a Mapfile author is free to create as many LAYERs
+in the Mapfile as they wish. If multiple NamedLayers are contained in the SLD file only the first will be used. 
+
+2.3 Testing
+===========
+
+Mapfiles and sample SLD files will be created and added to the msautotest test suite. There are several conflicting features that will
+need to be tested. Tests will include:
+
++ Applying SLD to a LAYER
++ Checking an error is returned if the SLD file cannot be found
++ Checking if multiple NamedLayer files are contained in an SLD file only the first is used
++ Checking SLD is applied even if the LAYER NAME doesn't match the NamedLayer Name
++ Checking Legends are correctly generated
++ Checking SLD can be supplied from a URL or querystring to override the SLD in the STYLEITEM
+
+Reviewing SLD support in MapServer highlighted several use cases which do not currently have tests. Tests may be added as
+part of this implementation. These include:
+
++ Using ``wms_sld_body`` in a WMS client
++ Using ``wms_sld_url`` in a WMS client
+
+Several other SLD tests however are provided:
+
++ Passing SLD via ``sld_body`` in a querystring is tested in many cases for example ``msautotest/wxs/wms_sld.map``
++ Passing in an SLD URL is tested in ``msautotest/sld/linemark.map``
+
+2.4 Security Concerns
+=====================
+
+MapServer already accepts SLD from remote URLs and client requests, so local SLD files shouldn't cause any concerns.
+
+2.5 MapScript
+=============
+
+MapScript currently includes an ``applySLD`` function on both Map and Layer objects. 
+The ``layerObj`` also includes a ``styleitem`` property which can be used to set the :ref:`STYLEITEM <mapfile-layer-styleitem>` property.
+
+3. Implementation Details
+=========================
+
+3.1 Affected files
+------------------
+
++ mapdraw.c
++ maplayer.c
++ mapogcsld.cpp
+
+More files may be affected once implementation is underway. 
+
+3.2 Ticket Reference
+--------------------
+
+TODO - add GitHub pull request URLs.
+
+3.3 Documentation
+-----------------
+
+Documentation will be added to the :ref:`STYLEITEM <mapfile-layer-styleitem>` docs. 
+A link to these docs will also be added to the "Other Items Implemented" section on the :ref:`SLD docs <sld>` page.
+
+4. Voting History
+=================
+
+TODO
