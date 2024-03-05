@@ -1600,8 +1600,9 @@ STATUS [on|off|default]
    pair: LAYER; STYLEITEM
    :name: mapfile-layer-styleitem
 
-STYLEITEM [<attribute>|auto|<javascript file>]
-    Styling based on attributes or generated with Javascript
+STYLEITEM [<attribute>|auto|<javascript file>|<sld file>]
+    Styling based on attributes, generated with JavaScript, or generated
+    from an SLD file.
 
     .. index::
        triple: LAYER; STYLEITEM; attribute
@@ -1636,6 +1637,30 @@ STYLEITEM [<attribute>|auto|<javascript file>]
         .. code-block:: bash
 
           ogr2ogr -sql "select *, OGR_STYLE from srclayer" "dstlayer" "srclayer"
+
+      - **SLD String** - Different Styled Layer Descriptor documents (see :ref:`sld`) can be stored 
+        as strings in the feature attribute to allow styling on a per feature basis. The SLD string
+        must end with ``StyledLayerDescriptor>`` (part of the SLD closing tag) for it to be interpreted as SLD.
+
+        To use the first NamedLayer in the SLD string, whether or not the LAYER :ref:`NAME <mapfile-layer-name>`
+        matches the NamedLayer Name, add a **SLD_USE_FIRST_NAMEDLAYER**
+        :ref:`METADATA <mapfile-layer-metadata>` key and set its value to **"true"**.
+
+        .. code-block:: mapfile
+
+          LAYER
+            ...
+            STYLEITEM "STYLE" # name of the attribute containing styling information
+            METADATA
+              "SLD_USE_FIRST_NAMEDLAYER" "true"
+            END
+          END
+
+        .. versionadded:: 8.2
+
+        .. seealso::
+
+           :ref:`rfc138`
 
     .. index::
        triple: LAYER; STYLEITEM; AUTO
@@ -1682,6 +1707,41 @@ STYLEITEM [<attribute>|auto|<javascript file>]
 
       .. note:: Requires :ref:`v8_support`.
 
+    - *<SLD file>*:
+
+      .. versionadded:: 8.2
+
+      A path to an SLD file. The path mush start with the prefix **sld://**, and
+      can be a path relative to the Mapfile, or an absolute path.
+      :ref:`CLASS` and :ref:`STYLE` blocks will then be generated based on the SLD document.
+
+      .. code-block:: mapfile
+
+        LAYER
+          ...
+          STYLEITEM "sld://mysldfile.xml"
+        END
+
+      For SLD files containing multiple NamedLayers, if Name matches the LAYER name then this
+      style will be used. If there is no name match then the first NamedLayer in the SLD will be used.
+      See :ref:`sld-named-styles` for more details.
+
+      To enforce matching of a NamedLayer Name and the LAYER :ref:`NAME <mapfile-layer-name>` a
+      :ref:`METADATA <mapfile-layer-metadata>` key can be set to **"false"** as in the example below:
+
+      .. code-block:: mapfile
+
+        LAYER
+          ...
+          STYLEITEM "sld://mysldfile.xml"
+          METADATA
+            "SLD_USE_FIRST_NAMEDLAYER" "false"
+          END
+        END
+
+      .. seealso::
+
+        :ref:`rfc138`
 
 .. index::
    pair: LAYER; SYMBOLSCALEDENOM
