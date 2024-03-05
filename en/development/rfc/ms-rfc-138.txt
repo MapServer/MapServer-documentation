@@ -6,8 +6,8 @@ MS RFC 138: Reference SLD files in Mapfiles
 
 :Author: 	Seth Girvin
 :Contact: 	sethg@geographika.co.uk
-:Last Updated:  2024-02-08
-:Version: 	Targeting MapServer 8.4
+:Last Updated:  2024-03-04
+:Version: 	Targeting MapServer 8.2
 :Status: 	Draft
 
 1. Overview
@@ -17,7 +17,7 @@ This proposal outlines how Styled Layer Descriptor (SLD) files could be referenc
 to be applied using SLD files rather than MapServer's ``CLASS`` and ``STYLE`` blocks.
 
 This would allow easier creation of Mapfiles from other applications, such as QGIS, which could export a Mapfile referencing
-SLD files, rather than attempting to translate QGIS styles directly to MapServer Mapfile syntax. It would make it easier to reuse
+SLD files, rather than attempting to translate QGIS styles directly to MapServer Mapfile syntax. It would make it easier to re-use
 styles between different applications.
 
 It is proposed that the LAYER's :ref:`STYLEITEM <mapfile-layer-styleitem>` keyword is used to reference the SLD files, as in
@@ -27,7 +27,11 @@ the example below:
 
     LAYER
       STYLEITEM "sld://mysldfile.xml" # uses SHAPEPATH and if not set then relative path to the Mapfile or absolute path
-      CLASS # define an empty CLASS here
+      CLASS # Any classes will be ignored, but if there is a problem reading the SLD file it will be used as a fallback
+        STYLE
+            COLOR 255 0 0
+            WIDTH 1
+        END
       END
     END
 
@@ -51,8 +55,9 @@ MapServer currently supports drawing layers in a Mapfile using SLD files in the 
 Currently ``msSLDApplySLDURL`` saves an SLD file a URL to a temporary file, and then applies this SLD to the layer. 
 Much of the code is already available and can be reused to implement applying SLD directly from a file.
 
-2.2 Limitations
-===============
+The SLD will be applied at the end of parsing and loading the Mapfile in ``msLoadMap`` and ``msLoadMapFromString``. Any classes in the layer will
+be replaced by classes generated from the SLD. Applying the SLD as early as possible ensures other code paths which affect styling, such as applying SLD from a
+URL are unaffected.
 
 Currently all uses of SLD rely on the NamedLayer Name property matching the LAYER NAME. For example
 ``popplace`` in the SLD file:
@@ -71,14 +76,57 @@ Will only be applied if the LAYER NAME, or WMS name are also ``popplace``:
         "wms_title" "popplace" # this property is also checked for a match
     END
 
-If an SLD file is defined within a layer, it is proposed there is no need for the NamedLayer property to match the LAYER NAME.
-This would allow SLD files to be more easily reused, and would avoid confusion as to why the SLD isn't being applied when specified
+If an SLD file is defined within a layer, it is proposed:
+
++ For SLD files with multiple NamedLayers, if the Name matches the layer names then this will be used.
++ If there are no matches then by default the first named layer will be used. A new ``SLD_USE_FIRST_NAMEDLAYER`` metadata item is created to apply this logic by default. 
+  It can be set in the Mapfile to only apply NamedLayer if there is a match in the SLD file using ``METADATA "SLD_USE_FIRST_NAMEDLAYER" "false"`` (or any other value than true).
+
+Using the first layer by default will allow SLD files to be more easily reused, and would avoid confusion as to why the SLD isn't being applied when specified
 in the Mapfile. 
+
+Feature-level SLD Styling
+-------------------------
+
+:ref:`rfc61` allowed individual features to be rendered with style read from an attribute, also defined in the ``STYLEITEM``.
+This RFC introduces support for SLD to be read from an attribute, along with OGR styles. For example, the following CSV contains two line features,
+the first with an SLD in its STYLE attribute, and the second with an OGR style:
+
+.. code-block:: bash
+
+    WKT,STYLE_FIELD
+    "LINESTRING(0.1 0.9,0.9 0.9)","<StyledLayerDescriptor version=""1.1.0""><NamedLayer><Name>test</Name><UserStyle>..
+    "LINESTRING(0.1 0.8,0.9 0.8)","PEN(c:#000000)","ogr style"
+
+A ``LAYER`` can use the ``STYLE_FIELD`` in the CSV to style individual features using by setting this attribute in the ``STYLEITEM``:
+
+.. code-block:: mapfile
+
+    LAYER
+        NAME "test"
+        CONNECTIONTYPE OGR
+        CONNECTION "data/mixed_styles.csv"
+        DATA "mixed_styles"
+
+        TYPE LINE
+        STATUS ON
+
+        STYLEITEM "STYLE_FIELD"
+
+2.2 Limitations
+===============
 
 MapServer supports applying multiple NamedLayers to a LAYER, by creating a copy of the layer and applying subsequent NamedLayer styles
 to these copies. It is proposed only one NamedLayer will be applied to a LAYER when defined as a file in the STYLEITEM property. 
 Cloning layers already containing a STYLEITEM will make the code overly complex, and a Mapfile author is free to create as many LAYERs
 in the Mapfile as they wish. If multiple NamedLayers are contained in the SLD file only the first will be used. 
+
+Feature-level SLD Styling
+-------------------------
+
+When rendering individual features SLD is applied to the LAYER, the feature is rendered, and then the next feature's SLD is applied, overriding any previous
+changes. For this reason any "layer-level" features in the SLD will be ignored - for example filters and layer opacity. WMS requests such as ``GetStyles`` will return an empty
+response. This is currently the case when using OGR styling, or string styles at the feature-level, so no changes will be made in this regard.
 
 2.3 Testing
 ===========
@@ -88,32 +136,44 @@ need to be tested. Tests will include:
 
 + Applying SLD to a LAYER
 + Checking an error is returned if the SLD file cannot be found
-+ Checking if multiple NamedLayer files are contained in an SLD file only the first is used
-+ Checking SLD is applied even if the LAYER NAME doesn't match the NamedLayer Name
++ Checking if multiple NamedLayer files are contained in an SLD file the NamedLayer matching the MAP LAYER is used
++ If there are no matches then the first NamedLayer will be used by default
 + Checking Legends are correctly generated
 + Checking SLD can be supplied from a URL or querystring to override the SLD in the STYLEITEM
 
-Reviewing SLD support in MapServer highlighted several use cases which do not currently have tests. Tests may be added as
-part of this implementation. These include:
-
-+ Using ``wms_sld_body`` in a WMS client
-+ Using ``wms_sld_url`` in a WMS client
-
-Several other SLD tests however are provided:
+Several other SLD tests however are already part of the test suite, and will ensure the changes in this RFC don't break existing
+functionality:
 
 + Passing SLD via ``sld_body`` in a querystring is tested in many cases for example ``msautotest/wxs/wms_sld.map``
 + Passing in an SLD URL is tested in ``msautotest/sld/linemark.map``
 
+Reviewing SLD support in MapServer highlighted several use cases which do not currently have tests. These include:
+
++ Using ``wms_sld_body`` in a WMS client
++ Using ``wms_sld_url`` in a WMS client
+
 2.4 Security Concerns
 =====================
 
-MapServer already accepts SLD from remote URLs and client requests, so local SLD files shouldn't cause any concerns.
+MapServer already accepts SLD from remote URLs and client requests, so local SLD files shouldn't cause any new concerns.
+A security risk of accepting external graphics in an SLD was addressed in MapServer 7.0 - see https://mapserver.org/MIGRATION_GUIDE.html#mapserver-6-4-to-7-0-migration
+by requiring external graphic URLs to be defined in a validation block:
+
+.. code-block:: mapfile
+
+    WEB
+        VALIDATION
+            "sld_external_graphic" "^.*/sld/data/.*"
+        END
+    ...
 
 2.5 MapScript
 =============
 
 MapScript currently includes an ``applySLD`` function on both Map and Layer objects. 
 The ``layerObj`` also includes a ``styleitem`` property which can be used to set the :ref:`STYLEITEM <mapfile-layer-styleitem>` property.
+If ``mapscript.msLoadMapFromString`` is used to load a Mapfile from a string then any ``STYLEITEM`` referencing an SLD file will
+automatically be applied to the layer.
 
 3. Implementation Details
 =========================
@@ -122,15 +182,15 @@ The ``layerObj`` also includes a ``styleitem`` property which can be used to set
 ------------------
 
 + mapdraw.c
++ mapfile.c
 + maplayer.c
 + mapogcsld.cpp
-
-More files may be affected once implementation is underway. 
++ mapogcsld.h
 
 3.2 Ticket Reference
 --------------------
 
-TODO - add GitHub pull request URLs.
++ https://github.com/MapServer/MapServer/pull/7034
 
 3.3 Documentation
 -----------------
@@ -141,4 +201,6 @@ A link to these docs will also be added to the "Other Items Implemented" section
 4. Voting History
 =================
 
-TODO
++1 from SethG, EvenR, TamasS, JukkaR, SteveL, JeromeB, DanielM, MikeS, TomK
+
+See https://lists.osgeo.org/pipermail/mapserver-dev/2024-February/017105.html
