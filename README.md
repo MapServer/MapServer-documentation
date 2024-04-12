@@ -1,6 +1,6 @@
 <img src="https://github.com/MapServer/MapServer-documentation/blob/main/_static/banner-large.png" width="702" alt="MapServer logo">
 
-[![Docs Builds](https://travis-ci.com/MapServer/MapServer-documentation.svg?branch=main)](https://travis-ci.com/MapServer/MapServer-documentation)
+[![Build Documentation](https://github.com/MapServer/MapServer-documentation/actions/workflows/build.yml/badge.svg)](https://github.com/MapServer/MapServer-documentation/actions?query=workflow%3A%22Build%20Documentation%22%20branch%3Amain)
 
 This repository is meant to write and manage the official documentation for 
 [MapServer](https://mapserver.org).  Please submit all pull requests to the
