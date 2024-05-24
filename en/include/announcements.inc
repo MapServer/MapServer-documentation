@@ -1,3 +1,12 @@
+**2024-05-24 - TinyOWS 1.2.1 is released**
+
+The minor version TinyOWS 1.2.1 has been released. This release is in honor
+of Olivier Courtin, the original TinyOWS developer & visionary. 
+The list of changes for this release can be found in 
+the :ref:`changelog <changelog-tinyows-1-2>`.
+
+Head to :ref:`download` to obtain a copy.
+
 **2023-04-18 - MapServer 8.0.1 and 7.6.5 are released**
 
 The maintenance release of MapServer 8.0.1 and 7.6.5 are now available.
