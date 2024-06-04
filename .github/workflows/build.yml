@@ -1,7 +1,6 @@
 name: Build Documentation
 
-on:
-  push:
+on: [push, pull_request]
 
 jobs:
   build:
@@ -21,21 +20,19 @@ jobs:
           pip install -r requirements.txt
           echo "GIT_BRANCH=$(echo $GITHUB_REF | cut -d '/' -f 3)" >> $GITHUB_ENV
           ./scripts/ci_build_docs.sh
-          
+
       - name: After success steps
-        if: ${{ success() }}
+        if: ${{ success() && github.event_name == 'push' && github.repository == 'MapServer/MapServer-documentation' && github.ref_name == 'branch-8-0' }}
         run: |
           # setup the SSH key
           mkdir -p ~/.ssh
           echo "${{ secrets.SSH_PRIVATE_KEY }}" > ~/.ssh/id_rsa
           chmod 600 ~/.ssh/id_rsa
           echo -e "Host *\n\tStrictHostKeyChecking no\n" > ~/.ssh/config  
-          
+
           touch ./build/html/.nojekyll   
-          
-          if [ "${{ github.event_name }}" = "push" ] && [ "$GIT_BRANCH" = "branch-8-0" ]; then
-            # get the short commit tag
-            sha=$(git rev-parse --short ${{ github.sha }})          
-            echo "publish website using $GIT_BRANCH branch and commit $sha"
-            ./scripts/ci_deploy_website.sh build /tmp $sha
-          fi
+
+          # get the short commit tag
+          sha=$(git rev-parse --short ${{ github.sha }})
+          echo "publish website using $GIT_BRANCH branch and commit $sha"
+          ./scripts/ci_deploy_website.sh build /tmp $sha
