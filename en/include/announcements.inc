@@ -1,8 +1,8 @@
-**2024-06-06 - MapServer 8.2.0-beta1 is released**
+**2024-06-08 - MapServer 8.2.0-beta2 is released**
 
-The first beta for MapServer 8.2 has been released. The list of
+The second beta for MapServer 8.2 has been released. The list of
 major changes for this release can be found in the :ref:`8.2 announcement <announce-8-2>`.
-See the :ref:`changelog <changelog-8-2-0-beta1>`
+See the :ref:`changelog <changelog-8-2-0-beta2>`
 for the full list of changes and head to :ref:`download` to obtain a copy.
 
 **2024-05-24 - TinyOWS 1.2.1 is released**
