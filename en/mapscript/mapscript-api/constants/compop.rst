@@ -89,3 +89,15 @@ Compop
 
    * .. autodata:: mapscript.MS_COMPOP_INVERT_RGB
         :annotation: 27
+
+   * .. autodata:: mapscript.MS_COMPOP_HSL_HUE
+        :annotation: 28
+
+   * .. autodata:: mapscript.MS_COMPOP_HSL_LUMINOSITY
+        :annotation: 29
+
+   * .. autodata:: mapscript.MS_COMPOP_HSL_SATURATION
+        :annotation: 30
+
+   * .. autodata:: mapscript.MS_COMPOP_HSL_COLOR
+        :annotation: 31
