@@ -50,7 +50,7 @@ sys.path.append(os.path.abspath('.'))
 #extensions = ['labels', 'sphinxcontrib.spelling']
 
 extensions = ['labels', 'sphinx.ext.autodoc', 'sphinx.ext.autosummary', 'sphinx.ext.viewcode'
-              , 'sphinxcontrib.jquery']
+              , 'sphinxcontrib.jquery', 'sphinx_copybutton']
 
 autosummary_generate = True # when True create a page for each mapscript class
 
