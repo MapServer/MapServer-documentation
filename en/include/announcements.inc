@@ -1,3 +1,10 @@
+**2024-06-27 - MapServer 8.2.0-rc2 is released**
+
+The second release candidate for MapServer 8.2.0 has been released. The list of
+major changes for this release can be found in the :ref:`8.2 announcement <announce-8-2>`.
+See the :ref:`changelog <changelog-8-2-0-rc2>`
+for the full list of changes and head to :ref:`download` to obtain a copy.
+
 **2024-06-14 - MapServer 8.2.0-rc1 is released**
 
 The first release candidate for MapServer 8.2.0 has been released. The list of
