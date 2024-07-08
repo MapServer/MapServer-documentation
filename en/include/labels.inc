@@ -65,7 +65,6 @@
 	input_postgis                  :ref:`PostGIS/PostgreSQL <input_postgis>`
 	installation                   :ref:`Installation <installation>`
 	introduction                   :ref:`An Introduction to MapServer <introduction>`
-	irc                            :ref:`IRC <irc>`
 	join                           :ref:`JOIN <join>`
 	kml                            :ref:`KML - Keyhole Markup Language <kml>`
 	label                          :ref:`LABEL <label>`
@@ -112,6 +111,7 @@
 	mapscript_ows                  :ref:`MapScript Wrappers for WxS Services <mapscript_ows>`
 	mapscript_tests                :ref:`MapScript Unit Testing <mapscript_tests>`
 	mapserv                        :ref:`mapserv <mapserv>`
+	matrix-irc                     :ref:`Matrix/IRC <matrix-irc>`
 	modindex                       :ref:`modindex`
 	msencrypt                      :ref:`msencrypt <msencrypt>`
 	mysql                          :ref:`MySQL <mysql>`
