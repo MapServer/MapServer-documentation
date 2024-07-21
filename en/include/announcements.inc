@@ -1,3 +1,13 @@
+**2024-07-21 - MapServer 8.2.1, 7.6.7 are released**
+
+Several maintenance releases of MapServer have been issued in order to fix
+a security flaw for the tostring() expression function.
+See the :ref:`8.2.1 changelog <changelog-8-2-1>`,
+:ref:`7.6.7 changelog <changelog-7-6-7>` for the list of changes. You 
+may also review MapServer's `Security Policy <https://github.com/MapServer/MapServer/blob/main/SECURITY.md>`__.
+
+Head to :ref:`download` to obtain a copy.
+
 **2024-07-08 - MapServer 8.2.0 is released**
 
 The major version MapServer 8.2 has been released. The list of
