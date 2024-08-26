@@ -9,7 +9,7 @@
 
 :Author: Jeff McKenna
 :Contact: jmckenna at gatewaygeomatics.com
-:Last Updated: 2022-09-05
+:Last Updated: 2024-08-26
 
 .. contents:: Table of Contents
     :depth: 3
@@ -123,28 +123,30 @@ ready with WMS/WFS support)
 
 Example 1. On Unix:
 
-::
+.. code-block:: bash
 
    $ ./mapserv -v
-   MapServer version 7.7-dev OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ 
-   SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS 
-   SUPPORTS=RSVG SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER 
-   SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT 
-   SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER SUPPORTS=GEOS SUPPORTS=PBF 
-   INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE
+   MapServer version 8.3-dev PROJ version 9.4 GDAL version 3.9 OUTPUT=PNG 
+   OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE 
+   SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS SUPPORTS=RSVG SUPPORTS=ICONV 
+   SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER 
+   SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER 
+   SUPPORTS=OGCAPI_SERVER SUPPORTS=GEOS SUPPORTS=PBF INPUT=JPEG INPUT=POSTGIS 
+   INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE INPUT=FLATGEOBU
 
 Example 2. On Windows:
 
-::
+.. code-block:: bash
 
    C:\ms4w> mapserv -v
-   MapServer version 7.7.0-dev (MS4W 4.0.5) OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML 
-   SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO 
-   SUPPORTS=SVG_SYMBOLS SUPPORTS=SVGCAIRO SUPPORTS=ICONV SUPPORTS=FRIBIDI 
-   SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER 
-   SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER 
-   SUPPORTS=FASTCGI SUPPORTS=THREADS SUPPORTS=GEOS SUPPORTS=POINT_Z_M 
-   SUPPORTS=PBF INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE 
+   MapServer version 8.3.0-dev  (MS4W 5.0.0) PROJ version 9.5 
+   GDAL version 3.10 OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ 
+   SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS 
+   SUPPORTS=SVGCAIRO SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER 
+   SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER 
+   SUPPORTS=SOS_SERVER SUPPORTS=OGCAPI_SERVER SUPPORTS=FASTCGI SUPPORTS=THREADS 
+   SUPPORTS=GEOS SUPPORTS=PBF INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL 
+   INPUT=SHAPEFILE INPUT=FLATGEOBUF
 
 .. index:: 
    pair: WMS Server; Mapfile
@@ -439,6 +441,13 @@ the WMS spec:
    "STYLES=" with an empty value to use default style(s). Named styles
    are also supported and are controlled by CLASS GROUP names in the
    mapfile.
+   
+   .. note::
+
+      As of the MapServer 8.0 release, MapServer strictly requires
+      the "STYLES=" parameter (unless SLD & SLD_BODY are specified).  
+      To avoid this requirement, you can set 
+      `"wms_allow_getmap_without_styles" "true"` in MAP.WEB.METADATA.   
 
    **SRS=namespace:identifier:** Spatial Reference System.
 
@@ -1073,6 +1082,17 @@ wms_postcode, wms_country**
 - *WMS TAG Name:* ContactAddress and family (WMS1.1.1, sect. 7.1.4.2)
 - *Description:* Optional contact address information. If provided
   then all six metadata items are required.
+  
+.. index:: 
+   triple: WMS; METADATA; wms_allow_getmap_without_styles
+
+**wms_allow_getmap_without_styles**
+
+  .. versionadded:: 8.0
+
+- *Description:* (Optional) "true" or "false".  If true, the "STYLES="
+  GetMap parameter will not be required.  If false (the default as of
+  MapServer 8.0) the "STYLES=" GetMap parameter will be required.
 
 .. index:: 
    triple: WMS; METADATA; wms_attribution_logourl_format
@@ -1135,11 +1155,12 @@ wms_postcode, wms_country**
 
 **wms_bbox_extended:**
 
+  .. versionadded:: 6.0
+
 - *Description:* (Optional) "true" or "false".  If true, bounding
   boxes are reported for all supported SRS / CRS in the capabilities
   document.  If false, only the bounding box of the first SRS / CRS is
   reported.
-- Introduced in 6.0.
 
 .. index:: 
    triple: WMS; METADATA; wms_contactelectronicmailaddress
@@ -1685,11 +1706,12 @@ Layer Object Metadata
 
 **wms_bbox_extended:**
 
+  .. versionadded:: 6.0
+
 - *Description:* (Optional) "true" or "false".  If true, bounding
   boxes are reported for all supported SRS / CRS in the capabilities
   document.  If false, only the bounding box of the first SRS / CRS is
   reported.
-- Introduced in 6.0.
 
 .. index:: 
    triple: WMS; METADATA; wms_dataurl_format
