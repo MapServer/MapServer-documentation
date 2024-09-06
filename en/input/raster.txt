@@ -634,6 +634,85 @@ are supported in MapServer 4.0 and newer.
 .. index::
    pair: Raster; Query
 
+.. _rasterlabel:
+
+Raster Labelling
+================
+
+.. versionadded:: 8.4
+
+This is the ability to render labels from raster pixel values,
+as an alternative or complement to other typical raster rendering (grayscale,
+classification, etc.). Typical applications are for temperature, wind, humidity,
+slopes, altitude, noise, pollution, etc.
+
+Visual example:
+
+ .. image:: ../images/rasterlabel.png
+
+LAYER Description
+-----------------
+
+A raster labelling layer :ref:`LAYER` is a hybrid layer, which has a raster data
+source as input and vector features as output.  The output features
+are represented as points.  Queries are not supported.
+
+Since the data source is a raster, all raster processing options can
+be used (e.g. RESAMPLE).  RESAMPLE=AVERAGE generally gives a good
+result, and the default.  This can be overridden by explicitly
+specifying the type of resampling.
+
+Vector field layers are of `TYPE` `point`, and have `CONNECTIONTYPE`
+`rasterlabel`. The raster data set is specified in `DATA`. The band to label
+is set through the `PROCESSING` `BANDS` option.
+
+LAYER Attributes
+----------------
+
+The rasterlabel connection type offers the following attribute:
+
+* [value]: the raw value
+
+Optional `PROCESSING` Settings
+------------------------------
+
+* `BANDS=<num>`: Specify the band to label. Not needed if there is a single band.
+* `LABEL_SPACING=<num>`: The spacing is simply the distance, in pixels, between points
+  to be displayed in the vector field. Default is 32.
+* `RESAMPLE=NEAREST/AVERAGE/BILINEAR`: Defaults to AVERAGE.
+* `ALLOW_OVERSAMPLE=YES/NO`: Whether it is allowed to oversample the raster at
+  a resolution higher than its nominal resolution. Default is NO, meaning that
+  when zooming in beyond the nominal resolution of the raster, at most one
+  point will be generated for each source pixel. This gives to the user a sense
+  of the resolution of the data it displays.
+
+Example of a layer definition
+-----------------------------
+
+.. code-block:: mapfile
+
+  LAYER
+    NAME "temperature"
+    TYPE POINT
+    CONNECTIONTYPE RASTERLABEL
+    PROJECTION
+      "init=epsg:4326"
+    END
+    DATA "data/temperature.tif"
+    # PROCESSING "BANDS=1"
+    # PROCESSING "LABEL_SPACING=32"
+    # PROCESSING "RESAMPLE=AVERAGE"
+    # PROCESSING "ALLOW_OVERSAMPLE=NO"
+    CLASS
+        TEXT (tostring([value],"%.1f")+"°")
+        LABEL
+          TYPE TRUETYPE
+          SIZE 7
+        END # label
+    END # class
+  END
+
+
 Raster Query
 ============
 
