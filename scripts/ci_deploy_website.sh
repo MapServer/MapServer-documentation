@@ -29,8 +29,9 @@ cp -rf * $destdir/mapserver.github.io
 
 cd $destdir/mapserver.github.io
 
-# restore README.md from the last commit
+# restore README.md and .nojekyll from the last commit
 git checkout HEAD -- README.md
+git checkout HEAD -- .nojekyll
 
 git config user.email "mapserverbot@mapserver.bot"
 git config user.name "MapServer deploybot"
