@@ -13,7 +13,7 @@ MSSQL
 :Contact: jmckenna at gatewaygeomatics.com
 :Author: Seth Girvin
 :Contact: sethg at geographika.co.uk
-:Last Updated: 2021-05-05
+:Last Updated: 2024-09-22
 
 .. contents::
     :depth: 4
@@ -32,17 +32,17 @@ columns, which is compiled as a plugin ("msplugin_mssql2008.dll").
 
 More Information:
 
-* `OGR MSSQL Spatial driver page <https://gdal.org/drivers/vector/mssqlspatial.html>`__ (describes the OGR MSSQL support)
-* `ogr2ogr application <https://gdal.org/programs/ogr2ogr.html>`__ (describes the ogr2ogr commandline application)
+* `OGR MSSQL Spatial driver page <https://gdal.org/en/latest/drivers/vector/mssqlspatial.html>`__ (describes the OGR MSSQL support)
+* `ogr2ogr application <https://gdal.org/en/latest/programs/ogr2ogr.html>`__ (describes the ogr2ogr commandline application)
 * :ref:`vector` (MapServer Vector Data Access Guide)
 
 Creating Spatial Data Tables in MSSQL
 =====================================
 
 There are several ways to create spatial data tables in MSSQL. You can easily upload existing data to an MSSQL
-table by using the `ogr2ogr <https://gdal.org/programs/ogr2ogr.html>`__
-commandline tool and the OGR's `MSSQL Spatial driver
-<https://gdal.org/drivers/vector/mssqlspatial.html>`__.  Here is an example that uploads 
+table by using the `ogr2ogr <https://gdal.org/en/latest/programs/ogr2ogr.html>`__
+command line tool and the OGR's `MSSQL Spatial driver
+<https://gdal.org/en/latest/drivers/vector/mssqlspatial.html>`__.  Here is an example that uploads 
 a shapefile (province.shp) into an MSSQL instance:
 
 ::
@@ -69,7 +69,7 @@ examples:
 
   Server=55.55.55.55\SQLEXPRESS,1433;uid=a_user;pwd=a_password;
          database=a_database;Integrated Security=True
-         
+
 If you don't specify Driver in the connection string, it uses the "SQL Server" driver (sqlsrv32.dll)
 which was last updated in 2010. To use a newer driver you can specify this in the connection string:
 
@@ -77,20 +77,20 @@ which was last updated in 2010. To use a newer driver you can specify this in th
 
     driver={ODBC Driver 17 for SQL Server};server=55.55.55.55\SQLEXPRESS,1433;uid=a_user;pwd=a_password;
         database=a_database;Integrated Security=False
-    
-The "SQL Server Native Client" drivers are also supported. 
 
-  
+The "SQL Server Native Client" drivers are also supported.
+
+
 OPTION 1: Connect Through OGR
 -----------------------------
 
 GDAL/OGR (and therefore MapServer) can read spatial tables in MSSQL 2008 through the 
-`MSSQLSpatial driver <https://gdal.org/drivers/vector/mssqlspatial.html>`__.
+`MSSQLSpatial driver <https://gdal.org/en/latest/drivers/vector/mssqlspatial.html>`__.
 
 Verify Local Support for MSSQLSpatial
 *************************************
 
-Use the command *ogrinfo --formats* to verify that your local GDAL is built with support for MSSQL; 
+Use the command ``ogrinfo --formats`` to verify that your local GDAL is built with support for MSSQL; 
 the response should contain "MSSQLSpatial" such as:
 
 ::
@@ -102,23 +102,23 @@ the response should contain "MSSQLSpatial" such as:
     ...
     -> "MSSQLSpatial" (read/write)
     ...
-    
+
 Test OGR Connection Parameters
 ******************************
 
-Use the *ogrinfo* commandline utility to test your connection through the MSSQLSpatial driver, such as:
+Use the *ogrinfo* command line utility to test your connection through the MSSQLSpatial driver, such as:
 
 ::
 
   ogrinfo "MSSQL:server=.\SQLEXPRESS;database=geo;trusted_connection=yes" province -summary
-  
+
 Create MapServer Layer using CONNECTIONTYPE OGR
 ***********************************************
 
 Your layer should contain a CONNECTIONTYPE OGR statement, as well as a CONNECTION.
 The connection should also contact a "tables=" parameter, and also the name of the
 geometry column in brackets.  You do not need to specify the DATA parameter unless you 
-define an sql select statement starting with the 'WHERE' keyword.  For example:
+define an SQL select statement starting with the 'WHERE' keyword.  For example:
 
 .. code-block:: mapfile
 
@@ -142,9 +142,9 @@ define an sql select statement starting with the 'WHERE' keyword.  For example:
     END
     PROCESSING 'CLOSE_CONNECTION=DEFER'
   END # layer
-  
 
-.. NOTE::
+.. note::
+
    The usual CONNECTIONTYPE terms 'using unique' and 'using srid' are not meaningful 
    for the OGR driver in this case, as these parameters are automatically retrieved 
    from the 'geometry_columns' metadata table.
@@ -153,6 +153,22 @@ define an sql select statement starting with the 'WHERE' keyword.  For example:
 
 OPTION 2: Connect Through MapServer Plugin
 ------------------------------------------
+
+As of MapServer 8.0 plugins can only be used when referenced in the MapServer :ref:`CONFIG <config>`
+file. The ``PLUGINS`` section needs to contain a key - a name for the driver, and a the path to the DLL.
+For example:
+
+.. code-block:: mapfile
+
+    CONFIG
+        ...
+        PLUGINS
+            "mssql" "C:\MapServer\bin\ms\plugins\mssql2008\msplugin_mssql2008.dll"
+        END
+        ...
+
+The key ``mssql`` can then be used in any Mapfiles to refer to this DLL. Controlling which DLLs are loaded by MapServer
+in the ``CONFIG`` file prevents Mapfiles from loading potentially dangerous DLLs. 
 
 Create MapServer Layer
 **********************
@@ -167,32 +183,32 @@ configured to access MSSQL as follows:
     TYPE POLYGON
     STATUS DEFAULT
     CONNECTIONTYPE PLUGIN
-    PLUGIN "msplugin_mssql2008.dll"
+    PLUGIN "mssql"
     CONNECTION "Server=.\MSSQLSERVER2008;Database=Maps;Integrated Security=true"
     DATA "ogr_geometry from rivers USING UNIQUE ogr_fid USING SRID=4326"
     ...
   END 
 
 The DATA parameter is used to perform the SQL select statement to
-access your table in MSSQL.  The geometry column is required in the
-select statement; in the above example the ogr_geometry column is the
+access your table in MSSQL. The geometry column is required in the
+select statement; in the above example the ``ogr_geometry`` column is the
 geometry column in the rivers table. The table should also have an
-unique column (ogr_fid) which is provided for random access to the
+unique column (``ogr_fid``) which is provided for random access to the
 features in the feature query operations.
 
 The DATA section should also contain the spatial reference id (SRID)
 of the features in the data table The SRID is used when specifying the
 search shapes during the intersect operations which should match with
 the SRID of the features otherwise no features are returned in a
-particular query.  if you omit specifying the SRID value in the DATA
+particular query. If you omit specifying the SRID value in the DATA
 section the diver will use SRID=0 when defining the search shapes.
 
 Selecting the Type of the Geometry Column
 *****************************************
 
 For the geometry columns MSSQL supports 2 data types: "geometry" and
-"geography".  By default the driver considers the type of the geometry
-column is "geometry".  In case if the type of the geometry column is
+"geography". By default the driver considers the type of the geometry
+column is "geometry". In case if the type of the geometry column is
 "geography" we must specify the data type in the DATA section
 explicitly, like::
 
@@ -205,19 +221,14 @@ On Windows platforms the DLLs needed by the program are searched for
 in the following order:
 
 1) The directory from which the application loaded.
-   
 2) The current directory.
-
 3) The system directory. Use the `GetSystemDirectory
    <http://msdn.microsoft.com/en-us/library/ms724373.aspx>`__ function
    to get the path of this directory.
-   
 4) The 16-bit system directory.
-
 5) The Windows directory. Use the `GetWindowsDirectory
    <http://msdn.microsoft.com/en-us/library/ms724454.aspx>`__ function
    to get the path of this directory.
-   
 6) The directories that are listed in the PATH environment variable.
 
 Binaries Containing the MSSQL Plugin
@@ -226,7 +237,7 @@ Binaries Containing the MSSQL Plugin
 Currently the following binary distributions contain
 msplugin_mssql2008.dll:
 
-- `GISInternals <http://www.gisinternals.com>`__
+- `GISInternals <https://www.gisinternals.com/>`__
 - `MS4W <https://ms4w.com>`__
 
 Using Spatial Indexes
@@ -237,16 +248,14 @@ be created to the geometry column which could easily be done with the
 OGR MSSQL Spatial driver like::
 
   ogrinfo -sql "create spatial index on rivers"
-               "MSSQL:server=.\MSSQLSERVER2008;database=Maps;
-                Integrated Security=true"
-  
+               "MSSQL:server=.\MSSQLSERVER2008;database=Maps;Integrated Security=true;"
+
 In general we can safely rely on the query optimizer to select the
-most appropriate index in the sql query operations. In some cases -
+most appropriate index in the SQL query operations. In some cases -
 however - we should force the optimizer to use the spatial index by
 specifying the index hint in the DATA section like::
 
-  DATA "ogr_geometry from rivers using index ogr_geometry_sidx
-        USING UNIQUE ogr_fid USING SRID=4326"
+  DATA "ogr_geometry from rivers using index ogr_geometry_sidx USING UNIQUE ogr_fid USING SRID=4326"
 
 Layer Processing Options
 ------------------------
