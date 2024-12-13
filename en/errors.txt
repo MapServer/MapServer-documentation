@@ -96,14 +96,11 @@ How to get a file's EXTENT values?
 
 The easiest way to get a vector file's EXTENT is to use the `ogrinfo`_
 utility, that is part of the GDAL/OGR library (for raster files you would use
-the `gdalinfo`_ utility). Windows users can download the `FWTools`_ package,
-which includes all of the GDAL and OGR commandline utilities. `MS4W`_ also
-includes the utilities (in *ms4w/tools/gdal-ogr-utils/*). Linux users will
-probably already have the GDAL libraries, if not you can also use the
-`FWTools` package.
+the `gdalinfo`_ utility). Windows users can download the `MS4W`_ package,
+which includes all of the GDAL and OGR commandline utilities (in */ms4w/tools/gdal-ogr/*). 
+Linux users will probably already have the GDAL libraries.
 
-.. _`FWTools`: http://fwtools.maptools.org/
-.. _`MS4W`: http://www.ms4w.com
+.. _`MS4W`: https://ms4w.com
 .. _`ogrinfo`: https://gdal.org/programs/ogrinfo.html
 .. _`gdalinfo`: https://gdal.org/programs/gdalinfo.html
 
@@ -216,11 +213,11 @@ msProcessProjection(): no options found in 'init' file
 Error displayed when attempting to use a specific projection.
 
 The message tells you that the projection you're trying to use isn't defined 
-in the epsg file.  Open your epsg file in a text editor and search for
-your projection to make sure that it exists.
+in the PROJ library's `proj.db` SQLite database file.  (if you are using PROJ < 6, 
+the projections are stored in an `epsg` file instead, that you can open a text editor and 
+search for your projection to make sure that it exists)
 
-On Windows, the default location of the epsg file is *c:\\proj\\nad*.  MS4W
-users will find the epsg file in *\\ms4w\\proj\\nad*.
+On Windows, with MS4W versions >= 5 users will find the `proj.db` file in */ms4w/share/proj/*.
 
 .. seealso::
     :ref:`PROJECTION` and https://spatialreference.org (https://epsg.io/ is no
@@ -232,27 +229,49 @@ users will find the epsg file in *\\ms4w\\proj\\nad*.
 msProcessProjection(): No such file or directory
 -------------------------------------------------------------------------------
 
-Error displayed when trying to refer to an epsg file.
+Error displayed when trying to refer to an `epsg` file.
 
-The message tells you that MapServer cannot find the epsg file.  
+The message tells you that MapServer cannot find the `epsg` file (when using 
+PROJ < 6).  
 
 On Windows, the default location of the epsg file is *c:\\proj\\nad*.  MS4W
-users will find the epsg file in *\\ms4w\\proj\\nad*.
+(versions < 5) users will find the epsg file in */ms4w/proj/nad*.
 
 Linux/Unix users should be careful to **specify the correct case** when 
 referring to the epsg file, since filenames are case sensitive on Linux/Unix.  
 "init=epsg:4326" refers to the epsg filename, and therefore "init=EPSG:4326" 
 will not work because it will be looking for an *EPSG* file in uppercase.
 
-Setting the location of the epsg file
+Setting the location of the PROJ files
 ..............................................................................
 
-There are a few options available if you need to set the epsg location:
+There are a few options available if you need to set the `proj.db` location:
 
-1. Use a system variable ("environment variable" on windows) called
-   "PROJ_LIB" and point it to your epsg directory.
+.. TIP::
+   Since the PROJ 9.1 release, the former `PROJ_LIB` variable has 
+   been replaced with `PROJ_DATA`
    
-2. Use the mapfile parameter CONFIG to force the location of the epsg
+1. Use MapServer's global configuration file, available since the MapServer 8.0
+   release, to set the "PROJ_DATA" environment variable.  The default name of
+   the config file is `mapserver.conf` (for MS4W users, the file is `/ms4w/ms4w.conf`).
+   Your config file could contain a CONFIG section such as:
+   
+   ::
+   
+     CONFIG
+
+       ENV
+
+         PROJ_DATA "/ms4w/share/proj"
+	
+       END #env
+
+    END
+
+2. Set a system variable ("environment variable" on windows) called
+   "PROJ_DATA" and point it to your proj directory.
+
+3. Use the mapfile parameter CONFIG to force the location of the `proj.db`
    file.  This parameter is specified at the MAP level
    
    .. seealso::
@@ -262,17 +281,17 @@ There are a few options available if you need to set the epsg location:
 
         MAP 
             ...
-            CONFIG "PROJ_LIB" "C:/somedir/proj/nad/"
+            CONFIG "PROJ_DATA" "/ms4w/share/proj"
             ...
         END
 
-3. Set an environment variable through your web server.  Apache has a 
+4. Set an environment variable through your web server.  Apache has a 
    SetEnv directive that can set environment variables.  Add something
    like the following to your Apache *httpd.conf* file:
    
    ::
 
-      SetEnv PROJ_LIB C:/somedir/proj/nad/
+      SetEnv PROJ_DATA "/ms4w/share/proj"
    
 
 .. index::

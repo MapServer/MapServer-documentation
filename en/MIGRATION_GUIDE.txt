@@ -6,11 +6,25 @@
 MapServer Migration Guide
 *****************************************************************************
 
-:Last Updated: 2024-08-26
+:Last Updated: 2024-12-13
 
 .. contents:: Table of Contents
     :depth: 2
     :backlinks: top
+    
+.. _migration-8-4:
+   
+MapServer 8.2 to 8.4 Migration
+==============================
+
+- you can now build against the PCRE2 library (WITH_PCRE2=ON)
+
+- reminder that since the PROJ 9.1 release, the former `PROJ_LIB` variable has 
+  been replaced with `PROJ_DATA`
+  
+  .. TIP::
+     For Windows users, MS4W >=5 leverages the `PROJ_DATA` environment variable, 
+     which points to `/ms4w/share/proj/`     
     
 .. _migration-8-2:
    
@@ -74,8 +88,6 @@ MapServer 7.6 to 8.0 Migration
         ...
       END #map
   
-  
-
 - Several deprecated mapfile parameters have been removed, and will throw an
   error if you still specify them now.  The following are specific examples 
   to be aware of (but be sure to review the :ref:`full list <rfc133>`), taken from the 
@@ -135,8 +147,47 @@ MapServer 7.6 to 8.0 Migration
   
   ::
 
-    ...&map.layer[county].class[0].label[0]=SIZE+24&...  
+    ...&map.layer[county].class[0].label[0]=SIZE+24&...
+
+- Using the :ref:`LABEL` WRAP parameter with *MAXLENGTH 0* to always wrap at the wrap character 
+  is no longer supported (as there are more strict checks in MapServer >= 8 for negative or
+  zero values), so instead you can remove (or comment) that *MAXLENGTH 0* line, and MapServer 
+  will wrap at the character, such as:
+  
+  .. code-block:: mapfile
+
+      LAYER
+        NAME "wrap-no-maxlength"
+        CLASS
+            LABEL
+                TYPE truetype
+                ANGLE follow
+                FONT "dejavu"
+                SIZE 8
+                COLOR 0 0 0
+                #MAXLENGTH 0 #would cause error in MapServer >=8
+                WRAP "|"
+            END #label
+            ...
+        END #class
+        ...
+
+        FEATURE
+          POINTS
+            50 -450 150 -450
+          END #points
+          TEXT "W: WrapSpace|With Pipe"
+        END #feature
         
+      END #layer 
+     
+  so the label will appear in the map image as:
+     
+  .. image:: ./images/label-wrap-with-pipe.png
+      :height: 59
+      :width: 187
+      :class: no-scaled-link 
+
 - Reminder: every mapfile :ref:`LAYER` should include a **NAME** parameter. 
   The NAME should **not contain** special characters, or spaces, or begin with 
   a number.  This simple name is important for your downstream users (such as 
