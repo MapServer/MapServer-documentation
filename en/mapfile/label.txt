@@ -241,9 +241,52 @@ MAXLENGTH [integer]
 
     .. csv-table:: Interaction with WRAP_ keyword
 
-        "", **maxlength = 0** ,  **maxlength > 0**
+        "", **without maxlength** ,  **maxlength > 0**
         **wrap = ‘char’** ,always wrap at the WRAP_ character ,newline at the first WRAP_ character after MAXLENGTH_ characters
-        **no wrap** ,no processing,skip label if it contains more than MAXLENGTH_ characters
+        **no wrap** ,no processing,skip label if it contains more than MAXLENGTH_ characters 
+        
+    .. warning::
+        Specifying *MAXLENGTH 0* to always wrap at the wrap character 
+        will cause an error in MapServer >=8 (as there are more strict checks in 
+        MapServer >= 8 for negative or zero values), so instead, do not specify a 
+        MAXLENGTH and MapServer will then wrap at the wrap character.
+        
+    Here is an example that wraps at the first dash "-" that occurs after 12 characters 
+    in the label (MAXLENGTH 12) :    
+        
+    .. code-block:: mapfile
+
+        LAYER
+          NAME "wrap-with-dash-with-maxlength"
+          CLASS
+              LABEL
+                  TYPE truetype
+                  ANGLE follow
+                  FONT "dejavu"
+                  SIZE 8
+                  COLOR 0 0 0
+                  MAXLENGTH 12 #wrap at first dash after 12 characters
+                  WRAP "-"
+              END #label
+              ...
+          END #class
+          ...
+
+          FEATURE
+            POINTS
+              50 -50 150 -50
+            END #points
+            TEXT "W: WrapDash-With-Dash"
+          END #feature
+          
+        END #layer 
+       
+    so the label will appear in the map image as:
+       
+    .. image:: ../images/label-wrap-with-maxlength.png
+        :height: 78
+        :width: 160
+        :class: no-scaled-link
 
     The associated RFC document for this feature is :ref:`RFC40`.
 
@@ -651,8 +694,8 @@ SIZE [integer]|[tiny|small|medium|large|giant]|[attribute]|[expression]
           END # STYLE
           
         .. image:: ../images/label-style-center-poly.png
-           :height: 400px
-           :width: 600 px
+           :height: 400
+           :width: 600
            :class: no-scaled-link 
 
 .. index::

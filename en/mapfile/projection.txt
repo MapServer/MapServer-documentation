@@ -13,6 +13,10 @@
 .. index::
    single: Map projections
    
+.. contents::
+    :depth: 3
+    :backlinks: top
+   
 Background
 ----------
 
@@ -33,9 +37,10 @@ output image (in the :ref:`MAP` object) and one projection object for
 each layer (in the :ref:`LAYER` objects) to be projected.  MapServer
 relies on the :term:`PROJ` library for projections.  Projection
 objects therefore consist of a series of PROJ keywords, which are
-either specified within the object directly or referred to in an
-:term:`EPSG` file.  An EPSG file is a lookup file containing projection
-parameters, and is part of the PROJ library.
+either specified within the object directly or referred to in a
+PROJ data file, that contains :term:`EPSG` definitions.  A PROJ data file 
+(`proj.db` for PROJ >=6, or `epsg` file for PROJ <6) is a lookup file containing 
+projection parameters, and is part of the PROJ library.
 
 Starting with MapServer 8 and when the PROJ 6 library or above is used,
 the use of EPSG codes when available, rather than the inline projection
@@ -156,25 +161,63 @@ shapefile layers or raster layers :
 
     For other layer types, this syntax is invalid.
 
-Specifying which EPSG files to use
+Setting the location of PROJ files
 ----------------------------------
 
 .. index::
-   triple: MAP; CONFIG; PROJ_LIB
+   triple: MAP; CONFIG; PROJ_DATA
+   
+.. TIP::
+   Since the PROJ 9.1 release, the former `PROJ_LIB` variable has 
+   been replaced with `PROJ_DATA`  
 
-:ref:`MAP` `CONFIG` can be used to specify the location of EPSG files:
+There are several ways to point MapServer to the PROJ files (`proj.db` for PROJ >=6, 
+or `epsg` file for PROJ <6) :
 
-.. code-block:: mapfile
+1. Use MapServer's global configuration file, available since the MapServer 8.0
+   release, to set the "PROJ_DATA" environment variable.  The default name of
+   the config file is `mapserver.conf` (for MS4W users, the file is `/ms4w/ms4w.conf`).
+   Your config file could contain an `ENV` section such as:
+   
+   ::
+   
+     CONFIG
 
-  MAP
-    CONFIG "PROJ_LIB" "/usr/share/proj/"
-    PROJECTION
-      "init=epsg:3857"
-    END # PROJECTION
-    ...
+       ENV
 
-It is important that `CONFIG "PROJ_LIB"` line comes before the
-`PROJECTION` block.
+         PROJ_DATA "/ms4w/share/proj"
+	
+       END #env
+
+     END #config
+
+   .. seealso:: :ref:`config`    
+
+2. Set the :ref:`MAP` object's `CONFIG` parameter in your mapfile to specify 
+   the location of PROJ files:
+
+   .. code-block:: mapfile
+
+      MAP
+        CONFIG "PROJ_DATA" "/usr/share/proj/"
+        PROJECTION
+          "init=epsg:3857"
+        END # PROJECTION
+      ...
+
+   It is important that the `CONFIG "PROJ_DATA"` line comes before the
+   `PROJECTION` block.
+   
+3. Set a system variable ("environment variable" on windows) called
+   "PROJ_DATA" and point it to your proj directory.
+   
+4. Set an environment variable through your web server.  Apache has a 
+   `SetEnv` directive that can set environment variables.  Add something
+   like the following to your Apache *httpd.conf* file:
+   
+   ::
+
+      SetEnv PROJ_DATA "/ms4w/share/proj"
 
 Important Notes
 ---------------

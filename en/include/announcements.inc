@@ -1,3 +1,10 @@
+**2024-12-14 - MapServer 8.4.0-beta2 is released**
+
+The second beta for MapServer 8.4 has been released. The list of
+major changes for this release can be found in the :ref:`8.4 announcement <announce-8-4>`.
+See the :ref:`changelog <changelog-8-4-0-beta2>`
+for the full list of changes and head to :ref:`download` to obtain a copy.
+
 **2024-09-02 - MapServer 8.2.2 is released**
 
 The maintenance release of MapServer 8.2.2 is now available.
@@ -101,39 +108,4 @@ The major version MapServer 8.0 has been released. The list of
 major changes for this release can be found in the :ref:`8.0 announcement <announce-8-0>`.
 See the :ref:`changelog <changelog-8-0>`
 for the full list of changes and head to :ref:`download` to obtain a copy.
-
-**2022-09-05 - MapServer 8.0.0-rc2 is released**
-
-The second release candidate for MapServer 8.0 has been released. The list of
-major changes for this release can be found in the :ref:`8.0 announcement <announce-8-0>`.
-See the :ref:`changelog <changelog-8-0-0-rc2>`
-for the full list of changes and head to :ref:`download` to obtain a copy.
-
-**2022-08-19 - MapServer 8.0.0-rc1 is released**
-
-The first release candidate for MapServer 8.0 has been released. The list of
-major changes for this release can be found in the :ref:`8.0 announcement <announce-8-0>`.
-See the :ref:`changelog <changelog-8-0-0-rc1>`
-for the full list of changes and head to :ref:`download` to obtain a copy.
-
-**2022-08-09 - MapServer 8.0.0-beta2 is released**
-
-The second beta for MapServer 8.0 has been released. The list of
-major changes for this release can be found in the :ref:`8.0 announcement <announce-8-0>`.
-See the :ref:`changelog <changelog-8-0-0-beta2>`
-for the full list of changes and head to :ref:`download` to obtain a copy.
-
-**2022-06-27 - MapServer 8.0.0-beta1 is released**
-
-The first beta for MapServer 8.0 has been released. The list of
-major changes for this release can be found in the :ref:`8.0 announcement <announce-8-0>`.
-See the :ref:`changelog <changelog-8-0-0-beta1>`
-for the full list of changes and head to :ref:`download` to obtain a copy.
-
-.. warning::
-    **2021-03-30 - Security Advisory – Limiting Mapfile Access**
-
-    It is important to limit MapServer CGI access to mapfiles, to 
-    prevent malicious attacks to your file system.  Please see details 
-    in the announcement at :ref:`2021-03-30-limit-mapfile-access`.
 
