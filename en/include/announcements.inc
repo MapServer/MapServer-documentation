@@ -1,8 +1,8 @@
-**2024-12-13 - MapServer 8.4.0-beta1 is released**
+**2024-12-14 - MapServer 8.4.0-beta2 is released**
 
-The first beta for MapServer 8.4 has been released. The list of
+The second beta for MapServer 8.4 has been released. The list of
 major changes for this release can be found in the :ref:`8.4 announcement <announce-8-4>`.
-See the :ref:`changelog <changelog-8-4-0-beta1>`
+See the :ref:`changelog <changelog-8-4-0-beta2>`
 for the full list of changes and head to :ref:`download` to obtain a copy.
 
 **2024-09-02 - MapServer 8.2.2 is released**
