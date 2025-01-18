@@ -1,0 +1,197 @@
+.. _rfc140:
+
+================================================
+MS RFC 140: MapServer Homepage
+================================================
+
+:Author: 	Seth Girvin
+:Contact: 	sethg@geographika.co.uk
+:Last Updated:  2025-01-18
+:Version: 	MapServer 8.6
+:Status: 	Draft
+
+1. Overview
+===========
+
+This RFC proposes adding functionality to MapServer for dynamically generating a homepage that lists all map services available in a given deployment. 
+This feature would enable the creation of pages like https://maps.isric.org/ directly from a MapServer deployment, without requiring 
+additional scripting. While scripting can achieve this, integrating the capability into MapServer itself 
+would offer greater convenience and maintainability.
+
+With the introduction of the :ref:`CONFIG file <config>` in MapServer 8.0, it is now possible to centrally manage information about all Mapfiles in a deployment. 
+This would ensure that the homepage remains automatically synchronised with both the CONFIG file and the capabilities of the Mapfiles it references.
+
+2.1 Proposed Solution
+=====================
+
+A new MapServer :ref:`CGI mode <cgi>` - ``mode=config`` will be added to allow details of the MapServer services to be returned. The ``MAPS`` block 
+in the :ref:`CONFIG file <config>` will be read to return a list of available services. By default the homepage service will be disabled unless a new
+``ENV`` option ``MS_HOMEPAGE_TEMPLATE`` has been set. This should be set to a folder containing a ``homepage.html`` value. However if only JSON
+responses are required it can be set to any value to enable the homepage service.
+
+.. code-block:: mapfile
+
+    ENV
+        MS_HOMEPAGE_TEMPLATE_DIRECTORY "share/ogcapi/templates/homepage/" # REQUIRED
+        ...
+    END
+    # Example MAPS block in the CONFIG file
+    MAPS
+        TEST_MAPFILE1 "/opt/mapserver/test/test1.map"
+        TEST_MAPFILE2 "/opt/mapserver/test/test2.map"
+    END
+
+Users will be able to request the Mapfile details in two formats - HTML and JSON. A parameter can be added to the querystring to choose the format - 
+it is proposed the OGC API use of the ``f`` parameter is
+used to select this, for example ``f=html`` or ``f=json``. As with the OGC Features API if not specified JSON will be the default.
+Requests will look as follows:
+
+.. code-block:: bat
+
+    # example web requests
+    # http://localhost/cgi-bin/mapserv.exe?mode=config&f=json
+    # http://localhost/cgi-bin/mapserv.exe?mode=config&f=html
+
+    # from the command line
+    mapserv -nh "QUERY_STRING=mode=config&f=json" -conf "/usr/local/etc/mapserver.conf"
+    mapserv -nh "QUERY_STRING=mode=config&f=html" -conf "C:\MapServer\apps\mapserver.conf"
+
+As the service returns JSON any client-side library can be used to render the output. However a default HTML template  will be provided
+following the same approach as in OGC Features API.
+
+JSON Structure
+--------------
+
+JSON will be generated using the nlohmann/json and Inja approach already implemented in :ref:`MS RFC 134: OGC API Support <rfc134>`.
+A proposed JSON structure is shown below. Final details may vary. URLs will be constructed based on settings in each individual Mapfile.
+
+.. code-block:: json
+
+    {
+      "id": "TEST_MAPFILE1", // the key in the config file
+      "name": "My_Mapfile", // the NAME in the Mapfile
+      "title": "My Mapfile Title", // the TITLE in the Mapfile
+      "links": [
+        {
+            "href": "https://demo.mapserver.org/cgi-bin/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities",
+            "title": "GetCapabilities",
+            "type": "WMS"
+        },
+        {
+            "href": "https://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=1.0.0&REQUEST=GetCapabilities",
+            "title": "GetCapabilities",
+            "type": "WFS"
+        },
+        {
+            "href": "https://demo.mapserver.org/cgi-bin/wcs?SERVICE=WCS&VERSION=1.0.0&REQUEST=GetCapabilities",
+            "title": "GetCapabilities",
+            "type": "WCS"
+        },
+        {
+            "href": "https://demo.mapserver.org/cgi-bin/mapserv/localdemo/ogcapi/api?f=html",
+            "title": "Landing Page",
+            "type": "OGCAPI"
+        },
+      ]
+    }
+
+
+Future Development
+------------------
+
+Once the general approach is in place more details could be added to this structure, such as the EXTENT and default PROJECTION. 
+The OGC Features API JSON can be used as a guide to create the structure, for example for the extent:
+
+.. code-block:: json
+
+    "extent": {
+        "spatial": {
+            "bbox": [
+                [
+                    -180,
+                    -90,
+                    180,
+                    90
+                ]
+            ],
+            "crs": "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
+        }
+    },
+
+It may be beneficial to allow an administrator to choose what data is made available through the service. A similar approach to
+the use of ``ows_enable_request`` could be considered. Additional links could include the OpenLayers Map (see :ref:`rfc63`).
+
+Potentially the approach taken in this RFC could be used to return the same information for a single Mapfile, providing individual home pages
+for each Mapfile.
+
+2.2 Limitations
+===============
+
+Mapfiles will need to be listed in the ``MAPS`` block of the ``CONFIG`` file to be listed as part of the service.
+There will be no support for reading all Mapfiles in a folder - this would be best handled by scripting the MAPS section of the
+CONFIG file.
+
+Available services such as WMS, WFS etc. will be checked for using the ``ows_enable_request`` in the ``METADATA`` section of a Mapfile, however there is no guarantee
+that the URLs will return valid XML if the Mapfile is not configured correctly.
+
+2.3 Testing
+===========
+
+``msautotests`` will be added to validate various CONFIG and Mapfile setups.
+
+2.4 Security Concerns
+=====================
+
+This new feature will make services more discoverable, but with this comes the risk of leaking information.
+The service will be opt-in, and up to the administrators of the deployment if they want this information to be
+visible by setting the ``MS_HOMEPAGE_TEMPLATE_DIRECTORY`` value in the ``CONFIG`` file.
+
+2.5 MapScript
+=============
+
+It is not planned to add MapScript support for this RFC.
+None of the current MapServer ``mode`` functionality is supported in MapScript, nor the OGC Features API functions.
+
+3. Implementation Details
+=========================
+
+This section contains notes from prototyping a possible solution. The final approach may differ. 
+
+A requests will be checked for ``mode=config`` in mapserv.c to return JSON and exit.
+A new mode will be added to ``mapservutil.c``
+
+.. code-block:: c
+
+    static char *const modeStrings[23]
+
+To list services supported in a Mapfile ``msOWSRequestIsEnabled`` will be used:
+
+- "AO", "OGCAPI"
+- "M", "GetMap", "GetCapabilities"
+- "F" (WFS) "GetCapabilities"
+- "CO" "GetCapabilities"
+
+Example ``int status = msOWSRequestIsEnabled(map, NULL, "AO", "OGCAPI", MS_FALSE);``
+
+For constructing URLs ``msOWSGetOnlineResource`` will be used (which calls ``msBuildOnlineResource``
+if ``ows_onlineresource`` (or ``wms_``, ``wfs_`` etc.) is not set.
+
+3.1 Affected files
+------------------
+
++ mapserv.c
++ mapservutil.c
++ mapserver.h
+
+3.2 Ticket Reference
+--------------------
+
++ TODO
+
+3.3 Documentation
+-----------------
+
+TODO
+
+4. Voting History
+=================
