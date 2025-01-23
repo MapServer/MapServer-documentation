@@ -6,7 +6,7 @@ MS RFC 140: MapServer Homepage
 
 :Author: 	Seth Girvin
 :Contact: 	sethg@geographika.co.uk
-:Last Updated:  2025-01-18
+:Last Updated:  2025-01-23
 :Version: 	MapServer 8.6
 :Status: 	Draft
 
@@ -20,6 +20,12 @@ would offer greater convenience and maintainability.
 
 With the introduction of the :ref:`CONFIG file <config>` in MapServer 8.0, it is now possible to centrally manage information about all Mapfiles in a deployment. 
 This would ensure that the homepage remains automatically synchronised with both the CONFIG file and the capabilities of the Mapfiles it references.
+
+The homepage would be a "superset" of all available Mapfiles in a MapServer deployment, as listed in the CONFIG file. 
+Each individual Mapfile would still have its own OGC API landing page, so the homepage is best described as a directory of all landing pages. 
+
+As most MapServer deployments will likely be serving out a combination of WxS and new OGC API services for some time to come, 
+it will allow both types to be listed together.
 
 2.1 Proposed Solution
 =====================
@@ -59,42 +65,73 @@ Requests will look as follows:
 As the service returns JSON any client-side library can be used to render the output. However a default HTML template  will be provided
 following the same approach as in OGC Features API.
 
+.. note::
+
+    Even though the JSON format is based on the OGC API, the homepage JSON service will still be generated for a Mapfile even if it only supports
+    older WxS services.
+
 JSON Structure
 --------------
 
 JSON will be generated using the nlohmann/json and Inja approach already implemented in :ref:`MS RFC 134: OGC API Support <rfc134>`.
-A proposed JSON structure is shown below. Final details may vary. URLs will be constructed based on settings in each individual Mapfile.
+
+The returned JSON will conform to the the `api-catalog <https://datatracker.ietf.org/doc/draft-ietf-httpapi-api-catalog/08/>`__, 
+a draft IETF (Internet Engineering Task Force) standard. An example implementation is the `pygeoapi homepage <https://demo.pygeoapi.io/>`__
+(see the associated `pull request <https://github.com/geopython/demo.pygeoapi.io/pull/60/files>`__). The JSON structure is available at
+https://demo.pygeoapi.io/api-catalog.json. An extract is shown below:
 
 .. code-block:: json
 
     {
-      "id": "TEST_MAPFILE1", // the key in the config file
-      "name": "My_Mapfile", // the NAME in the Mapfile
-      "title": "My Mapfile Title", // the TITLE in the Mapfile
-      "links": [
+      "linkset": [
         {
-            "href": "https://demo.mapserver.org/cgi-bin/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities",
-            "title": "GetCapabilities",
-            "type": "WMS"
-        },
-        {
-            "href": "https://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=1.0.0&REQUEST=GetCapabilities",
-            "title": "GetCapabilities",
-            "type": "WFS"
-        },
-        {
-            "href": "https://demo.mapserver.org/cgi-bin/wcs?SERVICE=WCS&VERSION=1.0.0&REQUEST=GetCapabilities",
-            "title": "GetCapabilities",
-            "type": "WCS"
-        },
-        {
-            "href": "https://demo.mapserver.org/cgi-bin/mapserv/localdemo/ogcapi/api?f=html",
-            "title": "Landing Page",
-            "type": "OGCAPI"
-        },
-      ]
-    }
+          "anchor": "https://demo.pygeoapi.io/master", 
+          "service-desc": [
+            {
+              "href": "https://demo.pygeoapi.io/master/openapi?f=json", 
+              "title": "pygeoapi - latest GitHub 'master' version (JSON)", 
+              "type": "application/vnd.oai.openapi+json"
+            }
+          ], 
+          "service-doc": [
+            {
+              "href": "https://demo.pygeoapi.io/master/openapi?f=html", 
+              "title": "pygeoapi - latest GitHub 'master' version (HTML)", 
+              "type": "text/html"
+            }
+          ]
+        }, 
 
+The api-catalog specification allows for an additional ``service-meta`` property *"used to link to additional metadata about the API, 
+and is primarily intended for machine consumption."*  This can be used to add any additional properties from Mapfiles
+required to generate a MapServer homepage. ``service-doc`` isn't mandatory property, so WxS service links can ignore this. 
+
+An example of the proposed JSON and metadata is shown below:
+
+.. code-block:: json
+
+    {
+      "linkset": [
+        {
+          "anchor": "https://demo.mapserver.org/", 
+          "service-desc": [
+            {
+              "href": "https://demo.mapserver.org/cgi-bin/msautotest?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities", 
+              "title": "World WMS service", 
+              "type": "text/xml"
+            }
+          ], 
+          "service-meta": {
+             {
+               "service-type": "wms",
+               "title": "WMS demo server for MapServer, used in the msautotest suite",
+               "keywords": ["layers", "list"],
+               "mapfile": "msautotest.map",
+             }
+          }
+        }, 
+
+``href`` values will be constructed based on settings in each individual Mapfile.
 
 Future Development
 ------------------
