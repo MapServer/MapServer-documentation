@@ -157,6 +157,12 @@ html_favicon = "_static/mapserver.ico"
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
+# Add paths that you wish to copy to the output directory
+# see: https://www.sphinx-doc.org/en/master/usage/configuration.html#confval-html_extra_path
+# note that the actual 'extra' folder itself is excluded, so only its contents
+# are copied to the output directory
+html_extra_path = ['./extra']
+
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
 html_last_updated_fmt = '%Y-%m-%d'
