@@ -7,16 +7,20 @@
  MapServer OpenLayers Viewer
 *****************************************************************************
 
-MapServer (since the 6.0 release) provides a simple, built-in method for testing a mapfile
+MapServer (since the 6.0 release) provides a simple, built-in method for testing a Mapfile
 using OpenLayers.  This feature is for testing/development purposes
 only, and not for production or deploying full-featured sites.  You
-can preview, test, and navigate a mapfile by accessing a special url
+can preview, test, and navigate a Mapfile by accessing a special url
 which will return a built-in OpenLayers template.
 
 .. note:: This feature was discussed in
     `rfc 63 <https://mapserver.org/development/rfc/ms-rfc-63.html>`_
     and in the ticket https://github.com/MapServer/MapServer/issues/3549
 
+Up to the MapServer 8.4 release the OpenLayers Viewer was based on `OpenLayers 2 <https://openlayers.org/two/>`_.
+As of MapServer 8.6 the OpenLayers viewer was updated to work with `OpenLayers 10.4+ <https://openlayers.org/>`_.
+The MapServer CGI Layer, used by the viewer, can be see in 
+the `OpenLayers examples <https://openlayers.org/en/latest/examples/mapserver-cgi.html>`_.
 
 Using the OpenLayers viewer
 -----------------------------------------------------------------------------
@@ -25,7 +29,7 @@ Using the OpenLayers viewer
 Opening the OpenLayers viewer in your browser
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-Assuming you are running mapserver on your local machine, and you have
+Assuming you are running MapServer on your local machine, and you have
 the Itasca demo setup, a basic url would be (split into two lines for
 readability)::
 
@@ -97,18 +101,32 @@ Here is a quick breakdown of the interesting parts of that URL:
 Customizing settings
 ~~~~~~~~~~~~~~~~~~~~
 
-* environment variables::
+The viewer relies on two external files - a JavaScript file and a CSS file. By default these are loaded
+from ``https://mapserver.org/lib/``, however you can use your own copies of these files if external network access
+is restricted by setting the following two :ref:`environment_variables`:
 
-    MS_OPENLAYERS_JS_URL - The URL to the OpenLayers javascript library. Per default the library loaded from the MapServer web server.
+* ``MS_OPENLAYERS_JS_URL`` - the URL to the OpenLayers JavaScript library. 
+* ``MS_OPENLAYERS_CSS_URL`` - the URL to the OpenLayers CSS file used for styling. 
+
+These variables can also be set in a Mapfile, for example to point to the full OpenLayers build on a CDN 
+(Content Delivery Network):
+
+.. code-block:: mapfile
+
+    CONFIG "MS_OPENLAYERS_CSS_URL" "//cdn.jsdelivr.net/npm/ol@v10.4.0/ol.css"
+    CONFIG "MS_OPENLAYERS_JS_URL" "//cdn.jsdelivr.net/npm/ol@v10.4.0/dist/ol.js"
 
 Location of the embedded OpenLayers.js file
 -------------------------------------------
 
-If you aren't providing your own OpenLayers library through `MS_OPENLAYERS_JS_URL`, 
-MapServer will point to a hardcoded filepath of `www.mapserver.org/lib` to find the OpenLayers 
-library, referred to in [maptemplate.c](https://github.com/MapServer/MapServer/blob/main/src/maptemplate.c#L54).
+If you aren't providing your own OpenLayers library through `MS_OPENLAYERS_JS_URL` and
+`MS_OPENLAYERS_CSS_URL`, MapServer will point to hardcoded filepaths at `mapserver.org/lib` to find the OpenLayers 
+library, referred to in `maptemplate.c <https://github.com/MapServer/MapServer/blob/main/src/maptemplate.c#L54>`_.
 
-The contents on that `lib` folder is stored in the MapServer documentation repository, 
-in the [/extra](https://github.com/MapServer/MapServer-documentation/tree/main/extra) folder.
+This version of OpenLayers is a cut-down version that only contains the classes needed for the
+MapServer viewer. The ``ol-mapserver.js`` file is ~200 KB compared to the full library which is ~ 840 KB.
+
+The contents of that `lib` folder is stored in the MapServer documentation repository, 
+in the `/extra <https://github.com/MapServer/MapServer-documentation/tree/main/extra>`_ folder.
 You are warmly encouraged to contribute to upgrading the OpenLayers library, at any time (maybe start 
-with creating a new [Pull Request](https://github.com/MapServer/MapServer-documentation/pulls) there.
+with creating a new `Pull Request <https://github.com/MapServer/MapServer-documentation/pulls>`_ there).
