@@ -8,17 +8,17 @@
 *****************************************************************************
 
 MapServer (since the 6.0 release) provides a simple, built-in method for testing a Mapfile
-using OpenLayers.  This feature is for testing/development purposes
+using OpenLayers.  This feature is for testing and development purposes
 only, and not for production or deploying full-featured sites.  You
-can preview, test, and navigate a Mapfile by accessing a special url
+can preview, test, and navigate a Mapfile by accessing a special URL
 which will return a built-in OpenLayers template.
 
 .. note:: This feature was discussed in
-    `rfc 63 <https://mapserver.org/development/rfc/ms-rfc-63.html>`_
+    `RFC 63 <https://mapserver.org/development/rfc/ms-rfc-63.html>`_
     and in the ticket https://github.com/MapServer/MapServer/issues/3549
 
 Up to the MapServer 8.4 release the OpenLayers Viewer was based on `OpenLayers 2 <https://openlayers.org/two/>`_.
-As of MapServer 8.6 the OpenLayers viewer was updated to work with `OpenLayers 10.4+ <https://openlayers.org/>`_.
+As of MapServer 8.6 the OpenLayers viewer was updated to work with `OpenLayers 10.5+ <https://openlayers.org/>`_.
 The MapServer CGI Layer, used by the viewer, can be see in 
 the `OpenLayers examples <https://openlayers.org/en/latest/examples/mapserver-cgi.html>`_.
 
@@ -30,13 +30,11 @@ Opening the OpenLayers viewer in your browser
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
 Assuming you are running MapServer on your local machine, and you have
-the Itasca demo setup, a basic url would be (split into two lines for
-readability)::
+the Itasca demo setup, a basic URL would be::
 
-    http://localhost/cgi-bin/mapserv?mode=browse&template=openlayers
-         &layer=lakespy2&layer=dlgstln2&map=/var/www/workshop/itasca.map
+    http://localhost/cgi-bin/mapserv?mode=browse&template=openlayers&layer=lakespy2&layer=dlgstln2&map=/var/www/workshop/itasca.map
 
-Here is a quick breakdown of that url:
+Here is a quick breakdown of that URL:
 
 * Basic Parameters for activating the OpenLayers browser::
 
@@ -50,14 +48,19 @@ Here is a quick breakdown of that url:
     layer=lakespy2
     layer=dlgstln2
 
+When using the ``mode=browser`` MapServer will create an image on the server. By default this will be in the same folder as the Mapfile.
+If this MapServer cannot write to this folder you will see an error similar to:
+
+.. code-block:: bash
+
+    msSaveImage(): Unable to access file. Failed to create output file (/etc/mapserver/Test174833722471.png).
+
+In this case you will need to set your :ref:`IMAGEPATH <mapfile-web-imagepath>` to a folder MapServer can write to.
+
 **That's it!**
 
-.. uncomment me when the demo server is up to 6.0
-.. If you don't have a live MapServer install to play with, you can also try this out on the demo server::
-..
-..    https://demo.mapserver.org/cgi-bin/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&BBOX=-180,-90,180,90&SRS=EPSG:4326&WIDTH=953&HEIGHT=480&LAYERS=bluemarble,continents,country_bounds,cities&STYLES=&FORMAT=image/png&TRANSPARENT=true&mode=browse&template=openlayers
-..
-
+If you don't have a live MapServer install to play with, you can also try the
+`MapServer demo <https://demo.mapserver.org/cgi-bin/wms?mode=browse&template=openlayers&layer=continents&layer=country_bounds>`__.
 
 Opening the OpenLayers viewer in the form of a WMS request
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -90,13 +93,16 @@ Here is a quick breakdown of the interesting parts of that URL:
     BBOX=429956.19803725,5231780.0814818,444078.32296225,5245902.2064068
     SRS=EPSG:26915
 
-    #Version and other WMS request params
+    #Version and other WMS request parameters
     SERVICE=WMS
     VERSION=1.1.1
     REQUEST=GetMap
     WIDTH=512
     HEIGHT=512
     TRANSPARENT=true
+
+If you don't have a live MapServer install to play with, you try the
+`MapServer demo <https://demo.mapserver.org/cgi-bin/wms?SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&BBOX=-180,-90,180,90&SRS=EPSG:4326&WIDTH=953&HEIGHT=480&LAYERS=bluemarble,continents,country_bounds,cities&STYLES=&FORMAT=application/openlayers&TRANSPARENT=true>`__.
 
 Customizing settings
 ~~~~~~~~~~~~~~~~~~~~
@@ -113,14 +119,14 @@ These variables can also be set in a Mapfile, for example to point to the full O
 
 .. code-block:: mapfile
 
-    CONFIG "MS_OPENLAYERS_CSS_URL" "//cdn.jsdelivr.net/npm/ol@v10.4.0/ol.css"
-    CONFIG "MS_OPENLAYERS_JS_URL" "//cdn.jsdelivr.net/npm/ol@v10.4.0/dist/ol.js"
+    CONFIG "MS_OPENLAYERS_CSS_URL" "//cdn.jsdelivr.net/npm/ol@v10.5.0/ol.css"
+    CONFIG "MS_OPENLAYERS_JS_URL" "//cdn.jsdelivr.net/npm/ol@v10.5.0/dist/ol.js"
 
 Location of the embedded OpenLayers.js file
 -------------------------------------------
 
-If you aren't providing your own OpenLayers library through `MS_OPENLAYERS_JS_URL` and
-`MS_OPENLAYERS_CSS_URL`, MapServer will point to hardcoded filepaths at `mapserver.org/lib` to find the OpenLayers 
+If you aren't providing your own OpenLayers library through ``MS_OPENLAYERS_JS_URL`` and
+``MS_OPENLAYERS_CSS_URL``, MapServer will point to hard-coded filepaths at `mapserver.org/lib` to find the OpenLayers 
 library, referred to in `maptemplate.c <https://github.com/MapServer/MapServer/blob/main/src/maptemplate.c#L54>`_.
 
 This version of OpenLayers is a cut-down version that only contains the classes needed for the
