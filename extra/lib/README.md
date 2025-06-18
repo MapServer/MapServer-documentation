@@ -19,6 +19,7 @@ automatic deployment of the MapServer documentation).
 
 # History
 
+- updated to OpenLayers 10.5.0 on 2025-06-18
 - updated to OpenLayers 10.4.0 on 2025-02-09
 - updated to OpenLayers 2.10 in 2014
 - initially included in the MapServer 6.0 release in 2011
