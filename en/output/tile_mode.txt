@@ -8,7 +8,7 @@
 :Contact:       pramsey at cleverelephant.ca
 :Author:        Jeff McKenna
 :Contact:       jmckenna at gatewaygeomatics.com
-:Last Updated:  2021-05-17
+:Last Updated:  2025-07-25
 
 .. contents:: Table of Contents
     :depth: 2
@@ -29,31 +29,32 @@ Configuration
 =============
 
 Tile requests are handled by the 'mapserv' CGI program.  In order to 
-return tiles in the correct projection, MapServer must be built with the 
---use-proj option turned on.  You can check if your version of 'mapserv' has 
+return tiles in the correct projection, MapServer must be built against the 
+`PROJ` library.  You can check if your version of 'mapserv' has 
 projection support by running it with the '-v' option and looking 
 for 'SUPPORTS=PROJ'.
 
 Example 1. On Unix::
 
    $ ./mapserv -v
-   MapServer version 7.7-dev OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ 
-   SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS 
-   SUPPORTS=RSVG SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER 
-   SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER 
-   SUPPORTS=SOS_SERVER SUPPORTS=GEOS SUPPORTS=POINT_Z_M SUPPORTS=PBF INPUT=JPEG 
-   INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE
+   MapServer version 8.5-dev PROJ version 9.6 GDAL version 3.11 OUTPUT=PNG 
+   OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE 
+   SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS SUPPORTS=RSVG SUPPORTS=ICONV 
+   SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER 
+   SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER 
+   SUPPORTS=OGCAPI_SERVER SUPPORTS=GEOS SUPPORTS=PBF INPUT=JPEG INPUT=POSTGIS 
+   INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE INPUT=FLATGEOBUF
 
 Example 2. On Windows::
 
    C:\ms4w> mapserv -v
-   MapServer version 7.7.0-dev (MS4W 4.0.4) OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML 
-   SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS 
-   SUPPORTS=SVGCAIRO SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER 
-   SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER 
-   SUPPORTS=SOS_SERVER SUPPORTS=FASTCGI SUPPORTS=THREADS SUPPORTS=GEOS 
-   SUPPORTS=POINT_Z_M SUPPORTS=PBF INPUT=JPEG INPUT=POSTGIS INPUT=OGR 
-   INPUT=GDAL INPUT=SHAPEFILE
+   MapServer version 8.5.0-dev (MS4W 5.2.0) PROJ version 9.7 GDAL version 3.12 
+   OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE 
+   SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS SUPPORTS=SVGCAIRO SUPPORTS=ICONV 
+   SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER 
+   SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER SUPPORTS=OGCAPI_SERVER 
+   SUPPORTS=FASTCGI SUPPORTS=THREADS SUPPORTS=GEOS SUPPORTS=PBF INPUT=JPEG 
+   INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE INPUT=FLATGEOBUF
    
 MapServer requires that each LAYER in your .map file (or "mapfile") have a valid PROJECTION 
 block to support reprojection.  Because the tile mode uses reprojection, 
@@ -185,6 +186,60 @@ contains it, then its address relative to that tile.  So the top left tile
 in the second zoom level is "00" and the bottom right one is "33".  
 See the Bing Maps site for more details: http://msdn.microsoft.com/en-us/library/bb545006.aspx
 
+Mapbox Vector Tile (MVT) output
+-------------------------------
+
+.. seealso::
+    MVT support was added into MapServer through :ref:`RFC #119 <rfc119>`
+    
+Since the MapServer 7.2.0 release, MapServer is able to output MVT vector tiles.
+
+**Notes regarding MVT support in MapServer:**
+
+- make sure that your `mapserv -v` command reports `SUPPORTS=PBF` in the response, 
+  which tells you that your MapServer instance supports MVT output
+  
+  - if your mapserv is missing the support, on Ubuntu you might execute:
+  
+    ::
+    
+      sudo apt install protobuf-c-compiler libprotobuf-c-dev
+      
+    and then compile MapServer with the `-DWITH_PROTOBUFC=ON` switch
+    
+- verify that your mapfile has a :ref:`PROJECTION` object defined for 
+  every :ref:`LAYER`
+  
+- add an OUTPUTFORMAT block to your mapfile, to leverage GDAL's 
+  `MVT driver <https://gdal.org/en/stable/drivers/vector/mvt.html>`__ :
+
+  .. code-block:: mapfile
+
+     OUTPUTFORMAT
+       NAME "mvt"
+       DRIVER MVT
+       #FORMATOPTION "EXTENT=512" # default is 4096
+       FORMATOPTION "EDGE_BUFFER=20"
+     END
+     
+- now test this output by adding the `&map.imagetype=mvt` switch to your earlier 
+  request, and try to load it in your browser, such as:
+  
+  ::
+
+     http://127.0.0.1/cgi-bin/mapserv.exe?
+         MAP=/ms4w/apps/local-demo/local.map
+         &MODE=tile
+         &TILEMODE=gmap
+         &TILE=0+0+0
+         &LAYERS=countries
+         &map.imagetype=mvt
+         
+- your browser should download a file, which you can rename to something like
+  `demo.pbf`, and then execute `ogrinfo <https://gdal.org/en/stable/programs/ogrinfo.html>`__ 
+  on the file to examine it
+  
+  - the ogrinfo response should contain a message such as `using driver `MVT' successful`
 
 Using Google Maps
 -----------------
@@ -328,9 +383,7 @@ as overlays, or as alternate base maps. Here is an example:
       <div id="myMap" style="position:relative; width:500px; height:500px;"></div>
     </body>
     </html>
-
-
-
+    
 .. RST Link Section
 
 .. _`GTileLayerOverlay`: https://developers.google.com/maps/documentation/javascript/tutorial
