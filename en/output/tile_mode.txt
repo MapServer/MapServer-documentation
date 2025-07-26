@@ -8,7 +8,7 @@
 :Contact:       pramsey at cleverelephant.ca
 :Author:        Jeff McKenna
 :Contact:       jmckenna at gatewaygeomatics.com
-:Last Updated:  2025-07-25
+:Last Updated:  2025-07-26
 
 .. contents:: Table of Contents
     :depth: 2
@@ -208,17 +208,33 @@ Since the MapServer 7.2.0 release, MapServer is able to output MVT vector tiles.
     and then compile MapServer with the `-DWITH_PROTOBUFC=ON` switch
     
 - verify that your mapfile has a :ref:`PROJECTION` object defined for 
-  every :ref:`LAYER`
+  every :ref:`LAYER` (to define the source projection for every layer)
+  
+  .. code-block:: mapfile
+  
+     LAYER
+       ...
+       #the data's source projection
+       # latlong, see https://spatialreference.org/ref/epsg/4326/
+       PROJECTION
+         "init=epsg:4326"
+       END
+       ...
+     END
   
 - add an OUTPUTFORMAT block to your mapfile, such as :
 
   .. code-block:: mapfile
 
-     OUTPUTFORMAT
-       NAME "mvt"
-       DRIVER MVT
-       #FORMATOPTION "EXTENT=512" # default is 4096
-       FORMATOPTION "EDGE_BUFFER=20"
+     MAP
+       ...
+       OUTPUTFORMAT
+         NAME "mvt"
+         DRIVER MVT
+         #FORMATOPTION "EXTENT=512" # default is 4096
+         FORMATOPTION "EDGE_BUFFER=20"
+       END
+       ...
      END
      
 - now test this output by adding the `&map.imagetype=mvt` switch to your earlier 
