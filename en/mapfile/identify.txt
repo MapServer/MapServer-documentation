@@ -1,0 +1,114 @@
+.. index::
+   single: IDENTIFY
+    
+.. _identify:
+
+*****************************************************************************
+ IDENTIFY
+*****************************************************************************
+
+.. versionadded:: 8.6
+
+Controls how vector features are identified, typically through WMS GetFeatureInfo
+or MODE=QUERY requests.
+
+.. index::
+   pair: IDENTIFY; TOLERANCE
+   :name: mapfile-identify-tolerance
+
+.. _identify_tolerance:
+
+TOLERANCE [double]
+    Sensitivity for point based queries (i.e. via mouse and/or map
+    coordinates). Given in TOLERANCEUNITS. If the layer is a POINT or a LINE,
+    the default is 3. For all other layer types, the default is 0.  To
+    restrict polygon searches so that the point must occur in the polygon
+    set the tolerance to zero. This setting does not apply to WFS GetFeature
+    operations.
+
+.. index::
+   pair: IDENTIFY; TOLERANCEUNITS
+   :name: mapfile-identify-toleranceunits
+
+.. _identify_tolerance_units:
+
+TOLERANCEUNITS [pixels|feet|inches|kilometers|meters|miles|nauticalmiles|dd]
+    Units of the TOLERANCE value. Default is pixels.
+
+.. index::
+   pair: IDENTIFY; CLASSAUTO
+   :name: mapfile-identify-classauto
+
+CLASSAUTO
+
+    By default, identification of point features is based on their location,
+    potentially extended with the radius defined by TOLERANCE value.
+
+    When setting the CLASSAUTO keyword, symbols from the style classes used to
+    render the incoming WMS GetFeatureInfo request are used for more precise
+    identification, by recognizing non-transparent pixels of the symbol.
+
+    The TOLERANCE value is also used to extend sensitive pixels beyond
+    non-transparent pixels of the symbol.
+
+    This option is mutually exclusive with CLASSGROUP.
+
+    This option is currently only honoured on layers of type POINT using
+    SYMBOL.
+
+    Example:
+
+    .. code-block:: mapfile
+
+        IDENTIFY
+            TOLERANCE 5  # optional
+            CLASSAUTO
+        END
+
+        CLASS
+            GROUP "my_style_group"
+            STYLE
+                SYMBOL "my_symbol"
+            END
+        END
+
+
+.. index::
+   pair: IDENTIFY; CLASSGROUP
+   :name: mapfile-identify-classgroup
+
+CLASSGROUP [string]
+
+    By default, identification of point features is based on their location,
+    potentially extended with the radius defined by TOLERANCE value.
+
+    When setting the CLASSGROUP keyword, symbols from the specified class's group
+    are used for more precise identification, by recognizing non-transparent
+    pixels of the symbol.
+
+    The :ref:`CLASS` object's GROUP parameter must be used in combination with
+    CLASSGROUP.
+
+    The TOLERANCE value is also used to extend sensitive pixels beyond
+    non-transparent pixels of the symbol.
+
+    This option is mutually exclusive with CLASSAUTO.
+
+    This option is currently only honoured on layers of type POINT using
+    SYMBOL.
+
+    Example:
+
+    .. code-block:: mapfile
+
+        IDENTIFY
+            TOLERANCE 5  # optional
+            CLASSGROUP "my_style_group"
+        END
+
+        CLASS
+            GROUP "my_style_group"
+            STYLE
+                SYMBOL "my_symbol"
+            END
+        END
