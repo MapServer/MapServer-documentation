@@ -10,10 +10,10 @@ should be similar):
 
 .. code-block:: ps1
 
-    C:\Python310\Scripts\virtualenv C:\VirtualEnvs\mapscript-docs-update
+    C:\Python313\Scripts\virtualenv C:\VirtualEnvs\mapscript-docs-update
     C:\VirtualEnvs\mapscript-docs-update\Scripts\activate.ps1
 
-    pip install mapscript==8.0.1
+    pip install mapscript==8.4.0
     $env:Path = "C:\MapServer\bin;" + $env:Path
     $env:MAPSERVER_DLL_PATH="C:\MapServer\bin"
     cd D:\GitHub\mapserver_docs\scripts\mapscript-docs
@@ -36,7 +36,7 @@ For Entity Relationship diagram example see https://graphviz.readthedocs.io/en/s
 .. code-block:: ps1
 
     pip install pydot
-    $env:Path = "C:\Program Files (x86)\Graphviz2.38\bin;" + $env:Path
+    $env:Path = "C:\Program Files\Graphviz\bin;" + $env:Path
     python diagrams.py
 
 Updating MapScript Objects
