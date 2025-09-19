@@ -1,3 +1,15 @@
+**2025-09-19 - MapServer 8.4.1 is released**
+
+The maintenance release of MapServer has been issued in order to fix
+a security flaw for WFS filters through OGR.
+See the :ref:`changelog <changelog-8-4-1>` for the list of changes. 
+You may also review MapServer's `Security Policy <https://github.com/MapServer/MapServer/blob/main/SECURITY.md>`__, 
+as well as this `Security Advisory <https://github.com/MapServer/MapServer/security/advisories/GHSA-256m-rx4h-r55w>`__.
+As security for the 7.6 branch has ended, and branches 8.2 & 8.0 are not supported, 
+all users are strongly encouraged to upgrade to the MapServer 8.4.1 release.
+
+Head to :ref:`download` to obtain a copy.
+
 **2025-01-15 - MapServer 8.4.0 is released**
 
 The major version MapServer 8.4 has been released. The list of
