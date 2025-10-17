@@ -1,28 +1,28 @@
 .. _rfc140:
 
 ================================================
-MS RFC 140: MapServer Homepage
+MS RFC 140: MapServer Index Page
 ================================================
 
 :Author: 	Seth Girvin
 :Contact: 	sethg@geographika.co.uk
-:Last Updated:  2025-05-09
+:Last Updated:  2025-17-10
 :Version: 	MapServer 8.6
-:Status: 	Draft
+:Status: 	Adopted
 
 1. Overview
 ===========
 
-This RFC proposes adding functionality to MapServer for dynamically generating a homepage that lists all map services available in a given deployment. 
+This RFC proposes adding functionality to MapServer for dynamically generating a index page that lists all map services available in a given deployment. 
 This feature would enable the creation of pages like https://maps.isric.org/ directly from a MapServer deployment, without requiring 
 additional scripting. While scripting can achieve this, integrating the capability into MapServer itself 
 would offer greater convenience and maintainability.
 
 With the introduction of the :ref:`CONFIG file <config>` in MapServer 8.0, it is now possible to centrally manage information about all Mapfiles in a deployment. 
-This would ensure that the homepage remains automatically synchronised with both the CONFIG file and the capabilities of the Mapfiles it references.
+This would ensure that the index page remains automatically synchronised with both the CONFIG file and the capabilities of the Mapfiles it references.
 
-The homepage would be a "superset" of all available Mapfiles in a MapServer deployment, as listed in the CONFIG file. 
-Each individual Mapfile would still have its own OGC API landing page, so the homepage is best described as a directory of all landing pages. 
+The index page would be a "superset" of all available Mapfiles in a MapServer deployment, as listed in the CONFIG file. 
+Each individual Mapfile would still have its own OGC API landing page, so the index page is best described as a directory of all landing pages. 
 
 As most MapServer deployments will likely be serving out a combination of WxS and new OGC API services for some time to come, 
 it will allow both types to be listed together.
@@ -30,15 +30,15 @@ it will allow both types to be listed together.
 2.1 Proposed Solution
 =====================
 
-A new MapServer :ref:`CGI mode <cgi>` - ``mode=config`` will be added to allow details of the MapServer services to be returned. The ``MAPS`` block 
-in the :ref:`CONFIG file <config>` will be read to return a list of available services. By default the homepage service will be disabled unless a new
-``ENV`` option ``MS_HOMEPAGE_TEMPLATE`` has been set. This should be set to a folder containing a ``homepage.html`` value. However if only JSON
-responses are required it can be set to any value to enable the homepage service.
+New MapServer functionality will be added to allow details of the MapServer services to be returned. The ``MAPS`` block 
+in the :ref:`CONFIG file <config>` will be read to return a list of available services. By default the index page service will be disabled unless a new
+``ENV`` option ``MS_INDEX_TEMPLATE_DIRECTORY`` has been set. This should be set to a folder containing a ``landing.html`` value. However if only JSON
+responses are required it can be set to any value to enable the index page service.
 
 .. code-block:: mapfile
 
     ENV
-        MS_HOMEPAGE_TEMPLATE_DIRECTORY "share/ogcapi/templates/homepage/" # REQUIRED
+        MS_INDEX_TEMPLATE_DIRECTORY "/mapserver/share/ogcapi/templates/html-index-bootstrap/" # REQUIRED
         ...
     END
     # Example MAPS block in the CONFIG file
@@ -55,19 +55,19 @@ Requests will look as follows:
 .. code-block:: bat
 
     # example web requests
-    # http://localhost/cgi-bin/mapserv.exe?mode=config&f=json
-    # http://localhost/cgi-bin/mapserv.exe?mode=config&f=html
+    # http://localhost/cgi-bin/mapserv.exe?f=json
+    # http://localhost/cgi-bin/mapserv.exe?f=html
 
     # from the command line
-    mapserv -nh "QUERY_STRING=mode=config&f=json" -conf "/usr/local/etc/mapserver.conf"
-    mapserv -nh "QUERY_STRING=mode=config&f=html" -conf "C:\MapServer\apps\mapserver.conf"
+    mapserv -nh "QUERY_STRING=f=json" -conf "/usr/local/etc/mapserver.conf"
+    mapserv -nh "QUERY_STRING=f=html" -conf "C:\MapServer\apps\mapserver.conf"
 
 As the service returns JSON any client-side library can be used to render the output. However a default HTML template  will be provided
 following the same approach as in OGC Features API.
 
 .. note::
 
-    Even though the JSON format is based on the OGC API, the homepage JSON service will still be generated for a Mapfile even if it only supports
+    Even though the JSON format is based on the OGC API, the index page JSON service will still be generated for a Mapfile even if it only supports
     older WxS services.
 
 JSON Structure
@@ -104,7 +104,7 @@ https://demo.pygeoapi.io/api-catalog.json. An extract is shown below:
 
 The api-catalog specification allows for an additional ``service-meta`` property *"used to link to additional metadata about the API, 
 and is primarily intended for machine consumption."*  This can be used to add any additional properties from Mapfiles
-required to generate a MapServer homepage. ``service-doc`` isn't mandatory property, so WxS service links can ignore this. 
+required to generate a MapServer index page. ``service-doc`` isn't mandatory property, so WxS service links can ignore this. 
 
 An example of the proposed JSON and metadata is shown below:
 
@@ -181,7 +181,7 @@ that the URLs will return valid XML if the Mapfile is not configured correctly.
 
 This new feature will make services more discoverable, but with this comes the risk of leaking information.
 The service will be opt-in, and up to the administrators of the deployment if they want this information to be
-visible by setting the ``MS_HOMEPAGE_TEMPLATE_DIRECTORY`` value in the ``CONFIG`` file.
+visible by setting the ``MS_INDEX_TEMPLATE_DIRECTORY`` value in the ``CONFIG`` file.
 
 2.5 MapScript
 =============
@@ -194,12 +194,7 @@ None of the current MapServer ``mode`` functionality is supported in MapScript, 
 
 This section contains notes from prototyping a possible solution. The final approach may differ. 
 
-A requests will be checked for ``mode=config`` in mapserv.c to return JSON and exit.
-A new mode will be added to ``mapservutil.c``
-
-.. code-block:: c
-
-    static char *const modeStrings[23]
+Requests will be checked in mapserv.c to return JSON and exit.
 
 To list services supported in a Mapfile ``msOWSRequestIsEnabled`` will be used:
 
@@ -219,16 +214,17 @@ if ``ows_onlineresource`` (or ``wms_``, ``wfs_`` etc.) is not set.
 + mapserv.c
 + mapservutil.c
 + mapserver.h
++ mapserv-config.cpp
 
 3.2 Ticket Reference
 --------------------
 
-+ TODO
++ https://github.com/MapServer/MapServer/pull/7350
 
 3.3 Documentation
 -----------------
 
-TODO
+See https://github.com/MapServer/MapServer-documentation/pull/1039
 
 4. Voting History
 =================
