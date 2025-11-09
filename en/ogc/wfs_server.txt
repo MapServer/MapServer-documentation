@@ -369,6 +369,77 @@ few pointers:
 - `Deegree`_ provides a WFS client.
 
 - `uDig`_ can add layers from WMS/WFS servers.
+
+Test with an ogrinfo command
+****************************
+
+You can use GDAL's `WFS driver <https://gdal.org/en/stable/drivers/vector/wfs.html>`__ 
+and the `ogrinfo utility <https://gdal.org/en/stable/programs/ogrinfo.html>`__ 
+to analyze your WFS service.
+
+For example, here is a command to examine the `continents` WFS layer:
+
+::
+
+  ogrinfo WFS:"https://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities" continents
+
+Which should return something like:
+
+::
+
+  INFO: Open of `WFS:https://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=2.0.0&REQUEST=GetCapabilities'
+      using driver `WFS' successful.
+    Metadata:
+      TITLE=WFS Demo Server for MapServer
+      ABSTRACT=This demonstration server showcases MapServer (www.mapserver.org) and its OGC support
+      PROVIDER_NAME=GatewayGeo
+
+    Layer name: ms:continents
+    Metadata:
+      TITLE=World continents
+    Geometry: Curve Polygon
+    Feature Count: 27458
+    Extent: (-180.000000, -90.000000) - (180.000000, 83.627419)
+    Layer SRS WKT:
+    GEOGCRS["WGS 84",
+        ENSEMBLE["World Geodetic System 1984 ensemble",
+            MEMBER["World Geodetic System 1984 (Transit)"],
+            MEMBER["World Geodetic System 1984 (G730)"],
+            MEMBER["World Geodetic System 1984 (G873)"],
+            MEMBER["World Geodetic System 1984 (G1150)"],
+            MEMBER["World Geodetic System 1984 (G1674)"],
+            MEMBER["World Geodetic System 1984 (G1762)"],
+            MEMBER["World Geodetic System 1984 (G2139)"],
+            MEMBER["World Geodetic System 1984 (G2296)"],
+            ELLIPSOID["WGS 84",6378137,298.257223563,
+                LENGTHUNIT["metre",1]],
+            ENSEMBLEACCURACY[2.0]],
+        PRIMEM["Greenwich",0,
+            ANGLEUNIT["degree",0.0174532925199433]],
+        CS[ellipsoidal,2],
+            AXIS["geodetic latitude (Lat)",north,
+                ORDER[1],
+                ANGLEUNIT["degree",0.0174532925199433]],
+            AXIS["geodetic longitude (Lon)",east,
+                ORDER[2],
+                ANGLEUNIT["degree",0.0174532925199433]],
+        USAGE[
+            SCOPE["Horizontal component of 3D system."],
+            AREA["World."],
+            BBOX[-90,-180,90,180]],
+        ID["EPSG",4326]]
+    Data axis to CRS axis mapping: 2,1
+    Supported SRS: EPSG:4326, EPSG:4269, EPSG:3978, EPSG:3857
+    Geometry Column = geom
+    gml_id: String (0.0) NOT NULL
+    NA2DESC: String (0.0)
+    NA3DESC: String (0.0)
+    
+.. TIP::
+   If you notice "Geometry: Unknown (any)" in the ogrinfo response, you
+   should set the "gml_geometries" and "gml_geom_type" properties in 
+   the LAYER.METADATA of your WFS server mapfile, as in the example 
+   mapfile above.
   
 Support for GET and POST Requests
 *********************************
