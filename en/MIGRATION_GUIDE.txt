@@ -6,11 +6,105 @@
 MapServer Migration Guide
 *****************************************************************************
 
-:Last Updated: 2025-09-22
+:Last Updated: 2025-11-18
 
 .. contents:: Table of Contents
     :depth: 2
     :backlinks: top
+    
+.. _migration-8-6:
+   
+MapServer 8.4 to 8.6 Migration
+==============================
+
+- You can now enable an automatically generated index page, that lists
+  all of your OGC services and endpoints, for each mapfile that you
+  defined in your CONFIG file.  To enable the index, add `MS_INDEX_TEMPLATE_DIRECTORY`
+  to your environment variables section of the :ref:`config` file, such as::
+  
+    ENV
+      #
+      # Index page
+      #
+      MS_INDEX_TEMPLATE_DIRECTORY "/ms4w/share/ogcapi/templates/html-index-bootstrap/"   
+    END
+    
+  .. image:: ./images/index-page-ms4w.png
+      :width: 800
+      :height: 433
+      :class: no-scaled-link
+
+  .. seealso:: :ref:`index-page` & :ref:`rfc140`
+  
+- A new :ref:`identify` object can be used in a mapfile to control how features are 
+  found through queries, to account for the actual symbol being used for 
+  that CLASS.  This could be useful for WMS GetFeatureInfo requests.
+  
+  .. code-block:: mapfile
+  
+      MAP
+        ...
+        WEB
+          METADATA
+            "wms_title" "My WMS Server"
+            ...
+          END #metadata
+        END #web
+        ...
+        SYMBOL
+          NAME "mysvg"
+          TYPE svg
+          IMAGE "./ttt.svg"
+        END #symbol
+        ...
+        LAYER
+          IDENTIFY
+            CLASSGROUP "test"
+          END #identify
+          CLASS
+            GROUP "test"
+            STYLE
+            ANGLE 30
+            SYMBOL "mysvg"
+          END #class
+        END #layer       
+        ...
+      END #map
+  
+  .. seealso:: original Pull Request `#7318 <https://github.com/MapServer/MapServer/pull/7318/>`__  
+    
+- :ref:`FALLBACK <mapfile-class-fallback>` has been added to the CLASS object, to allow that class to be used
+  if no other class can be applied.
+  
+  .. code-block:: mapfile
+  
+      MAP
+        ...
+        LAYER
+          ...
+          CLASS
+            NAME "test1"
+            ...
+          END #class
+          CLASS
+            NAME "test2"
+            ...
+          END #class
+          CLASS
+            NAME "test3"
+            ...
+            FALLBACK TRUE
+          END #class          
+        END #layer       
+        ...
+      END #map  
+  
+  .. seealso:: original Pull Request `#7309 <https://github.com/MapServer/MapServer/pull/7309/>`__  
+    
+- :ref:`ogcapi` has been enhanced to allow `vendorSpecificParameters` passed through to the OpenAPI 
+  document on the `/items` definitions.
+    
+  .. seealso:: original Pull Request `#7295 <https://github.com/MapServer/MapServer/pull/7295/>`__    
     
 .. _migration-8-4:
    
