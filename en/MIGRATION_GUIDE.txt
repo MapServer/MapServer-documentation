@@ -6,7 +6,7 @@
 MapServer Migration Guide
 *****************************************************************************
 
-:Last Updated: 2025-11-18
+:Last Updated: 2025-11-19
 
 .. contents:: Table of Contents
     :depth: 2
@@ -101,10 +101,38 @@ MapServer 8.4 to 8.6 Migration
   
   .. seealso:: original Pull Request `#7309 <https://github.com/MapServer/MapServer/pull/7309/>`__  
     
-- :ref:`ogcapi` has been enhanced to allow `vendorSpecificParameters` passed through to the OpenAPI 
-  document on the `/items` definitions.
+- :ref:`ogcapi` has been enhanced to allow the appending of additional 
+  query parameters to all URLs generated through the API, by
+  defining the `ows_extra_params` parameter in the MAP's METADATA object.
+  
+    .. code-block:: mapfile
+  
+      MAP
+        ...
+        WEB
+          METADATA
+            "ows_title" "My OGCAPI Server"
+            ...
+            "oga_html_template_directory" "../../share/ogcapi/templates/html-bootstrap/"
+            "ows_extra_params" "token=123"
+          END #metadata
+        END #web
+        ...
+        LAYER      
+          ...
+        END #layer
+      END #map
+      
+  All subsequent URLs available through OGCAPI: Features will contain that 
+  `token=123`, such as::
+  
+    http://127.0.0.1/cgi-bin/mapserv.exe/local-demo/ogcapi/collections/ocean/items?f=json&token=123
     
-  .. seealso:: original Pull Request `#7295 <https://github.com/MapServer/MapServer/pull/7295/>`__    
+  .. TIP::
+     For sensitive parameter values, you should enable :ref:`Run-time Substitution <runsub>` to
+     not store passwords and other tokens in mapfiles.  See steps at :ref:`OGCAPI: Features metadata <ogcapi_metadata>`.
+    
+  .. seealso:: original Pull Request `#7360 <https://github.com/MapServer/MapServer/pull/7360/>`__    
     
 .. _migration-8-4:
    
