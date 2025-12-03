@@ -1,8 +1,8 @@
-**2025-11-27 - MapServer 8.6.0-rc1 is released**
+**2025-12-03 - MapServer 8.6.0 is released**
 
-The first release candidate for MapServer 8.6 has been released. The list of
+The major version MapServer 8.6 has been released. The list of
 major changes for this release can be found in the :ref:`8.6 announcement <announce-8-6>`.
-See the :ref:`changelog <changelog-8-6-0-rc1>`
+See the :ref:`changelog <changelog-8-6-0>`
 for the full list of changes and head to :ref:`download` to obtain a copy.
 
 **2025-09-19 - MapServer 8.4.1 is released**
