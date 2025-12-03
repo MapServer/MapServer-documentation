@@ -24,7 +24,7 @@
 :Contact: jmckenna at gatewaygeomatics.com
 :Author: Seth Girvin
 :Contact: sethg at geographika.co.uk
-:Last Updated: 2023-06-13
+:Last Updated: 2025-12-03
 
 =============================================================================
  Introduction
@@ -43,16 +43,11 @@ is read-only.
 Note that because of the way that MapScript is generated many confusing,
 meaningless, and even dangerous attributes might be exposed by objects.
 
-.. warning::
+.. note::
 
-   As of the MapServer 8.0.0 release PHP support is only available through
-   MapServer's :ref:`SWIG API <swig>`.  The unmaintained `native` PHP MapScript
-   support was removed.
-   
- .. note::
-
-    PHP support is included in the SWIG API as of the MapServer 7.4.0 release. 
-    PHP 8.2 and PHP 8.1 are currently supported with MapServer 8.0.1.    
+    Since the MapServer 8.0.0 release PHP support is only available through
+    MapServer's :ref:`SWIG API <swig>`. Supported versions are PHP 8.5 and 
+    PHP 8.4 with MapServer 8.6.0  
 
 =============================================================================
  Appendices
