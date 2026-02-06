@@ -1,0 +1,180 @@
+.. _rfc141:
+
+================================================
+MS RFC 141: MapServer CONFIG MS_ONLINERESOURCE
+================================================
+
+:Author: 	Seth Girvin
+:Contact: 	sethg@geographika.co.uk
+:Last Updated:  2026-02-06
+:Version: 	MapServer 8.8
+:Status: 	Proposed
+
+Overview
+--------
+
+This RFC proposes adding a new environment variable, ``MS_ONLINERESOURCE``, to
+the MapServer :ref:`CONFIG file <config>`.
+
+The variable acts as a global fallback when no service-specific
+``*_onlineresource`` metadata (defined in the Mapfile
+:ref:`mapfile-web-metadata`) is provided. For background on service-specific
+usage, see :ref:`online_resource_wms`.
+
+The ``*_onlineresource`` settings define the public-facing URLs that MapServer
+advertises in GetCapabilities and related responses for accessing its OGC
+services (WMS, WFS, WCS, OGC Features API, etc.). These URLs are consumed by clients and must resolve correctly.
+
+Introducing a global ``MS_ONLINERESOURCE`` addresses the following issues:
+
+1. Mapfiles currently require service-specific ``*_onlineresource`` values, 
+   or an ``ows_onlineresource`` to be modified for each deployment environment
+   (for example, local development, staging, and production).
+   This RFC allows these environment-specific settings
+   to be defined once in a single ``CONFIG`` file.
+
+2. When a Mapfile does not define ``*_onlineresource`` metadata, MapServer
+   attempts to construct the service URL from request headers and server
+   variables. This approach can produce incorrect or inconsistent URLs in more
+   complex deployments, particularly when reverse proxies are used. As a
+   result, explicitly defining ``*_onlineresource`` metadata is currently
+   strongly recommended.
+
+Current Implementation
+----------------------
+
+When a Mapfile does not define ``*_onlineresource`` metadata, MapServer uses
+the ``msBuildOnlineResource()`` function (in ``maputil.c``) to construct the
+base **online resource URL**.
+
+The URL is generated dynamically from CGI request data and server environment
+variables, and relies on CGI and proxy headers; this can produce incorrect
+results in some server or reverse-proxy configurations.
+
+The function determines the URL components as follows:
+
+- **Hostname**
+
+  - Uses ``HTTP_X_FORWARDED_HOST`` if present
+  - Falls back to ``SERVER_NAME``
+  - If multiple forwarded hosts are provided, only the first is used
+
+- **Port**
+
+  - Uses ``HTTP_X_FORWARDED_PORT`` if present
+  - Otherwise uses ``SERVER_PORT``
+
+- **Protocol**
+
+  - Defaults to ``http``
+  - Uses ``https`` if ``HTTPS=on`` or ``SERVER_PORT=443``
+  - ``HTTP_X_FORWARDED_PROTO`` overrides all other logic
+
+- **Path**
+
+  - Uses ``SCRIPT_NAME``
+  - Appends ``PATH_INFO`` if present
+
+- **Query parameters**
+
+  - If the request is a GET request and includes a ``map=`` parameter, it is
+    appended as ``map=...&``
+
+The port is omitted when it matches the protocol default (``80`` for HTTP,
+``443`` for HTTPS); otherwise it is included explicitly.
+
+The resulting URL has the general form:
+
+::
+
+  [protocol]://[hostname][:port][script][pathinfo]?[map=...&]
+
+Examples:
+
+::
+
+  https://maps.example.com/mapserv?
+  https://maps.example.com/mapserv/ogc?map=/data/example.map&
+  http://localhost:8080/cgi-bin/mapserv?
+
+If the hostname, port, or script name cannot be determined, the function
+fails with a CGI error:
+
+::
+
+  Impossible to establish server URL.
+
+
+Proposed Implementation
+-----------------------
+
+Users will be able to add the new environment variable to the ``CONFIG`` file as follows:
+
+::
+
+  CONFIG
+    ENV
+      MS_ONLINERESOURCE "http://localhost/test/"
+
+Notes:
+
+- Existing ``*_onlineresource`` metadata in a Mapfile will take precedence over
+  the ``CONFIG`` setting.
+
+- If ``MS_ONLINERESOURCE`` is set to an empty string, the resulting base URL
+  will be empty. Users are responsible for providing a valid URL for their
+  environment.
+
+- There are no plans to support separate ``MS_ONLINERESOURCE`` values for
+  different services. While this could be useful in some scenarios, having
+  multiple variables such as ``MS_WMS_ONLINERESOURCE`` or
+  ``MS_WFS_ONLINERESOURCE`` would add unnecessary complexity.
+
+Testing
+-------
+
+The ``msautotests`` test suite will be updated to validate various ``CONFIG`` 
+and Mapfile setups, including:
+
+- Cases with and without a ``MS_ONLINERESOURCE`` setting
+- The case where ``MS_ONLINERESOURCE`` is set to an empty string
+
+Security Concerns
+-----------------
+
+There are no known security concerns at the moment.
+
+MapScript
+---------
+
+MapScript already supports ``CONFIG`` files, so no changes are required.
+
+Example usage:
+
+::
+
+    # Create a new map object with a CONFIG file
+    config = mapscript.configObj(r"C:\MapServer\apps\mapserver.conf")
+    map = mapscript.mapObj(r"C:\MapServer\my.map", config)
+
+    # The CONFIG file can also be passed to the fromstring helper method
+    mapscript.fromstring("MAP NAME TEST END", r"C:/MapfileResources/", config_file)
+
+
+Affected files
+--------------
+
++ ``maputil.c``
+
+Ticket Reference
+----------------
+
+TODO
+
+Documentation
+-------------
+
+Voting History
+--------------
+
+TODO
