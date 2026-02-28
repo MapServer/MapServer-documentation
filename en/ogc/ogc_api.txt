@@ -200,6 +200,9 @@ for an OGC API server:**
   - ows_title
   - gml_include_items
   - gml_featureid
+  - oga_queryable_items
+  - oga_sortable_items
+  - oga_geometry_type
   
 - LAYER TEMPLATE "VOID"
 
@@ -304,6 +307,9 @@ Example OGC API Server Mapfile
         "gml_include_items" "all" #REQUIRED
         "gml_featureid"     "ne_id" #REQUIRED
         "oga_use_default_extent_for_getfeature" # Optional. Can improve performance.
+        "oga_queryable_items" "all"  # required to allow filtering
+        "oga_geometry_type" "Polygon"
+        "oga_sortable_items" "area"
       END
       TYPE POLYGON
       STATUS ON
@@ -532,3 +538,75 @@ Web Object Metadata
   the family of OGC API JSON Schema files are located. This must be a valid URL
   where the actual .yaml files are located if you want your OpenAPI description
   to be valid. Default is *http://schemas.opengis.net*
+
+.. index::
+   triple: OGCAPI; METADATA; oga_queryable_items
+
+**oga_queryable_items**
+
+  .. versionadded:: 8.8.0
+
+- *Description:* (Optional) Comma separated list of items that can be used for
+  filtering at the /items endpoint (either as <item>=<value> query parameters
+  and/or through the filter=<cql2-text>|<cql2-json> query parameter).
+  "all" can also be used as a special value to indicate that all items can be
+  queried. If not specified, no items are queryable.
+  The list of queryable items is returned at the /collections/{collid}/queryables
+  URL.
+
+- Example Mapfile:
+
+  .. code-block:: mapfile
+
+    LAYER
+      METADATA
+        "oga_queryable_items" "name,count"
+      END
+    END
+
+.. index::
+   triple: OGCAPI; METADATA; oga_sortable_items
+
+**oga_sortable_items**
+
+  .. versionadded:: 8.8.0
+
+- *Description:* (Optional) Comma separated list of items that can be used for
+  sorting at the /items endpoint (through the sortby=[+-]?item query parameter).
+  "all" can also be used as a special value to indicate that all items can be
+  used as sorting key. If not specified, no items can be used as sorting keys.
+  The list of queryable items is returned at the /collections/{collid}/sortables
+  URL.
+
+- Example Mapfile:
+
+  .. code-block:: mapfile
+
+    LAYER
+      METADATA
+        "oga_sortable_items" "name,count"
+      END
+    END
+
+.. index::
+   triple: OGCAPI; METADATA; oga_geometry_type
+
+**oga_geometry_type**
+
+  .. versionadded:: 8.8.0
+
+- *Description:* (Optional) Value among "geometry-point", "geometry-multipoint",
+  "geometry-linestring", "geometry-multilinestring", "geometry-polygon",
+  "geometry-multipolygon", "geometry-geometrycollection", "geometry-any" (default value),
+  "geometry-point-or-multipoint", "geometry-linestring-or-multilinestring" 
+  and "geometry-polygon-or-multipolygon"
+
+- Example Mapfile:
+
+  .. code-block:: mapfile
+
+    LAYER
+      METADATA
+        "oga_geometry_type" "geometry-polygon-or-multipolygon"
+      END
+    END
