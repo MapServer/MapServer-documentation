@@ -34,7 +34,7 @@ MOCK_MODULES = ['mapscript._mapscript']
 sys.modules.update((mod_name, Mock()) for mod_name in MOCK_MODULES)
 
 
-#import mapscript
+import mapscript
 
 # If your extensions are in another directory, add it here. If the directory
 # is relative to the documentation root, use os.path.abspath to make it
@@ -587,9 +587,9 @@ def setup(app):
 
     # copy the mapscript sourcecode so it can be used 
     # for doc examples with literalinclude
-    # dst_folder =  "./en/mapscript/mapscript-api/mapscript"
-    # if os.path.exists(dst_folder) == False:
-        # os.symlink(os.path.dirname(mapscript.__file__), dst_folder)
+    dst_folder =  "./en/mapscript/mapscript-api/mapscript"
+    if os.path.exists(dst_folder) == False:
+        os.symlink(os.path.dirname(mapscript.__file__), dst_folder)
 
 # avoid warnings of "nonlocal image URI found" (this parameter requires Sphinx >=1.4)
 suppress_warnings = ['image.nonlocal_uri']
