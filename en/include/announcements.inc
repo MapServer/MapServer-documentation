@@ -6,8 +6,8 @@
 The maintenance release of MapServer 8.6.1 has been issued in order to fix
 a security flaw in the SLD parser.
 See the :ref:`changelog <changelog-8-6-1>` for the list of changes. 
-You may also review MapServer's `Security Policy <https://github.com/MapServer/MapServer/blob/main/SECURITY.md>`__, 
-as well as this `Security Advisory <https://github.com/MapServer/MapServer/security/advisories/GHSA-cv4m-mr84-fgjp>`__.
+You may also review this `Security Advisory <https://github.com/MapServer/MapServer/security/advisories/GHSA-cv4m-mr84-fgjp>`__, 
+as well as MapServer's `Security Policy <https://github.com/MapServer/MapServer/blob/main/SECURITY.md>`__.
 As security for the 7.6 branch has ended, and branches 8.4, 8.2 & 8.0 are not supported, 
 all users are strongly encouraged to upgrade to the MapServer 8.6.1 release (see the 
 :ref:`Migration Guide <migration>`).
