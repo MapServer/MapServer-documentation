@@ -47,7 +47,7 @@ meaningless, and even dangerous attributes might be exposed by objects.
 
     Since the MapServer 8.0.0 release PHP support is only available through
     MapServer's :ref:`SWIG API <swig>`. Supported versions are PHP 8.5 and 
-    PHP 8.4 with MapServer 8.6.0  
+    PHP 8.4 with MapServer 8.6.1
 
 =============================================================================
  Appendices
