@@ -129,7 +129,7 @@ exclude_patterns = ['.git', 'howto', 'redirection', 'users-manual', 'mapscript/m
 nitpicky = True
 
 # set filename used by spelling extension
-spelling_word_list_filename='spelling_wordlist.md'
+spelling_word_list_filename='spelling_wordlist.dict'
 
 # Options for HTML output
 # -----------------------
