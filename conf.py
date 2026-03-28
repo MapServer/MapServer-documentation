@@ -128,9 +128,6 @@ exclude_patterns = ['.git', 'howto', 'redirection', 'users-manual', 'mapscript/m
 # check for broken reference targets
 nitpicky = True
 
-# set filename used by spelling extension
-spelling_word_list_filename='spelling_wordlist.dict'
-
 # spelling extension options
 # --------------------------
 
