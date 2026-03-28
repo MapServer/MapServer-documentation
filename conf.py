@@ -131,6 +131,20 @@ nitpicky = True
 # set filename used by spelling extension
 spelling_word_list_filename='spelling_wordlist.dict'
 
+# spelling extension options
+# --------------------------
+
+# set filename used by spelling extension
+spelling_word_list_filename='spelling_wordlist.dict'
+
+# ignore changelogs and RFCs
+spelling_exclude_patterns = [
+    'development/changelog/*',
+    'development/changelog/mapcache/*',
+    'development/changelog/tinyows/*',
+    'development/rfc/*'    
+]
+
 # Options for HTML output
 # -----------------------
 
