@@ -139,7 +139,8 @@ spelling_exclude_patterns = [
     'development/changelog/*',
     'development/changelog/mapcache/*',
     'development/changelog/tinyows/*',
-    'development/rfc/*'    
+    'development/rfc/*',
+    'mapscript/php/*'
 ]
 
 # Options for HTML output
