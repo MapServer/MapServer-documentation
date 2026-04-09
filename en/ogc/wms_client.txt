@@ -9,7 +9,7 @@
 
 :Author: Jeff McKenna
 :Contact: jmckenna at gatewaygeomatics.com
-:Last Updated: 2026-03-24
+:Last Updated: 2026-04-09
 
 .. contents:: Table of Contents
     :depth: 4
@@ -47,21 +47,22 @@ WMS-Related Information
 Compilation / Installation
 ==========================
 
-The WMS connection type is enabled by the *--with-wmsclient* configure switch. 
+The WMS connection type is enabled by the *-DWITH_CLIENT_WMS* CMake switch. 
 It requires PROJ, GDAL and libcurl version 7.10.1 or more recent.   Windows 
 users who do not want to compile MapServer should use 
 `MS4W`_ (which comes ready for WMS/WFS client and server use), or check for the
 availability of other :ref:`Windows binaries <windows>` with WMS support.
 
-- For PROJ and GDAL installation, see the MapServer Compilation HowTo (:ref:`unix` / :ref:`win32`)
+- For `PROJ <https://proj.org>`__ and `GDAL <https://gdal.org>`__ installation, 
+  see the MapServer Compilation HowTo (:ref:`unix` / :ref:`win32`)
 - For `libcurl`_, make sure you have version 7.10.1 or more recent installed on your 
   system. You can find out your libcurl version using *curl-config --version*. 
   (if your system came with an older version of libcurl preinstalled then you MUST 
   uninstall it prior to installing the new version) 
 
 Once the required libraries are installed, then configure MapServer using the 
-*--with-wmsclient* switch (plus all the other switches you used to use) and recompile.
-This will give you a new set of executables (and possibly php_mapscript.so if you 
+*-DWITH_CLIENT_WMS* CMake switch (plus all the other switches you used to use) and recompile.
+This will give you a new set of executables (and possibly php_mapscriptng.so if you 
 requested it). See the MapServer Compilation HowTo (links above) for installation details. 
 
 Check your MapServer executable
@@ -75,27 +76,28 @@ Example 1. Mapserv Version Info on Unix:
 .. code-block:: bash
 
    $ ./mapserv -v
-   MapServer version 7.7-dev OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML 
-   SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO 
-   SUPPORTS=SVG_SYMBOLS SUPPORTS=RSVG SUPPORTS=ICONV SUPPORTS=FRIBIDI 
-   SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER 
-   SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER 
-   SUPPORTS=GEOS SUPPORTS=POINT_Z_M SUPPORTS=PBF INPUT=JPEG 
-   INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE 
+   MapServer version 8.7-dev PROJ version 9.8 GDAL version 3.12 
+   OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG 
+   SUPPORTS=FREETYPE SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS SUPPORTS=RSVG 
+   SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT 
+   SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER 
+   SUPPORTS=SOS_SERVER SUPPORTS=OGCAPI_SERVER SUPPORTS=GEOS SUPPORTS=PBF 
+   INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE 
+   INPUT=FLATGEOBUF
 
 Example 2. Mapserv Version Info on Windows:
 
 .. code-block:: bash
 
    C:\ms4w> mapserv -v
-   MapServer version 7.6.0-dev (MS4W 4.0.3) OUTPUT=PNG OUTPUT=JPEG 
-   OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG SUPPORTS=FREETYPE 
-   SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS SUPPORTS=SVGCAIRO 
-   SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER 
+   MapServer version 8.7.0-dev (MS4W 5.2.0) PROJ version 9.9 
+   GDAL version 3.13 OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ 
+   SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS 
+   SUPPORTS=SVGCAIRO SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER 
    SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT 
-   SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER SUPPORTS=FASTCGI 
-   SUPPORTS=THREADS SUPPORTS=GEOS SUPPORTS=POINT_Z_M SUPPORTS=PBF 
-   INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE 
+   SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER SUPPORTS=OGCAPI_SERVER 
+   SUPPORTS=FASTCGI SUPPORTS=THREADS SUPPORTS=GEOS SUPPORTS=PBF INPUT=JPEG 
+   INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE INPUT=FLATGEOBUF
  
 .. index:: 
    pair: WMS Client; Mapfile
@@ -134,7 +136,8 @@ Example 3. Setting IMAGEPATH Parameter in Mapfile
         ...
       END                        
             
-MS4W Users Should Specify the Following for IMAGEPATH and IMAGEURL:
+`MS4W <https://ms4w.com>`__ users should specify the following for 
+IMAGEPATH and IMAGEURL:
 
 .. code-block:: mapfile
 
@@ -190,6 +193,9 @@ example of a layer using this connection type:
         "wms_server_version"  "1.1.1"
         "wms_format"          "image/png"
       END
+      PROJECTION
+        "init=epsg:4326"
+      END       
     END
     
 You can also combine remote WMS layers from a server into one layer, separated 
@@ -201,14 +207,18 @@ by a comma (,) such as:
       NAME "census_tracts"
       TYPE RASTER
       STATUS ON
-      CONNECTION "http://tigerweb.geo.census.gov/arcgis/services/TIGERweb/tigerWMS_ACS2015/MapServer/WMSServer?"
+      CONNECTION "https://tigerweb.geo.census.gov/arcgis/services/TIGERweb/tigerWMS_ACS2015/MapServer/WMSServer?"
       CONNECTIONTYPE WMS
       METADATA
-          "wms_srs" 		"EPSG:4326"
-          "wms_name" 		"Census Tracts,Census Tracts Labels"
-          "wms_server_version" 	"1.1.1"
-          "wms_format" 	  	"image/png24"
+          "wms_srs"         "EPSG:4326"
+          #"wms_name"       "Census Tracts,Census Tracts Labels"
+          "wms_name"        "77,76"
+          "wms_server_version" "1.1.1"
+          "wms_format"      "image/png24"
       END
+      PROJECTION
+        "init=epsg:4326"
+      END       
     END   
    
 .. NOTE::
@@ -427,7 +437,7 @@ Optional Layer Parameters and Metadata
     - basic
     - digest
     - ntlm
-    - any (the underlying http library picks the best among the opotions supported by the remote server)
+    - any (the underlying http library picks the best among the options supported by the remote server)
     - anysafe (the underlying http library picks only safe methods among the options supported by the remote server)
 
   .. code-block:: mapfile
@@ -607,7 +617,6 @@ Limitations/TODO
 .. _`WMS 1.1.1 specification`: https://portal.ogc.org/files/?artifact_id=1081&version=1&format=pdf
 .. _`WMS 1.3.0 specification`: https://portal.ogc.org/files/?artifact_id=14416
 .. _`MapServer OGC Web Services Workshop package`: https://mapserver.github.io/ms-ogc-workshop/ 
-.. _`libcurl`: https://curl.se/libcurl/c/
+.. _`libcurl`: https://curl.se/libcurl/
 .. _`MS4W`: https://ms4w.com
-.. _`download a custom Canadian epsg file`: http://www.maptools.org/dl/proj4-epsg-with-42xxx.zip
-.. _`custom ESRI epsg file`: http://www.maptools.org/dl/proj4-epsg-with-42xxx-and-esri.zip
+

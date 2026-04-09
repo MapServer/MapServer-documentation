@@ -9,7 +9,7 @@
 
 :Author: Jeff McKenna
 :Contact: jmckenna at gatewaygeomatics.com
-:Last Updated: 2026-03-29
+:Last Updated: 2026-04-09
 
 .. contents:: Table of Contents
     :depth: 2
@@ -72,33 +72,39 @@ Setting Up an SOS Server Using MapServer
 Install the Required Software
 -----------------------------
 
-SOS requests are handled by the ":ref:`mapserv`" CGI program. The
+SOS requests are handled by the :ref:`mapserv` CGI program. The
 first step is to check that your mapserv executable includes SOS
 support. One way to verify this is to use the "-v" command-line switch
 and look for "SUPPORTS=SOS_SERVER".
 
 Example 1. On Unix:
 
-::
+.. code-block:: bash
 
    $ ./mapserv -v
-   MapServer version 4.9 OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG OUTPUT=WBMP
-   OUTPUT=SVG SUPPORTS=PROJ SUPPORTS=FREETYPE SUPPORTS=WMS_SERVER
-   SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT
-   SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER SUPPORTS=THREADS INPUT=JPEG
-   INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE DEBUG=MSDEBUG
+   MapServer version 8.7-dev PROJ version 9.8 GDAL version 3.12 
+   OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG 
+   SUPPORTS=FREETYPE SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS SUPPORTS=RSVG 
+   SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT 
+   SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER 
+   SUPPORTS=SOS_SERVER SUPPORTS=OGCAPI_SERVER SUPPORTS=GEOS SUPPORTS=PBF 
+   INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE 
+   INPUT=FLATGEOBUF
         
 
 Example 2. On Windows:
 
-::
+.. code-block:: bash
 
-   C:\MS4W\Apache\cgi-bin> mapserv -v
-   MapServer version 4.9 OUTPUT=GIF OUTPUT=PNG OUTPUT=JPEG OUTPUT=WBMP
-   OUTPUT=SVG SUPPORTS=PROJ SUPPORTS=FREETYPE SUPPORTS=WMS_SERVER
-   SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT
-   SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER SUPPORTS=THREADS INPUT=JPEG
-   INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE DEBUG=MSDEBUG
+   C:\ms4w> mapserv -v
+   MapServer version 8.7.0-dev (MS4W 5.2.0) PROJ version 9.9 
+   GDAL version 3.13 OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ 
+   SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS 
+   SUPPORTS=SVGCAIRO SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER 
+   SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT 
+   SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER SUPPORTS=OGCAPI_SERVER 
+   SUPPORTS=FASTCGI SUPPORTS=THREADS SUPPORTS=GEOS SUPPORTS=PBF INPUT=JPEG 
+   INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE INPUT=FLATGEOBUF
    
 .. note::
     Windows users can install `MS4W <https://ms4w.com>`__ which supports SOS server.   
@@ -106,13 +112,13 @@ Example 2. On Windows:
 If you don't have SOS support in your MapServer build, then you must
 compile MapServer with the following in mind:
 
-- flag *-DUSE_SOS_SVR* is required
+- CMake flag *-DWITH_SOS* is required
 
-- requires either *-DUSE_WMS_SVR* or *-DUSE_WFS_SVR* flags to be enabled 
+- requires either *-DWITH_WMS* or *-DWITH_WFS* flags to be enabled 
 
 - requires libxml2 and proj libraries
 
-- requires ICONV support (*-DUSE_ICONV*) on Windows
+- requires ICONV support (*-DWITH_ICONV*) on Windows
 
 For more help with MapServer compilation see the appropriate HowTo:
 :ref:`Unix <unix>` / :ref:`Windows <win32>`
@@ -288,6 +294,7 @@ things are likely not going to work.
 .. note::
     The SERVICE parameter is required for all SOS requests. 
 
+`SOS GetCapabilities live example <https://demo.mapserver.org/cgi-bin/sos?SERVICE=SOS&REQUEST=GetCapabilities>`__
 
 GetObservation Request
 ######################
@@ -388,7 +395,11 @@ Example 4:
    http://127.0.0.1/cgi-bin/mapserv.exe?map=D:/ms4w/apps/sos/sos_test.map&
    Request=GetObservation&service=SOS&Offering=WQ1289&
    observedproperty=Water Quality&version=1.0.0&
-   responseFormat=text/xml; subtype="om/1.0.0"&resultModel=om:Observation  
+   responseFormat=text/xml; subtype="om/1.0.0"&resultModel=om:Observation
+   
+Example 5:
+
+`SOS GetObservation live example <https://demo.mapserver.org/cgi-bin/sos?REQUEST=GetObservation&service=SOS&Offering=Water&observedproperty=WaterQuality&version=1.0.0&responseFormat=text/xml;%20subtype%3D%22om%2F1.0.0%22>`__
 
 DescribeSensor Request
 ######################
@@ -948,7 +959,7 @@ Layer Object Metadata
 
 
   All *sos_procedure* links from layers in the offerings will be
-  outputed together, such as the following taken from a
+  outputted together, such as the following taken from a
   GetCapabilities response:
   
   .. code-block:: xml
@@ -996,7 +1007,8 @@ In MapServer 5.0 SOS support has been upgraded to use a new metadata called
 sos_procedure_item. The value for sos_procedure_item is the field/attribute
 name containing the procedure values. The use of this metadata as well as the
 sos_procedure is described here per type of request (refer to
-https://github.com/MapServer/MapServer/issues/2050 for more description):
+`issue #2050 <https://github.com/MapServer/MapServer/issues/2050>`__ 
+for more description):
 
 It should be noted that, for very large datasets defined only with
 sos_procedure_item, this may result in costly processing, because MapServer
