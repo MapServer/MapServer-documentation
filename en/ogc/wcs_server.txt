@@ -13,7 +13,7 @@
 :Contact:      stephan.meissl at eox.at
 :Author:       Fabian Schindler
 :Contact:      fabian.schindler at eox.at
-:Last Updated: 2026-04-09
+:Last Updated: 2026-04-13
 
 .. contents:: Table of Contents
     :depth: 2
@@ -34,6 +34,7 @@ Implementation Specification version 1.0.0`_.
 Links to WCS-Related Information
 --------------------------------
 
+- :ref:`MapServer WCS Use Cases <wcs_format>`
 - `OGC'c WCS Standard page`_
 - `WCS 1.0.0 specification`_
 - `WCS 1.1.1c1 specification`_
@@ -44,27 +45,57 @@ Links to WCS-Related Information
   - `WCS 2.0 Specification - KVP Protocol Binding Extension`_
   - `WCS 2.0 Specification - XML/POST Protocol Binding Extension`_
 
-- :ref:`WMS Server HowTo <wms_server>`
-
 Software Requirements
 ---------------------
 
 In order to enable MapServer to serve WCS data, it MUST be compiled
 against certain libraries:
 
-- PROJ: The reprojection library. Version 4.4.3 or greater is required.
-- GDAL: raster support library.
+- `PROJ <https://proj.org>`__: The reprojection library. Version 4.4.3 or 
+  greater is required.
+- `GDAL <https://gdal.org>`__: raster support library.
 - MapServer: version >= 4.4 (tested with 8.6.1 while updating this document)
 
-For WCS 1.1.x (MapServer 5.2) and WCS 2.0 (MapServer 6.0) support
+For WCS 1.1.x support (since MapServer 5.2) and WCS 2.0 support (since MapServer 6.0) 
 there is an additional requirement:
 
-- libxml2: An xml parser and generation library. 
+- `libxml2 <https://gitlab.gnome.org/GNOME/libxml2/-/wikis/home>`__: An xml 
+  parser and generation library. 
 
-Please see the :ref:`MapServer UNIX Compilation and Installation HowTo
-<unix>` for detailed instructions on compiling MapServer with support
-for these libraries and features.  For Windows users, `MapServer for
-Windows (MS4W)`_ comes with WCS Server support.
+(Unix users should refer to the :ref:`unix` document for any compiling
+instructions, and Windows users might want to use `MS4W <https://ms4w.com>`__, 
+which comes ready with WCS support)
+
+You can check that your :ref:`mapserv` executable includes WCS server support 
+by using the "-v" command-line switch and look for "SUPPORTS=WCS_SERVER".
+
+Example 1. On Unix:
+
+.. code-block:: bash
+
+   $ ./mapserv -v
+   MapServer version 8.7-dev PROJ version 9.8 GDAL version 3.12 
+   OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ SUPPORTS=AGG 
+   SUPPORTS=FREETYPE SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS SUPPORTS=RSVG 
+   SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER SUPPORTS=WMS_CLIENT 
+   SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT SUPPORTS=WCS_SERVER 
+   SUPPORTS=SOS_SERVER SUPPORTS=OGCAPI_SERVER SUPPORTS=GEOS SUPPORTS=PBF 
+   INPUT=JPEG INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE 
+   INPUT=FLATGEOBUF
+
+Example 2. On Windows:
+
+.. code-block:: bash
+
+   C:\ms4w> mapserv -v
+   MapServer version 8.7-dev (MS4W 5.2.0) PROJ version 9.9 
+   GDAL version 3.13 OUTPUT=PNG OUTPUT=JPEG OUTPUT=KML SUPPORTS=PROJ 
+   SUPPORTS=AGG SUPPORTS=FREETYPE SUPPORTS=CAIRO SUPPORTS=SVG_SYMBOLS 
+   SUPPORTS=SVGCAIRO SUPPORTS=ICONV SUPPORTS=FRIBIDI SUPPORTS=WMS_SERVER 
+   SUPPORTS=WMS_CLIENT SUPPORTS=WFS_SERVER SUPPORTS=WFS_CLIENT 
+   SUPPORTS=WCS_SERVER SUPPORTS=SOS_SERVER SUPPORTS=OGCAPI_SERVER 
+   SUPPORTS=FASTCGI SUPPORTS=THREADS SUPPORTS=GEOS SUPPORTS=PBF INPUT=JPEG 
+   INPUT=POSTGIS INPUT=OGR INPUT=GDAL INPUT=SHAPEFILE INPUT=FLATGEOBUF
 
 .. index:: 
    pair: WCS Server; Mapfile
@@ -72,97 +103,105 @@ Windows (MS4W)`_ comes with WCS Server support.
 Configuring Your Mapfile to Serve WCS Layers
 ============================================
 
-Much as in the WMS and WFS support, WCS publishing is enabled by
-adding certain magic METADATA keyword/value pairs to a .map file.
+Similar to configuring :ref:`WMS <wms_server>` and :ref:`WFS <wfs_server>` 
+support, WCS publishing in MapServer is enabled by adding certain magic 
+METADATA keyword/value pairs to a `.map` file.
 
 MapServer will serve and include in its WCS capabilities only the
 layers that meet the following conditions:
 
 - Data source is a raster, which is processed using GDAL 
-  (e.g GeoTIFF, Erdas Imagine, ...)
+  (e.g GeoTIFF, NetCDF, ...)
 - LAYER NAME must be set
 - LAYER TYPE is set to RASTER
-- WEB metadata or LAYER metadata "wcs_enable_request" must be set
+- WEB metadata or LAYER metadata "wcs_enable_request" must be set 
+  (see `MS RFC 67`_)
 - WEB metadata "wcs_label" must be set
 - LAYER metadata "wcs_label" must be set
 - LAYER metadata "wcs_rangeset_name" must be set
 - LAYER metadata "wcs_rangeset_label" must be set
-- LAYER is enabled to be served via WCS (see `MS RFC 67`_)
-- LAYER PROJECTION must be set, even if PROJECTION is set at the MAP
-  level
+- LAYER PROJECTION must be set (which tells MapServer the source projection 
+  of the raster), and must also set the map-level PROJECTION (which 
+  specifies the output projection)
 
 Example WCS Server Mapfile
 --------------------------
 
-The following is an example of a simple WCS Server mapfile. Note the
-comments for the required parameters.
+The following is an example of a simple WCS Server mapfile (that servers one 
+single raster). Note the comments for the required parameters.
 
 .. code-block:: mapfile
         
-      MAP
-        NAME WCS_server
-        STATUS ON
-        SIZE 400 300
-        SYMBOLSET "../etc/symbols.txt"
-        EXTENT -2200000 -712631 3072800 3840000
-        UNITS METERS
-        SHAPEPATH "../data"
-        IMAGECOLOR 255 255 255
-        FONTSET "../etc/fonts.txt"
-
-
-        #
-        # Start of web interface definition
-        #
-        WEB
-          IMAGEPATH "/ms4w/tmp/ms_tmp/" 
-          IMAGEURL "/ms_tmp/"
-          METADATA
-            "wcs_label"           "GMap WCS Demo Server" ### required  
-            "wcs_description"     "Some text description of the service"  
-            "wcs_onlineresource"  "http://127.0.0.1/cgi-bin/mapserv.exe?" ### recommended
-            "wcs_fees"            "none"
-            "wcs_accessconstraints"    "none"
-            "wcs_keywordlist"          "wcs,test"
-            "wcs_metadatalink_type"    "TC211" 
-            "wcs_metadatalink_format"  "text/plain" 
-            "wcs_metadatalink_href"    "http://someurl.com"
-            "wcs_address"              "124 Gilmour Street"
-            "wcs_city"                 "Ottawa"
-            "wcs_stateorprovince"      "ON"
-            "wcs_postcode"             "90210"
-            "wcs_country"              "Canada"
-            "wcs_contactelectronicmailaddress" "blah@blah"
-            "wcs_contactperson"            "me"
-            "wcs_contactorganization"      "unemployed"
-            "wcs_contactposition"          "manager"
-            "wcs_contactvoicetelephone"    "613-555-1234"
-            "wcs_contactfacimiletelephone" "613-555-1235"
-            "wcs_service_onlineresource"   "http://127.0.0.1/cgi-bin/mapserv.exe?"            
-            "wcs_enable_request"           "*"
-          END
-        END
-
-        PROJECTION
-          "init=epsg:3978"
-        END
-
-
-        LAYER
-          NAME bathymetry
-          METADATA
-            "wcs_label"           "Elevation/Bathymetry"  ### required
-            "wcs_rangeset_name"   "Range 1"  ### required to support DescribeCoverage request
-            "wcs_rangeset_label"  "My Label" ### required to support DescribeCoverage request 
-          END
-          TYPE RASTER ### required
+        MAP
+          NAME "WCS_server"
           STATUS ON
-          DATA bath_mapserver.tif
-          PROJECTION
-            "init=epsg:3978"
+          SIZE 400 300
+          SYMBOLSET "../etc/symbols.txt"
+          EXTENT -6661783 2801107 11407237 8055791 #for EPSG:3857, but useful only when testing mapfile through map2img (with WCS)
+          UNITS METERS
+          SHAPEPATH "./data"
+          IMAGECOLOR 255 255 255
+          FONTSET "../etc/fonts.txt"
+          
+          CONFIG "MS_ERRORFILE" "/ms4w/tmp/ms_tmp/ms_error.txt"
+          DEBUG 5  
+
+          WEB
+            IMAGEPATH "/ms4w/tmp/ms_tmp/"
+            IMAGEURL "/ms_tmp/"
+            METADATA
+              "wcs_label"                     "WCS Demo Server" ### required
+              "wcs_description"               "Some text description of the service" ### recommended
+              "wcs_onlineresource"            "http://127.0.0.1/cgi-bin/mapserv.exe?MAP=/ms4w/apps/wcs-demo/wcs.map" ### recommended
+              "wcs_service_onlineresource"    "http://127.0.0.1/cgi-bin/mapserv.exe?MAP=/ms4w/apps/wcs-demo/wcs.map" ### recommended
+              "ows_title"                     "WCS Demo Server for MapServer" ### recommended
+              "ows_abstract"                  "This demonstration server showcases MapServer and its OGC support." ### recommended
+              "ows_contactperson"             "me"
+              "ows_contactposition"           "VIP"
+              "ows_contactorganization"       "FOSS4G"
+              "ows_contactelectronicmailaddress" "blah@blah.com"
+              "ows_contactvoicetelephone"     "+xx-xxx-xxx-xxxx"
+              "ows_contactfacsimiletelephone" "+xx-xxx-xxx-xxxx"
+              "ows_role"                      "developer"
+              "ows_addresstype"               "postal"
+              "ows_address"                   "1234 Main Street"
+              "ows_city"                      "xxxxx"
+              "ows_stateorprovince"           "xx"
+              "ows_postcode"                  "xxx xxx"
+              "ows_country"                   "Canada"
+              "ows_fees"                      "None"
+              "ows_accessconstraints"         "None"
+              "ows_hoursofservice"            "xxx"
+              "ows_contactinstructions"       "xxx"
+              "wcs_keywordlist"               "WCS,MODIS,NDVI,MapServer"
+              "wcs_enable_request"            "*"  ### required
+            END
           END
-        END
-      END # Map File
+
+          #output projection
+          PROJECTION
+            "init=epsg:3857" #LCC, see https://spatialreference.org/ref/epsg/3857/
+          END
+
+          LAYER
+            NAME "bluemarble-2004"
+            METADATA
+              "wcs_label"           "Elevation/Bathymetry"  ### required
+              "wcs_rangeset_name"   "My range"  ### required to support DescribeCoverage request
+              "wcs_rangeset_label"  "My label" ### required to support DescribeCoverage request
+              "wcs_formats"         "image/tiff"  ### required
+              "ows_extent"          "-180 -90 180 90" ### recommended
+            END
+            TYPE RASTER ### required
+            STATUS ON
+            DATA "world.topo.bathy.200401.3x5400x2700_geo.tif"
+            #the data's source projection
+            PROJECTION
+              "init=epsg:4326" #LCC, see https://spatialreference.org/ref/epsg/4326/
+            END
+            DEBUG 5
+          END # layer
+        END # mapfile
 
 .. index:: 
    pair: WCS Server; Output formats
@@ -171,13 +210,13 @@ Output Formats
 --------------
 
 The raster formats supported by MapServer WCS are determined by the
-wcs_formats metadata item on the LAYER.  This should contain a space
+*wcs_formats* metadata item on the LAYER.  This should contain a space
 separated list of OUTPUTFORMAT driver names separated by spaces.  If
 absent, all raster OUTPUTFORMATs are allowed.
 
 WCS is a "raw data" oriented format.  So it often most suitable to use
 it with format using the BYTE, INT16 and FLOAT32 IMAGEMODEs with GDAL
-related output formats rather than the built in "rendering oriented"
+related output formats rather than the built-in "rendering oriented"
 output formats.  By default the only GDAL format driver defined is the
 GTiff driver.  The following are example output format declarations
 utilizing the raw image modes::
@@ -201,8 +240,288 @@ utilizing the raw image modes::
 
 The FORMATOPTION FILENAME defines the preferred name of the result
 file when returned WCS GetCoverage results.
+
+Spatio/Temporal Indexes
+-----------------------
+
+MapServer has long supported a method of breaking a dataset into smaller, more
+manageable pieces or tiles. In this case a shapefile is used to store the
+boundary of each tile, and an attribute holds the location of the actual data.
+Within a MapServer mapfile the layer keywords *TILEINDEX* and *TILEITEM* are used
+to activate tiling.
+
+Consider the example where an organization wants to serve hundreds or even
+thousands of MODIS scenes in GeoTIFF format. Five images cover the spatial extent and each group
+of five varies by date of acquisition. This turns out to be a fairly common
+scenario for organizations interested in WCS, one that the existing tiling
+support does not adequately address. In previous versions of MapServer a
+developer would have to create one tileindex and one layer definition for
+each group of five images. This could result in configuration files that are
+prohibitively long and difficult to manage.
+
+In order to more efficiently support the WCS specification a new tiling scheme
+has been implemented within MapServer. One that supports spatial sub-setting,
+but also ad hoc sub-setting based on any attributes found within tileindex.
+In many cases a temporal attribute could be used, but sub-setting is not
+limited to that case. The new scheme introduces the concept of **tileindex
+layers**, that is, *a separate layer definition is used to describe the tile
+index dataset*. With this we get all the benefits of any MapServer layer, most
+importantly we can apply MapServer filters to the data. Filters can be defined
+at runtime using MapServer CGI, MapScript or via the WCS server interface. The
+syntax for the layer using the index remains unchanged except that the value
+for :ref:`TILEINDEX` refers to the index layer instead of an external shapefile.
+
+So, looking at the example above again we can reduce our MapServer
+configuration to two layer definitions, one for the tileindex and one for the
+imagery itself. Extracting a single date's worth of imagery is now a matter of
+setting the appropriate filter within the tileindex layer.
+
+Building Spatio-Temporal TileIndexes
+````````````````````````````````````
+
+**Step 1: Create your spatial index**
+
+Taking the above example, the first step is to create the spatial index with the 
+GDAL utility `gdaltindex <https://gdal.org/en/stable/programs/gdaltindex.html>`__. 
+Simply point gdaltindex at the directory containing the 
+collection of images and it will build a shapefile index suitable for use with
+MapServer. 
+
+For example, the following command creates a shapefile index, for a folder
+that contains many GeoTIFF images:
+
+.. code-block:: bash
+
+  gdaltindex -of "ESRI Shapefile" index_bluemarble.shp *.tif
   
-	
+Since GDAL 3.11 you can alternatively use the `gdal program <https://gdal.org/en/stable/programs/gdal_raster_index.html>`__ 
+such as:
+
+.. code-block:: bash
+
+  gdal raster index --of "ESRI Shapefile" *.tif index_bluemarble.shp
+  
+If you open that new spatial index in `QGIS <https://qgis.org>`__ and then
+view its attributes, you'll notice a single *location* field with all of the 
+GeoTIFF filenames, such as:
+
+.. image:: ../images/wcs-index1.png
+    :height: 330
+    :width: 300
+    :class: no-scaled-link 
+  
+**Step 2: Execute shptree on your spatial index file**
+
+Use MapServer's :ref:`shptree <shptree>` utility to make it faster for MapServer 
+to parse the index, with a command such as:
+
+.. code-block:: bash
+
+  shptree index_bluemarble.shp
+  
+You should notice that a new *.qix* file was created.
+
+**Step 3: Add the temporal information to the index**
+
+The next step would be to add the temporal (time) information to that index. 
+
+You could either use QGIS again & manually add the time values to the index 
+attributes (in a new string field such as *imgdate*), or write a script to do 
+that: the pseudo code would look something like:
+
+- open the index .dbf file for reading
+
+- create a new column to hold the image acquisition date
+
+- for each image; 1) extract the image acquisition date and 2) insert it into 
+  the new column
+  
+- close the index .dbf file
+
+Whatever you choose, the resulting attributes of your spatial index file 
+may look like:
+
+.. image:: ../images/wcs-index2.png
+    :height: 323
+    :width: 400
+    :class: no-scaled-link
+    
+Mapfile: define your Spatio/Temporal TileIndexes
+````````````````````````````````````````````````
+
+**Step 1: Setup your tileindex LAYER**
+
+The tileindex layer is where you point to the tileindex file that you 
+recently generated, and also define the FILTER for time requests, and 
+setup validation for that time format.
+
+.. NOTE::
+   You must setup a :ref:`VALIDATION <validation>` block for MapServer to 
+   properly pass the *time* values in the WCS request.
+
+.. code-block:: mapfile
+
+          /* tileindex layer */
+          LAYER
+            NAME "bluemarble-idx"
+            TYPE TILEINDEX
+            DATA "index_bluemarble.shp"
+            FILTER ("[imgdate]" = '%time%')
+            VALIDATION
+              #handle time values of format YYYY-MM-DDT00:00:00
+              'time'   '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$'
+            END
+            PROJECTION
+              "init=epsg:4326"
+            END  
+          END
+          
+**Step 2: Setup your raster images LAYER**
+
+Now you can setup your raster images layer, that will point to the other tileindex 
+layer.
+
+.. NOTE::
+   You must list all possible time values in the "wcs_timeposition" metadata.
+
+.. code-block:: mapfile
+
+          /* raster layer, that points to the above tileindex layer */
+          LAYER
+            NAME "bluemarble-2004"
+            METADATA
+              "wcs_label"           "Elevation/Bathymetry"  ### required
+              "wcs_description"     "My WCS layer"  ### recommended
+              "wcs_rangeset_name"   "My range"  ### required to support DescribeCoverage request
+              "wcs_rangeset_label"  "My label" ### required to support DescribeCoverage request
+              "wcs_formats"         "image/tiff"  ### required
+              "ows_extent"          "-180 -90 180 90" ### recommended
+              "wcs_resolution"      "0.066666666700000 0.066666666700000" ### required
+              "wcs_nativeformat"    "raw binary"
+              "wcs_bandcount"       "3"    
+              "wcs_timeposition"    "2004-01-01T00:00:00,2004-02-01T00:00:00,2004-03-01T00:00:00,2004-04-01T00:00:00,2004-05-01T00:00:00,2004-06-01T00:00:00,2004-07-01T00:00:00,2004-08-01T00:00:00,2004-09-01T00:00:00,2004-10-01T00:00:00,2004-11-01T00:00:00,2004-12-01T00:00:00" ### required
+              "wcs_timeitem"        "imgdate" ### required
+              "wcs_rangeset_axes"   "bands"
+              "wcs_rangeset_label"  "Bands"
+              "wcs_rangeset_name"   "Bands"
+            END
+            TYPE RASTER ### required
+            STATUS ON
+            TILEINDEX "bluemarble-idx"
+            TILEITEM "location"
+            #the data's source projection
+            PROJECTION
+              "init=epsg:4326" #LCC, see https://spatialreference.org/ref/epsg/4326/
+            END
+            DEBUG 5
+          END # layer
+          
+Example WCS Server Mapfile with Spatial/Temporal
+------------------------------------------------
+
+The following is an example of a WCS Server mapfile that serves raster images 
+by pointing to a separate tileindex layer. Note the comments for the 
+required parameters.
+
+.. code-block:: mapfile
+
+        MAP
+          NAME "WCS_server"
+          STATUS ON
+          SIZE 400 300
+          SYMBOLSET "../etc/symbols.txt"
+          EXTENT -6661783 2801107 11407237 8055791 #for EPSG:3857, but useful only when testing mapfile through map2img (with WCS)
+          UNITS METERS
+          SHAPEPATH "./data"
+          IMAGECOLOR 255 255 255
+          FONTSET "../etc/fonts.txt"
+          
+          CONFIG "MS_ERRORFILE" "/ms4w/tmp/ms_tmp/ms_error.txt"
+          DEBUG 5  
+
+          WEB
+            IMAGEPATH "/ms4w/tmp/ms_tmp/"
+            IMAGEURL "/ms_tmp/"
+            METADATA
+              "wcs_label"                     "WCS Demo Server" ### required
+              "wcs_description"               "Some text description of the service" ### recommended
+              "wcs_onlineresource"            "http://127.0.0.1/cgi-bin/mapserv.exe?MAP=/ms4w/apps/wcs-demo/wcs-tiled.map" ### recommended
+              "wcs_service_onlineresource"    "http://127.0.0.1/cgi-bin/mapserv.exe?MAP=/ms4w/apps/wcs-demo/wcs-tiled.map" ### recommended
+              "ows_title"                     "WCS Demo Server for MapServer" ### recommended
+              "ows_abstract"                  "This demonstration server showcases MapServer and its OGC support." ### recommended
+              "ows_contactperson"             "me"
+              "ows_contactposition"           "VIP"
+              "ows_contactorganization"       "FOSS4G"
+              "ows_contactelectronicmailaddress" "blah@blah.com"
+              "ows_contactvoicetelephone"     "+xx-xxx-xxx-xxxx"
+              "ows_contactfacsimiletelephone" "+xx-xxx-xxx-xxxx"
+              "ows_role"                      "developer"
+              "ows_addresstype"               "postal"
+              "ows_address"                   "1234 Main Street"
+              "ows_city"                      "xxxxx"
+              "ows_stateorprovince"           "xx"
+              "ows_postcode"                  "xxx xxx"
+              "ows_country"                   "Canada"
+              "ows_fees"                      "None"
+              "ows_accessconstraints"         "None"
+              "ows_hoursofservice"            "xxx"
+              "ows_contactinstructions"       "xxx"
+              "wcs_keywordlist"               "WCS,MODIS,NDVI,MapServer"
+              "wcs_enable_request"            "*"  ### required
+            END
+          END
+
+          #output projection
+          PROJECTION
+            "init=epsg:3857" #LCC, see https://spatialreference.org/ref/epsg/3857/
+          END
+          
+          /* tileindex layer */
+          LAYER
+            NAME "bluemarble-idx"
+            TYPE TILEINDEX
+            DATA "index_bluemarble.shp"
+            FILTER ("[imgdate]" = '%time%')
+            VALIDATION
+              #handle time values of format YYYY-MM-DDT00:00:00
+              'time'   '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$'
+            END
+            PROJECTION
+              "init=epsg:4326"
+            END  
+          END  
+
+          /* raster layer, that points to the above tileindex layer */
+          LAYER
+            NAME "bluemarble-2004"
+            METADATA
+              "wcs_label"           "Elevation/Bathymetry"  ### required
+              "wcs_description"     "My WCS layer"  ### recommended
+              "wcs_rangeset_name"   "My range"  ### required to support DescribeCoverage request
+              "wcs_rangeset_label"  "My label" ### required to support DescribeCoverage request
+              "wcs_formats"         "image/tiff"  ### required
+              "ows_extent"          "-180 -90 180 90" ### recommended
+              "wcs_resolution"      "0.066666666700000 0.066666666700000" ### required
+              "wcs_nativeformat"    "raw binary"
+              "wcs_bandcount"       "3"    
+              "wcs_timeposition"    "2004-01-01T00:00:00,2004-02-01T00:00:00,2004-03-01T00:00:00,2004-04-01T00:00:00,2004-05-01T00:00:00,2004-06-01T00:00:00,2004-07-01T00:00:00,2004-08-01T00:00:00,2004-09-01T00:00:00,2004-10-01T00:00:00,2004-11-01T00:00:00,2004-12-01T00:00:00" ### required
+              "wcs_timeitem"        "imgdate" ### required
+              "wcs_rangeset_axes"   "bands"
+              "wcs_rangeset_label"  "Bands"
+              "wcs_rangeset_name"   "Bands"
+            END
+            TYPE RASTER ### required
+            STATUS ON
+            TILEINDEX "bluemarble-idx"
+            TILEITEM "location"
+            #the data's source projection
+            PROJECTION
+              "init=epsg:4326" #LCC, see https://spatialreference.org/ref/epsg/4326/
+            END
+            DEBUG 5
+          END # layer
+        END # mapfile
+
 Test Your WCS 1.0 Server
 ========================
 
@@ -226,16 +545,33 @@ you add the parameters
    call to the MapServer executable, by setting *MS_MAP_PATTERN* or 
    *MS_MAP_NO_PATH* or hiding the *MAP=* parameter on public servers, 
    as recommended in the document :ref:`limit_mapfile_access`.  All possible
-   environment variables to secure your server are listed in :ref:`environment_variables`.   
-        
+   environment variables to secure your server are listed in :ref:`environment_variables`.      
 
 If you get an error message in the XML output then take necessary
 actions. Common problems and solutions are listed in the FAQ at the
 end of this document.
 
+.. TIP::
+   To see MapServer error messages as you execute WCS requests, be sure
+   to set the `CONFIG "MS_ERRORFILE"` parameter, as well as `DEBUG 5` at in your
+   LAYER, such as:
+
+    .. code-block:: mapfile
+
+       MAP
+         ...
+         CONFIG "MS_ERRORFILE" "/ms4w/tmp/ms_error.txt"
+         DEBUG 5
+         ...
+         LAYER
+           DEBUG 5
+           ...
+         END
+       END
+
 If everything went well, you should have a complete XML capabilities
-document.  Search it for the word "WARNING"... MapServer inserts XML
-comments starting with "<!--WARNING: " in the XML output if it detects
+document.  Search it for the word `"WARNING"`, as MapServer inserts XML
+comments starting with `"<!--WARNING: "` in the XML output if it detects
 missing mapfile parameters or metadata items.
 
 Note that when a request happens, it is passed through WMS, WFS, and
@@ -268,7 +604,6 @@ Here is a working example of a DescribeCoverage request:
 
 `WCS DescribeCoverage live example`_
 
-
 Test With a GetCoverage Request
 -------------------------------
 
@@ -287,7 +622,8 @@ according to the WCS spec:
    stated in the GetCapabilities
 
    **CRS=epsg_code:** Coordinate Reference System in which the request
-   is expressed.
+   is expressed. (you can search for EPSG codes on 
+   `spatialreference.org <https://spatialreference.org/>`__)
 
    **BBOX=minx,miny,maxx,maxy:** Bounding box corners (lower left,
    upper right) in CRS units.  One of BBOX or TIME is required.
@@ -295,10 +631,10 @@ according to the WCS spec:
    **TIME=time1,time2:** Request a subset corresponding to a time. One
    of BBOX or TIME is required..
 
-   **WIDTH=output_width:** Width in pixels of map picture.  One of
+   **WIDTH=output_width:** Width in pixels of map image.  One of
    WIDTH/HEIGHT or RESX/Y is required.
 
-   **HEIGHT=output_height:** Height in pixels of map picture.  One of
+   **HEIGHT=output_height:** Height in pixels of map image.  One of
    WIDTH/HEIGHT or RESX/Y is required.
    
    **RESX=x:** When requesting a georectified grid coverage, this
@@ -329,18 +665,356 @@ would look like:
     &HEIGHT=2833&FORMAT=GTiff
 
 Here is a working example of a GetCoverage request (note that a 350KB
-tif is being requested, so this may take a second):
+tif is being requested, which should automatically be downloaded locally):
 
 `WCS GetCoverage live example`_
+
+Test Using GDAL Utilities
+-------------------------
+
+A nice way to test your new WCS service is through the GDAL commandline.
+
+**Example 1: Get information on a MapServer WCS service:**
+
+.. code-block:: bash
+
+  gdalinfo -oo CLEAR_CACHE=YES WCS:"https://demo.mapserver.org/cgi-bin/wcs?VERSION=1.0.0"
+  
+Since GDAL 3.11 you can alternatively use the `gdal program <https://gdal.org/en/stable/programs/gdal_raster_index.html>`__ 
+such as:
+
+.. code-block:: bash
+
+  gdal info --oo CLEAR_CACHE=YES WCS:"https://demo.mapserver.org/cgi-bin/wcs?VERSION=1.0.0"
+      
+..  collapse:: Click here to see sample response
+
+    ::
+
+        Driver: WCS/OGC Web Coverage Service
+        Files: C:\Users\jeffm\.gdal\wcs_cache\bGtUw.aux.xml
+        Size is 512, 512
+        Origin = (0.000000000000000,0.000000000000000)
+        Pixel Size = (1.000000000000000,1.000000000000000)
+        Metadata:
+          WCS_GLOBAL#keywords=WCS,MODIS,NDVI
+          WCS_GLOBAL#Service.accessConstraints=None
+          WCS_GLOBAL#Service.description=Setup by GatewayGeo
+          WCS_GLOBAL#Service.fees=None
+          WCS_GLOBAL#Service.label=WCS Demo Server for MapServer, setup by GatewayGeo
+          WCS_GLOBAL#Service.name=MapServer WCS
+          WCS_GLOBAL#Service.responsibleParty.contactInfo.address.administrativeArea=Nova Scotia
+          WCS_GLOBAL#Service.responsibleParty.contactInfo.address.city=Lunenburg
+          WCS_GLOBAL#Service.responsibleParty.contactInfo.address.country=Canada
+          WCS_GLOBAL#Service.responsibleParty.contactInfo.address.deliveryPoint=1101 Blue Rocks Road
+          WCS_GLOBAL#Service.responsibleParty.contactInfo.address.electronicMailAddress=info@gatewaygeomatics.com
+          WCS_GLOBAL#Service.responsibleParty.contactInfo.address.postalCode=B0J 2C0
+          WCS_GLOBAL#Service.responsibleParty.contactInfo.phone.facsimile=+xx-xxx-xxx-xxxx
+          WCS_GLOBAL#Service.responsibleParty.contactInfo.phone.voice=+xx-xxx-xxx-xxxx
+          WCS_GLOBAL#Service.responsibleParty.individualName=Jeff McKenna
+          WCS_GLOBAL#Service.responsibleParty.organisationName=GatewayGeo
+          WCS_GLOBAL#Service.responsibleParty.positionName=Director
+          WCS_GLOBAL#updateSequence=0
+          WCS_GLOBAL#version=1.0.0
+        Subdatasets:
+          SUBDATASET_1_NAME=https://demo.mapserver.org/cgi-bin/wcs?VERSION=1.0.0&COVERAGE=ndvi
+          SUBDATASET_1_DESC=North Central US MODIS-based NDVI Images for 2002
+          SUBDATASET_2_NAME=https://demo.mapserver.org/cgi-bin/wcs?VERSION=1.0.0&COVERAGE=fpar
+          SUBDATASET_2_DESC=North Central US MODIS-based FPAR Images for 2002
+          SUBDATASET_3_NAME=https://demo.mapserver.org/cgi-bin/wcs?VERSION=1.0.0&COVERAGE=modis
+          SUBDATASET_3_DESC=North Central US MODIS Images for 2002
+        Corner Coordinates:
+        Upper Left  (   0.0000000,   0.0000000)
+        Lower Left  (       0.000,     512.000)
+        Upper Right (     512.000,       0.000)
+        Lower Right (     512.000,     512.000)
+        Center      (     256.000,     256.000)
         
+.. TIP::
+   You can get debugging info from GDAL by first setting the *CPL_DEBUG* environment variable 
+   (useful to see the exact GetCapabilities or GetCoverage requests), before re-running
+   your gdal command, such as:
+   
+   Windows CMD:
+   
+   ::
+   
+    SET CPL_DEBUG=ON
+    
+   Windows PowerShell:
+   
+   ::
+   
+    $Env:CPL_DEBUG = "ON"
+
+   Linux:
+   
+   ::
+   
+    export CPL_DEBUG=ON  
+
+   ..  collapse:: Click here to see sample response
+
+       ::    
+
+        HTTP: Fetch(https://demo.mapserver.org/cgi-bin/wcs?SERVICE=WCS&REQUEST=GetCoverage&VERSION=1.0.0&COVERAGE=modis&FORMAT=geotiff&BBOX=159457,5500645,160457,5501645&WIDTH=2&HEIGHT=2&CRS=EPSG:26915&time=2002-001)
+        WCS: GDALOpenResult() on content-type: image/tiff
+        GDAL: GDALOpen(/vsimem/.#!HIDDEN!#./1/wcsresult.dat, this=037EDF50) succeeds as GTiff.
+        GDAL: GDALClose(/vsimem/.#!HIDDEN!#./1/wcsresult.dat, this=037EDF50)
+        GDAL: GDALOpen(C:\Users\jeffm\.gdal\wcs_cache\FnoLB.xml, this=01956EA0) succeeds as WCS.
+        0GDAL: GDAL_CACHEMAX = 102 MB
+        GDAL: GDALDatasetCopyWholeRaster(): 2481*512 swaths, bInterleave=1
+        WCS: DirectRasterIO(0,0,2481,512) -> (2481,512) (3 bands)
+
+        HTTP: Fetch(https://demo.mapserver.org/cgi-bin/wcs?SERVICE=WCS&REQUEST=GetCoverage&VERSION=1.0.0&COVERAGE=modis&FORMAT=geotiff&BBOX=159457,5245645,1399957,5501645&WIDTH=2481&HEIGHT=512&CRS=EPSG:26915&time=2002-001&bands=1,2,3)
+        WCS: GDALOpenResult() on content-type: image/tiff
+        GDAL: GDALOpen(/vsimem/.#!HIDDEN!#./2/wcsresult.dat, this=037EE738) succeeds as GTiff.
+        GDAL: GDALClose(/vsimem/.#!HIDDEN!#./2/wcsresult.dat, this=037EE738)
+        ...10...20..WCS: DirectRasterIO(0,512,2481,512) -> (2481,512) (3 bands)
+
+        HTTP: Fetch(https://demo.mapserver.org/cgi-bin/wcs?SERVICE=WCS&REQUEST=GetCoverage&VERSION=1.0.0&COVERAGE=modis&FORMAT=geotiff&BBOX=159457,4989645,1399957,5245645&WIDTH=2481&HEIGHT=512&CRS=EPSG:26915&time=2002-001&bands=1,2,3)
+        WCS: GDALOpenResult() on content-type: image/tiff
+        GDAL: GDALOpen(/vsimem/.#!HIDDEN!#./3/wcsresult.dat, this=037EE738) succeeds as GTiff.
+        GDAL: GDALClose(/vsimem/.#!HIDDEN!#./3/wcsresult.dat, this=037EE738)
+        .30...40...50WCS: DirectRasterIO(0,1024,2481,512) -> (2481,512) (3 bands)
+
+        HTTP: Fetch(https://demo.mapserver.org/cgi-bin/wcs?SERVICE=WCS&REQUEST=GetCoverage&VERSION=1.0.0&COVERAGE=modis&FORMAT=geotiff&BBOX=159457,4733645,1399957,4989645&WIDTH=2481&HEIGHT=512&CRS=EPSG:26915&time=2002-001&bands=1,2,3)
+        WCS: GDALOpenResult() on content-type: image/tiff
+        GDAL: GDALOpen(/vsimem/.#!HIDDEN!#./4/wcsresult.dat, this=037EE738) succeeds as GTiff.
+        GDAL: GDALClose(/vsimem/.#!HIDDEN!#./4/wcsresult.dat, this=037EE738)
+        ...60...70..WCS: DirectRasterIO(0,1536,2481,271) -> (2481,271) (3 bands)
+   
+**Example 2: Get information on specific MapServer WCS layer:**
+
+The following gets information on the 'modis' raster layer in a MapServer WCS service:
+
+.. code-block:: bash
+
+  gdalinfo -oo CLEAR_CACHE=YES WCS:"https://demo.mapserver.org/cgi-bin/wcs?VERSION=1.0.0&COVERAGE=modis"
+  
+Since GDAL 3.11 you can alternatively use the `gdal program <https://gdal.org/en/stable/programs/gdal_raster_index.html>`__ 
+such as:
+
+.. code-block:: bash
+
+  gdal info --oo CLEAR_CACHE=YES WCS:"https://demo.mapserver.org/cgi-bin/wcs?VERSION=1.0.0&COVERAGE=modis"
+      
+..  collapse:: Click here to see sample response
+
+    ::
+
+        Driver: WCS/OGC Web Coverage Service
+        Files: C:\Users\jeffm\.gdal\wcs_cache\lZCmz.xml
+               C:\Users\jeffm\.gdal\wcs_cache\lZCmz.xml.aux.xml
+        Size is 2481, 1807
+        Coordinate System is:
+        PROJCRS["NAD83 / UTM zone 15N",
+            BASEGEOGCRS["NAD83",
+                DATUM["North American Datum 1983",
+                    ELLIPSOID["GRS 1980",6378137,298.257222101,
+                        LENGTHUNIT["metre",1]]],
+                PRIMEM["Greenwich",0,
+                    ANGLEUNIT["degree",0.0174532925199433]],
+                ID["EPSG",4269]],
+            CONVERSION["UTM zone 15N",
+                METHOD["Transverse Mercator",
+                    ID["EPSG",9807]],
+                PARAMETER["Latitude of natural origin",0,
+                    ANGLEUNIT["degree",0.0174532925199433],
+                    ID["EPSG",8801]],
+                PARAMETER["Longitude of natural origin",-93,
+                    ANGLEUNIT["degree",0.0174532925199433],
+                    ID["EPSG",8802]],
+                PARAMETER["Scale factor at natural origin",0.9996,
+                    SCALEUNIT["unity",1],
+                    ID["EPSG",8805]],
+                PARAMETER["False easting",500000,
+                    LENGTHUNIT["metre",1],
+                    ID["EPSG",8806]],
+                PARAMETER["False northing",0,
+                    LENGTHUNIT["metre",1],
+                    ID["EPSG",8807]]],
+            CS[Cartesian,2],
+                AXIS["(E)",east,
+                    ORDER[1],
+                    LENGTHUNIT["metre",1]],
+                AXIS["(N)",north,
+                    ORDER[2],
+                    LENGTHUNIT["metre",1]],
+            USAGE[
+                SCOPE["Engineering survey, topographic mapping."],
+                AREA["North America - between 96┬░W and 90┬░W - onshore and offshore. Canada - Manitoba; Nunavut; Ontario. United States (USA) - Arkansas; Illinois; Iowa; Kansas; Louisiana; Michigan; Minnesota; Mississippi; Missouri; Nebraska; Oklahoma; Tennessee; Texas; Wisconsin."],
+                BBOX[25.61,-96,84,-90]],
+            ID["EPSG",26915]]
+        Data axis to CRS axis mapping: 1,2
+        Origin = (159457.000000000000000,5501645.000000000000000)
+        Pixel Size = (500.000000000000000,-500.000000000000000)
+
+**Example 3: Get information on MapServer WCS layer for a specific time:**
+
+The following gets information on the 'modis' raster layer in a MapServer WCS service, 
+for a specific time:
+
+.. code-block:: bash
+
+  gdalinfo -oo CLEAR_CACHE=YES -oo DefaultTime="2002-001" WCS:"https://demo.mapserver.org/cgi-bin/wcs?VERSION=1.0.0&COVERAGE=modis"
+  
+Since GDAL 3.11 you can alternatively use the `gdal program <https://gdal.org/en/stable/programs/gdal_raster_index.html>`__ 
+such as:
+
+.. code-block:: bash
+
+  gdal info --oo CLEAR_CACHE=YES --oo DefaultTime="2002-001" WCS:"https://demo.mapserver.org/cgi-bin/wcs?VERSION=1.0.0&COVERAGE=modis"
+      
+..  collapse:: Click here to see sample response
+
+    ::
+
+        Driver: WCS/OGC Web Coverage Service
+        Files: C:\Users\jeffm\.gdal\wcs_cache\ADNOa.xml
+               C:\Users\jeffm\.gdal\wcs_cache\ADNOa.xml.aux.xml
+        Size is 2481, 1807
+        Coordinate System is:
+        PROJCRS["NAD83 / UTM zone 15N",
+            BASEGEOGCRS["NAD83",
+                DATUM["North American Datum 1983",
+                    ELLIPSOID["GRS 1980",6378137,298.257222101,
+                        LENGTHUNIT["metre",1]]],
+                PRIMEM["Greenwich",0,
+                    ANGLEUNIT["degree",0.0174532925199433]],
+                ID["EPSG",4269]],
+            CONVERSION["UTM zone 15N",
+                METHOD["Transverse Mercator",
+                    ID["EPSG",9807]],
+                PARAMETER["Latitude of natural origin",0,
+                    ANGLEUNIT["degree",0.0174532925199433],
+                    ID["EPSG",8801]],
+                PARAMETER["Longitude of natural origin",-93,
+                    ANGLEUNIT["degree",0.0174532925199433],
+                    ID["EPSG",8802]],
+                PARAMETER["Scale factor at natural origin",0.9996,
+                    SCALEUNIT["unity",1],
+                    ID["EPSG",8805]],
+                PARAMETER["False easting",500000,
+                    LENGTHUNIT["metre",1],
+                    ID["EPSG",8806]],
+                PARAMETER["False northing",0,
+                    LENGTHUNIT["metre",1],
+                    ID["EPSG",8807]]],
+            CS[Cartesian,2],
+                AXIS["(E)",east,
+                    ORDER[1],
+                    LENGTHUNIT["metre",1]],
+                AXIS["(N)",north,
+                    ORDER[2],
+                    LENGTHUNIT["metre",1]],
+            USAGE[
+                SCOPE["Engineering survey, topographic mapping."],
+                AREA["North America - between 96┬░W and 90┬░W - onshore and offshore. Canada - Manitoba; Nunavut; Ontario. United States (USA) - Arkansas; Illinois; Iowa; Kansas; Louisiana; Michigan; Minnesota; Mississippi; Missouri; Nebraska; Oklahoma; Tennessee; Texas; Wisconsin."],
+                BBOX[25.61,-96,84,-90]],
+            ID["EPSG",26915]]
+        Data axis to CRS axis mapping: 1,2
+        Origin = (159457.000000000000000,5501645.000000000000000)
+        Pixel Size = (500.000000000000000,-500.000000000000000)
+        Metadata:
+          description=Setup by GatewayGeo
+          label=North Central US MODIS Images for 2002
+          TIME_POSITION=2002-001
+          WCS_GLOBAL#keywords=WCS,MODIS,NDVI
+          WCS_GLOBAL#Service.accessConstraints=None
+          WCS_GLOBAL#Service.description=Setup by GatewayGeo
+          WCS_GLOBAL#Service.fees=None
+          WCS_GLOBAL#Service.label=WCS Demo Server for MapServer, setup by GatewayGeo
+          WCS_GLOBAL#Service.name=MapServer WCS
+          WCS_GLOBAL#Service.responsibleParty.contactInfo.address.administrativeArea=Nova Scotia
+          WCS_GLOBAL#Service.responsibleParty.contactInfo.address.city=Lunenburg
+          WCS_GLOBAL#Service.responsibleParty.contactInfo.address.country=Canada
+          WCS_GLOBAL#Service.responsibleParty.contactInfo.address.deliveryPoint=1101 Blue Rocks Road
+          WCS_GLOBAL#Service.responsibleParty.contactInfo.address.electronicMailAddress=info@gatewaygeomatics.com
+          WCS_GLOBAL#Service.responsibleParty.contactInfo.address.postalCode=B0J 2C0
+          WCS_GLOBAL#Service.responsibleParty.contactInfo.phone.facsimile=+xx-xxx-xxx-xxxx
+          WCS_GLOBAL#Service.responsibleParty.contactInfo.phone.voice=+xx-xxx-xxx-xxxx
+          WCS_GLOBAL#Service.responsibleParty.individualName=Jeff McKenna
+          WCS_GLOBAL#Service.responsibleParty.organisationName=GatewayGeo
+          WCS_GLOBAL#Service.responsibleParty.positionName=Director
+          WCS_GLOBAL#updateSequence=0
+          WCS_GLOBAL#version=1.0.0
+        Subdatasets:
+          SUBDATASET_1_NAME=WCS_SDS:time="2002-001",C:\Users\jeffm\.gdal\wcs_cache\ADNOa.xml
+          SUBDATASET_1_DESC=Coverage modis at time 2002-001
+          SUBDATASET_2_NAME=WCS_SDS:time="2002-057",C:\Users\jeffm\.gdal\wcs_cache\ADNOa.xml
+          SUBDATASET_2_DESC=Coverage modis at time 2002-057
+          SUBDATASET_3_NAME=WCS_SDS:time="2002-073",C:\Users\jeffm\.gdal\wcs_cache\ADNOa.xml
+          SUBDATASET_3_DESC=Coverage modis at time 2002-073
+          SUBDATASET_4_NAME=WCS_SDS:time="2002-089",C:\Users\jeffm\.gdal\wcs_cache\ADNOa.xml
+          SUBDATASET_4_DESC=Coverage modis at time 2002-089
+          SUBDATASET_5_NAME=WCS_SDS:time="2002-097",C:\Users\jeffm\.gdal\wcs_cache\ADNOa.xml
+          SUBDATASET_5_DESC=Coverage modis at time 2002-097
+          SUBDATASET_6_NAME=WCS_SDS:time="2002-105",C:\Users\jeffm\.gdal\wcs_cache\ADNOa.xml
+          SUBDATASET_6_DESC=Coverage modis at time 2002-105
+          SUBDATASET_7_NAME=WCS_SDS:time="2002-121",C:\Users\jeffm\.gdal\wcs_cache\ADNOa.xml
+          SUBDATASET_7_DESC=Coverage modis at time 2002-121
+          SUBDATASET_8_NAME=WCS_SDS:time="2002-153",C:\Users\jeffm\.gdal\wcs_cache\ADNOa.xml
+          SUBDATASET_8_DESC=Coverage modis at time 2002-153
+          SUBDATASET_9_NAME=WCS_SDS:time="2002-169",C:\Users\jeffm\.gdal\wcs_cache\ADNOa.xml
+          SUBDATASET_9_DESC=Coverage modis at time 2002-169
+          SUBDATASET_10_NAME=WCS_SDS:time="2002-185",C:\Users\jeffm\.gdal\wcs_cache\ADNOa.xml
+          SUBDATASET_10_DESC=Coverage modis at time 2002-185
+        Corner Coordinates:
+        Upper Left  (  159457.000, 5501645.000) ( 97d42'39.02"W, 49d34'16.99"N)
+        Lower Left  (  159457.000, 4598145.000) ( 97d 4'38.66"W, 41d27'45.44"N)
+        Upper Right ( 1399957.000, 5501645.000) ( 80d40'50.24"W, 49d 0'20.53"N)
+        Lower Right ( 1399957.000, 4598145.000) ( 82d18' 6.92"W, 41d 2' 5.85"N)
+        Center      (  779707.000, 5049895.000) ( 89d25' 0.65"W, 45d32'46.92"N)
+
+**Example 4: Get GeoTIFF for a MapServer WCS layer for a specific time:**
+
+The following converts a 'modis' raster layer in a MapServer WCS service, 
+for a specific time, to a GeoTIFF:
+
+.. code-block:: bash
+
+  gdal_translate -of GTiff -oo CLEAR_CACHE=YES -oo DefaultTime="2002-001" WCS:"https://demo.mapserver.org/cgi-bin/wcs?VERSION=1.0.0&COVERAGE=modis" modis-2002-001.tif
+  
+Since GDAL 3.11 you can alternatively use the `gdal program <https://gdal.org/en/stable/programs/gdal_raster_index.html>`__ 
+such as:
+
+.. code-block:: bash
+
+  gdal convert --of GTiff --oo CLEAR_CACHE=YES --oo DefaultTime="2002-001" WCS:"https://demo.mapserver.org/cgi-bin/wcs?VERSION=1.0.0&COVERAGE=modis" modis-2002-001-2.tif
+   
+Test Using QGIS "Add WCS Layer"
+-------------------------------
+
+`QGIS <https://qgis.org>`__ is an excellent way to test your WCS service, 
+through the *Layer/Add Layer/Add WCS Layer* menu item.
+
+.. image:: ../images/qgis-add-wcs-layer.png
+    :height: 217
+    :width: 500
+    :class: no-scaled-link
+    
+You can then try to choose an exact time (and associated GeoTIFF file) from the 
+MapServer WCS service.
+
+.. image:: ../images/qgis-add-wcs-layer2.png
+    :height: 374
+    :width: 500
+    :class: no-scaled-link
+    
+.. tip::
+  You can/should use the `QGIS Network Logger <https://github.com/MapServer/MapServer/wiki/Get-the-Raw-WMS-Request-Generated-by-QGIS>`__ 
+  to get the exact GetCapabilities or GetCoverage requests sent by QGIS.
+
+   
 .. index:: 
    single: WCS 1.1.0
 
 WCS 1.1.0+ Issues
 =================
 
-WCS 1.1.0 and later versions of the WCS protocol are supported by
-MapServer 5.2.  For the most part the map file setup for WCS 1.1.0 is
+WCS 1.1.0 and later versions of the WCS protocol are supported since
+MapServer 5.2.0.  For the most part the mapfile setup for WCS 1.1.0 is
 similar to WCS 1.0.0, but the actual protocol is substantially
 changed.
 
@@ -460,7 +1134,6 @@ BOUNDINGBOX for an area in California might look like::
 And, likewise the bounds reported by GetCapabilities, and
 DescribeCoverage will be in this ordering as appropriate.
 
-
 .. index:: 
    single: WCS 2.0
 
@@ -470,15 +1143,15 @@ WCS 2.0
 Overview
 --------
 
-Version 6.0 introduces support for the new version 2.0 of the WCS
-specification. This section documents the usage of the new WCS
-version.
+MapServer 6.0 introduced support for version 2.0 of the WCS
+specification. This section documents how to configure WCS
+version 2.0 with MapServer.
 
 Web Coverage Service (WCS) 2.0 Interface Standard
 `````````````````````````````````````````````````
 
-This specification adopts the new OGC Core and Extension model and at
-the moment the following documents are available from the `OGC'c WCS
+This specification adopts the new OGC Core and Extension model, and 
+the following documents are available from the `OGC'c WCS
 Standard page`_:
 
 * `GML 3.2.1 Application Schema Coverages`_
@@ -502,7 +1175,7 @@ responses should validate.
 WCS 2.0 KVP request parameters
 ``````````````````````````````
 
-The following KVP request parameters are available in WCS 2.0:
+The following KVP (key/value pair) request parameters are available in WCS 2.0:
 
     **COVERAGEID=id**: This parameter is technically the same as the
     **COVERAGE** parameter for WCS 1.0 or the **IDENTIFIER** parameter
@@ -684,10 +1357,11 @@ requests.
 Changes to previous versions
 ----------------------------
 
-The layer name must be a valid NCName, i.e: must not start with a
-number and can only contain alphanumerical characters. This constraint
-derives of the gml:id property which has to be a NCName, that relates
-to the coverage ID which is itself taken from the layers name.
+The layer name must be a valid NCName (""non-colonized name"), 
+i.e: must not start with a number and can only contain alphanumerical 
+characters. This constraint derives from the `gml:id` property which has 
+to be a NCName, that relates to the coverage ID which is itself 
+taken from the layer's name.
 
 Specifying coverage specific metadata
 -------------------------------------
@@ -701,8 +1375,8 @@ image does not provide these metadata.  Not every input image format
 has geospatial metadata attached.  In this case, the layer metadata
 can be used to provide this information.
 
-The convention is that once (wcs|ows)_extent and one of (wcs|ows)_size
-and (wcs|ows)_resolution is set in the layer metadata, all the
+The convention is that once *(wcs|ows)_extent* and one of *(wcs|ows)_size*
+and *(wcs|ows)_resolution* is set in the layer metadata, all the
 coverage specific metadata will be retrieved from there.  Otherwise
 the source image is queried via GDAL, if possible.
 
@@ -718,8 +1392,8 @@ discussed.
 The following layer metadata fields can be used to return a more
 detailed description for the range type of a "virtual dataset"
 coverage.  A coverage is considered as a "virtual dataset" if the
-(wcs|ows)_extent metadata entry and one of the (wcs|ows)_size or
-(wcs|ows)_resolution metadata entries are set.
+*(wcs|ows)_extent* metadata entry and one of the *(wcs|ows)_size* or
+*(wcs|ows)_resolution* metadata entries are set.
 
 First of all, the used version of metadata has to be identified. To
 identify the bands of a coverage, the following field must be
@@ -743,7 +1417,7 @@ All values are interpreted as strings, only "interval" is interpreted
 as 2 double precision float values separated with a space.
 
 Also default values can be configured for every key. These have the
-same suffix as the band specific keys but start with (wcs|ows) instead
+same suffix as the band specific keys but start with *(wcs|ows)* instead
 of the bands name:
 
   * (wcs|ows)_band_interpretation
@@ -753,10 +1427,10 @@ of the bands name:
   * (wcs|ows)_interval
   
 If no specific or default value is given, the output is dependent on 
-the metadata key. The UOM, for example will be set to 'W.m-2.Sr-1', 
-interval and significant figures will be determined according to the 
-image type and definition, description, and interpretation will not be 
-visible in the output at all.
+the metadata key. The UOM (unit of measurement) for example will be 
+set to 'W.m-2.Sr-1', interval and significant figures will be determined 
+according to the image type and definition, description, and interpretation 
+will not be visible in the output at all.
 
 This example demonstrates the use of the band-specific metadata fields 
 with their default values:
@@ -1043,7 +1717,7 @@ Reference Section
 
 To avoid confusion only "wcs_*" and "ows_*" prefixed metadata entries
 are evaluated in OGC WCS services. Previous versions used "wms_*"
-prefixed entries as fallback which is dropped in version 6.0 in favor of
+prefixed entries as fallback which was dropped in version 6.0 in favor of
 forcing explicit decisions. The module will look for the "wcs_*" and
 "ows_*" metadata prefixes in this order.
 
@@ -1236,7 +1910,7 @@ wcs_country, wcs_postcode, wcs_stateorprovince**
 
 **wcs_metadatalink_list**
 
-  .. versionadded:: 8.0
+  .. versionadded:: 8.0.0
 
 - *Description:* (Optional) Space-separated list of parts of metadata keys,
   to be able to specify several metadata links. If the value of wcs_metadatalink_list
@@ -1258,6 +1932,8 @@ wcs_country, wcs_postcode, wcs_stateorprovince**
         "wcs_metadatalink_html_format" "text/html"
         "wcs_metadatalink_html_type" "TC211"
         "wcs_metadatalink_html_href" "http://example.com/testHTML"
+        
+  .. seealso:: original Pull Request `#6031 <https://github.com/MapServer/MapServer/pull/6031/>`__        
 
 .. index:: 
    triple: WCS; METADATA; wcs_metadatalink_type
@@ -1506,9 +2182,11 @@ Layer Object Metadata
 
 **wcs_outputformat_{OUTPUTFORMATNAME}_creationoption_{OPTIONNAME}**
 
-- *Description:* (Optional) (added in MapServer 7.2.0) To provide
-  creation options in a (GDAL) output format specific and layer specific way.
-  {OUTPUTFORMATNAME} should be substituted by the user with the OUTPUTFORMAT.NAME
+  .. versionadded:: 7.2.0
+
+- *Description:* (Optional) To provide creation options in a (GDAL) output 
+  format specific and layer specific way.`{OUTPUTFORMATNAME}` should be 
+  substituted by the user with the OUTPUTFORMAT.NAME
   value of an output format allowed for the layer. And {OPTIONNAME} by a
   valid GDAL creation option valid for the OUTPUTFORMAT.DRIVER.
   
@@ -1524,16 +2202,21 @@ Layer Object Metadata
   **wcs_outputformat_{OUTPUTFORMATNAME}_creationoption_BAND_{bandnumber}_{OPTIONNAME}**.
   bandnumber will be automatically adjusted when passed to GDAL so that the
   WCS band subsetting is properly taken into account.
-  You can consult `WCS GRIB output in msautotest`_ as
-  a practical example of how to configure GRIB2 WCS output (requires GDAL 2.3.0)
+  You can consult `wcs_grib_output.map <https://github.com/MapServer/MapServer/blob/main/msautotest/wxs/wcs_grib_output.map>`__ 
+  in msautotest as a practical example of how to configure GRIB2 WCS output 
+  (requires GDAL 2.3.0).
+
+  .. seealso:: original Pull Request `#5530 <https://github.com/MapServer/MapServer/pull/5530/>`__
 
 .. index::
    triple: WCS; METADATA; wcs_outputformat_mdi
 
 **wcs_outputformat_{OUTPUTFORMATNAME}_mdi_{DOMAIN}_{KEY}**
 
-- *Description:* (Optional) (added in MapServer 8.0.0) To provide
-  metadata item (mdi) options in a GDAL output format specific and layer specific way.
+  .. versionadded:: 8.0.0
+
+- *Description:* (Optional) To provide metadata item (mdi) options in a GDAL 
+  output format specific and layer specific way.
   {OUTPUTFORMATNAME} should be substituted by the user with the OUTPUTFORMAT.NAME
   value of an output format allowed for the layer.
   {DOMAIN} is the name of a GDAL metadata domain. In general, you should use "default"
@@ -1604,7 +2287,8 @@ Layer Object Metadata
   the output of the WCS request is netCDF too, and no manual wcs_outputformat_netCDF_mdi_*
   item is defined, then MapServer will automatically forward metadata from the
   input dataset to the output file to generate a netCDF 3D dataset.
-
+  
+  .. seealso:: original Pull Request `#6456 <https://github.com/MapServer/MapServer/pull/6456/>`__
 
 *Axes Descriptions* (WCS 1.x only)
 
@@ -1711,72 +2395,6 @@ Rules for handling SRS in a MapServer WCS
 
 TODO!
 
-Spatio/Temporal Indexes
-=======================
-
-MapServer has long supported a method of breaking a dataset into smaller, more
-manageable pieces or tiles. In this case a shapefile is used to store the
-boundary of each tile, and an attribute holds the location of the actual data.
-Within a MapServer mapfile the layer keywords TILEINDEX and TILEITEM are used
-to activate tiling.
-
-Consider the example where an organization wants to serve hundreds or even
-thousands of MODIS scenes. Five images cover the spatial extent and each group
-of five varies by date of acquisition. This turns out to be a fairly common
-scenario for organizations interested in WCS, one that the existing tiling
-support does not adequately address. In previous versions of MapServer a
-developer would have to create one tile index and one layer definition for
-each group of five images. This could result in configuration files that are
-prohibitively long and difficult to manage.
-
-In order to more efficiently support the WCS specification a new tiling scheme
-has been implemented within MapServer. One that supports spatial sub-setting,
-but also ad hoc sub-setting based on any attributes found within tile index.
-In many cases a temporal attribute could be used, but sub-setting is not
-limited to that case. The new scheme introduces the concept of tile index
-layers, that is, a separate layer definition is used to describe the tile
-index dataset. With this we get all the benefits of any MapServer layer, most
-importantly we can apply MapServer filters to the data. Filters can be defined
-at runtime using MapServer CGI, MapScript or via the WCS server interface. The
-syntax for the layer using the index remains unchanged except that the value
-for :ref:`TILEINDEX` refers to the index layer instead of an external shapefile.
-
-So, looking at the example above again we can reduce our MapServer
-configuration to two layer definitions, one for the tile index and one for the
-imagery itself. Extracting a single dates worth of imagery is now a matter of
-setting the appropriate filter within the tile index layer.
-
-Building Spatio-Temporal Tile Indexes
--------------------------------------
-
-Developing these tile indexes is more difficult than basic indexes simply
-because there are no ready-made tools to do so. Fortunately we can leverage
-existing tool available within MapServer or supporting libraries such as GDAL
-by post processing their output.
-
-Taking the above example, building an index is relatively simple task if you
-are willing to roll up your sleeves and write a bit of code. First, the basic
-spatial index needs to be built. The GDAL utility gdaltindex already does
-this. Simply point gdaltindex at the directory containing the collection of
-MODIS images and it will build a shapefile index suitable for use with
-MapServer. The next step would be to add the temporal information. The pseudo
-code would look something like:
-
-- open the index .dbf file for reading
-
-- create a new column to hold the image acquisition date
-
-- for each image; 1) extract the image acquisition date and 2) insert it into 
-  the new column
-  
-- close the index .dbf file
-
-This general approach could be used for many cases. A scripting language such
-as Perl, PHP or Python works well since they all have readily available
-modules for manipulating .dbf files. A worst case would involve hand editing
-the resulting .dbf file using a desktop tool such as Mircosoft Access or ESRI
-Arcview.
-
 WCS 2.0 Application Profile - Earth Observation (EO-WCS)
 ========================================================
 
@@ -1834,7 +2452,6 @@ Service of Canada.
 .. _`Open Geospatial Consortium (OGC)`: https://www.ogc.org/
 .. _`MapServer for Windows (MS4W)`: https://ms4w.com
 .. _`WCS 2.0 tests in msautotest`: https://github.com/MapServer/MapServer/blob/main/msautotest/wxs/wcs_simple.map
-.. _`WCS GRIB output in msautotest`: https://github.com/MapServer/MapServer/blob/main/msautotest/wxs/wcs_grib_output.map
 .. _`MS RFC 67`: https://mapserver.org/development/rfc/ms-rfc-67.html
 .. _`Earth Observation Application Profile`: https://docs.ogc.org/is/10-140r2/10-140r2.html
 .. _`EOxServer`: https://eoxserver.org
