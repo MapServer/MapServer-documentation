@@ -467,7 +467,8 @@ class MapFileLexer(RegexLexer):
             (r'\s+', Text),
             (r'\[.*?\]', Name.Other),
             (r'[{}\[\]();,-.]+', Punctuation),
-            (r'#.*', Comment),
+            (r'#.*', Comment.Single),
+            (r'/\*', Comment.Multiline, 'comment'),
             (r'(AND|OR|NOT|EQ|GT|LT|GE|LE|NE|IN|IEQ)\b', Operator.Word),
             (r'!=|==|<=|>=|=~|&&|\|\||[-~+/*%=<>&^|./\$]', Operator),
             ('(?:[rR]|[uU][rR]|[rR][uU])"', String, 'dqs'),
@@ -484,6 +485,12 @@ class MapFileLexer(RegexLexer):
             (r'[0-9]+', Number.Integer)
 
         ],
+        'comment': [
+            (r'[^*/]+', Comment.Multiline),
+            (r'/\*', Comment.Multiline, '#push'),
+            (r'\*/', Comment.Multiline, '#pop'),
+            (r'[*/]', Comment.Multiline),
+        ],        
         'dqs': [
             (r'"', String, '#pop'),
             (r'\\\\|\\"|\\\n', String.Escape), # included here again for raw strings
