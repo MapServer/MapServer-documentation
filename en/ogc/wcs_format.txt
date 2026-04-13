@@ -11,7 +11,9 @@
 :Contact:      nbarker at ittvis.com
 :Author:       Gail Millin
 :Contact:      nbarker at ittvis.com
-:Last Updated: 2026-04-09
+:Author:       Jeff McKenna
+:Contact:      jmckenna at gatewaygeomatics.com
+:Last Updated: 2026-04-13
 
 
 .. contents::
@@ -23,6 +25,8 @@ NetCDF temporal/banded data through the MapServer WCS interface. Thanks go to
 Steve Lime and Frank Warmerdam for their assistance with these projects
 
 It also shows how to configure MapServer for GRIB2 output format.
+
+.. seealso:: :ref:`WCS Server HowTo <wcs_server>`       
 
 Landsat
 =======
@@ -273,16 +277,23 @@ Define your output format as
       EXTENSION 'tif'
     END
 
-Then you need to define your tile index within the map file
+Then you need to define your tile index within the mapfile.
+
+.. NOTE::
+   You must setup a :ref:`VALIDATION <validation>` block for MapServer to 
+   properly pass the *time* values in the WCS request.
 
 .. code-block:: mapfile
 
     LAYER
       NAME 'time_idx'
       TYPE TILEINDEX
-      DATA 'timeIndex'
-      FILTERITEM 'time'
-      FILTER '%time%'
+      DATA 'timeIndex.shp'
+      FILTER ("[time]" = '%time%')
+      VALIDATION
+        #handle time values of format YYYY-MM-DDT00:00:00
+        'time'   '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$'
+      END
     END
 
 and the actual layer
