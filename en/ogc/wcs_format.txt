@@ -13,7 +13,7 @@
 :Contact:      nbarker at ittvis.com
 :Author:       Jeff McKenna
 :Contact:      jmckenna at gatewaygeomatics.com
-:Last Updated: 2026-04-13
+:Last Updated: 2026-04-16
 
 
 .. contents::
@@ -22,7 +22,7 @@
 
 This document explains how to use MapServer to deliver Landsat, SPOT, DEM, and
 NetCDF temporal/banded data through the MapServer WCS interface. Thanks go to
-Steve Lime and Frank Warmerdam for their assistance with these projects
+Steve Lime and Frank Warmerdam for their assistance with these projects.
 
 It also shows how to configure MapServer for GRIB2 output format.
 
@@ -31,18 +31,19 @@ It also shows how to configure MapServer for GRIB2 output format.
 Landsat
 =======
 
-To serve Landsat imagery through the MapServer Web Coverage Service specify
-the :ref:`OUTPUTFORMAT` object. For format support install the GDAL library
-and from the command prompt and cd to where GDAL is installed and use the
-command, gdalinfo --formats. A list of all supported formats will appear and
-will specify if the format is read only **<ro>** or read and write **<rw>**
+To serve Landsat imagery through the MapServer Web Coverage Service we must configure
+the :ref:`OUTPUTFORMAT` object. First, you should verify that your local `GDAL <https://gdal.org>`__ 
+library supports that raster format: from the command prompt, use the `gdalinfo <https://gdal.org/programs/gdalinfo.html>`__ 
+command to see what formats are supported, by executing *gdalinfo --formats*. 
+A list of all supported formats will appear and will specify if the format is 
+read-only **<ro>** or read and write **<rw>**;
 for WCS the format needs to be supported for read and write (except for
 *GDAL's* own WCS format, however).
 
 For the example below the Landsat 7 15m resolution mosaic is in a Enhanced
-Compressed Wavelets format (ECW). By running the gdalinfo.exe program I could
+Compressed Wavelets format (ECW). By running the gdalinfo command we can
 verify that the ECW format has write permissions, therefore the format can be
-specified in the MapFile and requested using the GetCoverage request. 
+specified in the mapfile and requested using the GetCoverage request. 
 
 .. code-block:: mapfile
 
@@ -78,8 +79,8 @@ specified in the MapFile and requested using the GetCoverage request.
      END
 
 A GetCoverage request can then be requested (using the parameters set in the
-MapFile) by creating a URL with the elements: - Your Server, MapServer
-Program, Location of MapFile, Type of Service (WCS), Request (GetCoverage),
+mapfile) by creating a URL with the elements: - Your Server, MapServer
+Program, Location of mapfile, Type of Service (WCS), Request (GetCoverage),
 Coverage (Landsat7), BBOX (0,0,700005,1050000), CRS (EPSG:27700), ResX (75)
 ResY (75), Format (ECW).
 
@@ -90,7 +91,7 @@ SPOT imagery can be delivered through MapServer Web Coverage Service similarly
 to the Landsat example above. The main difference is that as SPOT is a
 greyscale image the wcs_bandcount = 1 rather than a Landsat image which
 consists of 3 bands. For this example the well known GeoTiff format will be
-used to demonstrate what to specify in a MapFile for SPOT data. 
+used to demonstrate what to specify in a mapfile for SPOT data. 
 
 .. code-block:: mapfile
 
@@ -123,7 +124,7 @@ used to demonstrate what to specify in a MapFile for SPOT data.
         END
     END
 
-The key parameters to specify in the WCS MapFile for any data layer and format
+The key parameters to specify in the WCS mapfile for any data layer and format
 are::
 
     - Layer Name = Create a short name for the data
@@ -174,8 +175,8 @@ and the corresponding layer
       END
     END
 
-Performance gains can be made by using the gdaladdo utility described at
-https://gdal.org/programs/gdaladdo.html
+Performance gains can be made by using the `gdaladdo <https://gdal.org/programs/gdaladdo.html>`__ 
+utility.
 
 NetCDF
 ======
