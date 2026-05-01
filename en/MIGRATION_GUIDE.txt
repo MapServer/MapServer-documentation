@@ -6,7 +6,7 @@
 MapServer Migration Guide
 *****************************************************************************
 
-:Last Updated: 2026-04-19
+:Last Updated: 2026-05-01
 
 .. contents:: Table of Contents
     :depth: 2
@@ -117,7 +117,7 @@ MapServer 8.4 to 8.6 Migration
   query parameters to all URLs generated through the API, by
   defining the `ows_extra_params` parameter in the mapfile's WEB.METADATA object.
   
-    .. code-block:: mapfile
+  .. code-block:: mapfile
   
       MAP
         ...
@@ -154,6 +154,9 @@ MapServer 8.2 to 8.4 Migration
 - The 8.4.1 release includes a fix for a security flaw for WFS filter requests to
   an OGR backend connection (see CVE record: `CVE-2025-59431 <https://www.cve.org/CVERecord?id=CVE-2025-59431>`__, 
   or MapServer's `Security Advisory <https://github.com/MapServer/MapServer/security/advisories/GHSA-256m-rx4h-r55w>`__)
+
+- MapServer now requires at least `CMake <https://cmake.org/>`__ version 3.16 
+  for building
 
 - you can now build against the PCRE2 library (WITH_PCRE2=ON)
 
@@ -346,7 +349,8 @@ MapServer 7.6 to 8.0 Migration
 MapServer 7.4 to 7.6 Migration
 ==============================
 
-- MapServer now requires at least CMake version 3.0 for compiling
+- MapServer now requires at least `CMake <https://cmake.org/>`__ version 3.0 
+  for building
 
 - PointZM data support (X,Y,Z,M coordinates) is now enabled by default
 
@@ -364,7 +368,7 @@ MapServer 7.4 to 7.6 Migration
 - CONNECTIONOPTIONS parameter has been added in the mapfile LAYER, to take  
   advantage of GDAL/OGR driver options. (see :ref:`RFC 125 <rfc125>`) such as:
 
-	.. code-block:: mapfile
+  .. code-block:: mapfile
 
 		LAYER
 		  NAME "test"
@@ -380,7 +384,7 @@ MapServer 7.4 to 7.6 Migration
   to enable a 'painters model' where all classes for a layer are drawn at once with a 
   `ALL_MATCHING_CLASSES` setting, such as:
   
-	.. code-block:: mapfile
+  .. code-block:: mapfile
 
 		LAYER
 		  NAME "test"
@@ -417,7 +421,7 @@ MapServer 7.4 to 7.6 Migration
       
   Here is an example of the new `wms_essential` parameter:
   
-    .. code-block:: mapfile
+  .. code-block:: mapfile
   
         LAYER
           NAME "country_bounds"
@@ -437,7 +441,7 @@ MapServer 7.4 to 7.6 Migration
 - Windows users can now use umlauts (special characters such as ä ö ü) in their 
   directory paths and filenames, such as:
   
-    .. code-block:: mapfile
+  .. code-block:: mapfile
     
         LAYER
           ..	
@@ -502,19 +506,19 @@ MapServer 6.4 to 7.0 Migration
   from MapServer syntax to native syntax (e.g. SQL). Native expressions can still be set either
   using: 1) sub-selects in the DATA statement or 2) using the new NATIVE_FILTER processing key.
 
-::
+  .. code-block:: mapfile
 
-  # OGR Layer Before
-  LAYER
-    ...
-    FILTER 'where id=234'
-  END
+    # OGR Layer Before
+    LAYER
+      ...
+      FILTER 'where id=234'
+    END
 
-  # OGR Layer After
-  LAYER
-    ...
-    PROCESSING 'NATIVE_FILTER=id=234'
-  END
+    # OGR Layer After
+    LAYER
+      ...
+      PROCESSING 'NATIVE_FILTER=id=234'
+    END
 
 - MapServer attribute queries (e.g. mode=item[n]query) *must* be specified using MapServer 
   expression syntax (qstring and qitem (opt)). For RDBMS backends you no longer send SQL snippets, 
@@ -526,21 +530,21 @@ MapServer 6.4 to 7.0 Migration
   and MapScript getter/setter functions will continue to function but unpredictable results will 
   occur if used in conjunction with COMPOSITE blocks. For more information see https://mapserver.org/development/rfc/ms-rfc-113.html.
 
-::
+  .. code-block:: mapfile
 
-  # Before
-  LAYER
-    ...
-    OPACITY 70
-  END
-
-  # After
-  LAYER
-    ...
-    COMPOSITE
+    # Before
+    LAYER
+      ...
       OPACITY 70
     END
-  END
+
+    # After
+    LAYER
+      ...
+      COMPOSITE
+        OPACITY 70
+      END
+    END
 
 - Handling of non UTF-8 encoded datasources has changed with RFC103. Mapfiles
   now *must* be saved in UTF-8 encoding, and requests returned by MapServer
@@ -567,37 +571,39 @@ MapServer 6.4 to 7.0 Migration
 - ExternalGraphics added through SLD must now validate against the
   "sld_external_graphic" entry of the MAP->WEB->VALIDATION block
   
-::
+  .. code-block:: mapfile
 
-  MAP
-   WEB
-    VALIDATION
-     "sld_external_graphic" "^/path/to/symbols/.*png"
+    MAP
+     WEB
+      VALIDATION
+       "sld_external_graphic" "^/path/to/symbols/.*png"
+      END
+     END
     END
-   END
-  END
 
 MapServer 6.2 to 6.4 Migration
 ==============================
+
+- MapServer now must be built with the CMake tool. Build instructions 
+  are included in the `INSTALL_CMAKE.md <https://github.com/MapServer/MapServer/blob/main/INSTALL_CMAKE.md>`__ 
+  file in the source directory. You will need to have CMake installed
+  on your system. Users of mapscripts (except PHP) will also need `SWIG <https://www.swig.org/>`__ 
+  to be installed.
 
 - The "ows_extent" layer metadata is not used anymore to obtain georeferencing 
   information for unreferenced raster data. Please use the "extent" layer key 
   instead
   
-::
+  .. code-block:: mapfile
 
-  LAYER
-    ...
-    EXTENT -180 90 180 90
-  END
+    LAYER
+      ...
+      EXTENT -180 90 180 90
+    END
 
 - Validation patterns cannot be specified in metadata blocks (i.e. using
   xxx_validation_pattern and default_xxx metadata entries), use VALIDATION blocks.
   see #4596 #4604 #4608 or :ref:`runsub`
-
-- Build has changed after the switch to cmake. Build instructions are included in
-  the INSTALL.CMAKE file in the source directory. You will need to have cmake installed
-  on your system. Users of mapscripts (except php) will also need swig to be installed.
 
 - WFS paging parameter startIndex changed to base on 0 instead of 1 (0 is the first
   feature). See #4180 for external references.
@@ -726,7 +732,7 @@ support it.
 As a result the parameters BACKGROUNDCOLOR, BACKGROUNDSHADOWCOLOR, BACKGROUNDSHADOWSIZE
 are no more. To draw a label "box" in 6.0 you'd do:
 
-::
+.. code-block:: mapfile
 
   LABEL
     ...
@@ -850,7 +856,9 @@ Mapfile Changes - OGC requests - DUMP parameter removed
 The DUMP LAYER parameter has been removed.  To enable output of
 geometries in WMS getfeatureinfo requests - GML
 (INFO_FORMAT=application/vnd.ogc.gml), LAYER METADATA is used
-instead::
+instead.
+
+.. code-block:: mapfile
 
    METADATA
      gml_geometries "geom"
@@ -877,7 +885,7 @@ following character is ", ' or \.
 For Windows users: if you have a path string delimited by single/double
 quotes that ends with \, you will have to escape the last backslash. 
 
-::
+.. code-block:: mapfile
   
   SHAPEPATH "C:\ms4w\shapefiles\"
   # should be modified to...
@@ -965,7 +973,7 @@ the 5.4/5.6 versions. Gone are resultsGetShape and getFeature methods. You shoul
 refactored getShape method to access layer shapes. That method takes a resultObj and returns
 a shapeObj. Typical use would be (in Perl):
 
-::
+.. code-block:: perl
 
   $layer->queryByRect($map, $map->{extent}); # layer is still open                                                                             
 
@@ -980,6 +988,8 @@ a shapeObj. Typical use would be (in Perl):
 A resultObj encapsulates the data used to manage a result set.
 
 To access shapes independently of a query use the new resultObj class:
+
+.. code-block:: perl
 
   $layer->open();
   $shape = $layer->getShape(new mapscript::resultObj(1));  
@@ -1142,7 +1152,7 @@ like ANGLEITEM or LABELSIZEITEM were used, now you denote the attribute
 in the context of the property being bound. For example, to bind an 
 attribute to a label size you'd do:
 
-::
+.. code-block:: mapfile
 
   LABEL
     ...
