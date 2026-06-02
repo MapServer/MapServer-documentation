@@ -246,6 +246,24 @@ html_theme = "classic"
 # this can be set as a sphinx-build option using `-A BRANCH=main`
 html_context = {'branch': release}
 
+# linkcheck options
+# -----------------
+
+linkcheck_exclude_documents = [
+    r'.*/changelog/.*', 
+    r'.*/rfc/.*', 
+    r'.*/announce/.*',
+    r'.*/announcements/.*'
+]
+
+linkcheck_ignore = [
+    r'https?://localhost(?:\:\d+)?(?:/.*)?$',
+    r'https?://127\.0\.0\.1(?:\:\d+)?(?:/.*)?$',
+    r'https?://myserver(?:\:\d+)?(?:/.*)?$',
+    r'https?://server(?:\:\d+)?(?:/.*)?$',
+    r'https?://example.com(?:\:\d+)?(?:/.*)?$'
+]
+
 # Options for LaTeX output
 # ------------------------
 
