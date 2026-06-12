@@ -17,12 +17,8 @@ git clone --depth=1 \
   /tmp/MapServer-documentation
 
 cd /tmp/MapServer-documentation
-git fetch origin gh-pages
-git checkout -B gh-pages origin/gh-pages
-
-# delete existing files
-git rm -rf --quiet --ignore-unmatch .
-
+git checkout --orphan gh-pages
+git rm -rf . || true
 
 # add in the new build files
 cp -a "$builddir/html/." .
@@ -30,4 +26,4 @@ touch .nojekyll
 
 git add -A
 git commit -m "update with results of commit https://github.com/MapServer/MapServer-documentation/commit/$sha" --quiet || echo "Nothing to commit"
-git push origin gh-pages
+git push origin gh-pages --force
