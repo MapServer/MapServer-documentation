@@ -1,0 +1,233 @@
+.. index::
+   single: SYMBOL
+    
+.. _symbol:
+
+*****************************************************************************
+ SYMBOL
+*****************************************************************************
+
+- Symbol definitions can be included within the main map file or, more
+  commonly, in a separate file. Symbol definitions in a separate file
+  are designated using the :ref:`SYMBOLSET <SYMBOLSET>` keyword, as
+  part of the :ref:`MAP object <map>`.  This recommended setup is
+  ideal for re-using symbol definitions across multiple MapServer
+  applications.
+- There are 3 main types of symbols in MapServer: Markers, 
+  Lines and Shadesets.
+- Symbol 0 is always the degenerate case for a particular class of 
+  symbol. For points, symbol 0 is a single pixel, for shading (i.e. 
+  filled polygons) symbol 0 is a solid fill, and for lines, symbol 0 
+  is a single pixel wide line.
+- Symbol definitions contain no color information, colors are set within 
+  :ref:`STYLE` objects.
+- Line styling was moved to :ref:`CLASS` :ref:`STYLE` in MapServer 
+  version 5.  The mechanisms are no longer available in `SYMBOL`.
+- For MapServer versions < 5 there is a maximum of 64 symbols per
+  file. This can be changed by editing mapsymbol.h and changing the
+  value of MS_MAXSYMBOLS at the top of the file.  As of MapServer 5.0
+  there is no symbol limit.
+- More information can be found in the
+  :ref:`Construction of Cartographic Symbols <sym_construction>`
+  document.
+
+
+.. index::
+   pair: SYMBOL; ANCHORPOINT
+   :name: mapfile-symbol-anchorpoint
+    
+ANCHORPOINT [x] [y]
+    .. versionadded:: 6.2
+
+    Used to specify the location (within the symbol) that is to be
+    used as an anchorpoint when rotating the symbol and placing the
+    symbol on a map.  Default is **0.5 0.5** (corresponding to the
+    center of the symbol).
+
+      `x`: A double in the range [0,1] that specifies the location
+      within the symbol along the x axis.  0 specifies the left edge
+      of the symbol, 1 specifies the right edge of the symbol.  0.5
+      specifies the center of the symbol (in the x direction).
+
+      `y`: A double in the range [0,1] that specifies the location
+      within the symbol along the y axis.  0 specifies the top edge of
+      the symbol, 1 specifies the lower edge of the symbol.  0.5
+      specifies the center of the symbol (in the y direction).
+
+    `ANCHORPOINT` can be used with `SYMBOL`\s of `TYPE` `ellipse`,
+    `pixmap`, `svg`, `truetype` and `vector`.  To ensure proper
+    behaviour for vector symbols, the left and top edges of the
+    bounding box of the symbol should be at 0.
+    
+    .. note::
+        SVG symbols might require to have their width/height set inside the
+        SVG file, for ANCHORPOINT to work correctly.  See
+        `report <https://lists.osgeo.org/pipermail/mapserver-users/2021-February/081984.html>`__.    
+
+.. index::
+   pair: SYMBOL; ANTIALIAS
+   :name: mapfile-symbol-antialias
+    
+ANTIALIAS [true|false]
+    Should TrueType fonts be antialiased.  Only useful for GD (gif)
+    rendering.  Default is false.  Has no effect for the other
+    renderers (where anti-aliasing can not be turned off).
+
+    .. warning::
+
+       GD support was removed in MapServer 7.0.
+
+.. index::
+   pair: SYMBOL; CHARACTER
+   :name: mapfile-symbol-character
+    
+CHARACTER [char|entity number]
+    Character used to reference a particular TrueType font character. 
+    You'll need to figure out the mapping from the keyboard character 
+    to font character.
+    
+    HTML entity numbers can also be used, for example:
+    
+    .. code-block:: mapfile
+
+        SYMBOL
+          NAME "right-arrow"
+          COLOR 255 255 255
+          TYPE TRUETYPE
+          FONT "dejavu"
+          CHARACTER "&#10140;"
+        END
+
+.. index::
+   pair: SYMBOL; FILLED
+   :name: mapfile-symbol-filled
+    
+FILLED [true|false]
+    If `true`, the symbol will be filled with a user defined color
+    (using :ref:`STYLE` `COLOR`).  Default is `false`.
+
+    If `true`, symbols of `TYPE` `ellipse` and `vector` will be
+    treated as polygons (fill color specified using :ref:`style`
+    `COLOR` and outline specified using :ref:`style` `OUTLINECOLOR`
+    and `WIDTH`).
+
+    If `false`, symbols of `TYPE` `ellipse` and `vector` will be
+    treated as lines (the lines can be given a color using
+    :ref:`style` `COLOR` and a width using :ref:`style` `WIDTH`).
+
+.. index::
+   pair: SYMBOL; FONT
+   :name: mapfile-symbol-font
+    
+FONT [string]
+    Name of TrueType font to use as defined in the :ref:`FONTSET`.
+
+.. index::
+   pair: SYMBOL; IMAGE
+   :name: mapfile-symbol-image
+    
+IMAGE [string]
+    Filename of image to use as a marker. For type `pixmap`, use
+    GIF or PNG files; for type `svg`, use SVG.
+
+.. index::
+   pair: SYMBOL; NAME
+   :name: mapfile-symbol-name
+    
+NAME [string]
+    Alias for the symbol.  To be used in :ref:`CLASS` :ref:`STYLE`
+    objects.
+
+.. index::
+   pair: SYMBOL; POINTS
+   :name: mapfile-symbol-points
+    
+POINTS [x y] [x y] ... END
+
+    Signifies the start of a sequence of points that make up a symbol
+    of `TYPE` `vector` or that define the x and y radius of a symbol
+    of `TYPE` `ellipse`.  The end of this section is signified with
+    the keyword `END`.  The `x` and `y` values can be given using
+    decimal numbers.  The maximum `x` and `y` values define the
+    bounding box of the symbol.  The size (actually height) of a
+    symbol is defined in the :ref:`STYLE`.  You can create
+    non-contiguous paths by inserting "-99 -99" at the appropriate
+    places.
+
+    x values increase to the right, y values increase downwards.
+
+    For symbols of `TYPE` `ellipse`, a single point is specified that
+    defines the x and y radius of the ellipse. Circles are created
+    when `x` and `y` are equal.
+
+    .. note::
+
+      If a :ref:`STYLE` using this symbol doesn't contain an explicit
+      size, then the default symbol size will be based on the range of
+      "y" values in the point coordinates. e.g. if the y coordinates
+      of the points in the symbol range from 0 to 5, then the default
+      size for this symbol will be assumed to be 5.
+
+.. index::
+   pair: SYMBOL; TRANSPARENT
+   :name: mapfile-symbol-transparent
+    
+TRANSPARENT [color index]
+    Sets a transparent color for the input image for pixmap symbols,
+    or determines whether all shade symbols should have a transparent
+    background.  For shade symbols it may be desirable to have
+    background features "show through" a transparent hatching pattern,
+    creating a more complex map.  By default a symbol's background is
+    the same as the parent image (i.e.  color 0). This is user
+    configurable.
+
+    .. note::
+
+      The default (AGG) renderer does not support the `TRANSPARENT`
+      parameter. It is supported by the GD renderer (GIF).
+
+    .. warning::
+
+       GD support was removed in MapServer 7.0.
+
+.. index::
+   pair: SYMBOL; TYPE
+   :name: mapfile-symbol-type
+    
+.. index::
+   triple: SYMBOL; TYPE; ellipse
+    
+.. index::
+   triple: SYMBOL; TYPE; hatch
+    
+.. index::
+   triple: SYMBOL; TYPE; pixmap
+    
+.. index::
+   triple: SYMBOL; TYPE; svg
+    
+.. index::
+   triple: SYMBOL; TYPE; truetype
+    
+.. index::
+   triple: SYMBOL; TYPE; vector
+    
+TYPE [ellipse|hatch|pixmap|svg|truetype|vector]
+    -  `ellipse`: radius values in the x and y directions define an ellipse.
+    -  `hatch`: produces hatched lines throughout the (polygon) shape.
+    -  `pixmap`: a user supplied image will be used as the symbol.
+    -  `svg`: scalable vector graphics (SVG) symbol.  Requires the
+       libsvg/libsvg-cairo libraries (or alternatively the librsvg library).
+    -  `truetype`: TrueType font to use as defined in the :ref:`MAP`
+       :ref:`FONTSET`\.
+    -  `vector`: a vector drawing is used to define the shape of the symbol.
+
+    .. note::
+
+      .. index::
+         triple: SYMBOL; TYPE; cartoline
+    
+      `TYPE` `cartoline` is no longer used.  Dashed lines are
+      specified using `PATTERN`, `LINECAP`, `LINEJOIN` and
+      `LINEJOINMAXSIZE` in :ref:`STYLE`.  Examples in
+      :ref:`Construction of Cartographic Symbols <sym_construction>`.

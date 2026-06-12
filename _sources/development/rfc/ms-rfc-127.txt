@@ -1,0 +1,62 @@
+.. _rfc127:
+
+=========================================================================
+MS RFC 127: Drop (broken) support for builds without GDAL and PROJ
+=========================================================================
+
+:Date: 2019-12-02
+:Author: Even Rouault
+:Contact: even.rouault@spatialys.com
+:Status: Adopted
+:Last update: 2019-12-11
+:Version: MapServer 7.6
+
+Overview
+--------
+
+MapServer, at least since 7.4.0, does not compile if disabling GDAL or PROJ
+support. As far as we know, nobody complained about that, which shows that such
+configurations must have been used very rarely in practice. We thus propose to
+acknowledge the fact that those dependencies as required. Beyond the benefit of avoiding
+broken configurations, this also removes a huge number of #ifdef that are
+scattered in the source code, which improves readability.
+
+Proposed solution
+-----------------
+
+- In CMakeLists.txt, remove USE_GDAL, USE_OGR, USE_PROJ
+- In CMakeLists.txt, make GDAL and PROJ required as libpng, libjpeg and freetype
+- In .c, .cpp files, remove the code paths that correspond to USE_GDAL, USE_OGR,
+  USE_PROJ not defined
+
+Backwards Compatibility Issues
+-------------------------------
+
+None w.r.t 7.4 branch.
+
+Security implications
+---------------------
+
+None.
+
+MapScript implications
+----------------------
+
+None (apart a removal of a #ifdef USE_PROJ in PHP bindings)
+
+Documentation needs
+-------------------
+
+https://mapserver.org/installation/unix.html and https://mapserver.org/installation/win32.html
+will need to move GDAL and PROJ from the highly recommended section to the mandatory one.
+
+Ticket ID and references
+------------------------
+
+Pull request available at: https://github.com/MapServer/MapServer/pull/5935
+
+Voting history
+--------------
+
+Adopted with +1 from PSC members SethG, EvenR, MichaelS, JeffM, SteveL, JukkaR,
+DanielM, StephanS

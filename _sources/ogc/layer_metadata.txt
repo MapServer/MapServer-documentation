@@ -1,0 +1,85 @@
+.. index:: 
+   pair: Metadata; Layer Metadata API
+
+.. _layer_metadata:
+
+*****************************************************************************
+ Layer Metadata
+*****************************************************************************
+
+:Author:       Tom Kralidis
+:Contact:      tomkralidis at gmail.com
+:Last Updated: 2020-10-12
+
+.. contents::
+    :depth: 2
+    :backlinks: top
+
+Introduction
+============
+
+OGC Web Services (OWS) have the ability to advertise content metadata
+associated with a given resource (WMS Layer, WFS FeatureType, WCS Coverage,
+SOS ObservationOffering), both inline to the Capabilities document and as a
+reference to a given URL (i.e. ISO metadata XML document).
+
+MapServer supports both inline (e.g. `wms_title`, `wms_abstract`) and URL
+based (e.g. `wms_metadataurl_href`) metadata advertising for OWS
+Capabilities.
+
+Formal XML metadata in MapServer OGC services Capabilities XML provides value
+to Catalogue services which harvest metadata to support discovery.
+
+MapServer 7.2 adds support for dynamic publishing of XML metadata for all OGC
+Web Services to advertise formal layer metadata.
+
+How it Works
+============
+
+If a layer does not have associated formal XML metadata configured via
+`ows_metadataurl_*` metadata, MapServer provides a metadata URL link to
+metadata (i.e. WMS `MetadataURL`) in the OGC Capabilities XML.  The URL
+itself points to MapServer's `GetMetadata` API.  Example:
+
+.. code-block:: xml
+
+   <MetadataURL type="TC211">
+     <Format>text/xml</Format>
+     <OnlineResource xmlns:xlink="http://www.w3.org/1999/xlink" xlink:type="simple" xlink:href="http://localhost/path/to/ows?request=GetMetadata&amp;layer=road"/>
+   </MetadataURL>
+
+Supported Metadata Formats
+==========================
+
+MapServer's layer API supports the `ISO 19115-1:2014`_ geospatial standard, via
+`ISO 19139-1:2019` as the XML representation.
+
+The Layer Metadata API
+======================
+
+The Layer Metadata API provides formal metadata for any LAYER object in a
+mapfile, deriving metadata values (title, abstract, keywords, spatial
+properties), from a mapfile LAYER object definition.  The metadata response
+contains useful information (title, abstract, keywords), as well as access
+links to associated services (WMS, WFS, etc.).
+
+The API supports two parameters:
+
+- *request* (Mandatory): fixed value of `GetMetadata`
+- *layer* (Mandatory): single layer name value
+
+Missing parameters will result in an OGC `ogc:ExceptionReport` XML.
+
+Request Example
+===============
+
+`http://localhost/path/to/ows?request=GetMetadata&amp;layer=road`
+
+Layer Metadata Support Through CGI
+----------------------------------
+
+.. #### rST Link Section ####
+
+.. _`MS RFC 82: Support for Enhanced Layer Metadata Management`: https://mapserver.org/development/rfc/ms-rfc-82.html
+.. _`ISO 19115-1:2014`: https://www.iso.org/standard/53798.html
+.. _`ISO 19139-1:2019`: https://www.iso.org/standard/67253.html

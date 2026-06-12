@@ -1,0 +1,499 @@
+.. index:: JOIN
+
+.. _join:
+
+*****************************************************************************
+ JOIN
+*****************************************************************************
+
+.. index::
+   pair: JOIN; LAYER
+   :name: mapfile-join-layer
+    
+Description
+===========
+
+Joins are defined within a :ref:`layer` object. It is important to understand
+that JOINs are *ONLY* available once a query has been processed. You cannot
+use joins to affect the look of a map. The primary purpose is to enable lookup
+tables for coded data (e.g. 1 => Forest) but there are other possible uses.
+
+.. index::
+   pair: JOIN; Supported formats
+    
+Supported Formats
+=================
+ 
+- DBF/XBase files
+- CSV (comma delimited text file)
+- PostgreSQL tables
+- MySQL tables
+
+Mapfile Parameters:
+===================
+
+.. index::
+   pair: JOIN; CONNECTION
+   :name: mapfile-join-connection
+    
+CONNECTION [string]
+    Parameters required for the join table's database connection (not required
+    for DBF or CSV joins). The following is an example connection for
+    :ref:`PostgreSQL <input_postgis>`:
+
+    .. code-block:: mapfile
+
+      CONNECTION "host=127.0.0.1 port=5432 user=pg password=pg dbname=somename"
+      CONNECTIONTYPE POSTGRESQL
+    
+.. index::
+   pair: JOIN; CONNECTIONTYPE
+   :name: mapfile-join-connectiontype
+    
+.. index::
+   triple: JOIN; CONNECTIONTYPE; csv
+    
+.. index::
+   triple: JOIN; CONNECTIONTYPE; mysql
+    
+.. index::
+   triple: JOIN; CONNECTIONTYPE; postgresql
+    
+CONNECTIONTYPE [csv|mysql|postgresql]
+    Type of connection (not required for DBF joins). For PostgreSQL
+    use `postgresql`, for CSV use `csv`, for MySQL use `mysql`.
+    
+.. index::
+   pair: JOIN; FOOTER
+   :name: mapfile-join-footer
+    
+FOOTER [filename]
+    Template to use *after* a layer's set of results have been sent. In other
+    words, this header HTML will be displayed after the contents of the 
+    `TEMPLATE` HTML.
+
+.. index::
+   pair: JOIN; FROM
+   :name: mapfile-join-from
+    
+FROM [column]
+    Join column in the dataset.  This is case sensitive.
+    
+.. index::
+   pair: JOIN; HEADER
+   :name: mapfile-join-header
+    
+HEADER [filename]
+    Template to use *before* a layer's set of results have been sent. In other
+    words, this header HTML will be displayed before the contents of the 
+    `TEMPLATE` HTML.
+
+.. index::
+   pair: JOIN; NAME
+   :name: mapfile-join-name
+    
+NAME [string]
+    Unique name for this join. Required.  
+
+.. index::
+   pair: JOIN; TABLE
+   :name: mapfile-join-table
+    
+TABLE [filename|tablename]
+    For file-based joins this is the name of XBase or comma delimited file
+    (relative to the location of the mapfile) to join TO. For PostgreSQL
+    support this is the name of the PostgreSQL table to join TO.
+
+.. index::
+   pair: JOIN; TEMPLATE
+   :name: mapfile-join-template
+    
+TEMPLATE [filename]
+    Template to use with one-to-many joins. The template is processed
+    once for each record and can only contain substitutions for
+    columns in the joined table.  Refer to the column in the joined
+    table in your template like [joinname_columnname], where joinname
+    is the NAME specified for the JOIN object.
+
+.. index::
+   pair: JOIN; TO
+   :name: mapfile-join-to
+    
+TO [column]
+    Join column in the table to be joined. This is case sensitive.
+
+.. index::
+   pair: JOIN; TYPE
+   :name: mapfile-join-type
+    
+TYPE [ONE-TO-ONE|ONE-TO-MANY]
+    The type of join. Default is one-to-one.
+
+Example 1: Join from Shapefile to DBF file
+==========================================
+
+Mapfile Layer
+-------------
+
+.. code-block:: mapfile
+
+      LAYER
+        NAME "prov_bound"
+        TYPE POLYGON
+        STATUS DEFAULT
+        DATA "prov.shp"
+        CLASS
+          NAME "Province"
+          STYLE
+            OUTLINECOLOR 120 120 120
+            COLOR 255 255 0
+          END
+        END
+        TEMPLATE "../htdocs/cgi-query-templates/prov.html"
+        HEADER "../htdocs/cgi-query-templates/prov-header.html"
+        FOOTER "../htdocs/cgi-query-templates/footer.html"
+        JOIN
+          NAME "test"
+          TABLE "../data/lookup.dbf"
+          FROM "ID"
+          TO "IDENT"
+          TYPE ONE-TO-ONE
+        END
+      END # layer
+
+Ogrinfo
+-------
+
+::
+
+  >ogrinfo lookup.dbf lookup -summary
+  INFO: Open of `lookup.dbf'
+  using driver `ESRI Shapefile' successful.
+
+  Layer name: lookup
+  Geometry: None
+  Feature Count: 12
+  Layer SRS WKT:
+  (unknown)
+  IDENT: Integer (2.0)
+  VAL: Integer (2.0)
+
+::
+
+  >ogrinfo prov.shp prov -summary
+  INFO: Open of `prov.shp'
+  using driver `ESRI Shapefile' successful.
+
+  Layer name: prov
+  Geometry: Polygon
+  Feature Count: 12
+  Extent: (-2340603.750000, -719746.062500) - (3009430.500000, 3836605.250000)
+  Layer SRS WKT:
+  (unknown)
+  NAME: String (30.0)
+  ID: Integer (2.0)
+
+Template
+--------
+
+.. code-block:: html
+
+  <!-- MapServer Template -->
+  <tr bgcolor="#EFEFEF">
+    <td align="left">[NAME]</td>
+    <td align="left">[test_VAL]</td>
+  </tr> 
+
+
+Example 2: Join from Shapefile to PostgreSQL table
+==================================================
+
+Mapfile Layer
+-------------
+
+.. code-block:: mapfile
+
+      LAYER
+        NAME "prov_bound"
+        TYPE POLYGON
+        STATUS DEFAULT
+        DATA "prov.shp"
+        CLASS
+          NAME "Province"
+          STYLE
+            OUTLINECOLOR 120 120 120
+            COLOR 255 255 0
+          END
+        END
+        TOLERANCE 20
+        TEMPLATE "../htdocs/cgi-query-templates/prov.html"
+        HEADER "../htdocs/cgi-query-templates/prov-header.html"
+        FOOTER "../htdocs/cgi-query-templates/footer.html"  
+        JOIN
+          NAME "test"
+          CONNECTION "host=127.0.0.1 port=5432 user=pg password=pg dbname=join"
+          CONNECTIONTYPE postgresql
+          TABLE "lookup"
+          FROM "ID"
+          TO "ident"
+          TYPE ONE-TO-ONE
+        END
+      END # layer
+
+Ogrinfo
+-------
+
+::
+
+  >ogrinfo -ro PG:"host=127.0.0.1 port=5432 user=pg password=pg dbname=join"
+               lookup -summary
+  INFO: Open of `PG:host=127.0.0.1 port=5432 user=pg password=pg dbname=join'
+  using driver `PostgreSQL' successful.
+
+  Layer name: lookup
+  Geometry: Unknown (any)
+  Feature Count: 12
+  Layer SRS WKT:
+  (unknown)
+  ident: Integer (0.0)
+  val: Integer (0.0)
+
+Template
+--------
+
+.. code-block:: html
+
+  <!-- MapServer Template 
+  <tr bgcolor="#EFEFEF">
+    <td align="left">[NAME]</td>
+    <td align="left">[test_val]</td>
+  </tr>
+
+
+Example 3: Join from Shapefile to CSV file
+==========================================
+
+Mapfile Layer
+-------------
+
+.. code-block:: mapfile
+
+      LAYER
+        NAME "prov_bound"
+        TYPE POLYGON
+        STATUS DEFAULT
+        DATA "prov.shp"
+        CLASS
+          NAME "Province"
+          STYLE
+            OUTLINECOLOR 120 120 120
+            COLOR 255 255 0
+          END
+        END
+        TOLERANCE 20
+        TEMPLATE "../htdocs/cgi-query-templates/prov.html"
+        HEADER "../htdocs/cgi-query-templates/prov-header.html"
+        FOOTER "../htdocs/cgi-query-templates/footer.html"  
+        JOIN
+          NAME "test"
+          CONNECTIONTYPE CSV
+          TABLE "../data/lookup.csv"
+          FROM "ID"
+          #TO "IDENT"  # see note below
+          TO "1"       # see note below
+          TYPE ONE-TO-ONE
+        END
+      END # layer
+
+CSV File Structure
+------------------
+
+::
+
+  "IDENT","VAL"
+  1,12
+  2,11
+  3,10
+  4,9
+  5,8
+  6,7
+  7,6
+  8,5
+  9,4
+  10,3
+  11,2
+  12,1
+
+.. note::
+   The CSV driver currently doesn't read column names from the first
+   row. It just uses indexes (1, 2, ... n) to reference the
+   columns. It's ok to leave column names as the first row since they
+   likely won't match anything but they aren't used. Typically you'd
+   see something like TO "1" in the JOIN block. Then in the template
+   you'd use [name_1], [name_2], etc...
+
+Ogrinfo
+-------
+
+::
+
+  >ogrinfo lookup.csv lookup -summary
+  INFO: Open of `lookup.csv'
+  using driver `CSV' successful.
+
+  Layer name: lookup
+  Geometry: None
+  Feature Count: 12
+  Layer SRS WKT:
+  (unknown)
+  IDENT: String (0.0)
+  VAL: String (0.0)
+
+Template (prov.html)
+--------------------
+
+Ideally this the template should look like this:
+
+.. code-block:: html
+
+  <!-- MapServer Template -->
+  <tr bgcolor="#EFEFEF">
+    <td align="left">[NAME]</td>
+    <td align="left">[test_VAL]</td>
+  </tr>
+
+But since attribute names are not supported for CSV files (see note
+above), the following will have to be used:
+
+.. code-block:: html
+
+  <!-- MapServer Template -->
+  <tr bgcolor="#EFEFEF">
+    <td align="left">[NAME]</td>
+    <td align="left">[test_2]</td>
+  </tr>
+
+Example 4: Join from Shapefile to MySQL
+=======================================
+
+Mapfile Layer
+-------------
+
+.. code-block:: mapfile
+
+      LAYER
+        NAME "prov_bound"
+        TYPE POLYGON
+        STATUS DEFAULT
+        DATA "prov.shp"
+        CLASS
+          NAME "Province"
+          STYLE
+            OUTLINECOLOR 120 120 120
+            COLOR 255 255 0
+          END # style
+        END # class
+        TOLERANCE 20
+        TEMPLATE "../htdocs/cgi-query-templates/prov.html"
+        HEADER "../htdocs/cgi-query-templates/prov-header.html"
+        FOOTER "../htdocs/cgi-query-templates/footer.html"  
+        JOIN
+          NAME "mysql-join"
+          CONNECTIONTYPE MYSQL
+          CONNECTION 'server:user:password:database'
+          TABLE "mysql-tablename"
+          FROM "ID"
+          TO "mysql-column"
+          TYPE ONE-TO-ONE
+        END # join
+      END # layer
+
+Example 5: One-to-many join
+============================================
+
+In a join of type `ONE-TO-MANY`, the `JOIN` object needs to contain a
+`TEMPLATE`.  This `TEMPLATE` is used for each matching record in the
+join table.  Columns in the join table are referenced using
+<join_name>_<join_column_name>.  Columns in the layer table are
+referenced using <column_name>.
+
+For a one-to-many join, the `LAYER` `TEMPLATE` file has to contain a
+reference to the the `JOIN` object, as follows: [join_<join_name>].
+
+In this example, it is assumed that the join table many.dbf contains
+the columns MANYFIELD1 and MANYFIELD2 in addition to the join column
+(IDENT).
+
+Layer object:
+
+.. code-block:: mapfile
+
+  LAYER
+    NAME "joinonetomany"
+    TYPE POLYGON
+    STATUS DEFAULT
+    DATA "prov.shp"
+    CLASS
+      NAME "Province"
+      STYLE
+        OUTLINECOLOR 120 120 120
+        COLOR 255 255 0
+      END # style
+    END # class
+    TEMPLATE "oneToMany.html"
+    HEADER "oneToMany_header.html"
+    FOOTER "oneToMany_footer.html"
+    JOIN
+      NAME "onetomanytest"
+      TABLE "many.dbf"
+      FROM "ID"
+      TO "IDENT"
+      TYPE ONE-TO-MANY
+      TEMPLATE "oneToMany_join.html"
+    END # join
+  END # layer
+
+Template oneToMany_header.html:
+
+.. code-block:: html
+
+  <!-- MapServer Template -->
+  <html>
+    <head><title>One to Many Join</title></head>
+    <body>
+      <h1>MapServer output</h1>
+      <table>
+
+Template oneToMany.html:
+
+.. code-block:: html
+
+  <!-- MapServer Template -->
+  <tr>
+    <td><strong>[ID]</strong></td>
+    <td>
+      <table>
+        [join_onetomanytest]
+      </table>
+    </td>
+  </tr>
+
+Template oneToMany_join.html:
+
+.. code-block:: html
+
+  <!-- MapServer Template -->
+  <tr>
+    <td>[NAME]</td>
+    <td>[onetomanytest_MANYFIELD1]</td>
+    <td>[onetomanytest_MANYFIELD2]</td>
+  </tr>
+ 
+Template oneToMany_footer.html:
+
+.. code-block:: html
+
+  <!-- MapServer Template -->
+      </table>
+    </body>
+  <html>

@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>MS RFC 64 - MapServer Expression Parser Overhaul &#8212; MapServer 8.6.4 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx.css?v=48f05237" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx_collapse.css?v=226d88b4" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=dd298242" />
+    <link rel="stylesheet" type="text/css" href="../../_static/ribbon.css?v=ea091bf4" />
+    
+    <script src="../../_static/jquery.js?v=5d32c60e"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+    <script src="../../_static/documentation_options.js?v=f59c4a7a"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    
+    <link rel="icon" href="../../_static/mapserver.ico"/>
+    <link rel="author" title="About these documents" href="../../about.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="copyright" title="Copyright" href="../../copyright.html" />
+    <link rel="next" title="MS RFC 65 - Single-pass Query Changes for 6.0" href="ms-rfc-65.html" />
+    <link rel="prev" title="MS RFC 63: Built-in OpenLayers map viewer" href="ms-rfc-63.html" /> 
+  </head><body>
+<!-- add a ribbon to show these docs are the main branch -->
+<h4 class="ribbon">DOCS PREVIEW</h4>
+
+<table width="100%" style="width: 100%; background-color: white;">
+  <tr>
+    <td rowspan="2" style="padding: 10px 0px 10px 10px;">
+      <a href="../../index.html" title="Home"><img src="../../_static/banner.png" alt="MapServer banner" border="0" /></a>
+    </td>
+    <td style="padding: 10px 10px 0px 0px; text-align: right; vertical-align: top;">
+      <a href="../../index.html" title="Home">Home</a> |
+      <a href="../../products.html" title="Products (MapServer core, MapCache, TinyOWS">Products</a> |
+      <a href="https://github.com/MapServer/MapServer/issues/" title="Issue Tracker (MapServer core)">Issue Tracker</a> |
+      <a href="../../community/service_providers.html" title="Professional Service Providers">Service Providers</a> |      
+      <a href="../../faq.html" title="Frequently Asked Questions">FAQ</a> |
+      <a href="https://fosstodon.org/@mapserver" title="Mastodon" target="_blank">Mastodon</a> |
+      <a href="../../download.html" title="Download Source or Binaries">Download </a> |
+      <a class="badge" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KRJ2X44N3HA6U&source=url" target="_blank">
+        <img src="https://img.shields.io/badge/donate-%E2%9D%A4%C2%A0-ff69b4.svg?style=flat" alt="Donate to MapServer">
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0px 10px 0px 0px; text-align: right; vertical-align: bottom;">
+        <img src="../../_static/flagicons/en.png" alt="en" title="en" border="0" width="18px" height="13px"/>
+        
+          <a href="../../ar/development/rfc/ms-rfc-64.html"><img src="../../_static/flagicons/ar.png" alt="ar" title="ar" border="0" /></a>
+        
+        
+          <a href="../../de/development/rfc/ms-rfc-64.html"><img src="../../_static/flagicons/de.png" alt="de" title="de" border="0" /></a>
+        
+        
+          <a href="../../el/development/rfc/ms-rfc-64.html"><img src="../../_static/flagicons/el.png" alt="el" title="el" border="0" /></a>
+        
+        
+          <a href="../../es/development/rfc/ms-rfc-64.html"><img src="../../_static/flagicons/es.png" alt="es" title="es" border="0" /></a>
+        
+        
+          <a href="../../fr/development/rfc/ms-rfc-64.html"><img src="../../_static/flagicons/fr.png" alt="fr" title="fr" border="0" /></a>
+        
+        
+          <a href="../../id/development/rfc/ms-rfc-64.html"><img src="../../_static/flagicons/id.png" alt="id" title="id" border="0" /></a>
+        
+        
+          <a href="../../it/development/rfc/ms-rfc-64.html"><img src="../../_static/flagicons/it.png" alt="it" title="it" border="0" /></a>
+        
+        
+          <a href="../../ja/development/rfc/ms-rfc-64.html"><img src="../../_static/flagicons/ja.png" alt="ja" title="ja" border="0" /></a>
+        
+        
+          <a href="../../nl_NL/development/rfc/ms-rfc-64.html"><img src="../../_static/flagicons/nl_NL.png" alt="nl_NL" title="nl_NL" border="0" /></a>
+        
+        
+          <a href="../../pl/development/rfc/ms-rfc-64.html"><img src="../../_static/flagicons/pl.png" alt="pl" title="pl" border="0" /></a>
+        
+        
+          <a href="../../ru/development/rfc/ms-rfc-64.html"><img src="../../_static/flagicons/ru.png" alt="ru" title="ru" border="0" /></a>
+        
+        
+          <a href="../../sq/development/rfc/ms-rfc-64.html"><img src="../../_static/flagicons/sq.png" alt="sq" title="sq" border="0" /></a>
+        
+        
+          <a href="../../tr/development/rfc/ms-rfc-64.html"><img src="../../_static/flagicons/tr.png" alt="tr" title="tr" border="0" /></a>
+        
+
+    </td>
+  </tr>
+</table>
+
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="ms-rfc-65.html" title="MS RFC 65 - Single-pass Query Changes for 6.0"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ms-rfc-63.html" title="MS RFC 63: Built-in OpenLayers map viewer"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Home</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Development</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" accesskey="U">Request for Comments</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MS RFC 64 - MapServer Expression Parser Overhaul</a></li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="ms-rfc-64-mapserver-expression-parser-overhaul">
+<span id="rfc64"></span><h1>MS RFC 64 - MapServer Expression Parser Overhaul<a class="headerlink" href="#ms-rfc-64-mapserver-expression-parser-overhaul" title="Link to this heading">¶</a></h1>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2010/11/2</p>
+</dd>
+<dt class="field-even">Author<span class="colon">:</span></dt>
+<dd class="field-even"><p>Steve Lime</p>
+</dd>
+<dt class="field-odd">Contact<span class="colon">:</span></dt>
+<dd class="field-odd"><p>sdlime at comcast.net</p>
+</dd>
+<dt class="field-even">Last Edited<span class="colon">:</span></dt>
+<dd class="field-even"><p>2010-11-2</p>
+</dd>
+<dt class="field-odd">Status<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Adopted</p>
+</dd>
+</dl>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>This is a draft RFC addressing 1) how the Bison/Yacc parser for logical expressions is implemented and 2) where in the MapServer code
+the  parser can be used. This RFC could have broader impacts on query processing depending on additional changes at the driver level,
+specifically the RDBMS ones. Those changes don’t have to occur for this to be a useful addition.</p>
+<p>A principle motivation for this work is to support OGC filter expressions in a single pass in a driver-independent manner.</p>
+<p>All of the work detailed here is being prototyped in a sandbox, visit:</p>
+<blockquote>
+<div><p><cite>http://svn.osgeo.org/mapserver/sandbox/sdlime/common-expressions/mapserver  &lt;http://svn.osgeo.org/mapserver/sandbox/sdlime/common-expressions/mapserver&gt;</cite></p>
+</div></blockquote>
+</section>
+<section id="existing-expression-parsing">
+<h2>Existing Expression Parsing<a class="headerlink" href="#existing-expression-parsing" title="Link to this heading">¶</a></h2>
+<p>The existing logical expression handling in MapServer works like so:</p>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>duplicate expression string[[BR]]</p></li>
+<li><p>substitute shape attributes into string (e.g. ‘[name]’ =&gt; ‘Anoka’)[[BR]]</p></li>
+<li><p>parse with yyparse()</p></li>
+</ol>
+</div></blockquote>
+<p>The parser internally calls yylex() for its tokens. Tokens are the smallest pieces of an expression.</p>
+<p><strong>Advantages</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>it’s simple and it works</p></li>
+</ul>
+</div></blockquote>
+<p><strong>Disadvantages</strong></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>limited by substitution to strings, no complex types can be handled</p></li>
+<li><p>have to perform the substitution and tokenize the resulting string for every feature</p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="proposed-technical-changes">
+<h2>Proposed Technical Changes<a class="headerlink" href="#proposed-technical-changes" title="Link to this heading">¶</a></h2>
+<p>This RFC proposes a number of technical changes. The core change, however, involved updating the way logical expressions work.
+Additional features capitalize on this core change to bring additional capabilities to MapServer.</p>
+<p><strong>Core Parser Update</strong></p>
+<p>I propose moving to a setup where a logical expression is tokenized once (via our Flex-generated lexer) and then Bison/Yacc parser
+works through tokens (via a custom version of yylex() defined in mapparser.y) as necessary for each feature. This eliminates the
+substitution and tokenize steps currently necessary and opens up possibilities for supporting more complex objects in expressions.
+Basically we’d hang a list of tokens off an expressionObj, populate it in msLayerWhichItems() and leverage the tokens as needed
+in the parser. The following new structs and enums are added to mapserver.h:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">enum</span> <span class="n">MS_TOKEN_LOGICAL_ENUM</span> <span class="p">{</span> <span class="n">MS_TOKEN_LOGICAL_AND</span><span class="o">=</span><span class="mi">100</span><span class="p">,</span> <span class="n">MS_TOKEN_LOGICAL_OR</span><span class="p">,</span> <span class="n">MS_TOKEN_LOGICAL_NOT</span> <span class="p">};</span>
+<span class="n">enum</span> <span class="n">MS_TOKEN_LITERAL_ENUM</span> <span class="p">{</span> <span class="n">MS_TOKEN_LITERAL_NUMBER</span><span class="o">=</span><span class="mi">110</span><span class="p">,</span> <span class="n">MS_TOKEN_LITERAL_STRING</span><span class="p">,</span> <span class="n">MS_TOKEN_LITERAL_TIME</span><span class="p">,</span> <span class="n">MS_TOKEN_LITERAL_SHAPE</span> <span class="p">};</span>
+<span class="n">enum</span> <span class="n">MS_TOKEN_COMPARISON_ENUM</span> <span class="p">{</span>
+  <span class="n">MS_TOKEN_COMPARISON_EQ</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span> <span class="n">MS_TOKEN_COMPARISON_NE</span><span class="p">,</span> <span class="n">MS_TOKEN_COMPARISON_GT</span><span class="p">,</span> <span class="n">MS_TOKEN_COMPARISON_LT</span><span class="p">,</span> <span class="n">MS_TOKEN_COMPARISON_LE</span><span class="p">,</span> <span class="n">MS_TOKEN_COMPARISON_GE</span><span class="p">,</span> <span class="n">MS_TOKEN_COMPARISON_IEQ</span><span class="p">,</span>
+  <span class="n">MS_TOKEN_COMPARISON_RE</span><span class="p">,</span> <span class="n">MS_TOKEN_COMPARISON_IRE</span><span class="p">,</span>
+  <span class="n">MS_TOKEN_COMPARISON_IN</span><span class="p">,</span> <span class="n">MS_TOKEN_COMPARISON_LIKE</span><span class="p">,</span>
+  <span class="n">MS_TOKEN_COMPARISON_INTERSECTS</span><span class="p">,</span> <span class="n">MS_TOKEN_COMPARISON_DISJOINT</span><span class="p">,</span> <span class="n">MS_TOKEN_COMPARISON_TOUCHES</span><span class="p">,</span> <span class="n">MS_TOKEN_COMPARISON_OVERLAPS</span><span class="p">,</span> <span class="n">MS_TOKEN_COMPARISON_CROSSES</span><span class="p">,</span> <span class="n">MS_TOKEN_COMPARISON_WITHIN</span><span class="p">,</span> <span class="n">MS_TOKEN_COMPARISON_CONTAINS</span><span class="p">,</span>
+  <span class="n">MS_TOKEN_COMPARISON_BEYOND</span><span class="p">,</span> <span class="n">MS_TOKEN_COMPARISON_DWITHIN</span>
+<span class="p">};</span>
+<span class="n">enum</span> <span class="n">MS_TOKEN_FUNCTION_ENUM</span> <span class="p">{</span> <span class="n">MS_TOKEN_FUNCTION_LENGTH</span><span class="o">=</span><span class="mi">140</span><span class="p">,</span> <span class="n">MS_TOKEN_FUNCTION_TOSTRING</span><span class="p">,</span> <span class="n">MS_TOKEN_FUNCTION_COMMIFY</span><span class="p">,</span> <span class="n">MS_TOKEN_FUNCTION_AREA</span><span class="p">,</span> <span class="n">MS_TOKEN_FUNCTION_ROUND</span><span class="p">,</span> <span class="n">MS_TOKEN_FUNCTION_FROMTEXT</span> <span class="p">};</span>
+<span class="n">enum</span> <span class="n">MS_TOKEN_BINDING_ENUM</span> <span class="p">{</span> <span class="n">MS_TOKEN_BINDING_DOUBLE</span><span class="o">=</span><span class="mi">150</span><span class="p">,</span> <span class="n">MS_TOKEN_BINDING_INTEGER</span><span class="p">,</span> <span class="n">MS_TOKEN_BINDING_STRING</span><span class="p">,</span> <span class="n">MS_TOKEN_BINDING_TIME</span><span class="p">,</span> <span class="n">MS_TOKEN_BINDING_SHAPE</span> <span class="p">};</span>
+
+<span class="n">typedef</span> <span class="n">union</span> <span class="p">{</span>
+  <span class="n">double</span> <span class="n">dblval</span><span class="p">;</span>
+  <span class="nb">int</span> <span class="n">intval</span><span class="p">;</span>
+  <span class="n">char</span> <span class="o">*</span><span class="n">strval</span><span class="p">;</span>
+  <span class="n">struct</span> <span class="n">tm</span> <span class="n">tmval</span><span class="p">;</span>
+  <span class="n">shapeObj</span> <span class="o">*</span><span class="n">shpval</span><span class="p">;</span>
+  <span class="n">attributeBindingObj</span> <span class="n">bindval</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">tokenValueObj</span><span class="p">;</span>
+
+<span class="n">typedef</span> <span class="n">struct</span> <span class="p">{</span>
+  <span class="nb">int</span> <span class="n">token</span><span class="p">;</span>
+  <span class="n">tokenValueObj</span> <span class="n">tokenval</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">tokenObj</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Some of these definitions hint at other features that will be detailed later. When we convert an expression string into a series of tokens
+we also store away the value associated with that token (if necessary). In many cases the token value is a literal (string or number), in
+other cases its a reference to a feature attribute. In the latter case we use the attributeBindingObj already in use by MapServer to encapsulate
+the information necessary to quickly access the correct data (typically an item index value).</p>
+<p>We always have had to make expression data available to the parser (and lexer) via temporary global variables. That would continue to be
+the case here, although different data are shared in this context. One thing to note is that once an expression is tokenized we no longer have
+to rely on the flex-generated lexer so, in theory, it should be easier to implement a thread-safe parser should we choose to do so.</p>
+<p><strong>Extending the Yacc grammar to support spatial operators</strong></p>
+<p>The mapserver.h definitions above allow for using shapeObj’s within the Yacc grammar (we also define a shapeObj as a new base token type
+within mapparser.y). There are two types of shape-related tokens: 1) a shape binding, that is, a reference to the geometry being evaluated and
+2) shape literals, shapes described as WKT within the expression string. For example:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">In</span> <span class="n">the</span> <span class="n">expression</span><span class="p">:</span>
+  <span class="n">EXPRESSION</span> <span class="p">(</span><span class="n">fromText</span><span class="p">(</span><span class="s1">&#39;POINT(500000 5000000)&#39;</span><span class="p">)</span> <span class="n">Intersects</span> <span class="p">[</span><span class="n">shape</span><span class="p">])</span>
+
+  <span class="mi">1</span><span class="p">)</span> <span class="n">fromText</span><span class="p">(</span><span class="s1">&#39;POINT(500000 5000000)&#39;</span><span class="p">)</span> <span class="n">defines</span> <span class="n">a</span> <span class="n">shape</span> <span class="n">literal</span> <span class="p">(</span><span class="n">the</span> <span class="n">WKT</span> <span class="n">to</span> <span class="n">shapeObj</span> <span class="n">conversion</span> <span class="ow">is</span> <span class="n">done</span> <span class="n">only</span> <span class="n">once</span><span class="p">)</span>
+  <span class="mi">2</span><span class="p">)</span> <span class="p">[</span><span class="n">shape</span><span class="p">]</span> <span class="ow">is</span> <span class="n">a</span> <span class="n">shape</span> <span class="n">binding</span>
+</pre></div>
+</div>
+<p>We can use these tokens in the grammar to implement all of the MapServer supported (via GEOS) logical operators. Note that in the above
+example fromText() appears as a function operating on a string. This is handled as a special case when tokenizing the string since we only
+want to do this once. So we create a shape literal based on the enclosed WKT string at this time.</p>
+<p><strong>Extending the grammar to support spatial functions</strong></p>
+<p>By supporting the use of more complex objects we can support functions on those objects. We could write:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">EXPRESSION</span> <span class="p">(</span><span class="n">area</span><span class="p">([</span><span class="n">shape</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">100000</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>or rely on even more of the GEOS operators. (Note: only the area function is present in the sandbox.) To do this we need to somehow store
+a shapeObj’s scope so that working copies can be free’d as appropriate. I would propose adding a ‘’int scope’’ to the shapeObj structure
+definition. Shapes created in the course of expression evaluation would be tagged as having limited scope while literals or bindings would
+be left alone and presumably destroyed later. This saves having to make copies of shapes which can be expensive.</p>
+<p><strong>Context Sensitive Parsing</strong></p>
+<p>We could have done this all along but this would be an opportune time to implement context sensitive parser use. Presently we expect the
+parser to produce a true or false result, but certainly aren’t limited to that. The idea is to use the parser to compute values in other situations.
+Two places are working in the sandbox and are detailed below.</p>
+<p>Class <strong>TEXT</strong> Parameter</p>
+<p>Currently you can write:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">CLASS</span>
+  <span class="o">...</span>
+  <span class="n">TEXT</span> <span class="p">([</span><span class="n">area</span><span class="p">]</span> <span class="n">acres</span><span class="p">)</span>
+<span class="n">END</span>
+</pre></div>
+</div>
+<p>It looks as if the TEXT value is an expression (and it is stored as such) but it’s not evaluated as one. It would be very useful to treat this as
+a true expression. This would open up a world of formatting options for drivers that don’t support it otherwise (e.g. shapefiles). Ticket
+<cite>2950 &lt;https://github.com/MapServer/MapServer/issues/2950&gt;</cite> is an example where this would come in handy. Within the sandbox I’ve added
+toString, round and commify functions so that you can write:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">TEXT</span> <span class="p">(</span><span class="n">commify</span><span class="p">(</span><span class="n">toString</span><span class="p">([</span><span class="n">area</span><span class="p">]</span><span class="o">*</span><span class="mf">0.000247105381</span><span class="p">,</span><span class="s2">&quot;</span><span class="si">%.2f</span><span class="s2">&quot;</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39; ac&#39;</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Which converts area from sq. meters to acres, truncates the result to two decimal places adds commas (213234.123455 =&gt; 213,234.12) for
+crowd pleasing display. To add this support, in addition to grammar changes, we add these declarations to mapserver.h:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">enum</span> <span class="n">MS_PARSE_RESULT_TYPE_ENUM</span> <span class="p">{</span> <span class="n">MS_PARSE_RESULT_BOOLEAN</span><span class="p">,</span> <span class="n">MS_PARSE_RESULT_STRING</span><span class="p">,</span> <span class="n">MS_PARSE_RESULT_SHAPE</span> <span class="p">};</span>
+
+<span class="n">typedef</span> <span class="n">union</span> <span class="p">{</span>
+  <span class="nb">int</span> <span class="n">intval</span><span class="p">;</span>
+  <span class="n">char</span> <span class="o">*</span><span class="n">strval</span><span class="p">;</span>
+  <span class="n">shapeObj</span> <span class="o">*</span><span class="n">shpval</span><span class="p">;</span>
+<span class="p">}</span> <span class="n">parseResultObj</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Then in the grammar we set a parse result type and set the result accordingly. One side effect is that we have to define a standard way to convert
+numbers to strings when in the string context and simply using “%g” as a format string for snprintf does wonders to output.</p>
+<p>Style <strong>GEOMTRANSFORM</strong></p>
+<p>Within the sandbox I’ve implemented GEOMTRANSFORMs as expressions as opposed to the original implementation. The parser has also been
+extended to support the GEOS buffer operator. So you can write:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">STYLE</span>
+  <span class="n">GEOMTRANSFORM</span> <span class="p">(</span><span class="n">buffer</span><span class="p">([</span><span class="n">shape</span><span class="p">],</span> <span class="o">-</span><span class="mi">3</span><span class="p">))</span>
+  <span class="o">...</span>
+<span class="n">END</span>
+</pre></div>
+</div>
+<p>This does executes a buffer on the geometry before rendering (see test.buffer.png attachment). Because the GEOMTRANSFORM processing occurs
+this transformation happens <strong>after</strong> the feature is converted from map to image coordinates, but the effect is still valuable and the buffer value is
+given in pixels. In the future we might consider implementing a GEOMTRANSFORM at the layer level so that the transformation is available to all
+classes and/or styles (and consequently in query modes too).</p>
+</section>
+<section id="expression-use-elsewhere">
+<h2>Expression Use Elsewhere<a class="headerlink" href="#expression-use-elsewhere" title="Link to this heading">¶</a></h2>
+<p>Currently the logical expression syntax is also used with REQUIRES/LABELREQUIRES and with rasters. In the REQUIRES/LABELREQUIRES case the code
+would remain mostly “as is” we’d still do the substitutions bases on layer status, then explicitly tokenize and parse. Since this done at most once per
+layer there’s really no need to do anything more.</p>
+<p>Rasters present more of a challenge. We’d need to handle them as a special case when tokenizing an expression by defining pixel bindings and then
+pass a pixel to the parser when evaluating the expression. This should be <strong>much, much</strong> faster than the current method where each pixel value is
+converted to a string representation (and then back to a number), especially given the number of pixels often evaluated. Some interesting drawing
+effects are also possible if you could expose a pixel location to the GEOS operators. For example, one could create a mask showing only pixels within
+a particular geometry.</p>
+</section>
+<section id="query-impact">
+<h2>Query Impact<a class="headerlink" href="#query-impact" title="Link to this heading">¶</a></h2>
+<p>This is where things get interesting. I’m proposing adding a new query, msQueryByFilter() that would work off an expression string (this is working in
+the sandbox). The expression string would still have to be accompanied by an extent parameter. Drivers like shapefiles still need to first apply a bounding
+box before applying a secondary filter. Other drivers could choose to combine the extent and expression string (more likely the tokens) if they so choose.
+msQueryByFilter() works much like msQueryByAttributes(). The layer API has been extended to include a prototype, msLayerSupportsCommonFilters(), that
+allows the driver to say if it could process this common expression format natively somehow (e.g. via a FILTER and msLayerWhichShapes()/ msLayerNextShape()) or
+if the expression would need to be applied after msLayerNextShape() is called repeatedly. The shapefile and tiled shapefile drivers would work natively, as would any
+driver that uses msEvalExpression(). My hope is that the RDBMS drivers could somehow translate (via the tokens) an expression into their native SQL but if not,
+we would still be able to use those sources.</p>
+</section>
+<section id="backwards-compatibility-issues">
+<h2>Backwards Compatibility Issues<a class="headerlink" href="#backwards-compatibility-issues" title="Link to this heading">¶</a></h2>
+<p>Surprisingly few. The parser changes would all be transparent to the user. Truly handling TEXT expressions as expressions is a regression, albeit a positive
+one IMHO. I would also propose a few expression level changes especially around case-insensitive string and regex comparisons within logical expression. I
+think it makes more sense and is more user friendly to simply define case-insensitive operators (e.g. EQ and IEQ for straight string equality, and ~ and ~* for
+regex (modeled after Postgres).</p>
+<p>The additional operators, functions and parsing contexts are new functionality.</p>
+<p>A great deal of code would be made obsolete if this were pursued. Much of the OWS filter evaluation would be handled by the msQueryByFilter() function and
+numerous associated enums, defines, etc… could go away.</p>
+<p>Grammar summary (<strong>bold means new</strong>):</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Logical operators: AND, OR, NOT</p></li>
+<li><p>Comparison operators: =, <strong>=*</strong>, !=, &gt;, &lt;, &gt;=, &lt;=, ~, <strong>~*</strong>, in</p></li>
+<li><p>Spatial comparison operators: <strong>intersects</strong>, <strong>disjoint</strong>, <strong>touches</strong>, <strong>overlaps</strong>, <strong>crosses</strong>, <strong>within</strong>, <strong>contains</strong>, <strong>beyond</strong>, <strong>dwithin</strong></p></li>
+<li><p>Functions: length, <strong>commify</strong>, <strong>round</strong>, <strong>tostring</strong></p></li>
+<li><p>Spatial functions: <strong>fromtext</strong>, <strong>area</strong>, <strong>distance</strong>, <strong>buffer</strong></p></li>
+</ul>
+</div></blockquote>
+</section>
+<section id="security-issues">
+<h2>Security Issues<a class="headerlink" href="#security-issues" title="Link to this heading">¶</a></h2>
+<p>While the bulk of the work is in the bowels of MapServer any change of this magnitude could have unintended consequences. In this case I
+think the largest risks are buffer overflows associated with string operators in the parser and memory leaks. Care would need to be taken in
+developing a comprehensive set of test cases.</p>
+</section>
+<section id="todo-s">
+<h2>Todo’s<a class="headerlink" href="#todo-s" title="Link to this heading">¶</a></h2>
+<blockquote>
+<div><ol class="arabic simple">
+<li><p>The ‘’IN’’ operator is in dire need of optimization.</p></li>
+<li><p>All OGC filter operations need to be supported. Bounding box filters in particular have not been looked at.</p></li>
+<li><p>Need ‘’LIKE’’ operator code. (e.g. Dr. Dobbs, 9/08, ‘’Matching Wildcards: An Algorithm’’, pp. 37-39)</p></li>
+<li><p>How to handle layer tolerances in msQueryByFilter()?</p></li>
+<li><p>Best way to manage tokens: array, list, tree? Bison/Yacc needs array or list, but both Frank and Paul have referred to trees. (Update: the tokens are now managed as a linked list.)</p></li>
+<li><p>Thread safety…</p></li>
+<li><p>Parser error handling, any errors have basically always been silently ignored.</p></li>
+</ol>
+</div></blockquote>
+</section>
+<section id="bug-id">
+<h2>Bug ID<a class="headerlink" href="#bug-id" title="Link to this heading">¶</a></h2>
+<blockquote>
+<div><p>#3613</p>
+</div></blockquote>
+</section>
+<section id="voting-history">
+<h2>Voting history<a class="headerlink" href="#voting-history" title="Link to this heading">¶</a></h2>
+<blockquote>
+<div><p>Passed on 12/1/2010 with a +1 from Steve L, Steve W, Perry, Assefa, Tamas.</p>
+</div></blockquote>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p>
+<a href="../../about.html" title="About">About</a><br>
+<a href="../../products.html" title="Products">Products</a><br>
+<a href="../../community/index.html" title="Community">Community</a><br>
+<a href="../index.html" title="Development">Development</a><br>
+<a href="../../download.html" title="Downloads">Downloads</a><br>
+<a href="../../documentation.html" title="Documentation">Documentation</a><br>
+<a href="../../faq.html" title="FAQ">FAQ</a><br>
+<a href="../../psc.html" title="PSC">PSC</a><br>
+<a href="https://fosstodon.org/@mapserver" title="Mastodon">Mastodon</a>
+</p>
+  <h3>Current Table Of Contents</h3>
+  <ul>
+<li><a class="reference internal" href="#">MS RFC 64 - MapServer Expression Parser Overhaul</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#existing-expression-parsing">Existing Expression Parsing</a></li>
+<li><a class="reference internal" href="#proposed-technical-changes">Proposed Technical Changes</a></li>
+<li><a class="reference internal" href="#expression-use-elsewhere">Expression Use Elsewhere</a></li>
+<li><a class="reference internal" href="#query-impact">Query Impact</a></li>
+<li><a class="reference internal" href="#backwards-compatibility-issues">Backwards Compatibility Issues</a></li>
+<li><a class="reference internal" href="#security-issues">Security Issues</a></li>
+<li><a class="reference internal" href="#todo-s">Todo’s</a></li>
+<li><a class="reference internal" href="#bug-id">Bug ID</a></li>
+<li><a class="reference internal" href="#voting-history">Voting history</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="ms-rfc-65.html" title="MS RFC 65 - Single-pass Query Changes for 6.0"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ms-rfc-63.html" title="MS RFC 63: Built-in OpenLayers map viewer"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Home</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Development</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" >Request for Comments</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MS RFC 64 - MapServer Expression Parser Overhaul</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; <a href="../../copyright.html">Copyright</a> 2026, Open Source Geospatial Foundation.
+      Last updated on 2026-06-12.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

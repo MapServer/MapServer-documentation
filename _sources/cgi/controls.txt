@@ -1,0 +1,584 @@
+.. index::
+   simple: CGI controls
+
+.. _cgi_controls:
+
+*****************************************************************************
+ MapServer CGI Controls
+*****************************************************************************
+
+.. contents:: Table of Contents
+    :depth: 3
+    :backlinks: top
+    
+Variables
+=========
+
+Variable names are not case sensitive.
+
+.. index::
+   pair: CGI; buffer
+
+BUFFER [distance]
+    A distance, in the same coordinate system as the map file, used in
+    conjunction with MAPXY to create an new map extent.
+
+.. index::
+   pair: CGI; classgroup
+
+CLASSGROUP [name]
+    The name of a :ref:`LAYER` CLASSGROUP.  Set the :ref:`LAYER`
+    `CLASSGROUP` to `name` for all layers that have at least one
+    :ref:`CLASS` that is using the given CLASSGROUP `name`.
+
+.. index::
+   pair: CGI; context
+
+CONTEXT [filename]
+    Path to a context file. Path is relative to the map file to be used, or
+    can also be a URL path (See the section "Map Context Support Through
+    CGI" below for more details).
+
+.. index::
+   pair: CGI; icon
+
+ICON [layername],[classindex]
+    Used in MODE=legendicon to generate a legend icon for a layer.  The
+    class index value is optional and defaults to 0.
+
+.. index::
+   pair: CGI; id
+
+ID [id-string]
+    By default MapServer generates a unique session id based on system time
+    and process id. This parameter overwrites the default.
+
+.. index::
+   pair: CGI; img
+
+IMG
+    The name associated with the inline map image used to record user clicks.
+    What actually is passed are two variables, img.x and img.y.
+
+    For the CGI Applications this is an essential variable, see the examples
+    for sample usage.
+
+.. index::
+   pair: CGI; imgbox
+
+IMGBOX [x1] [y1] [x2] [y2]
+    Coordinates (in pixels) of a box drag in the image. Most often used in
+    conjunction with Java based front ends to the MapServer.
+
+.. index::
+   pair: CGI; imgext
+
+IMGEXT [minx] [miny] [maxx] [maxy]
+    The spatial extent of the existing inline image, that is, the image the
+    users can see in their browser.
+
+.. index::
+   pair: CGI; imgshape
+
+IMGSHAPE [x1 y1 x2 y2 x3 y3 ...] | [WKT]
+    An arbitrary polygon shape (specified using **image coordinates**)
+    to be used for query purposes.
+
+    The polygon is specified by listing its coordinates (multiple
+    instances simply add parts to the shape so it is possible to
+    construct a shape with holes) or by specifying the WKT (Well
+    Known Text) representation.
+
+    Used with the NQUERY mode.
+
+.. index::
+   pair: CGI; imgsize
+
+IMGSIZE [cols] [rows]
+    The size (in pixels) of the exiting inline image.
+
+.. index::
+   pair: CGI; imgxy
+
+IMGXY [x] [y]
+    Coordinates (in pixels) of a single mouse click. Used most often in
+    conjunction with Java based front ends to the MapServer.
+
+.. index::
+   pair: CGI; layer
+
+LAYER [name]
+    The name of a layer as it appears in the map file. Sending mapserv a layer
+    name sets that layer's STATUS to ON.
+
+.. index::
+   pair: CGI; layers
+
+LAYERS [name name ...]
+    The names of the layers to be turned on. Layer names must be separated by
+    spaces.
+
+    Version 4.4 and above: passing 'LAYERS=all' will automatically turn on all
+    layers.
+
+.. index::
+   pair: CGI; map
+
+MAP [filename]
+    Path, relative to the CGI directory, of the map file to be used.
+
+.. index::
+   pair: CGI; mapext
+
+MAPEXT [minx] [miny] [maxx] [maxy] , MAPEXT (shape)
+    The spatial extent of the map to be created.
+
+    Can be set to shape as an alternative option. In this case mapextent is
+    set to the extent of a selected shape. Used with queries.
+
+.. index::
+   pair: CGI; mapshape
+
+MAPSHAPE [x1 y1 x2 y2 x3 y3 ...] | [WKT]
+    An arbitrary polygon shape (specified using **map coordinates**)
+    to be used for query purposes.
+
+    The polygon is specified by listing its coordinates (multiple
+    instances simply add parts to the shape so it is possible to
+    construct a shape with holes) or by specifying a WKT (Well Known
+    Text) representation of the polygon.
+
+    Used with the NQUERY mode.
+
+.. index::
+   pair: CGI; mapsize
+
+MAPSIZE [cols] [rows]
+    The size (in pixels) of the image to be created. Useful for allowing users
+    to change the resolution of the output map dynamically.
+
+.. index::
+   pair: CGI; mapxy
+
+MAPXY [x] [y] , MAPXY (shape)
+    A point, in the same coordinate system as the shapefiles, to be used in
+    conjunction with a buffer or a scale to construct a map extent.
+
+    Can be set to shape as an alternative option. In this case mapextent is
+    set to the extent of a selected shape. Used with queries.
+
+.. index::
+   pair: CGI; minx
+
+.. index::
+   pair: CGI; miny
+
+.. index::
+   pair: CGI; maxx
+
+.. index::
+   pair: CGI; maxy
+
+MINX | MINY | MAXX | MAXY [number]
+    Minimum/Maximum x/y coordinate of the spatial extent for a new map/query.
+    This set of parameters are the pieces of MAPEXT.
+
+.. index::
+   pair: CGI; mode
+
+MODE [value]
+    Mode of operation. The following options are supported:
+
+    .. index::
+       triple: CGI; mode; browse
+
+    BROWSE
+        Fully interactive interface where maps (and interactive pages) are
+        created. This is the default mode.
+
+    .. index::
+       triple: CGI; mode; coordinate
+
+    COORDINATE
+        Returns a string of map coordinates based on a user click on an image. 
+
+        ::
+
+          mapserv.exe?map=/ms4w/apps/local-demo/local.map&MODE=coordinate&IMGEXT=0 0 100 100&IMGXY=10 10
+
+    .. index::
+       triple: CGI; mode; featurenquery
+
+    FEATURENQUERY
+        A spatial search that uses multiple features from SLAYER to query
+        other layers.
+
+    .. index::
+       triple: CGI; mode; featurequery
+
+    FEATUREQUERY
+        A spatial search that uses one feature from SLAYER to query other
+        layers.
+
+    .. index::
+       triple: CGI; mode; indexquery
+
+    INDEXQUERY
+        Looks up a feature based on the values of SHAPEINDEX and TILEINDEX
+        parameters. SHAPEINDEX is required, TILEINDEX is optional and is only
+        used with tiled shapefile layers.
+
+    .. index::
+       triple: CGI; mode; itemfeaturenquery
+
+    ITEMFEATURENQUERY
+        A text search of attribute data is triggered using a QSTRING. Returns
+        all matches. Layer to be searched is defined using slayer parameter.
+        The results of this search are applied to other searchable layers
+        (which can be limited using the QLAYER parameter).
+
+    .. index::
+       triple: CGI; mode; itemfeaturequery
+
+    ITEMFEATUREQUERY
+        A text search of attribute data is triggered using a QSTRING. Returns
+        first match. Layer to be searched is defined using slayer parameter.
+        The results of this search are applied to other searchable layers
+        (which can be limited using the QLAYER parameter).
+
+    .. index::
+       triple: CGI; mode; itemnquery
+
+    ITEMNQUERY
+        A text search of attribute data is triggered using a QSTRING.
+        Returns all matches.
+
+    .. index::
+       triple: CGI; mode; itemquery
+
+    ITEMQUERY
+        A text search of attribute data is triggered using a layer QSTRING.
+        Returns 1st match.
+
+    .. index::
+       triple: CGI; mode; legend
+
+    LEGEND
+        The created legend is returned. Used within an <img ... > tag.
+
+    .. index::
+       triple: CGI; mode; legendicon
+
+    LEGENDICON
+        A legend icon is returned.  The ICON parameter must also be used
+        to specify the layername and a class index.  Class index value is
+        optional and defaults to 0.  For example:
+
+        ::
+
+          mapserv.exe?map=/ms4w/apps/local-demo/local.map&MODE=legendicon&ICON=countries,0
+
+    .. index::
+       triple: CGI; mode; map
+
+    MAP
+        The created map is returned. Used within an <img ... > tag.
+
+    .. index::
+       triple: CGI; mode; nquery
+
+    NQUERY
+        A spatial search (finds all) is triggered by a click in a map or by
+        user-define selection box.
+
+    .. index::
+       triple: CGI; mode; query
+
+    QUERY
+        A spatial search (finds closest) is triggered by a click in a map.
+
+    .. index::
+       triple: CGI; mode; reference
+
+    REFERENCE
+        The created reference map is returned. Used within an <img ... > tag.
+
+    .. index::
+       triple: CGI; mode; scalebar
+
+    SCALEBAR
+        The created scalebar is returned. Used within an <img ... > tag.
+
+    .. index::
+       triple: CGI; mode; tile
+
+    TILE
+        Generate a map tile. See :ref:`tile_mode` for details. 
+
+    .. index::
+       triple: CGI; mode; zoomin
+
+    ZOOMIN
+        Switch to mode BROWSE with ZOOMDIR=1
+
+    .. index::
+       triple: CGI; mode; zoomout
+
+    ZOOMOUT
+        Switch to mode BROWSE with ZOOMDIR=-1
+
+    .. note::
+       The previously available map-only query modes, e.g.
+       ITEMQUERYMAP, are no longer supported.  The `QFORMAT` parameter
+       is now used instead.
+
+.. index::
+   pair: CGI; qformat
+
+QFORMAT [outputformat | mime/type] (optional)
+    The `OUTPUTFORMAT` name or mime/type to be used to process a set
+    of query results (corresponds to the :ref:`WEB` object's
+    QUERYFORMAT parameter).
+    The parameter is optional and used in conjunction with query
+    `MODE`\s.  The default is text/html.
+
+    Example (map output):
+
+    ::
+
+       ...&mode=nquery&qformat=png24&...
+
+.. index::
+   pair: CGI; qitem
+
+QITEM [name] (optional)
+    The name of an attribute in a layer attribute table to query on. The
+    parameter is optional and used in conjunction with the QSTRING for
+    attribute queries.
+
+.. index::
+   pair: CGI; qlayer
+
+QLAYER [name]
+    Query layer. The name of the layer to be queried as it appears in the map
+    file.
+
+.. index::
+   pair: CGI; qstring
+
+QSTRING [expression]
+    Attribute queries: Query string passed to the query function.
+    Since 5.0, qstring will have to be specified in the `VALIDATION`
+    parameter of the `LAYER` for qstring queries to work
+    (*qstring_validation_pattern* `LAYER`-level `METADATA` for
+    MapServer  versions prior to 5.4).
+
+.. index::
+   pair: CGI; queryfile
+
+QUERYFILE [filename]
+    Used with BROWSE or NQUERY mode. This option identifies a query file to
+    load before any regular processing. In BROWSE mode this result in a query
+    map being produced instead of a regular map. This is useful when you want
+    to hilite a feature while still in a pan/zoom mode. In NQUERY mode you'd
+    gain access to any of the templates used in normally presenting the query,
+    so you have access to query maps AND attribute information.
+    See the SAVEQUERY option.
+
+.. index::
+   pair: CGI; ref
+
+REF
+    The name associated with the inline reference map image used to record
+    user clicks. What actually is passed are two variables, ref.x and ref.y.
+
+    For the CGI Applications this is an essential variable when reference
+    maps are used, see the examples for sample usage.
+
+.. index::
+   pair: CGI; refxy
+
+REFXY [x] [y]
+    Coordinates (in pixels) of a single mouse click in the reference image.
+    Used in conjunction with Java based front ends to the MapServer.
+
+.. index::
+   pair: CGI; savequery
+
+SAVEQUERY
+    When used with any of the query modes this tells the MapServer to save the
+    query results to a temporary file for use in subsequent operations
+    (see QUERYFILE). Useful for making queries persistent.
+
+.. index::
+   pair: CGI; scaledenom
+
+SCALEDENOM [number]
+    Scale to create a new map at. Used with mapxy. Scale is given as the
+    denominator of the actual scale fraction, for example for a map at a scale
+    of 1:24,000 use 24000.  Implemented in MapServer 5.0, to replace the
+    deprecated SCALE parameter.
+
+SCALE [number] - deprecated
+    Since MapServer 5.0 the proper parameter to use is SCALEDENOM
+    instead.  The deprecated SCALE is the scale to create a new map at. Used
+    with mapxy. Scale is given as the denominator of the actual scale fraction,
+    for example for a map at a scale of 1:24,000 use 24000.
+
+.. index::
+   pair: CGI; searchmap
+
+SEARCHMAP
+    It is possible to do pan/zoom interfaces using querymaps. In these cases
+    you will likely want information about the contents of the new map rather
+    than the previous map which is the normal way queries work. When
+    searchmap is specified the new map is created and it's extent is used
+    to query layers. Useful with NQUERY mode only.
+
+.. index::
+   pair: CGI; shapeindex
+
+SHAPEINDEX [index]
+    Used for index queries (in conjunction with INDEXQUERY).
+
+.. index::
+   pair: CGI; slayer
+
+SLAYER [name]
+    Select layer. The name of the layer to be used for any of the feature
+    (i.e. staged) query modes. The select layer must be a polygon layer. The
+    selection feature(s) are available for presentation to the user.
+
+.. index::
+   pair: CGI; tile
+
+TILE [coord]
+    Used in MODE=TILE. Tile coordinates. See :ref:`tile_mode` for details.
+
+.. index::
+   pair: CGI; tileindex
+
+TILEINDEX [index]
+    Used for index queries (in conjunction with INDEXQUERY), used with tiled
+    shapefile layers.
+
+.. index::
+   pair: CGI; tilemode
+
+TILEMODE [mode]
+    Used in MODE=TILE. mode can be `gmap` (Google Maps) or `ve` (Bing Maps/Virtual Earth).
+    See :ref:`tile_mode` for details.
+
+.. index::
+   pair: CGI; tilesize
+
+TILESIZE [width] [height]
+
+    .. versionadded:: 8.0
+
+    Used in MODE=TILE. width and height are the tile dimension in in pixels.
+    If not specified, defaults to 256x256.
+    See :ref:`tile_mode` for details.
+
+.. index::
+   pair: CGI; zoom
+
+ZOOM [number]
+    Zoom scaling to apply to the creation of the new map. Values greater than
+    0 resulting in zooming in, 0 is a pan, and values less than zero are for
+    zooming out. A value of 2 means "zoom in twice".
+
+    ZOOM can be used as a shortcut for the combination ZOOMDIR/ZOOMSIZE.
+    The zoom is limited by the MINZOOM/MAXZOOM settings compiled into the
+    MapServer (-25/25) by default.
+
+.. index::
+   pair: CGI; zoomdir
+
+ZOOMDIR [1 | 0 | -1]
+    Direction to zoom. See above.
+
+.. index::
+   pair: CGI; zoomsize
+
+ZOOMSIZE [number]
+    Absolute magnitude of a zoom. Used with ZOOMDIR.
+
+    ZOOMDIR is limited to MAXZOOM compiled into the MapServer (25 by default).
+
+
+.. index::
+   single: Change map file parameters
+
+.. _cgi_mapfile_change_parameters:
+
+Changing mapfile parameters via a form or a URL
+===============================================
+
+Beginning with version 3.3 it is possible to change virtually any mapfile 
+value from a form or a URL (see :ref:`RUNSUB`).  The syntax for
+this is fairly straightforward, and depends on what version of
+MapServer you are using.  One potentially very powerful use of this
+ability to change mapfile parameters through a URL involves changing
+class expressions on-the-fly.  `VALIDATION` is used to control
+run-time substitution.  Try it out.
+
+.. warning::
+
+  This functionality is only available via the :ref:`mapserv` CGI application.
+  Within MapScript this is easy to do by yourself since the developer has
+  complete control over how input is handled.
+
+Using MapServer version < 8
+---------------------------
+
+.. warning::
+   The below methods were removed as of the MapServer 8.0.0 release.  
+   You can still however handle this through 
+   :ref:`runsub`, but with a more limited list of supported mapfile 
+   parameters.
+
+Previous versions of the MapServer CGI program allowed certain parameters
+to be changed via a URL using a cumbersome syntax such as
+map_layer_0_class_0_color=255+0+0 which changes the color in one classObj.
+So, in the past you had to change parameters one-at-a-time. Now you can
+pass chunks of mapfiles (with security restrictions) to the CGI interface.
+The map_object notation is still necessary to identify which object you
+want to modify but you can change multiple properties at one time. Note
+that you can use either a '_' or a '.' to separate identifiers.
+
+Example 1, changing a scalebar object:
+
+::
+
+  ...&map.scalebar=UNITS+MILES+COLOR+121+121+121+SIZE+300+2&...
+
+Example 2, changing a presentation style:
+
+::
+
+ ...&map.layer[lakes].class[0].style[0]=SYMBOL+crosshatch+COLOR+151+51+151+SIZE+15&...
+
+Example 3, creating a new feature:
+
+::
+
+  ...&map_layer[3]=FEATURE+POINTS+500000+1000000+END+TEXT+'A+test+point'+END&...
+
+Example 4, set multiple web object parameters:
+
+::
+
+  ...&map_web=imagepath+/ms4w/tmp/ms_tmp/+imageurl+/ms_tmp/
+
+Example 5, set the map size:
+
+::
+
+  ...&map_size=800+400
+
+The variable identifies an object uniquely (by name or index in the
+case of layerObj's and classObj's). The value is a snippet of a
+mapfile. You cannot create new objects other than inline features at
+this point.
+

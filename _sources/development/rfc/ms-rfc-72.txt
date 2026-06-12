@@ -1,0 +1,106 @@
+.. _rfc72:
+
+=========================================================================
+MS RFC 72: Layer and Label-Level Geomtransforms
+=========================================================================
+
+:Date:  2011/06/27
+:Author: Steve Lime
+:Contact: sdlime at comcast.net
+:Status: Draft
+:Version: TBD
+
+1. Overview
+-----------
+
+MapServer 6.0 introduced the concept of geometry expressions within a styleObj-geomtransform. For
+example, one could write:
+
+::
+
+  STYLE
+    GEOMTRANSFORM (buffer([shape], -5)
+    ...
+  END
+
+This would cause a buffer operation to be run on the shape before being rendered with a given style.
+
+This is useful for certain cartographic effects but is limited in a couple of ways:
+
+  1) it operates in pixel space (e.g. once a feature is converted from map to image coordinates)
+  2) the resulting shape can only be used with a single style so it is not efficient to, say, create a complex rendering of a buffered feature
+  3) it is not possible to query transformed features
+  4) the resulting shape cannot be used in any labeling operations
+
+2. The proposed solution
+------------------------
+
+This RFC proposes to extend GEOMTRANSFORMS to both the layer and label contexts. Basically the same 
+keyword and syntax would become valid in other objects.
+
+For a layer the transformation would be applied to geometries as they are read from a datasource 
+and before any drawing or query operations. As a result it would be much more efficient to perform
+complex rendering of a transformed shape. In addition the resulting shape would also be queryable 
+in a consistent manner since the transformation would be independent of the map being drawn (e.g. 
+scale, bounding box, etc...).
+
+For a label the transformation would be applied ahead label point computation, in pixel coordinates
+much like the current style implementation. This will allow for effects like labeling the inside edge
+of a polygon or perhaps creating a curved labels within a polygon. 
+
+These operations are computationaly intensive so users would need to understand the performance 
+impact but as tiling becomes the norm this is less an issue.
+
+3. Implementation Details
+-------------------------
+
+For layers I propose adding a check to the functions msLayerGetShape() and msLayerNextShape() to
+conditionally apply the GEOMSTRANFORM before returning the shape. The resulting shape would contain
+all the attributes of the parent. (Note: one potential issue is that certain operations might affect 
+the bounding box used to select candidate shapes via msLayerWhichShapes()).
+
+For labels the check and transformation would be applied within the msLayerDrawShape() function.
+
+Small changes to the logical expression grammar (mapparser.y) and expression tokenizer would need
+to be made. 
+
+3.1 Files affected
+------------------
+
+The following files will be modified/created by this RFC:
+
+::
+
+  mapfile.c (layer/label read/write)
+  mapdraw.c (update msDrawShape())
+  maplayer.c (update msLayerGetShape(), msLayerNextShape(), msLayerWhichItems() and msLayerGetTokens())
+  maplexer.l (add additional GEOS operators, in trunk only buffer and difference are currently implemented)
+  mapparser.y (extend the grammar)
+
+3.2 MapScript Issues
+--------------------
+
+These are just expressionObj's so functions to get/set them already exist.
+
+
+3.3 Security Issues
+-------------------
+
+Care must be take to avoid memory leaks associated with the production of the transformed shapes. It 
+would make sense to allow runtime substitution like is done with layer filters and class expressions. 
+Similarly, validation patterns would be required. 
+
+3.4 Backwards Compatibility Issues
+----------------------------------
+
+This change provides a new functionality with no backwards compatibility issues being considered.
+
+4. Bug ID
+---------
+
+None assigned. See related ticket #3871. 
+
+5. Voting history
+-----------------
+
+None

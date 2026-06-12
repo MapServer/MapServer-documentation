@@ -1,0 +1,467 @@
+.. index::
+   single: OUTPUTFORMAT
+    
+.. _outputformat:
+
+*****************************************************************************
+ OUTPUTFORMAT
+*****************************************************************************
+
+A map file may have zero, one or more OUTPUTFORMAT object declarations, 
+defining available output formats supported including formats like PNG, 
+JPEG, GeoTIFF, SVG, PDF and KML.
+
+If OUTPUTFORMAT sections declarations are not found in the map file, the 
+following implicit declarations will be made. Only those for which support 
+is compiled in will actually be available. The GeoTIFF depends on building 
+with GDAL support, and the PDF and SVG depend on building with cairo support.
+  
+.. code-block:: mapfile
+
+    OUTPUTFORMAT
+      NAME "png"
+      DRIVER AGG/PNG
+      MIMETYPE "image/png"
+      IMAGEMODE RGB
+      EXTENSION "png"
+      FORMATOPTION "GAMMA=0.75"
+    END
+    OUTPUTFORMAT
+      NAME "png8"
+      DRIVER AGG/PNG8
+      MIMETYPE "image/png; mode=8bit"
+      IMAGEMODE RGB
+      EXTENSION "png"
+      FORMATOPTION "QUANTIZE_FORCE=on"
+      FORMATOPTION "QUANTIZE_COLORS=256"
+      FORMATOPTION "GAMMA=0.75"
+    END
+    OUTPUTFORMAT
+      NAME "jpeg"
+      DRIVER AGG/JPEG
+      MIMETYPE "image/jpeg"
+      IMAGEMODE RGB
+      EXTENSION "jpg"
+      FORMATOPTION "GAMMA=0.75"
+    END
+    OUTPUTFORMAT
+      NAME "jpeg_png"
+      MIMETYPE "image/vnd.jpeg-png"
+      DRIVER AGG/MIXED
+      IMAGEMODE RGBA
+      FORMATOPTION "TRANSPARENT_FORMAT=png"
+      FORMATOPTION "OPAQUE_FORMAT=jpeg"
+    END
+    OUTPUTFORMAT
+      NAME "jpeg_png8"
+      MIMETYPE "image/vnd.jpeg-png8"
+      DRIVER AGG/MIXED
+      IMAGEMODE RGBA
+      FORMATOPTION "TRANSPARENT_FORMAT=png8"
+      FORMATOPTION "OPAQUE_FORMAT=jpeg"
+    END
+    OUTPUTFORMAT
+      NAME "svg"
+      DRIVER CAIRO/SVG
+      MIMETYPE "image/svg+xml"
+      IMAGEMODE RGB
+      EXTENSION "svg"
+    END
+    OUTPUTFORMAT
+      NAME "pdf"
+      DRIVER CAIRO/PDF
+      MIMETYPE "application/x-pdf"
+      IMAGEMODE RGB
+      EXTENSION "pdf"
+    END
+    OUTPUTFORMAT
+      NAME "GTiff"
+      DRIVER GDAL/GTiff
+      MIMETYPE "image/tiff"
+      IMAGEMODE RGB
+      EXTENSION "tif"
+    END
+    OUTPUTFORMAT
+      NAME "kml"
+      DRIVER KML
+      MIMETYPE "application/vnd.google-earth.kml.xml"
+      IMAGEMODE RGB
+      EXTENSION "kml"
+    END
+    OUTPUTFORMAT
+      NAME "kmz"
+      DRIVER KMZ
+      MIMETYPE "application/vnd.google-earth.kmz"
+      IMAGEMODE RGB
+      EXTENSION "kmz"
+    END
+    OUTPUTFORMAT
+      NAME "cairopng"
+      DRIVER CAIRO/PNG
+      MIMETYPE "image/png"
+      IMAGEMODE RGB
+      EXTENSION "png"
+    END
+    OUTPUTFORMAT
+      NAME "myUTFGrid"
+      DRIVER UTFGRID
+      FORMATOPTION "LABELS=true"
+      FORMATOPTION "UTFRESOLUTION=4"
+      FORMATOPTION "DUPLICATES=false"
+    END
+
+.. index::
+   pair: OUTPUTFORMAT; DRIVER
+   :name: mapfile-outputformat-driver
+    
+DRIVER [name]
+    The name of the driver to use to generate this output format. Some driver 
+    names include the definition of the format if the driver supports multiple 
+    formats. For AGG, the possible driver names are "AGG/PNG" and "AGG/JPEG".
+    For output through OGR the OGR driver name is appended, such as 
+    "OGR/Mapinfo File".  For output through GDAL the GDAL shortname for the 
+    format is appended, such as "GDAL/GTiff". Note that PNG and JPEG 
+    output can be generated with either GDAL or AGG (AGG is generally more 
+    efficient).  TEMPLATE should be used for template based output. (mandatory).
+    Other drivers: KML, KMZ and UTFGRID.
+
+.. index::
+   pair: OUTPUTFORMAT; EXTENSION
+   :name: mapfile-outputformat-extension
+
+EXTENSION [type]
+    Provide the extension to use when creating files of this type. (optional)
+
+
+.. index::
+   pair: OUTPUTFORMAT; FORMATOPTION
+   :name: mapfile-outputformat-formatoption
+    
+.. _FORMATOPTION:
+
+FORMATOPTION [option]
+    Provides a driver or format specific option. Zero or more FORMATOPTION 
+    statement may be present within a OUTPUTFORMAT declaration. (optional)
+
+    .. note::
+        All FORMATOPTION values can be replaced using runtime substitution. See :ref:`RUNSUB`
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; GAMMA
+
+    - AGG/\*: "GAMMA=n" is used to specify the gamma correction to
+      apply to polygon rendering. Allowed values are [0.0,1.0] ,
+      default is 0.75. This value is used to prevent artifacts from
+      appearing on the border of contiguous polygons. Set to 1.0 to
+      disable gamma correction.
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; QUALITY
+
+    - AGG/JPEG: The "QUALITY=n" option may be used to set the quality of 
+      jpeg produced (value from 0-100).
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; COMPRESSION
+
+    - AGG/PNG: "COMPRESSION=n" is used to determine the ZLIB
+      compression applied to the png creation. n is expected to be an
+      integer value from 0 to 9, with 0 meaning *no* compression (not
+      recommended), 1 meaning fastest compression, and 9 meaning best
+      compression. The compression levels come at a cost (be it in
+      terms of cpu processing or file size, chose the setting that
+      suits you most). The default is COMPRESSION=6.
+
+    - AGG/PNG supports quantizing from 24/32 bits to 8bits, in order
+      to reduce the final image size (and therefore save bandwidth)
+      (see also `MapServer issue #2436`_
+      for strategies when applying these options):
+
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; QUANTIZE_FORCE
+
+      - "QUANTIZE_FORCE=on" used to reduce an RGB or RGBA image into
+        an 8bit (or less) paletted images. The colors used in the
+        palette are selected to best fit the actual colors in the RGB
+        or RGBA image.
+ 
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; QUANTIZE_COLORS
+
+      - "QUANTIZE_COLORS=256" used to specify the number of colors to
+        be used when applying quantization. Maximum value is
+        256. Specifying anything between 17 and 255 is probably a
+        waste of quality as each pixel is still encoded with a full
+        byte. Specifying a value under 16 will produce tiny images,
+        but severely degraded.
+
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; PALETTE
+
+      - "PALETTE=/path/to/palette.txt" is used to define the absolute
+        path where palette colors can be found. This file must contain
+        256 entries of r,g,b triplets for RGB imagemodes, or r,g,b,a
+        quadruplets for RGBA imagemodes. The expected format is one
+        triplet (or quadruplet) per line, each value separated by
+        commas, and each triplet/quadruplet on a single line. If you
+        want to use transparency with a palette, it is important to
+        have these two colors in the palette file: 0,0,0,0 and
+        255,255,255,255.
+
+        .. NOTE::
+	   0,0,0,0 is important if you have fully transparent areas.
+	   255,255,255,255 is opaque white.
+           The important colors to have in your palette really depend
+	   on your actual map, although 0,0,0,0 , 0,0,0,255 , and
+	   255,255,255,255 are very likely to show up most of the
+	   time.
+
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; PALETTE_FORCE
+
+      - "PALETTE_FORCE=on" is used to reduce image depth with a
+        predefined palette.  This option is incompatible with the
+        previous quantization options. To allow additional colours 
+        for anti-aliasing other than those in the predefined 
+        palette, use with "QUANTIZE_COLORS". 
+
+    .. index::
+       pair: PDF; Geospatial
+
+    - AGG/MIXED
+    
+      .. versionadded:: 7.2
+      
+      AGG/MIXED is a meta driver that automatically selects the appropriate format
+      depending if the result image has transparency or not. It requires the
+      TRANSPARENT_FORMAT and OPAQUE_FORMAT options to be defined and set to
+      another valid format. The valid formats for TRANSPARENT_FORMAT and
+      OPAQUE_FORMAT are those handled by the AGG/PNG, AGG/JPEG or GDAL/xxxx
+      drivers. By default, the "jpeg_png" format (with "image/vnd.jpeg-png" mime
+      type) is pre-configured to use PNG images when they are non-opaque pixels
+      and JPEG when they are only opaque pixels. Similarly a "jpeg_png8" format
+      (with "image/vnd.jpeg-png8" mime type) is pre-configured to use PNG 8bits
+      images when they are non-opaque pixels and JPEG when they are only opaque
+      pixels.
+
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; TRANSPARENT_FORMAT
+
+      - "TRANSPARENT_FORMAT=name": which output format to be used when the
+        image contains non-opaque/transparent pixels.
+
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; OPAQUE_FORMAT
+
+      - "OPAQUE_FORMAT=name": which output format to be used when the
+        image contains only opaque pixels.
+ 
+      Example:
+
+      .. code-block:: mapfile
+
+        OUTPUTFORMAT
+          NAME "jpeg_low"
+          MIMETYPE "image/jpeg; quality=50"
+          DRIVER AGG/JPEG
+          IMAGEMODE RGB
+          FORMATOPTION "QUALITY=50"
+        END
+
+        OUTPUTFORMAT
+          NAME "jpeg_low_png"
+          MIMETYPE "image/vnd.jpeg-png; quality=50"
+          DRIVER AGG/MIXED
+          IMAGEMODE RGBA
+          FORMATOPTION "TRANSPARENT_FORMAT=png"
+          FORMATOPTION "OPAQUE_FORMAT=jpeg_low"
+        END
+
+    - CAIRO/PDF:
+
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; GEO_ENCODING
+
+      - "GEO_ENCODING=ISO32000" or "GEO_ENCODING=OGC_BP": 
+      
+        .. versionadded:: 6.2      
+      
+        Geospatial PDF will be generated.  Requires GDAL 1.10 with PDF driver.
+        See the `GDAL Geospatial PDF`_ documentation for requirements.
+
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; METADATA_ITEM
+
+      - "METADATA_ITEM:option=value": 
+      
+        .. versionadded:: 6.2
+        
+        Additional PDF options can be
+        provided using the METADATA_ITEM prefix.  The following
+        options are available: `AUTHOR`, `CREATOR`, `CREATION_DATE`,
+        `KEYWORDS`, `PRODUCER`, `SUBJECT`, `TITLE`.
+
+      Example:
+
+      .. code-block:: mapfile
+
+        OUTPUTFORMAT
+          NAME pdf
+          DRIVER "CAIRO/PDF"
+          MIMETYPE "application/x-pdf"
+          IMAGEMODE RGB
+          EXTENSION "pdf"
+          FORMATOPTION "GEO_ENCODING=ISO32000"
+          FORMATOPTION "METADATA_ITEM:CREATOR=MapServer, with GDAL trunk"
+          FORMATOPTION "METADATA_ITEM:PRODUCER=MapServer, with GDAL trunk"
+        END
+
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; INTERLACE
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; TILED
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; BLOCKXSIZE
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; BLOCKYSIZE
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; INTERLEAVE
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; COMPRESS
+
+    - GDAL/GTiff: Supports the "TILED=YES", "BLOCKXSIZE=n",
+      "BLOCKYSIZE=n", "INTERLEAVE=[PIXEL/BAND]" and
+      "COMPRESS=[NONE,PACKBITS,JPEG,LZW,DEFLATE]" format specific
+      options.
+
+    - GDAL/\*: All FORMATOPTIONs are passed onto the GDAL create function. 
+      Options supported by GDAL are described in the detailed documentation 
+      for each GDAL format.
+
+    .. index::
+       triple: OUTPUTFORMAT; FORMATOPTION; NULLVALUE
+
+    - GDAL/\*: "NULLVALUE=n" is used in raw image modes (IMAGEMODE 
+      BYTE/INT16/FLOAT) to pre-initialize the raster and an attempt is made
+      to record this in the resulting file as the nodata value. This is
+      automatically set in WCS mode if rangeset_nullvalue is set. 
+
+    - OGR/\*: See the :ref:`ogr_output` document for details of OGR
+      format options.
+
+    .. index::
+       pair: OUTPUTFORMAT; UTFGRID
+       :name: mapfile-outputformat-utfgrid
+
+    - UTFGRID: See :ref:`rfc93`.
+
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; LABELS
+
+      - "LABELS=true".  Labels can be rendered using their parent
+        feature id (derived via UTFITEM) where the labels bounding box
+        is drawn to the map.
+
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; UTFRESOLUTION
+
+      - "UTFRESOLUTION=4".  The resolution of the grid.  A larger
+        resolution will make the grid smaller and therefore reduce its
+        weight but also its precision.
+
+      .. index::
+         triple: OUTPUTFORMAT; FORMATOPTION; DUPLICATES
+
+      - "DUPLICATES=false".  It may be desirable NOT to remove
+        duplicate feature id/key pairs since that process could be
+        expensive depending on the number of features in the map. This
+        option can be used to skip this step. The resulting JSON file
+        will be a bit larger.
+
+.. index::
+   pair: OUTPUTFORMAT; IMAGEMODE
+   :name: mapfile-outputformat-imagemode
+    
+IMAGEMODE [RGB|RGBA|INT16|FLOAT32|FEATURE]
+    Selects the imaging mode in which the output is generated. Does matter 
+    for non-raster formats like Flash. Not all formats support all 
+    combinations. (optional)
+
+    .. index::
+       triple: OUTPUTFORMAT; IMAGEMODE; RGB
+
+    - RGB: Render in 24bit Red/Green/Blue mode. Supports all colors 
+      but does not support transparency.
+
+    .. index::
+       triple: OUTPUTFORMAT; IMAGEMODE; RGBA
+
+    - RGBA: Render in 32bit Red/Green/Blue/Alpha mode. Supports all 
+      colors, and alpha based transparency. All features are rendered
+      against an initially transparent background.
+
+    .. index::
+       triple: OUTPUTFORMAT; IMAGEMODE; BYTE
+
+    - BYTE:  Render raw 8bit pixel values (no presentation).  Only 
+      works for RASTER layers (through GDAL) and WMS layers currently.
+
+    .. index::
+       triple: OUTPUTFORMAT; IMAGEMODE; INT16
+
+    - INT16: Render raw 16bit signed pixel values (no presentation). 
+      Only works for RASTER layers (through GDAL) and WMS layers currently.
+
+    .. index::
+       triple: OUTPUTFORMAT; IMAGEMODE; FLOAT32
+
+    - FLOAT32: Render raw 32bit floating point pixel values 
+      (no presentation). Only works for RASTER layers (through GDAL) 
+      and WMS layers currently.
+
+    .. index::
+       triple: OUTPUTFORMAT; IMAGEMODE; FEATURE
+
+    - FEATURE: Output is a non-image result, such as features written 
+      via templates or OGR.  
+
+.. index::
+   pair: OUTPUTFORMAT; MIMETYPE
+   :name: mapfile-outputformat-mimetype
+    
+MIMETYPE [type]
+    Provide the mime type to be used when returning results over the web. 
+    (optional)
+
+.. index::
+   pair: OUTPUTFORMAT; NAME
+   :name: mapfile-outputformat-name
+    
+NAME [name]
+    The name to use in the IMAGETYPE keyword of the map file to 
+    select this output format.  This name is also used in metadata describing
+    wxs formats allowed, and can be used (sometimes along with mimetype) to 
+    select the output format via keywords in OGC requests. (optional)
+
+.. index::
+   pair: OUTPUTFORMAT; TRANSPARENT
+   :name: mapfile-outputformat-transparent
+    
+TRANSPARENT [on|off]
+    Indicates whether transparency should be enabled for this format. Note 
+    that transparency does not work for IMAGEMODE RGB output. Not all formats 
+    support transparency (optional). When transparency is enabled for the 
+    typical case of 8-bit pseudocolored map generation, the IMAGECOLOR color 
+    will be marked as transparent in the output file palette. Any other map 
+    components drawn in this color will also be transparent, so for map 
+    generation with transparency it is best to use an otherwise unused color 
+    as the background color.
+
+.. _`GDAL Geospatial PDF`: https://gdal.org/en/stable/drivers/raster/pdf.html
+.. _`MapServer issue #2436`: https://github.com/MapServer/MapServer/issues/2436

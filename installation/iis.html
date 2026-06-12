@@ -1,0 +1,644 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Running MapServer on IIS &#8212; MapServer 8.6.4 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx.css?v=48f05237" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_collapse.css?v=226d88b4" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=dd298242" />
+    <link rel="stylesheet" type="text/css" href="../_static/ribbon.css?v=ea091bf4" />
+    
+    <script src="../_static/jquery.js?v=5d32c60e"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+    <script src="../_static/documentation_options.js?v=f59c4a7a"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    
+    <link rel="icon" href="../_static/mapserver.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="copyright" title="Copyright" href="../copyright.html" />
+    <link rel="next" title="Oracle Installation" href="oracle.html" />
+    <link rel="prev" title=".NET MapScript Compilation" href="dotnet.html" /> 
+  </head><body>
+<!-- add a ribbon to show these docs are the main branch -->
+<h4 class="ribbon">DOCS PREVIEW</h4>
+
+<table width="100%" style="width: 100%; background-color: white;">
+  <tr>
+    <td rowspan="2" style="padding: 10px 0px 10px 10px;">
+      <a href="../index.html" title="Home"><img src="../_static/banner.png" alt="MapServer banner" border="0" /></a>
+    </td>
+    <td style="padding: 10px 10px 0px 0px; text-align: right; vertical-align: top;">
+      <a href="../index.html" title="Home">Home</a> |
+      <a href="../products.html" title="Products (MapServer core, MapCache, TinyOWS">Products</a> |
+      <a href="https://github.com/MapServer/MapServer/issues/" title="Issue Tracker (MapServer core)">Issue Tracker</a> |
+      <a href="../community/service_providers.html" title="Professional Service Providers">Service Providers</a> |      
+      <a href="../faq.html" title="Frequently Asked Questions">FAQ</a> |
+      <a href="https://fosstodon.org/@mapserver" title="Mastodon" target="_blank">Mastodon</a> |
+      <a href="../download.html" title="Download Source or Binaries">Download </a> |
+      <a class="badge" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KRJ2X44N3HA6U&source=url" target="_blank">
+        <img src="https://img.shields.io/badge/donate-%E2%9D%A4%C2%A0-ff69b4.svg?style=flat" alt="Donate to MapServer">
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0px 10px 0px 0px; text-align: right; vertical-align: bottom;">
+        <img src="../_static/flagicons/en.png" alt="en" title="en" border="0" width="18px" height="13px"/>
+        
+          <a href="../ar/installation/iis.html"><img src="../_static/flagicons/ar.png" alt="ar" title="ar" border="0" /></a>
+        
+        
+          <a href="../de/installation/iis.html"><img src="../_static/flagicons/de.png" alt="de" title="de" border="0" /></a>
+        
+        
+          <a href="../el/installation/iis.html"><img src="../_static/flagicons/el.png" alt="el" title="el" border="0" /></a>
+        
+        
+          <a href="../es/installation/iis.html"><img src="../_static/flagicons/es.png" alt="es" title="es" border="0" /></a>
+        
+        
+          <a href="../fr/installation/iis.html"><img src="../_static/flagicons/fr.png" alt="fr" title="fr" border="0" /></a>
+        
+        
+          <a href="../id/installation/iis.html"><img src="../_static/flagicons/id.png" alt="id" title="id" border="0" /></a>
+        
+        
+          <a href="../it/installation/iis.html"><img src="../_static/flagicons/it.png" alt="it" title="it" border="0" /></a>
+        
+        
+          <a href="../ja/installation/iis.html"><img src="../_static/flagicons/ja.png" alt="ja" title="ja" border="0" /></a>
+        
+        
+          <a href="../nl_NL/installation/iis.html"><img src="../_static/flagicons/nl_NL.png" alt="nl_NL" title="nl_NL" border="0" /></a>
+        
+        
+          <a href="../pl/installation/iis.html"><img src="../_static/flagicons/pl.png" alt="pl" title="pl" border="0" /></a>
+        
+        
+          <a href="../ru/installation/iis.html"><img src="../_static/flagicons/ru.png" alt="ru" title="ru" border="0" /></a>
+        
+        
+          <a href="../sq/installation/iis.html"><img src="../_static/flagicons/sq.png" alt="sq" title="sq" border="0" /></a>
+        
+        
+          <a href="../tr/installation/iis.html"><img src="../_static/flagicons/tr.png" alt="tr" title="tr" border="0" /></a>
+        
+
+    </td>
+  </tr>
+</table>
+
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="oracle.html" title="Oracle Installation"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="dotnet.html" title=".NET MapScript Compilation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Home</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../documentation.html" >MapServer 8.6.4 Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" accesskey="U">Installation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Running MapServer on IIS</a></li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="running-mapserver-on-iis">
+<span id="iis"></span><h1>Running MapServer on IIS<a class="headerlink" href="#running-mapserver-on-iis" title="Link to this heading">¶</a></h1>
+<dl class="field-list simple">
+<dt class="field-odd">Author<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Seth Girvin</p>
+</dd>
+<dt class="field-even">Contact<span class="colon">:</span></dt>
+<dd class="field-even"><p>sgirvin at compass.ie</p>
+</dd>
+<dt class="field-odd">Last Updated<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2024-11-21</p>
+</dd>
+</dl>
+<nav class="contents local" id="contents">
+<ul class="simple">
+<li><p><a class="reference internal" href="#mapserver-set-up" id="id2">MapServer Set-up</a></p></li>
+<li><p><a class="reference internal" href="#configuring-with-iis" id="id3">Configuring with IIS</a></p></li>
+<li><p><a class="reference internal" href="#mapserver-configuration-file" id="id4">MapServer Configuration File</a></p></li>
+<li><p><a class="reference internal" href="#setting-up-applications" id="id5">Setting up Applications</a></p></li>
+<li><p><a class="reference internal" href="#setting-up-logging" id="id6">Setting up Logging</a></p></li>
+<li><p><a class="reference internal" href="#further-configuration" id="id7">Further Configuration</a></p>
+<ul>
+<li><p><a class="reference internal" href="#setting-a-default-mapfile" id="id8">Setting a Default Mapfile</a></p></li>
+<li><p><a class="reference internal" href="#setting-a-certificates-file" id="id9">Setting a Certificates File</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#securing-mapserver-in-iis" id="id10">Securing MapServer in IIS</a></p></li>
+<li><p><a class="reference internal" href="#troubleshooting" id="id11">Troubleshooting</a></p></li>
+</ul>
+</nav>
+<p id="index-0">This document details how to configure a pre-built version of MapServer to run on IIS (Microsoft’s web server - Internet Information Services).
+These steps have a minimum requirement of IIS 7 and Windows 7, and have been tested on IIS 10 running on Windows 10.</p>
+<p>MapServer can also be run on Windows using <a class="reference external" href="https://ms4w.com">MS4W</a> (MapServer for Windows) - which installs its
+own preconfigured Apache web server, and other related tools such as PHP, TinyOWS, and MapCache.
+Running MapServer under IIS may be necessary when deploying to servers where the installation of an additional web server is restricted, or where
+system administrators have more experience maintaining IIS.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The MapServer executables from <a class="reference external" href="https://ms4w.com">MS4W</a> can also be used under IIS as well; for more
+information see the section in MS4W’s <a class="reference external" href="https://ms4w.com/README_INSTALL.html#installing-the-ms4w-mapserver-binaries-in-other-environments">README</a>,
+or ask the MS4W community for assistance (<a class="reference external" href="https://lists.ms4w.com/mailman/listinfo/ms4w-users">subscribe</a>).</p>
+</div>
+<section id="mapserver-set-up">
+<h2><a class="toc-backref" href="#id2" role="doc-backlink">MapServer Set-up</a><a class="headerlink" href="#mapserver-set-up" title="Link to this heading">¶</a></h2>
+<p>Pre-compiled versions of MapServer and GDAL (a required dependency) can be downloaded from <a class="reference external" href="http://www.gisinternals.com/release.php">http://www.gisinternals.com/release.php</a>.
+These downloads are built and maintained by Tamas Szekeres a long term contributor to MapServer, and Project Steering
+Committee (PSC) member.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Which version should I download?</p>
+<ul class="simple">
+<li><p>Unless you are using deprecated features in your mapfiles you should download the latest stable release.</p></li>
+<li><p>Nearly all servers will now have a x64 (64-bit) architecture, so unless you are restricted to a win32 (32-bit) server
+download a x64 rather than a win32 release.</p></li>
+<li><p>Unless you have a good reason you should use the latest compiler version. MSVC 2022 means the binaries were compiled with
+using Visual C++ 2022.</p></li>
+<li><p>This installation guide uses the <em>“Compiled binaries in a single .zip package”</em> download (release-1911-x64-gdal-3-2-1-mapserver-7-6-2.zip). There is
+also a <em>“MapServer installer with IIS registration support”</em> option, which has an inbuilt installer.</p></li>
+</ul>
+</div>
+<p>Once you have downloaded the zip file follow the steps below.</p>
+<ol class="arabic">
+<li><p>Unzip the folder to your machine. In this example we will assume it has been unzipped to <code class="docutils literal notranslate"><span class="pre">C:\MapServer</span></code>.
+Make sure that you have “unblocked” the zip, to avoid and security related issues later. Right-click on the zip file,
+select properties and click the “Unblock” button on the General tab.</p>
+<img alt="../_images/iis-unblock-zip.png" src="../_images/iis-unblock-zip.png" />
+</li>
+<li><p>Test that MapServer is working by double clicking <code class="docutils literal notranslate"><span class="pre">C:\MapServer\SDKShell.bat</span></code> to start a new Windows command
+session configured with MapServer environment settings, and then type:</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>mapserv -v
+</pre></div>
+</div>
+<p>The MapServer version and supported format types should be displayed in the command window.</p>
+</li>
+</ol>
+</section>
+<section id="configuring-with-iis">
+<span id="iis-configuration"></span><h2><a class="toc-backref" href="#id3" role="doc-backlink">Configuring with IIS</a><a class="headerlink" href="#configuring-with-iis" title="Link to this heading">¶</a></h2>
+<p>These steps assume IIS 7 or higher is installed on the development machine, and MapServer is using the default website
+location of <code class="docutils literal notranslate"><span class="pre">C:\Inetpub\wwwroot</span></code>. MapServer is installed as a <a class="reference internal" href="../optimization/fastcgi.html#fastcgi"><span class="std std-ref">FastCGI</span></a> application, which improves performance by allowing
+MapServer to share objects such as database connections between requests.</p>
+<p>All command line steps should be “Run as Administrator” (to select this option this right-click on the
+Windows command line icon).
+Make sure IIS is on the machine - if you have a folder named <code class="docutils literal notranslate"><span class="pre">C:\Inetpub</span></code> then it is likely IIS is already installed.</p>
+<p>You can install IIS (for Windows 10) from the command line with:</p>
+<blockquote>
+<div><div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>dism /online /enable-feature /featurename:IIS-WebServer
+</pre></div>
+</div>
+</div></blockquote>
+<p>More details on setting up a FastCGI application with IIS can be found in the
+<a class="reference external" href="https://docs.microsoft.com/en-us/iis/configuration/system.webserver/fastcgi/application/">Microsoft FastCGI documentation</a>.</p>
+<ol class="arabic">
+<li><p>First copy the required .exes into the same folder as the MapServer DLLs. This can be done using the command below:</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>xcopy C:\MapServer\bin\ms\apps\* C:\MapServer\bin
+</pre></div>
+</div>
+</li>
+<li><p>Create a new folder <code class="docutils literal notranslate"><span class="pre">C:\Inetpub\wwwroot\mapserver</span></code></p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span><span class="k">md</span> C:\Inetpub\wwwroot\mapserver
+</pre></div>
+</div>
+</li>
+<li><p>Create a new, empty <code class="docutils literal notranslate"><span class="pre">C:\Inetpub\wwwroot\mapserver\web.config</span></code> file, and open it (as an administrator) in Notepad:</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span><span class="k">copy</span> NUL C:\Inetpub\wwwroot\mapserver\web.config
+notepad C:\Inetpub\wwwroot\mapserver\web.config
+</pre></div>
+</div>
+</li>
+<li><p>Paste in the following configuration:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+<span class="nt">&lt;configuration&gt;</span>
+<span class="w">    </span><span class="nt">&lt;system.webServer&gt;</span>
+<span class="w">        </span><span class="nt">&lt;handlers&gt;</span>
+<span class="w">            </span><span class="nt">&lt;add</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;MapServerFastCgi&quot;</span><span class="w"> </span><span class="na">path=</span><span class="s">&quot;*&quot;</span><span class="w"> </span><span class="na">verb=</span><span class="s">&quot;*&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;&quot;</span><span class="w"> </span><span class="na">modules=</span><span class="s">&quot;FastCgiModule&quot;</span><span class="w"> </span><span class="na">scriptProcessor=</span><span class="s">&quot;C:\Mapserver\bin\mapserv.exe&quot;</span>
+<span class="w">            </span><span class="na">resourceType=</span><span class="s">&quot;Unspecified&quot;</span><span class="w"> </span><span class="na">requireAccess=</span><span class="s">&quot;Script&quot;</span><span class="w"> </span><span class="na">allowPathInfo=</span><span class="s">&quot;true&quot;</span><span class="w"> </span><span class="na">preCondition=</span><span class="s">&quot;&quot;</span><span class="w">  </span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/handlers&gt;</span>
+<span class="w">        </span><span class="nt">&lt;caching</span><span class="w"> </span><span class="na">enabled=</span><span class="s">&quot;true&quot;</span><span class="w"> </span><span class="na">enableKernelCache=</span><span class="s">&quot;true&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/system.webServer&gt;</span>
+<span class="nt">&lt;/configuration&gt;</span>
+</pre></div>
+</div>
+</li>
+<li><p>Next set up the web application in IIS:</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;</span><span class="nv">%systemroot%</span><span class="s2">\system32\inetsrv\appcmd&quot;</span> add app /site.name:<span class="s2">&quot;Default Web Site&quot;</span> /path:/mapserver /physicalPath:<span class="s2">&quot;C:\Inetpub\wwwroot\mapserver&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p>Allow request handlers to be set in the web.config file (above), rather than just at the web site level.</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span><span class="nv">%windir%</span>\system32\inetsrv\appcmd.exe unlock config -section:system.webServer/handlers
+</pre></div>
+</div>
+</li>
+<li><p>Next make sure the required IIS CGI module (which includes FastCGI) is installed in IIS with the following command:</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>Dism /Online /Enable-Feature /FeatureName:IIS-CGI
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can also enable IIS modules through the user interface as follows:</p>
+<ol class="arabic simple">
+<li><p>Click “Start button”</p></li>
+<li><p>In the Search box, enter “Turn windows features on or off”</p></li>
+<li><p>In the Features window, Click: “Internet Information Services”</p></li>
+<li><p>Click: “World Wide Web Services”</p></li>
+<li><p>Click: “Application Development Features”</p></li>
+<li><p>Check (enable) the features.</p></li>
+<li><p>IIS may then need to be restarted</p></li>
+</ol>
+<img alt="../_images/windows_features.jpg" src="../_images/windows_features.jpg" />
+</div>
+</li>
+<li><p>Next we set the mapserver.exe to be a FastCGI application and allow it to run in IIS:</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;</span><span class="nv">%systemroot%</span><span class="s2">\system32\inetsrv\appcmd&quot;</span> set config -section:system.webServer/fastCgi /+<span class="s2">&quot;[fullPath=&#39;C:\Mapserver\bin\mapserv.exe&#39;]&quot;</span> /commit:apphost
+<span class="s2">&quot;</span><span class="nv">%systemroot%</span><span class="s2">\system32\inetsrv\appcmd&quot;</span> set config /section:isapiCgiRestriction /+<span class="s2">&quot;[path=&#39;C:\MapServer\bin\mapserv.exe&#39;,description=&#39;MapServer&#39;,allowed=&#39;True&#39;]&quot;</span>
+</pre></div>
+</div>
+<p>These settings can also be viewed and configured using IIS Manager:</p>
+<img alt="../_images/iis-cgi-settings.png" src="../_images/iis-cgi-settings.png" />
+</li>
+<li><p>Test the set-up was successful by entering the following URL in a browser: <a class="reference external" href="http://localhost/mapserver/">http://localhost/mapserver/</a>. If the following text is displayed then MapServer has
+been successfully configured as a FastCGI application in IIS.</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>No query information to decode. QUERY_STRING is set, but empty.
+</pre></div>
+</div>
+</li>
+</ol>
+</section>
+<section id="mapserver-configuration-file">
+<h2><a class="toc-backref" href="#id4" role="doc-backlink">MapServer Configuration File</a><a class="headerlink" href="#mapserver-configuration-file" title="Link to this heading">¶</a></h2>
+<p>The MapServer 8.0 release introduced a new <a class="reference internal" href="../mapfile/config.html#config"><span class="std std-ref">CONFIG</span></a> file. This allows all MapServer global environment variables to be set in a single place, which is
+easier to manage than IIS FastCGI variables, and more portable between different environments and operating systems.</p>
+<p>For this example we will create an empty configuration file at <code class="docutils literal notranslate"><span class="pre">C:\MapServer\apps\mapserver.conf</span></code>. Once the file is created the following sample configuration can be
+copied in:</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>CONFIG
+  ENV
+
+    # allow any map from any location - suitable for development only
+    MS_MAP_PATTERN <span class="s2">&quot;.&quot;</span>
+
+    # allow maps from anywhere in C:/MapServer/apps/ or subfolders
+    # MS_MAP_PATTERN <span class="s2">&quot;^(C:)?\/MapServer\/apps\/((?!\.{2})[_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(map))$&quot;</span>
+
+    # path to the Proj4 projection files
+    PROJ_DATA <span class="s2">&quot;C:/MapServer/bin/proj9/SHARE&quot;</span>
+
+    # point to the certs file for HTTPS access to OWS servers
+    CURL_CA_BUNDLE <span class="s2">&quot;C:\MapServer\bin\curl\curl-ca-bundle.crt&quot;</span>
+
+    # to set a default mapfile uncomment below
+    # MS_MAPFILE <span class="s2">&quot;C:/MapServer/apps/test/test.map&quot;</span>
+
+    # to block MapServer from accesssing mapfile by path uncomment below
+    # MS_MAP_NO_PATH TRUE
+  END
+
+  # allow mapfiles to be accessed by key
+  MAPS
+    <span class="s2">&quot;test&quot;</span> <span class="s2">&quot;C:/MapServer/apps/tests/test.map&quot;</span>
+  END
+
+  PLUGINS
+    # new keyed approach to plugins
+    <span class="s2">&quot;mssql&quot;</span> <span class="s2">&quot;C:/MapServer/bin/ms/plugins/mssql2008/msplugin_mssql2008.dll&quot;</span>
+    <span class="s2">&quot;oci&quot;</span> <span class="s2">&quot;C:/MapServer/bin/ms/plugins/oci/msplugin_oracle.dll&quot;</span>
+  END
+END
+</pre></div>
+</div>
+<p>An IIS FastCGI environment variable <code class="docutils literal notranslate"><span class="pre">MAPSERVER_CONFIG_FILE</span></code> however still needs to be created to point to this configuration file. This can be set using IIS Manager, and selecting
+Server &gt; FastCGI Settings &gt; <code class="docutils literal notranslate"><span class="pre">C:\MapServer\bin\mapserv.exe</span></code> &gt; Environment Variables:</p>
+<img alt="../_images/iis-config-file.png" src="../_images/iis-config-file.png" />
+<p>Alternatively it can beset from the command line with the following command:</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span><span class="nv">%windir%</span>\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+<span class="s2">&quot;[fullPath=&#39;C:\MapServer\bin\mapserv.exe&#39;].environmentVariables.[name=&#39;MAPSERVER_CONFIG_FILE&#39;,value=&#39;C:\MapServer\apps\mapserver.conf&#39;]&quot;</span> /commit:apphost
+</pre></div>
+</div>
+</section>
+<section id="setting-up-applications">
+<h2><a class="toc-backref" href="#id5" role="doc-backlink">Setting up Applications</a><a class="headerlink" href="#setting-up-applications" title="Link to this heading">¶</a></h2>
+<p>MapServer applications consist of a mapfile, and additional optional files for data, symbols, logs, and images. The same instance of MapServer
+can be used to serve many applications. In this example we will create a new <code class="docutils literal notranslate"><span class="pre">test</span></code> subfolder for a test application in a <code class="docutils literal notranslate"><span class="pre">C:\MapServer\apps</span></code> folder.</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span><span class="k">md</span> C:\MapServer\apps\test
+</pre></div>
+</div>
+<p>Now create a new <cite>test.map</cite> file in this folder and paste in the test Mapfile below.</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span><span class="k">copy</span> NUL C:\MapServer\apps\test\test.map
+notepad C:\MapServer\apps\test\test.map
+</pre></div>
+</div>
+<div class="highlight-mapfile notranslate"><div class="highlight"><pre><span></span><span class="k">MAP</span>
+    <span class="k">EXTENT</span> <span class="p">-</span><span class="mi">180</span> <span class="p">-</span><span class="mi">90</span> <span class="mi">180</span> <span class="mi">90</span>
+    <span class="c1"># Set the path to where the map projections are stored</span>
+    <span class="k">CONFIG</span> <span class="s">&quot;PROJ_DATA&quot;</span> <span class="s">&quot;C:\MapServer</span><span class="se">\b</span><span class="s">in\proj\SHARE&quot;</span>
+    <span class="k">NAME</span> <span class="s">&quot;TestMap&quot;</span>
+    <span class="k">WEB</span>
+      <span class="k">METADATA</span>
+        <span class="s">&quot;ows_enable_request&quot;</span> <span class="s">&quot;*&quot;</span>
+      <span class="k">END</span>
+    <span class="k">END</span>
+    <span class="k">PROJECTION</span>
+      <span class="s">&quot;init=epsg:4326&quot;</span>
+    <span class="k">END</span>
+    <span class="k">LAYER</span>
+      <span class="k">NAME</span> <span class="s">&quot;country_bounds&quot;</span>
+      <span class="k">TYPE</span> <span class="nb">RASTER</span>
+      <span class="k">CONNECTION</span> <span class="s">&quot;https://demo.mapserver.org/cgi-bin/wms?&quot;</span>
+      <span class="k">CONNECTIONTYPE</span> <span class="nb">WMS</span>
+      <span class="k">METADATA</span>
+        <span class="s">&quot;wms_srs&quot;</span>             <span class="s">&quot;epsg:4326&quot;</span>
+        <span class="s">&quot;wms_name&quot;</span>            <span class="s">&quot;country_bounds&quot;</span>
+        <span class="s">&quot;wms_server_version&quot;</span>  <span class="s">&quot;1.1.1&quot;</span>
+        <span class="s">&quot;wms_format&quot;</span>          <span class="s">&quot;image/png&quot;</span>
+      <span class="k">END</span>
+    <span class="k">END</span>
+<span class="k">END</span>
+</pre></div>
+</div>
+<p>You should now be able to test the application is accessible through IIS using the following URL to retrieve an image via WMS:
+<a class="reference external" href="http://localhost/mapserver/mapserv?map=C:/MapServer/apps/test/test.map&amp;SERVICE=WMS&amp;VERSION=1.3.0&amp;REQUEST=GetMap&amp;LAYERS=country_bounds&amp;STYLES=&amp;CRS=EPSG:4326&amp;BBOX=-180,-90,180,90&amp;WIDTH=400&amp;HEIGHT=300&amp;FORMAT=image/png">http://localhost/mapserver/mapserv?map=C:/MapServer/apps/test/test.map&amp;SERVICE=WMS&amp;VERSION=1.3.0&amp;REQUEST=GetMap&amp;LAYERS=country_bounds&amp;STYLES=&amp;CRS=EPSG:4326&amp;BBOX=-180,-90,180,90&amp;WIDTH=400&amp;HEIGHT=300&amp;FORMAT=image/png</a></p>
+<img alt="../_images/iis-working.png" src="../_images/iis-working.png" />
+</section>
+<section id="setting-up-logging">
+<h2><a class="toc-backref" href="#id6" role="doc-backlink">Setting up Logging</a><a class="headerlink" href="#setting-up-logging" title="Link to this heading">¶</a></h2>
+<p>You can set-up MapServer logging by adding the following lines to your <code class="docutils literal notranslate"><span class="pre">MAP</span></code> block.</p>
+<div class="highlight-mapfile notranslate"><div class="highlight"><pre><span></span><span class="k">DEBUG</span> <span class="mi">5</span> <span class="c1"># a value from 0 (OFF) to 5 (detailed)</span>
+<span class="k">CONFIG</span> <span class="s">&quot;MS_ERRORFILE&quot;</span> <span class="s">&quot;logs\ms.log&quot;</span>
+</pre></div>
+</div>
+<p>The path to the log file is relative to the mapfile, so in this example you need to create a new <code class="docutils literal notranslate"><span class="pre">C:\MapServer\apps\test\logs</span></code> folder:</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span><span class="k">md</span> C:\MapServer\apps\test\logs
+</pre></div>
+</div>
+<p>You may need to set read-write permissions on the log file to the IIS application pool user (in this example we are using the default <cite>IIS AppPoolDefaultAppPool</cite> account
+under which the MapServer FastCGI runs). In IIS10 the “Authenticated Users” group normally has Modify access to all folders on the C drive, so this step may
+not be necessary.</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>icacls <span class="s2">&quot;C:\MapServer\apps\test\logs&quot;</span> /grant <span class="s2">&quot;IIS AppPool\DefaultAppPool&quot;</span>:(OI)(CI)RW
+</pre></div>
+</div>
+<p>If a different application pool is used, or you don’t set the permissions you will receive the following message
+(also check that the <code class="docutils literal notranslate"><span class="pre">C:\MapServer\apps\test\logs</span></code> folder exists as it will not be created automatically).</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>msSetErrorFile(): General error message. Failed to open MS_ERRORFILE C:/MapServer/apps/test/logs/ms.log
+</pre></div>
+</div>
+</section>
+<section id="further-configuration">
+<span id="iis-environ-settings"></span><h2><a class="toc-backref" href="#id7" role="doc-backlink">Further Configuration</a><a class="headerlink" href="#further-configuration" title="Link to this heading">¶</a></h2>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As of MapServer 8.0 <a class="reference internal" href="../optimization/environment_variables.html#environment-variables"><span class="std std-ref">Environment Variables</span></a> can be set in the <a class="reference internal" href="../mapfile/config.html#config"><span class="std std-ref">CONFIG</span></a> file rather than as variables in IIS</p>
+</div>
+<p>MapServer makes use of <a class="reference internal" href="../optimization/environment_variables.html#environment-variables"><span class="std std-ref">Environment Variables</span></a> to create application-wide settings. When using IIS these need to be set
+as FastCGI environment settings, rather than standard system-wide environment variables. Each FastCGI application can be configured
+with different environment variables and can be modified by IIS Manager, or using the command line.</p>
+<img alt="../_images/iis-environ-settings.png" src="../_images/iis-environ-settings.png" />
+<p>FastCGI configurations are stored in <code class="docutils literal notranslate"><span class="pre">C:\Windows\System32\inetsrv\config\applicationHost.config</span></code> in the format below:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;environmentVariables&gt;</span>
+<span class="w">   </span><span class="nt">&lt;environmentVariable</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;CURL_CA_BUNDLE&quot;</span><span class="w"> </span><span class="na">value=</span><span class="s">&quot;C:\MapServer\bin\curl-ca-bundle.crt&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="nt">&lt;/environmentVariables&gt;</span>
+</pre></div>
+</div>
+<section id="setting-a-default-mapfile">
+<h3><a class="toc-backref" href="#id8" role="doc-backlink">Setting a Default Mapfile</a><a class="headerlink" href="#setting-a-default-mapfile" title="Link to this heading">¶</a></h3>
+<p>The <code class="docutils literal notranslate"><span class="pre">MS_MAPFILE</span></code> environment variable can be set to a default map as follows:</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span><span class="nv">%windir%</span>\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+<span class="s2">&quot;[fullPath=&#39;C:\Mapserver\bin\mapserv.exe&#39;].environmentVariables.[name=&#39;MS_MAPFILE&#39;,value=&#39;C:\MapServer\apps\test\test.map&#39;]&quot;</span> /commit:apphost
+</pre></div>
+</div>
+<p>You can make then make a request without the query string requiring <code class="docutils literal notranslate"><span class="pre">map=C:/MapServer/apps/test/test.map</span></code>: <a class="reference external" href="http://localhost/mapserver/mapserv?SERVICE=WMS&amp;VERSION=1.3.0&amp;REQUEST=GetMap&amp;LAYERS=country_bounds&amp;STYLES=&amp;CRS=EPSG:4326&amp;BBOX=-180,-90,180,90&amp;WIDTH=400&amp;HEIGHT=300&amp;FORMAT=image/png">http://localhost/mapserver/mapserv?SERVICE=WMS&amp;VERSION=1.3.0&amp;REQUEST=GetMap&amp;LAYERS=country_bounds&amp;STYLES=&amp;CRS=EPSG:4326&amp;BBOX=-180,-90,180,90&amp;WIDTH=400&amp;HEIGHT=300&amp;FORMAT=image/png</a></p>
+<p>In addition to this method the <a class="reference external" href="https://www.iis.net/downloads/microsoft/url-rewrite">URL Rewrite module</a>
+can be used to set different mapfiles dependent on query string parameters or domain names.</p>
+</section>
+<section id="setting-a-certificates-file">
+<h3><a class="toc-backref" href="#id9" role="doc-backlink">Setting a Certificates File</a><a class="headerlink" href="#setting-a-certificates-file" title="Link to this heading">¶</a></h3>
+<p>To access remote data sources via HTTPS (for example when cascading a WMS), you may need to point to a
+certificates file. This can be set using the <code class="docutils literal notranslate"><span class="pre">CURL_CA_BUNDLE</span></code> environment variable:</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span><span class="nv">%windir%</span>\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+<span class="s2">&quot;[fullPath=&#39;C:\Mapserver\bin\mapserv.exe&#39;].environmentVariables.[name=&#39;CURL_CA_BUNDLE&#39;,value=&#39;C:\MapServer\bin\curl\curl-ca-bundle.crt&#39;]&quot;</span> /commit:apphost
+</pre></div>
+</div>
+<p>See <a class="reference internal" href="../ogc/wxs_secure.html#wxs-secure"><span class="std std-ref">Accessing OGC services over HTTPS</span></a> for further details.</p>
+</section>
+</section>
+<section id="securing-mapserver-in-iis">
+<h2><a class="toc-backref" href="#id10" role="doc-backlink">Securing MapServer in IIS</a><a class="headerlink" href="#securing-mapserver-in-iis" title="Link to this heading">¶</a></h2>
+<p>MapServer has two environment variables that can be used to restrict which mapfiles can be accessed.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As of MapServer 8.0 these variables can be set in the <a class="reference internal" href="../mapfile/config.html#config"><span class="std std-ref">CONFIG</span></a> file rather than as variables in IIS</p>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">MS_MAP_NO_PATH</span></code> can be used to ensure that users can’t provide their own <code class="docutils literal notranslate"><span class="pre">map=</span></code> parameter to the query string. This can
+be set to any value (“True” in this example) so that only the <code class="docutils literal notranslate"><span class="pre">MS_MAPFILE</span></code> environment value can be used (see “Setting a Default Mapfile” above).</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span><span class="nv">%windir%</span>\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+<span class="s2">&quot;[fullPath=&#39;C:\Mapserver\bin\mapserv.exe&#39;].environmentVariables.[name=&#39;MS_MAP_NO_PATH&#39;,value=&#39;True&#39;]&quot;</span> /commit:apphost
+</pre></div>
+</div>
+<p><code class="docutils literal notranslate"><span class="pre">MS_MAP_PATTERN</span></code> can be set to limit the folders from which mapfiles can be accessed using a regular expression. For example to limit
+to the <code class="docutils literal notranslate"><span class="pre">C:\MapServer\apps</span></code> (note this path is case-sensitive) folder use the following regular expression: <code class="docutils literal notranslate"><span class="pre">&quot;^(C:)?\/MapServer\/apps\/((?!\.{2})[_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(map))$&quot;</span></code></p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span><span class="nv">%windir%</span>\system32\inetsrv\appcmd.exe set config -section:system.webServer/fastCgi /+<span class="s2">&quot;[fullPath=&#39;C:\Mapserver\bin\mapserv.exe&#39;].environmentVariables.[name=&#39;MS_MAP_PATTERN&#39;,value=&#39;&quot;</span><span class="se">^(</span>C:)?\/MapServer\/apps\/((?!\.{2})[_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(map))$<span class="s2">&quot;&#39;]&quot;</span> /commit:apphost
+</pre></div>
+</div>
+<p>In addition to these methods IIS itself can be used to block or filter query string parameters. The
+<a class="reference external" href="https://docs.microsoft.com/en-us/iis/configuration/system.webserver/security/requestfiltering/denyquerystringsequences/">denyQueryStringSequences</a>
+element can be set to block a mapfile being set by a URL. Both <cite>map=</cite> and the encoded <cite>map%3d</cite> are blocked.</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="cp">&lt;?xml version=&quot;1.0&quot; encoding=&quot;UTF-8&quot;?&gt;</span>
+<span class="nt">&lt;configuration&gt;</span>
+<span class="w">    </span><span class="nt">&lt;system.webServer&gt;</span>
+<span class="w">        </span><span class="nt">&lt;security&gt;</span>
+<span class="w">            </span><span class="nt">&lt;requestFiltering&gt;</span>
+<span class="w">                </span><span class="nt">&lt;denyQueryStringSequences&gt;</span>
+<span class="w">                     </span><span class="nt">&lt;add</span><span class="w"> </span><span class="na">sequence=</span><span class="s">&quot;map=&quot;</span><span class="w"> </span><span class="nt">/&gt;</span><span class="w"> </span><span class="cm">&lt;!-- will return HTTP Error 404.18 - Not Found --&gt;</span>
+<span class="w">                 </span><span class="nt">&lt;/denyQueryStringSequences&gt;</span>
+<span class="w">            </span><span class="nt">&lt;/requestFiltering&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/security&gt;</span>
+<span class="w">        </span><span class="nt">&lt;handlers&gt;</span>
+<span class="w">            </span><span class="nt">&lt;add</span><span class="w"> </span><span class="na">name=</span><span class="s">&quot;MapServerFastCgi&quot;</span><span class="w"> </span><span class="na">path=</span><span class="s">&quot;*&quot;</span><span class="w"> </span><span class="na">verb=</span><span class="s">&quot;*&quot;</span><span class="w"> </span><span class="na">type=</span><span class="s">&quot;&quot;</span><span class="w"> </span><span class="na">modules=</span><span class="s">&quot;FastCgiModule&quot;</span><span class="w"> </span><span class="na">scriptProcessor=</span><span class="s">&quot;C:\Mapserver\bin\mapserv.exe&quot;</span><span class="w"> </span><span class="na">resourceType=</span><span class="s">&quot;Unspecified&quot;</span><span class="w"> </span><span class="na">requireAccess=</span><span class="s">&quot;Script&quot;</span><span class="w"> </span><span class="na">allowPathInfo=</span><span class="s">&quot;false&quot;</span><span class="w"> </span><span class="na">preCondition=</span><span class="s">&quot;&quot;</span><span class="w"> </span><span class="na">responseBufferLimit=</span><span class="s">&quot;4194304&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">        </span><span class="nt">&lt;/handlers&gt;</span>
+<span class="w">        </span><span class="nt">&lt;httpErrors</span><span class="w"> </span><span class="na">errorMode=</span><span class="s">&quot;Detailed&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/system.webServer&gt;</span>
+<span class="nt">&lt;/configuration&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="troubleshooting">
+<h2><a class="toc-backref" href="#id11" role="doc-backlink">Troubleshooting</a><a class="headerlink" href="#troubleshooting" title="Link to this heading">¶</a></h2>
+<p>Common error messages and how to resolve them are listed below.</p>
+<ul>
+<li><p>If the <code class="docutils literal notranslate"><span class="pre">MAPSERVER_CONFIG_FILE</span></code> environment variable has not been set in IIS, or it points to a missing or inaccessible file, you will receive the following message:</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>msLoadConfig(): Unable to access file. See mapserver.org/config_file.html for more information.
+</pre></div>
+</div>
+</li>
+<li><p>If the <code class="docutils literal notranslate"><span class="pre">MAPSERVER_CONFIG_FILE</span></code> is empty or doesn’t begin with <code class="docutils literal notranslate"><span class="pre">CONFIG</span></code> you will receive the following message:</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>msLoadConfig(): Unknown identifier. First token must be CONFIG, this doesn&#39;t look like a mapserver config file.
+</pre></div>
+</div>
+</li>
+<li><p>If the <code class="docutils literal notranslate"><span class="pre">MAPSERVER_CONFIG_FILE</span></code> has invalid syntax you will receive a message similar to the following:</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>msLoadConfig(): Unknown identifier. Parsing error near (ENVS):(line 2)
+</pre></div>
+</div>
+</li>
+<li><p>The following error is returned (from MapServer 8.0) if <code class="docutils literal notranslate"><span class="pre">allowPathInfo=&quot;false&quot;</span></code> is set in the <code class="docutils literal notranslate"><span class="pre">handlers</span></code> section
+for MapServer in the <code class="docutils literal notranslate"><span class="pre">web.config</span></code> file. This should be set to <code class="docutils literal notranslate"><span class="pre">true</span></code>.</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>msLoadMap(): Regular expression error. MS_DEFAULT_MAPFILE_PATTERN validation failed.
+</pre></div>
+</div>
+</li>
+<li><p>If the <code class="docutils literal notranslate"><span class="pre">CONFIG</span></code> file security regular expressions used to limit access to mapfiles do not match the supplied mapfile you will receive the following:</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>msCGILoadMap(): Web application error. CGI variable <span class="p">&amp;</span>quot;map<span class="p">&amp;</span>quot; fails to validate.
+</pre></div>
+</div>
+</li>
+<li><p>Check that the file exists if you receive the following error. If it does exist then check the file permissions.</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>msLoadMap(): Unable to access file. (C:/MapServer/apps/test/test.map)
+</pre></div>
+</div>
+</li>
+<li><p>MapServer projections are stored in <code class="docutils literal notranslate"><span class="pre">C:\MapServer\bin\proj\SHARE</span></code> (or <code class="docutils literal notranslate"><span class="pre">C:\MapServer\bin\proj9\SHARE</span></code> when using PROJ 9). When the projection is specified
+in the following form <cite>“init=epsg:3857”</cite>, MapServer will try to find this code in the <cite>epsg</cite> file, where it is listed as <cite>&lt;3857&gt; +proj=merc +a=6378137…</cite>.
+If you receive the error below then make sure the <code class="docutils literal notranslate"><span class="pre">CONFIG</span> <span class="pre">&quot;PROJ_DATA&quot;</span> <span class="pre">&quot;C:\MapServer\bin\proj\SHARE&quot;</span></code> setting is pointing to the correct path.
+<em>Note on one installation this message was shown as forward slashes rather than backslashes were used.</em></p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>msProcessProjection(): Projection library error. proj error <span class="s2">&quot;No such file or directory&quot;</span> for <span class="s2">&quot;init=epsg:3857&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p>The following error is caused if IIS has been locked-down so settings cannot be overridden at the <cite>web.config</cite> level.</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>HTTP Error 500.19 - Internal Server Error
+The requested page cannot be accessed because the related configuration data for the page is invalid.
+
+This configuration section cannot be used at this path. This happens when the section is locked at a parent level.
+Locking is either by default (overrideModeDefault=<span class="s2">&quot;Deny&quot;</span>), or set explicitly by a location tag with
+overrideMode=<span class="s2">&quot;Deny&quot;</span> or the legacy allowOverride=<span class="s2">&quot;false&quot;</span>.
+</pre></div>
+</div>
+<p>Run the following in a command window (with administrator permissions). This enables the handlers section in the /mapserver/web.config
+file to override the ones set at the machine level.
+See <a class="reference external" href="http://stackoverflow.com/questions/9794985/iis-this-configuration-section-cannot-be-used-at-this-path-configuration-lock">http://stackoverflow.com/questions/9794985/iis-this-configuration-section-cannot-be-used-at-this-path-configuration-lock</a></p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span><span class="nv">%windir%</span>\system32\inetsrv\appcmd.exe unlock config -section:system.webServer/handlers
+</pre></div>
+</div>
+</li>
+<li><p>Check <code class="docutils literal notranslate"><span class="pre">C:\MapServer\bin\mapserv.exe</span></code> exists if you encounter the error below.</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span>HTTP Error 500.0 - Internal Server Error
+The FastCGI executable could not be found
+</pre></div>
+</div>
+</li>
+<li><p>To view the CGI applications registered with IIS you can use the command below (this reads the <code class="docutils literal notranslate"><span class="pre">C:\Windows\System32\inetsrv\config</span></code>):</p>
+<div class="highlight-bat notranslate"><div class="highlight"><pre><span></span><span class="s2">&quot;</span><span class="nv">%systemroot%</span><span class="s2">\system32\inetsrv\appcmd&quot;</span> list config /section:isapiCgiRestriction
+</pre></div>
+</div>
+<p>This should output XML similar to below for this section:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;system.webServer&gt;</span>
+<span class="w">  </span><span class="nt">&lt;security&gt;</span>
+<span class="w">    </span><span class="nt">&lt;isapiCgiRestriction&gt;</span>
+<span class="w">      </span><span class="nt">&lt;add</span><span class="w"> </span><span class="na">path=</span><span class="s">&quot;C:\MapServer\bin\mapserv.exe&quot;</span><span class="w"> </span><span class="na">allowed=</span><span class="s">&quot;true&quot;</span><span class="w"> </span><span class="na">description=</span><span class="s">&quot;MapServer&quot;</span><span class="w"> </span><span class="nt">/&gt;</span>
+<span class="w">    </span><span class="nt">&lt;/isapiCgiRestriction&gt;</span>
+<span class="w">  </span><span class="nt">&lt;/security&gt;</span>
+<span class="nt">&lt;/system.webServer&gt;</span>
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p>
+<a href="../about.html" title="About">About</a><br>
+<a href="../products.html" title="Products">Products</a><br>
+<a href="../community/index.html" title="Community">Community</a><br>
+<a href="../development/index.html" title="Development">Development</a><br>
+<a href="../download.html" title="Downloads">Downloads</a><br>
+<a href="../documentation.html" title="Documentation">Documentation</a><br>
+<a href="../faq.html" title="FAQ">FAQ</a><br>
+<a href="../psc.html" title="PSC">PSC</a><br>
+<a href="https://fosstodon.org/@mapserver" title="Mastodon">Mastodon</a>
+</p>
+  <h3>Current Table Of Contents</h3>
+  <ul>
+<li><a class="reference internal" href="#">Running MapServer on IIS</a><ul>
+<li><a class="reference internal" href="#mapserver-set-up">MapServer Set-up</a></li>
+<li><a class="reference internal" href="#configuring-with-iis">Configuring with IIS</a></li>
+<li><a class="reference internal" href="#mapserver-configuration-file">MapServer Configuration File</a></li>
+<li><a class="reference internal" href="#setting-up-applications">Setting up Applications</a></li>
+<li><a class="reference internal" href="#setting-up-logging">Setting up Logging</a></li>
+<li><a class="reference internal" href="#further-configuration">Further Configuration</a><ul>
+<li><a class="reference internal" href="#setting-a-default-mapfile">Setting a Default Mapfile</a></li>
+<li><a class="reference internal" href="#setting-a-certificates-file">Setting a Certificates File</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#securing-mapserver-in-iis">Securing MapServer in IIS</a></li>
+<li><a class="reference internal" href="#troubleshooting">Troubleshooting</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="oracle.html" title="Oracle Installation"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="dotnet.html" title=".NET MapScript Compilation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Home</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../documentation.html" >MapServer 8.6.4 Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" >Installation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Running MapServer on IIS</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; <a href="../copyright.html">Copyright</a> 2026, Open Source Geospatial Foundation.
+      Last updated on 2026-06-12.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,171 @@
+.. _python:
+
+*****************************************************************************
+ Python MapScript Appendix
+*****************************************************************************
+
+:Author: Sean Gillies
+:Author: Seth Girvin
+:Contact: sethg at geographika.co.uk
+:Last Updated: 2021-05-24
+
+.. contents::
+    :depth: 2
+    :backlinks: top
+
+.. index::
+    pair: MapScript; Python
+
+=============================================================================
+ Introduction
+=============================================================================
+
+The Python MapScript module contains some class extension methods that have
+not yet been implemented for other languages.
+
+.. index::
+    triple: MapScript; Python; Classes
+
+=============================================================================
+ Classes
+=============================================================================
+
+References to sections below will be added here as the documentation grows.
+
+.. index::
+    triple: MapScript; Python; imageObj
+
+-----------------------------------------------------------------------------
+ imageObj
+-----------------------------------------------------------------------------
+
+Pillow (a fork of the Python Imaging Library), https://pillow.readthedocs.io/, is an
+indispensable tool for image manipulation.  The extensions to :class:`imageObj` are
+all geared towards better integration of Pillow in MapScript applications.
+
+imageObj Extended Methods
+-------------------------
+
+
+
++ :func:`imageObj.write` - write image data to a Python file-like object.  Default is stdout.
+
+.. code-block:: python
+
+        url = urllib.urlopen('https://mapserver.org/_static/banner.png')
+        ms_image = imageObj(url, 'AGG/JPEG')
+
+See :ref:`ms_imagery` for further examples.
+
+.. index::
+    triple: MapScript; Python; pointObj
+
+------------------------------------------------------------------------------
+ pointObj
+------------------------------------------------------------------------------
+
+pointObj Methods
+----------------
+
+__str__() : string
+    Return a string formatted like
+
+    ::
+
+        { 'x': %f , 'y': %f, 'z': %f }
+
+    
+    with the coordinate values substituted appropriately.  Usage example:
+
+    ::
+
+        >>> p = mapscript.pointObj(1, 1, 1)
+        >>> str(p)
+        { 'x': 1 , 'y': 1, 'z': 1 }
+
+
+    Note that the return value can be conveniently eval'd into a Python
+    dictionary:
+
+    ::
+
+        >>> p_dict = eval(str(p))
+        >>> p_dict['x']
+        1
+
+
+.. index::
+    triple: MapScript; Python; rectObj
+
+------------------------------------------------------------------------------
+ rectObj
+------------------------------------------------------------------------------
+
+rectObj Methods
+---------------
+
+__contains__( pointObj point ) : boolean
+    Returns True if *point* is inside the rectangle, otherwise returns False.
+
+    ::
+
+        >>> r = mapscript.rectObj(0, 0, 1, 1)
+        >>> p = mapscript.pointObj(2, 0)       # outside
+        >>> p in r
+        False
+        >>> p not in r
+        True
+
+    
+__str__() : string
+    Return a string formatted like
+
+    ::
+
+        { 'minx': %f , 'miny': %f , 'maxx': %f , 'maxy': %f }
+
+    
+    with the bounding values substituted appropriately.  Usage example:
+
+    ::
+
+        >>> r = mapscript.rectObj(0, 0, 1, 1)
+        >>> str(r)
+        { 'minx': 0 , 'miny': 0 , 'maxx': 1 , 'maxy': 1 }
+
+
+    Note that the return value can be conveniently eval'd into a Python
+    dictionary:
+
+    ::
+
+        >>> r_dict = eval(str(r))
+        >>> r_dict['minx']
+        0
+
+
+.. index::
+    triple: MapScript; Python; Exception handling
+
+=============================================================================
+ Exception Handling
+=============================================================================
+
+The Python MapScript module maps a few MapServer errors into Python exceptions.  
+Attempting to load a non-existent mapfile raises an 'IOError', for example
+
+::
+
+    >>> import mapscript
+    >>> mapfile = '/no/such/file.map'
+    >>> m = mapscript.mapObj(mapfile)
+    Traceback (most recent call last):
+      File "<stdin>", line 1, in ?
+      File "/usr/lib/python2.3/site-packages/mapscript.py", line 799, in __init__
+        newobj = _mapscript.new_mapObj(*args)
+    IOError: msLoadMap(): Unable to access file. (/no/such/file.map)
+    >>>
+
+The message of the error is written by 'msSetError' and so is the same message that 
+CGI mapserv users see in error logs.
+

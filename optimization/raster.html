@@ -1,0 +1,443 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Raster Management &amp; Optimization &#8212; MapServer 8.6.4 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx.css?v=48f05237" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_collapse.css?v=226d88b4" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=dd298242" />
+    <link rel="stylesheet" type="text/css" href="../_static/ribbon.css?v=ea091bf4" />
+    
+    <script src="../_static/jquery.js?v=5d32c60e"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+    <script src="../_static/documentation_options.js?v=f59c4a7a"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    
+    <link rel="icon" href="../_static/mapserver.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="copyright" title="Copyright" href="../copyright.html" />
+    <link rel="next" title="Tile Indexes" href="tileindex.html" />
+    <link rel="prev" title="Mapfile Tuning &amp; Management" href="mapfile.html" /> 
+  </head><body>
+<!-- add a ribbon to show these docs are the main branch -->
+<h4 class="ribbon">DOCS PREVIEW</h4>
+
+<table width="100%" style="width: 100%; background-color: white;">
+  <tr>
+    <td rowspan="2" style="padding: 10px 0px 10px 10px;">
+      <a href="../index.html" title="Home"><img src="../_static/banner.png" alt="MapServer banner" border="0" /></a>
+    </td>
+    <td style="padding: 10px 10px 0px 0px; text-align: right; vertical-align: top;">
+      <a href="../index.html" title="Home">Home</a> |
+      <a href="../products.html" title="Products (MapServer core, MapCache, TinyOWS">Products</a> |
+      <a href="https://github.com/MapServer/MapServer/issues/" title="Issue Tracker (MapServer core)">Issue Tracker</a> |
+      <a href="../community/service_providers.html" title="Professional Service Providers">Service Providers</a> |      
+      <a href="../faq.html" title="Frequently Asked Questions">FAQ</a> |
+      <a href="https://fosstodon.org/@mapserver" title="Mastodon" target="_blank">Mastodon</a> |
+      <a href="../download.html" title="Download Source or Binaries">Download </a> |
+      <a class="badge" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KRJ2X44N3HA6U&source=url" target="_blank">
+        <img src="https://img.shields.io/badge/donate-%E2%9D%A4%C2%A0-ff69b4.svg?style=flat" alt="Donate to MapServer">
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0px 10px 0px 0px; text-align: right; vertical-align: bottom;">
+        <img src="../_static/flagicons/en.png" alt="en" title="en" border="0" width="18px" height="13px"/>
+        
+          <a href="../ar/optimization/raster.html"><img src="../_static/flagicons/ar.png" alt="ar" title="ar" border="0" /></a>
+        
+        
+          <a href="../de/optimization/raster.html"><img src="../_static/flagicons/de.png" alt="de" title="de" border="0" /></a>
+        
+        
+          <a href="../el/optimization/raster.html"><img src="../_static/flagicons/el.png" alt="el" title="el" border="0" /></a>
+        
+        
+          <a href="../es/optimization/raster.html"><img src="../_static/flagicons/es.png" alt="es" title="es" border="0" /></a>
+        
+        
+          <a href="../fr/optimization/raster.html"><img src="../_static/flagicons/fr.png" alt="fr" title="fr" border="0" /></a>
+        
+        
+          <a href="../id/optimization/raster.html"><img src="../_static/flagicons/id.png" alt="id" title="id" border="0" /></a>
+        
+        
+          <a href="../it/optimization/raster.html"><img src="../_static/flagicons/it.png" alt="it" title="it" border="0" /></a>
+        
+        
+          <a href="../ja/optimization/raster.html"><img src="../_static/flagicons/ja.png" alt="ja" title="ja" border="0" /></a>
+        
+        
+          <a href="../nl_NL/optimization/raster.html"><img src="../_static/flagicons/nl_NL.png" alt="nl_NL" title="nl_NL" border="0" /></a>
+        
+        
+          <a href="../pl/optimization/raster.html"><img src="../_static/flagicons/pl.png" alt="pl" title="pl" border="0" /></a>
+        
+        
+          <a href="../ru/optimization/raster.html"><img src="../_static/flagicons/ru.png" alt="ru" title="ru" border="0" /></a>
+        
+        
+          <a href="../sq/optimization/raster.html"><img src="../_static/flagicons/sq.png" alt="sq" title="sq" border="0" /></a>
+        
+        
+          <a href="../tr/optimization/raster.html"><img src="../_static/flagicons/tr.png" alt="tr" title="tr" border="0" /></a>
+        
+
+    </td>
+  </tr>
+</table>
+
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="tileindex.html" title="Tile Indexes"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="mapfile.html" title="Mapfile Tuning &amp; Management"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Home</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../documentation.html" >MapServer 8.6.4 Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" accesskey="U">Optimization</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Raster Management &amp; Optimization</a></li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="raster-management-optimization">
+<span id="raster-optimization"></span><span id="index-0"></span><h1><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Raster Management &amp; Optimization</a><a class="headerlink" href="#raster-management-optimization" title="Link to this heading">¶</a></h1>
+<dl class="field-list simple">
+<dt class="field-odd">Author<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Jeff McKenna</p>
+</dd>
+<dt class="field-even">Contact<span class="colon">:</span></dt>
+<dd class="field-even"><p>jmckenna at gatewaygeomatics.com</p>
+</dd>
+<dt class="field-odd">Original Author<span class="colon">:</span></dt>
+<dd class="field-odd"><p>HostGIS</p>
+</dd>
+<dt class="field-even">Last Updated<span class="colon">:</span></dt>
+<dd class="field-even"><p>2022-01-25</p>
+</dd>
+</dl>
+<nav class="contents" id="table-of-contents">
+<p class="topic-title">Table of Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#raster-management-optimization" id="id1">Raster Management &amp; Optimization</a></p>
+<ul>
+<li><p><a class="reference internal" href="#choose-the-right-raster-format-for-your-needs" id="id2">Choose the right raster format for your needs</a></p></li>
+<li><p><a class="reference internal" href="#spend-time-to-review-gdal-s-associated-driver-page-for-your-chosen-format" id="id3">Spend time to review GDAL’s associated driver page for your chosen format</a></p></li>
+<li><p><a class="reference internal" href="#connect-to-your-data-through-gdal" id="id4">Connect to your data through GDAL</a></p></li>
+<li><p><a class="reference internal" href="#overviews" id="id5">Overviews</a></p></li>
+<li><p><a class="reference internal" href="#tileindexes-and-internal-tiling" id="id6">Tileindexes and Internal Tiling</a></p></li>
+<li><p><a class="reference internal" href="#learn-review-the-various-gdal-utilities-to-manage-your-rasters" id="id7">Learn &amp; Review the various GDAL utilities to manage your rasters</a></p></li>
+<li><p><a class="reference internal" href="#handling-your-raster-layers-in-the-mapfile" id="id8">Handling your raster LAYERS in the mapfile</a></p></li>
+<li><p><a class="reference internal" href="#remote-wms" id="id9">Remote WMS</a></p></li>
+</ul>
+</li>
+</ul>
+</nav>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../input/raster.html#raster"><span class="std std-ref">Raster Data</span></a></p>
+</div>
+<section id="choose-the-right-raster-format-for-your-needs">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Choose the right raster format for your needs</a><a class="headerlink" href="#choose-the-right-raster-format-for-your-needs" title="Link to this heading">¶</a></h2>
+<p>The best/optimal data sources for MapServer in terms of speed-of-display
+is <a class="reference external" href="https://gdal.org/drivers/raster/gtiff.html">GeoTIFF</a> for rasters.</p>
+<p>Here are some other points to consider:</p>
+<ul class="simple">
+<li><p>The GeoTIFF image format is the fastest to “decipher”, but once you get beyond a
+certain point, the disk reading may become slow
+enough to make it worthwhile to consider other image formats.</p></li>
+<li><p>For GeoTIFFs larger than 1 GB, ECW images tend to render faster than GeoTIFFs, since
+decompressing the data (CPU and RAM) is faster than reading the uncompressed
+data (disk). The downside is that ECW is not Open Source, and the licensing is
+often prohibitive.  <a class="reference external" href="https://gdal.org/drivers/raster/mrsid.html#raster-mrsid">MrSID</a>
+is another compressed image format that can be used.</p></li>
+<li><p>JPEG2000 is a very slow image format, as is JPEG.</p></li>
+</ul>
+</section>
+<section id="spend-time-to-review-gdal-s-associated-driver-page-for-your-chosen-format">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Spend time to review GDAL’s associated driver page for your chosen format</a><a class="headerlink" href="#spend-time-to-review-gdal-s-associated-driver-page-for-your-chosen-format" title="Link to this heading">¶</a></h2>
+<p>This is a critical step, as MapServer relies on GDAL for raster data access.
+Each driver (GDAL format) has its own set of abilities and switches. Find
+your raster format and review its options
+<a class="reference external" href="https://gdal.org/drivers/raster/index.html">here</a>.</p>
+</section>
+<section id="connect-to-your-data-through-gdal">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Connect to your data through GDAL</a><a class="headerlink" href="#connect-to-your-data-through-gdal" title="Link to this heading">¶</a></h2>
+<p>For data management in MapServer, this should always be one of your first steps.
+Sometimes desktop GIS programs will display a format in a certain
+way but your data might not display in MapServer; checking
+how GDAL reads your raster file, will help you manage and understand
+the data.  Here is an example using <em>gdalinfo</em> to read and return
+various important metadata regarding a specific raster, in this case a
+MrSID raster:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gdalinfo</span> <span class="n">ortho_1</span><span class="o">-</span><span class="mi">1</span><span class="n">_hc_s_mn163_2019_1</span><span class="o">.</span><span class="n">sid</span>
+
+      <span class="n">Driver</span><span class="p">:</span> <span class="n">MrSID</span><span class="o">/</span><span class="n">Multi</span><span class="o">-</span><span class="n">resolution</span> <span class="n">Seamless</span> <span class="n">Image</span> <span class="n">Database</span> <span class="p">(</span><span class="n">MrSID</span><span class="p">)</span>
+      <span class="n">Files</span><span class="p">:</span> <span class="n">ortho_1</span><span class="o">-</span><span class="mi">1</span><span class="n">_hc_s_mn163_2019_1</span><span class="o">.</span><span class="n">sid</span>
+             <span class="n">ortho_1</span><span class="o">-</span><span class="mi">1</span><span class="n">_hc_s_mn163_2019_1</span><span class="o">.</span><span class="n">sid</span><span class="o">.</span><span class="n">aux</span><span class="o">.</span><span class="n">xml</span>
+      <span class="n">Size</span> <span class="ow">is</span> <span class="mi">50249</span><span class="p">,</span> <span class="mi">116781</span>
+      <span class="n">Coordinate</span> <span class="n">System</span> <span class="ow">is</span><span class="p">:</span>
+      <span class="n">PROJCS</span><span class="p">[</span><span class="s2">&quot;NAD83 / UTM zone 15N&quot;</span><span class="p">,</span>
+          <span class="n">GEOGCS</span><span class="p">[</span><span class="s2">&quot;NAD83&quot;</span><span class="p">,</span>
+              <span class="n">DATUM</span><span class="p">[</span><span class="s2">&quot;North_American_Datum_1983&quot;</span><span class="p">,</span>
+                  <span class="n">SPHEROID</span><span class="p">[</span><span class="s2">&quot;GRS 1980&quot;</span><span class="p">,</span><span class="mi">6378137</span><span class="p">,</span><span class="mf">298.257222101</span><span class="p">,</span>
+                      <span class="n">AUTHORITY</span><span class="p">[</span><span class="s2">&quot;EPSG&quot;</span><span class="p">,</span><span class="s2">&quot;7019&quot;</span><span class="p">]],</span>
+                  <span class="n">TOWGS84</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+                  <span class="n">AUTHORITY</span><span class="p">[</span><span class="s2">&quot;EPSG&quot;</span><span class="p">,</span><span class="s2">&quot;6269&quot;</span><span class="p">]],</span>
+              <span class="n">PRIMEM</span><span class="p">[</span><span class="s2">&quot;Greenwich&quot;</span><span class="p">,</span><span class="mi">0</span><span class="p">,</span>
+                  <span class="n">AUTHORITY</span><span class="p">[</span><span class="s2">&quot;EPSG&quot;</span><span class="p">,</span><span class="s2">&quot;8901&quot;</span><span class="p">]],</span>
+              <span class="n">UNIT</span><span class="p">[</span><span class="s2">&quot;degree&quot;</span><span class="p">,</span><span class="mf">0.0174532925199433</span><span class="p">,</span>
+                  <span class="n">AUTHORITY</span><span class="p">[</span><span class="s2">&quot;EPSG&quot;</span><span class="p">,</span><span class="s2">&quot;9122&quot;</span><span class="p">]],</span>
+              <span class="n">AUTHORITY</span><span class="p">[</span><span class="s2">&quot;EPSG&quot;</span><span class="p">,</span><span class="s2">&quot;4269&quot;</span><span class="p">]],</span>
+          <span class="n">PROJECTION</span><span class="p">[</span><span class="s2">&quot;Transverse_Mercator&quot;</span><span class="p">],</span>
+          <span class="n">PARAMETER</span><span class="p">[</span><span class="s2">&quot;latitude_of_origin&quot;</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+          <span class="n">PARAMETER</span><span class="p">[</span><span class="s2">&quot;central_meridian&quot;</span><span class="p">,</span><span class="o">-</span><span class="mi">93</span><span class="p">],</span>
+          <span class="n">PARAMETER</span><span class="p">[</span><span class="s2">&quot;scale_factor&quot;</span><span class="p">,</span><span class="mf">0.9996</span><span class="p">],</span>
+          <span class="n">PARAMETER</span><span class="p">[</span><span class="s2">&quot;false_easting&quot;</span><span class="p">,</span><span class="mi">500000</span><span class="p">],</span>
+          <span class="n">PARAMETER</span><span class="p">[</span><span class="s2">&quot;false_northing&quot;</span><span class="p">,</span><span class="mi">0</span><span class="p">],</span>
+          <span class="n">UNIT</span><span class="p">[</span><span class="s2">&quot;metre&quot;</span><span class="p">,</span><span class="mi">1</span><span class="p">,</span>
+              <span class="n">AUTHORITY</span><span class="p">[</span><span class="s2">&quot;EPSG&quot;</span><span class="p">,</span><span class="s2">&quot;9001&quot;</span><span class="p">]],</span>
+          <span class="n">AXIS</span><span class="p">[</span><span class="s2">&quot;Easting&quot;</span><span class="p">,</span><span class="n">EAST</span><span class="p">],</span>
+          <span class="n">AXIS</span><span class="p">[</span><span class="s2">&quot;Northing&quot;</span><span class="p">,</span><span class="n">NORTH</span><span class="p">],</span>
+          <span class="n">AUTHORITY</span><span class="p">[</span><span class="s2">&quot;EPSG&quot;</span><span class="p">,</span><span class="s2">&quot;26915&quot;</span><span class="p">]]</span>
+      <span class="n">Origin</span> <span class="o">=</span> <span class="p">(</span><span class="mf">494792.400000000023283</span><span class="p">,</span><span class="mf">5018068.799999999813735</span><span class="p">)</span>
+      <span class="n">Pixel</span> <span class="n">Size</span> <span class="o">=</span> <span class="p">(</span><span class="mf">0.600000000000000</span><span class="p">,</span><span class="o">-</span><span class="mf">0.600000000000000</span><span class="p">)</span>
+      <span class="n">Metadata</span><span class="p">:</span>
+        <span class="n">GEOTIFF_CHAR__GeogAngularUnitsGeoKey</span><span class="o">=</span><span class="n">Angular_Degree</span>
+        <span class="n">GEOTIFF_CHAR__GTModelTypeGeoKey</span><span class="o">=</span><span class="n">ModelTypeProjected</span>
+        <span class="n">GEOTIFF_CHAR__GTRasterTypeGeoKey</span><span class="o">=</span><span class="n">RasterPixelIsArea</span>
+        <span class="n">GEOTIFF_CHAR__ProjectedCSTypeGeoKey</span><span class="o">=</span><span class="n">PCS_NAD83_UTM_zone_15N</span>
+        <span class="n">GEOTIFF_CHAR__ProjLinearUnitsGeoKey</span><span class="o">=</span><span class="n">Linear_Meter</span>
+        <span class="n">GEOTIFF_NUM__1024__GTModelTypeGeoKey</span><span class="o">=</span><span class="mi">1</span>
+        <span class="n">GEOTIFF_NUM__1025__GTRasterTypeGeoKey</span><span class="o">=</span><span class="mi">1</span>
+        <span class="n">GEOTIFF_NUM__1026__GTCitationGeoKey</span><span class="o">=</span><span class="n">NAD83</span> <span class="o">/</span> <span class="n">UTM</span> <span class="n">zone</span> <span class="mi">15</span><span class="n">N</span>
+        <span class="n">GEOTIFF_NUM__2049__GeogCitationGeoKey</span><span class="o">=</span><span class="n">NAD83</span>
+        <span class="n">GEOTIFF_NUM__2054__GeogAngularUnitsGeoKey</span><span class="o">=</span><span class="mi">9102</span>
+        <span class="n">GEOTIFF_NUM__2062__GeogTOWGS84GeoKey</span><span class="o">=</span><span class="mf">0.000000</span><span class="p">,</span><span class="mf">0.000000</span><span class="p">,</span><span class="mf">0.000000</span>
+        <span class="n">GEOTIFF_NUM__3072__ProjectedCSTypeGeoKey</span><span class="o">=</span><span class="mi">26915</span>
+        <span class="n">GEOTIFF_NUM__3076__ProjLinearUnitsGeoKey</span><span class="o">=</span><span class="mi">9001</span>
+        <span class="n">IMAGE__ENCODING_APPLICATION</span><span class="o">=</span><span class="n">GeoExpress</span> <span class="mf">10.0.1.5035</span>
+        <span class="n">IMAGE__FORMAT</span><span class="o">=</span><span class="n">MrSID</span><span class="o">/</span><span class="n">MG3</span>
+        <span class="n">IMAGE__INPUT_FILE_SIZE</span><span class="o">=</span><span class="mf">30104685840.000000</span>
+        <span class="n">IMAGE__INPUT_FORMAT</span><span class="o">=</span><span class="n">GeoTIFF</span>
+        <span class="n">IMAGE__LTI_ESDK_VERSION</span><span class="o">=</span><span class="mf">9.5.4.5035</span><span class="o">.</span><span class="n">Bob_5011_br</span> <span class="n">win64</span><span class="o">-</span><span class="n">vc15</span><span class="o">/</span><span class="n">Release_md</span>
+
+        <span class="n">IMAGE__MODIFICATIONS</span><span class="o">=</span><span class="n">COMPRESSED</span> <span class="n">CROPPED</span> <span class="n">EMBEDDED</span> <span class="n">REORDERED</span><span class="o">-</span><span class="n">BANDS</span> <span class="n">MOSAICKED</span> <span class="n">REPROJECTED</span>
+        <span class="n">IMAGE__PRINT_DENSITY_UNIT</span><span class="o">=</span><span class="ow">in</span>
+        <span class="n">IMAGE__PRINT_X_DENSITY</span><span class="o">=</span><span class="mf">200.000000</span>
+        <span class="n">IMAGE__PRINT_Y_DENSITY</span><span class="o">=</span><span class="mf">200.000000</span>
+        <span class="n">VERSION</span><span class="o">=</span><span class="n">MG3</span>
+      <span class="n">Image</span> <span class="n">Structure</span> <span class="n">Metadata</span><span class="p">:</span>
+        <span class="n">INTERLEAVE</span><span class="o">=</span><span class="n">PIXEL</span>
+      <span class="n">Corner</span> <span class="n">Coordinates</span><span class="p">:</span>
+      <span class="n">Upper</span> <span class="n">Left</span>  <span class="p">(</span>  <span class="mf">494792.400</span><span class="p">,</span> <span class="mf">5018068.800</span><span class="p">)</span> <span class="p">(</span> <span class="mi">93</span><span class="n">d</span> <span class="mi">3</span><span class="s1">&#39;59.18&quot;W, 45d18&#39;</span><span class="mf">57.98</span><span class="s2">&quot;N)</span>
+      <span class="n">Lower</span> <span class="n">Left</span>  <span class="p">(</span>  <span class="mf">494792.400</span><span class="p">,</span> <span class="mf">4948000.200</span><span class="p">)</span> <span class="p">(</span> <span class="mi">93</span><span class="n">d</span> <span class="mi">3</span><span class="s1">&#39;56.57&quot;W, 44d41&#39;</span> <span class="mf">7.27</span><span class="s2">&quot;N)</span>
+      <span class="n">Upper</span> <span class="n">Right</span> <span class="p">(</span>  <span class="mf">524941.800</span><span class="p">,</span> <span class="mf">5018068.800</span><span class="p">)</span> <span class="p">(</span> <span class="mi">92</span><span class="n">d40</span><span class="s1">&#39;54.44&quot;W, 45d18&#39;</span><span class="mf">56.45</span><span class="s2">&quot;N)</span>
+      <span class="n">Lower</span> <span class="n">Right</span> <span class="p">(</span>  <span class="mf">524941.800</span><span class="p">,</span> <span class="mf">4948000.200</span><span class="p">)</span> <span class="p">(</span> <span class="mi">92</span><span class="n">d41</span><span class="s1">&#39; 6.94&quot;W, 44d41&#39;</span> <span class="mf">5.78</span><span class="s2">&quot;N)</span>
+      <span class="n">Center</span>      <span class="p">(</span>  <span class="mf">509867.100</span><span class="p">,</span> <span class="mf">4983034.500</span><span class="p">)</span> <span class="p">(</span> <span class="mi">92</span><span class="n">d52</span><span class="s1">&#39;29.30&quot;W, 45d 0&#39;</span> <span class="mf">2.48</span><span class="s2">&quot;N)</span>
+      <span class="n">Band</span> <span class="mi">1</span> <span class="n">Block</span><span class="o">=</span><span class="mi">1024</span><span class="n">x128</span> <span class="n">Type</span><span class="o">=</span><span class="n">Byte</span><span class="p">,</span> <span class="n">ColorInterp</span><span class="o">=</span><span class="n">Red</span>
+        <span class="n">Min</span><span class="o">=</span><span class="mf">0.000</span> <span class="n">Max</span><span class="o">=</span><span class="mf">228.000</span>
+        <span class="n">Minimum</span><span class="o">=</span><span class="mf">0.000</span><span class="p">,</span> <span class="n">Maximum</span><span class="o">=</span><span class="mf">228.000</span><span class="p">,</span> <span class="n">Mean</span><span class="o">=</span><span class="mf">86.853</span><span class="p">,</span> <span class="n">StdDev</span><span class="o">=</span><span class="mf">53.485</span>
+        <span class="n">Overviews</span><span class="p">:</span> <span class="mi">25125</span><span class="n">x58391</span><span class="p">,</span> <span class="mi">12563</span><span class="n">x29196</span><span class="p">,</span> <span class="mi">6282</span><span class="n">x14598</span><span class="p">,</span> <span class="mi">3141</span><span class="n">x7299</span><span class="p">,</span> <span class="mi">1571</span><span class="n">x3650</span><span class="p">,</span> <span class="mi">786</span><span class="n">x1825</span><span class="p">,</span> <span class="mi">393</span><span class="n">x913</span><span class="p">,</span> <span class="mi">197</span><span class="n">x457</span><span class="p">,</span> <span class="mi">99</span><span class="n">x229</span><span class="p">,</span> <span class="mi">50</span><span class="n">x115</span><span class="p">,</span> <span class="mi">25</span><span class="n">x58</span><span class="p">,</span> <span class="mi">13</span><span class="n">x29</span><span class="p">,</span> <span class="mi">7</span><span class="n">x15</span><span class="p">,</span> <span class="mi">4</span><span class="n">x8</span>
+        <span class="n">Metadata</span><span class="p">:</span>
+          <span class="n">STATISTICS_APPROXIMATE</span><span class="o">=</span><span class="n">YES</span>
+          <span class="n">STATISTICS_MAXIMUM</span><span class="o">=</span><span class="mi">228</span>
+          <span class="n">STATISTICS_MEAN</span><span class="o">=</span><span class="mf">86.853391304348</span>
+          <span class="n">STATISTICS_MINIMUM</span><span class="o">=</span><span class="mi">0</span>
+          <span class="n">STATISTICS_STDDEV</span><span class="o">=</span><span class="mf">53.485489960597</span>
+          <span class="n">STATISTICS_VALID_PERCENT</span><span class="o">=</span><span class="mi">100</span>
+      <span class="n">Band</span> <span class="mi">2</span> <span class="n">Block</span><span class="o">=</span><span class="mi">1024</span><span class="n">x128</span> <span class="n">Type</span><span class="o">=</span><span class="n">Byte</span><span class="p">,</span> <span class="n">ColorInterp</span><span class="o">=</span><span class="n">Green</span>
+        <span class="n">Min</span><span class="o">=</span><span class="mf">0.000</span> <span class="n">Max</span><span class="o">=</span><span class="mf">224.000</span>
+        <span class="n">Minimum</span><span class="o">=</span><span class="mf">0.000</span><span class="p">,</span> <span class="n">Maximum</span><span class="o">=</span><span class="mf">224.000</span><span class="p">,</span> <span class="n">Mean</span><span class="o">=</span><span class="mf">81.011</span><span class="p">,</span> <span class="n">StdDev</span><span class="o">=</span><span class="mf">45.552</span>
+        <span class="n">Overviews</span><span class="p">:</span> <span class="mi">25125</span><span class="n">x58391</span><span class="p">,</span> <span class="mi">12563</span><span class="n">x29196</span><span class="p">,</span> <span class="mi">6282</span><span class="n">x14598</span><span class="p">,</span> <span class="mi">3141</span><span class="n">x7299</span><span class="p">,</span> <span class="mi">1571</span><span class="n">x3650</span><span class="p">,</span> <span class="mi">786</span><span class="n">x1825</span><span class="p">,</span> <span class="mi">393</span><span class="n">x913</span><span class="p">,</span> <span class="mi">197</span><span class="n">x457</span><span class="p">,</span> <span class="mi">99</span><span class="n">x229</span><span class="p">,</span> <span class="mi">50</span><span class="n">x115</span><span class="p">,</span> <span class="mi">25</span><span class="n">x58</span><span class="p">,</span> <span class="mi">13</span><span class="n">x29</span><span class="p">,</span> <span class="mi">7</span><span class="n">x15</span><span class="p">,</span> <span class="mi">4</span><span class="n">x8</span>
+        <span class="n">Metadata</span><span class="p">:</span>
+          <span class="n">STATISTICS_APPROXIMATE</span><span class="o">=</span><span class="n">YES</span>
+          <span class="n">STATISTICS_MAXIMUM</span><span class="o">=</span><span class="mi">224</span>
+          <span class="n">STATISTICS_MEAN</span><span class="o">=</span><span class="mf">81.010782608696</span>
+          <span class="n">STATISTICS_MINIMUM</span><span class="o">=</span><span class="mi">0</span>
+          <span class="n">STATISTICS_STDDEV</span><span class="o">=</span><span class="mf">45.552372785005</span>
+          <span class="n">STATISTICS_VALID_PERCENT</span><span class="o">=</span><span class="mi">100</span>
+      <span class="n">Band</span> <span class="mi">3</span> <span class="n">Block</span><span class="o">=</span><span class="mi">1024</span><span class="n">x128</span> <span class="n">Type</span><span class="o">=</span><span class="n">Byte</span><span class="p">,</span> <span class="n">ColorInterp</span><span class="o">=</span><span class="n">Blue</span>
+        <span class="n">Min</span><span class="o">=</span><span class="mf">0.000</span> <span class="n">Max</span><span class="o">=</span><span class="mf">211.000</span>
+        <span class="n">Minimum</span><span class="o">=</span><span class="mf">0.000</span><span class="p">,</span> <span class="n">Maximum</span><span class="o">=</span><span class="mf">211.000</span><span class="p">,</span> <span class="n">Mean</span><span class="o">=</span><span class="mf">90.109</span><span class="p">,</span> <span class="n">StdDev</span><span class="o">=</span><span class="mf">48.708</span>
+        <span class="n">Overviews</span><span class="p">:</span> <span class="mi">25125</span><span class="n">x58391</span><span class="p">,</span> <span class="mi">12563</span><span class="n">x29196</span><span class="p">,</span> <span class="mi">6282</span><span class="n">x14598</span><span class="p">,</span> <span class="mi">3141</span><span class="n">x7299</span><span class="p">,</span> <span class="mi">1571</span><span class="n">x3650</span><span class="p">,</span> <span class="mi">786</span><span class="n">x1825</span><span class="p">,</span> <span class="mi">393</span><span class="n">x913</span><span class="p">,</span> <span class="mi">197</span><span class="n">x457</span><span class="p">,</span> <span class="mi">99</span><span class="n">x229</span><span class="p">,</span> <span class="mi">50</span><span class="n">x115</span><span class="p">,</span> <span class="mi">25</span><span class="n">x58</span><span class="p">,</span> <span class="mi">13</span><span class="n">x29</span><span class="p">,</span> <span class="mi">7</span><span class="n">x15</span><span class="p">,</span> <span class="mi">4</span><span class="n">x8</span>
+        <span class="n">Metadata</span><span class="p">:</span>
+          <span class="n">STATISTICS_APPROXIMATE</span><span class="o">=</span><span class="n">YES</span>
+          <span class="n">STATISTICS_MAXIMUM</span><span class="o">=</span><span class="mi">211</span>
+          <span class="n">STATISTICS_MEAN</span><span class="o">=</span><span class="mf">90.109217391304</span>
+          <span class="n">STATISTICS_MINIMUM</span><span class="o">=</span><span class="mi">0</span>
+          <span class="n">STATISTICS_STDDEV</span><span class="o">=</span><span class="mf">48.70795205406</span>
+          <span class="n">STATISTICS_VALID_PERCENT</span><span class="o">=</span><span class="mi">100</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can use the extent values returned from gdalinfo (using Lower Left and
+Upper Right values) to paste into your
+mapfile’s EXTENT parameter.  You can also notice in that summary
+the <em>PROJCS/AUTHORITY</em> line, which states that this data is currently
+in the <a class="reference external" href="https://spatialreference.org/ref/epsg/26915/">EPSG:26915</a> projection.</p>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For Windows users, <a class="reference external" href="https://ms4w.com">MS4W</a> includes the gdalinfo utility,
+and all utilities mentioned here.</p>
+</div>
+</section>
+<section id="overviews">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Overviews</a><a class="headerlink" href="#overviews" title="Link to this heading">¶</a></h2>
+<p>GeoTIFF supports the creation of “overviews” within the file, which is basically a
+downsampled version of the raster data suitable for use at lower resolutions.
+Use the <a class="reference external" href="https://gdal.org/programs/gdaladdo.html">gdaladdo</a> program to add overviews
+to a GeoTIFF, and MapServer (via GDAL)
+will automagically choose which downsampled layer to use. Note that overviews
+significantly increase the disk space required by a GeoTIFF, and in some cases the
+extra disk reading may offset the performance gained by MapServer not having to
+resample the image. You’ll just have to try it for yourself and see how it
+works.</p>
+</section>
+<section id="tileindexes-and-internal-tiling">
+<span id="index-1"></span><h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Tileindexes and Internal Tiling</a><a class="headerlink" href="#tileindexes-and-internal-tiling" title="Link to this heading">¶</a></h2>
+<p>Tiling is mostly effective for cases where one commonly requests only a very
+small area of the image.</p>
+<p>A tileindex is how one creates an on-the-fly mosaic from many rasters. This is
+described in the <a class="reference internal" href="tileindex.html#tileindex"><span class="std std-ref">Tile Indexes</span></a> MapServer document. That document describes
+common cases where a tileindex makes sense. In particular, if you have a very
+large raster and most requests are for a very small spatial area within it,
+you may want to consider slicing it and tileindexing it.</p>
+<p>As an alternative to slicing and mosaicing, TIFFs do support a concept of
+internal tiling. Like a tileindex, this is mostly effective when the requests
+are for a small portion of the raster. Internal tiling is done by adding “-co
+TILED=YES” to gdal_translate, e.g.:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">gdal_translate</span> <span class="o">-</span><span class="n">co</span> <span class="n">TILED</span><span class="o">=</span><span class="n">YES</span> <span class="n">original</span><span class="o">.</span><span class="n">tif</span> <span class="n">tiled</span><span class="o">.</span><span class="n">tif</span>
+</pre></div>
+</div>
+</section>
+<section id="learn-review-the-various-gdal-utilities-to-manage-your-rasters">
+<span id="index-2"></span><h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Learn &amp; Review the various GDAL utilities to manage your rasters</a><a class="headerlink" href="#learn-review-the-various-gdal-utilities-to-manage-your-rasters" title="Link to this heading">¶</a></h2>
+<p>GDAL raster commandline utilities are very powerful, and the more processing
+that you can do offline, the faster and easier it will be for MapServer
+to display your raster.  For example, you might need a colorful ‘shaded relief’
+from a raw DEM raster, in which case you could use the
+<a class="reference external" href="https://gdal.org/programs/gdaldem.html">gdaldem</a> utility, and then
+point your MapServer layer to that shaded relief raster.  Or you might
+want to reproject all of your rasters to the desired output/display projection
+beforehand, by using the <a class="reference external" href="https://gdal.org/programs/gdalwarp.html#gdalwarp">gdalwarp</a>
+utility.  Review all of the available GDAL raster utilities
+<a class="reference external" href="https://gdal.org/programs/index.html#raster-programs">here</a>.</p>
+</section>
+<section id="handling-your-raster-layers-in-the-mapfile">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Handling your raster LAYERS in the mapfile</a><a class="headerlink" href="#handling-your-raster-layers-in-the-mapfile" title="Link to this heading">¶</a></h2>
+<p>Please review the notes in the document <a class="reference internal" href="mapfile.html#mapfile-tuning"><span class="std std-ref">Mapfile Tuning &amp; Management</span></a>.</p>
+</section>
+<section id="remote-wms">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Remote WMS</a><a class="headerlink" href="#remote-wms" title="Link to this heading">¶</a></h2>
+<p>Some remote WMS/OGC services (as WMS actually returns an image from
+a request sent to a remote server) can be slow or unreliable. Optionally
+you can use a monitoring service, such as
+<a class="reference external" href="https://demo.geohealthcheck.org/resources?lang=en&amp;resource_type=OGC%3AWMS">GeoHealthCheck</a>,
+to keep track of the service’s reliability for you.</p>
+<p>You can also consider when the remote WMS layer or remote service
+should be used.  For example, there may be a different WMS server
+(or a different set of imagery, or even vector outline maps) suitable
+for drawing the countries or states to orient the user. You could then
+have the WMS layer come on at a certain scale, or have the layer always
+available but turned off so the user can choose when to turn it on.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p>
+<a href="../about.html" title="About">About</a><br>
+<a href="../products.html" title="Products">Products</a><br>
+<a href="../community/index.html" title="Community">Community</a><br>
+<a href="../development/index.html" title="Development">Development</a><br>
+<a href="../download.html" title="Downloads">Downloads</a><br>
+<a href="../documentation.html" title="Documentation">Documentation</a><br>
+<a href="../faq.html" title="FAQ">FAQ</a><br>
+<a href="../psc.html" title="PSC">PSC</a><br>
+<a href="https://fosstodon.org/@mapserver" title="Mastodon">Mastodon</a>
+</p>
+  <h3>Current Table Of Contents</h3>
+  <ul>
+<li><a class="reference internal" href="#">Raster Management &amp; Optimization</a><ul>
+<li><a class="reference internal" href="#choose-the-right-raster-format-for-your-needs">Choose the right raster format for your needs</a></li>
+<li><a class="reference internal" href="#spend-time-to-review-gdal-s-associated-driver-page-for-your-chosen-format">Spend time to review GDAL’s associated driver page for your chosen format</a></li>
+<li><a class="reference internal" href="#connect-to-your-data-through-gdal">Connect to your data through GDAL</a></li>
+<li><a class="reference internal" href="#overviews">Overviews</a></li>
+<li><a class="reference internal" href="#tileindexes-and-internal-tiling">Tileindexes and Internal Tiling</a></li>
+<li><a class="reference internal" href="#learn-review-the-various-gdal-utilities-to-manage-your-rasters">Learn &amp; Review the various GDAL utilities to manage your rasters</a></li>
+<li><a class="reference internal" href="#handling-your-raster-layers-in-the-mapfile">Handling your raster LAYERS in the mapfile</a></li>
+<li><a class="reference internal" href="#remote-wms">Remote WMS</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="tileindex.html" title="Tile Indexes"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="mapfile.html" title="Mapfile Tuning &amp; Management"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Home</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../documentation.html" >MapServer 8.6.4 Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" >Optimization</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Raster Management &amp; Optimization</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; <a href="../copyright.html">Copyright</a> 2026, Open Source Geospatial Foundation.
+      Last updated on 2026-06-12.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

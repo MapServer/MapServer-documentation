@@ -1,0 +1,98 @@
+.. _rfc129:
+
+=========================================================================
+MS RFC 129: Update msautotest to use Pytest
+=========================================================================
+
+:Date: 2020-01-29
+:Author: Even Rouault
+:Contact: even.rouault@spatialys.com
+:Status: Adopted
+:Last update: 2020-01-29
+:Version: MapServer 7.6
+
+Overview
+--------
+
+This RFC proposes to use the `Pytest <https://docs.pytest.org/en/latest/>`_
+framework, to replace the current ad-hoc Python testing infrastructure for its
+msautotest regression test suite.
+
+Rationale
+---------
+
+MapServer uses a ad-hoc Python testing infrastructure, similar to what GDAL used
+up to GDAL 2.3 (starting with GDAL 2.4, pytest has been adopted)
+
+While it is fullyfunctional, it is non-standard. Using a standard
+testing framework brings more familiarity to developers, more capabilities, and
+less boilerplate for tests under msautotest/mspython, due to the ability
+of using assertions instead of the adhoc post_reason()/return 'fail' current
+combo.
+
+Pytest offers, among many other features:
+
+- nicer output
+- ability to run a subset of tests based on expressions. For example,
+  "pytest -k wfs" to run all tests containing wfs in their name.
+- standard solution for skipping tests, expected failures, etc.
+- adding custom options with documentation
+
+Proposed solution
+-----------------
+
+Tests under msautotest/mspython are modified to be compatible of pytest:
+methods are prefixed with `test_`, adhoc post_reason()/return 'fail' replaced
+by simple `assert` statements
+
+msautotest/pymod/mstestlib.py, the workhorse to run tests based on mapfiles,
+is modified to use pytest infrastructure
+
+Python mapscript tests, under mapscript/python/tests, are not modified. They
+use Python `unittest` module, which can be used transparently with pytest.
+
+It is now possible to just run `pytest` from msautotest to run all tests.
+Or `pytest misc renderers` to just run tests in those directories.
+
+Backwards Compatibility Issues
+-------------------------------
+
+None for users.
+
+What is not changed:
+
+- the syntax of test MapFiles is not changed
+- the current run_test.py launcher scripts in wxs/, gdal/, etc. subdirectories
+  are preserved and are wrapper scripts over pytest.
+
+A few changes:
+
+- pytest must be installed: "pip install -r requirements.txt" from msautotest/
+- a few changes in options: the strict, valgrind and run_under_asan options are
+  now prefixed with double hyphen
+
+Security implications
+---------------------
+
+None
+
+MapScript implications
+----------------------
+
+None
+
+Documentation needs
+-------------------
+
+https://mapserver.org/development/tests/autotest.html will be updated
+
+Ticket ID and references
+------------------------
+
+Pull request available at: https://github.com/MapServer/MapServer/pull/5984
+
+Voting history
+--------------
+
+Adopted with +1 from PSC members SethG, EvenR, JeffM, SteveL, JukkaR,
+JeromeB, StephanS, TomK
