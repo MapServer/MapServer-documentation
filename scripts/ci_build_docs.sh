@@ -1,4 +1,5 @@
 #!/bin/bash
+echo "GIT_BRANCH is: $GIT_BRANCH"
 
 git log -n1 | grep -q "\\[build_pdf\\]"
 
