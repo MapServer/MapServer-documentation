@@ -3,27 +3,31 @@
 # MapServer-documentation repo. Called from build.yml when a push to main
 # is detected
 
+set -euo pipefail
+
 builddir=$1
 sha=$2
 github_token=$3
 
-git config user.email "mapserverbot@mapserver.bot"
-git config user.name "MapServer deploybot"
+git config --global user.email "mapserverbot@mapserver.bot"
+git config --global user.name "MapServer deploybot"
 
-git clone --no-checkout --depth=1 \
-  https://x-access-token:${github_token}@github.com/mapserver/MapServer-documentation.git \
+git clone --depth=1 \
+  https://x-access-token:${github_token}@github.com/MapServer/MapServer-documentation.git \
   /tmp/MapServer-documentation
 
 cd /tmp/MapServer-documentation
-git checkout -B gh-pages
+git fetch origin gh-pages
+git checkout -B gh-pages origin/gh-pages
 
 # delete existing files
-git rm -r * --quiet || true
+git rm -rf --quiet --ignore-unmatch .
+
 
 # add in the new build files
-cp -rf "$builddir/html/"* .
+cp -a "$builddir/html/." .
 touch .nojekyll
 
 git add -A
-git commit -m "update with results of commit https://github.com/mapserver/MapServer-documentation/commit/$sha" --quiet || echo "Nothing to commit"
-git push origin gh-pages --force
+git commit -m "update with results of commit https://github.com/MapServer/MapServer-documentation/commit/$sha" --quiet || echo "Nothing to commit"
+git push origin gh-pages
