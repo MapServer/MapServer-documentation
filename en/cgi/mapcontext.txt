@@ -15,7 +15,7 @@ following syntax:
 
     http://localhost/mapserver.cgi?MODE=map&MAP=/path/to/mapfile.map&CONTEXT=
                          /path/to/contextfile.xml&LAYERS=layer_name1 layers_name2 
-   
+
 .. note::
 
     All layers created from a context file have their status set to ON. To be
@@ -36,21 +36,33 @@ accessing a local context file:
 
 Due to security concerns loading a file from a URL is disabled by default. To 
 enable this functionality, the user needs to set a CONFIG parameter called 
-CGI_CONTEXT_URL in the default map file that will allow this functionality. 
+``CGI_CONTEXT_URL`` in the default map file that will allow this functionality. 
 Here is an example of a map file with the CONFIG parameter:
 
 ::
 
-    # Start of map file
-    NAME DEMO
-    STATUS ON
-    SIZE 400 300
-    EXTENT -2200000 -712631 3072800 3840000
-    UNITS METERS
-    IMAGECOLOR 255 255 255
-    IMAGETYPE png
-    CONFIG "CGI_CONTEXT_URL" "1"
+    MAP
+        NAME DEMO
+        STATUS ON
+        SIZE 400 300
+        EXTENT -2200000 -712631 3072800 3840000
+        UNITS METERS
+        IMAGECOLOR 255 255 255
+        IMAGETYPE png
+        CONFIG "CGI_CONTEXT_URL" "1"
     ...
+
+.. warning::
+
+    ``CGI_CONTEXT_URL`` is disabled by default. Enabling this option allows
+    MapServer to load remote context documents specified through the
+    ``CONTEXT`` CGI parameter and may result in server-side requests to
+    URLs contained in those documents.
+
+    Only enable this option when context documents come from trusted
+    sources. Where possible, outbound network access from the MapServer
+    host should be limited (for example through firewall or network policy
+    rules) to trusted services.
 
 Default Map File
 ----------------
@@ -68,24 +80,25 @@ required parameters:
 
 ::
 
-    NAME CGI-CONTEXT-DEMO
-    STATUS ON
-    SIZE 400 300
-    EXTENT -2200000 -712631 3072800 3840000
-    UNITS METERS
-    IMAGECOLOR 255 255 255
-    IMAGETYPE png
-    #
-    # Start of web interface definition
-    #
-    WEB
-      MINSCALE 2000000
-      MAXSCALE 50000000
-    #
-    # On Windows systems, /tmp and /tmp/ms_tmp/ should be created at the root 
-    # of the drive where the .MAP file resides.
-    #
-      IMAGEPATH "/ms4w/tmp/ms_tmp/" 
-      IMAGEURL "/ms_tmp/"
-    END
-    END # Map File                      
+    MAP
+        NAME CGI-CONTEXT-DEMO
+        STATUS ON
+        SIZE 400 300
+        EXTENT -2200000 -712631 3072800 3840000
+        UNITS METERS
+        IMAGECOLOR 255 255 255
+        IMAGETYPE png
+        #
+        # Start of web interface definition
+        #
+        WEB
+          MINSCALE 2000000
+          MAXSCALE 50000000
+        #
+        # On Windows systems, /tmp and /tmp/ms_tmp/ should be created at the root 
+        # of the drive where the .MAP file resides.
+        #
+          IMAGEPATH "/ms4w/tmp/ms_tmp/" 
+          IMAGEURL "/ms_tmp/"
+        END
+    END # Map File
