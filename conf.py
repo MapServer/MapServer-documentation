@@ -11,7 +11,7 @@
 # All configuration values have a default; values that are commented out
 # serve to show the default.
 
-import sys, os, shutil
+import sys, os
 import inspect
 from unittest.mock import MagicMock #py3 only
 
@@ -243,8 +243,8 @@ html_show_sourcelink = False
 html_theme = "classic"
 
 # Add the branch name as a variable that can be used in templates
-# this can be set as a sphinx-build option using `-A BRANCH=main`
-html_context = {'branch': release}
+# Defaults to 'local'if GIT_BRANCH isn't set (e.g. local builds)
+html_context = {'branch': os.environ.get('GIT_BRANCH', 'local')}
 
 # linkcheck options
 # -----------------

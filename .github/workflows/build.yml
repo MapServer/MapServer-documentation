@@ -5,6 +5,8 @@ on: [push, pull_request, workflow_dispatch]
 jobs:
   build:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
       - name: Checkout repository contents
@@ -16,12 +18,14 @@ jobs:
           python-version: 3.13
 
       - name: Build docs
+        env:
+          GIT_BRANCH: ${{ github.ref_name }}
         run: |
           pip install -r requirements.txt
-          echo "GIT_BRANCH=$(echo $GITHUB_REF | cut -d '/' -f 3)" >> $GITHUB_ENV
           ./scripts/ci_build_docs.sh
 
-      - name: After success steps
+      # Deploy release branch to mapserver.github.io
+      - name: Deploy to mapserver.github.io
         if: ${{ success() && github.event_name == 'push' && github.repository == 'MapServer/MapServer-documentation' && github.ref_name == 'branch-8-6' }}
         run: |
           # setup the SSH key
@@ -36,3 +40,11 @@ jobs:
           sha=$(git rev-parse --short ${{ github.sha }})
           echo "publish website using $GIT_BRANCH branch and commit $sha"
           ./scripts/ci_deploy_website.sh build /tmp $sha
+
+      # Deploy main branch to gh-pages branch (same repo)
+      - name: Deploy to gh-pages
+        if: ${{ success() && github.event_name == 'push' && github.repository == 'MapServer/MapServer-documentation' && github.ref_name == 'main' }}
+        run: |
+          sha=$(git rev-parse --short ${{ github.sha }})
+          echo "Publishing main branch (commit $sha) to gh-pages"
+          ./scripts/ci_deploy_gh_pages.sh ${{ github.workspace }}/build $sha ${{ secrets.GITHUB_TOKEN }}
