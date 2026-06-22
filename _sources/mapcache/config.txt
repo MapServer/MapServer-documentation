@@ -1,0 +1,1071 @@
+.. _mapcache_config:
+
+*****************************************************************************
+Configuration File
+*****************************************************************************
+
+:Author: Thomas Bonfort
+:Contact: tbonfort at terriscope.fr
+
+The configuration file determines how mod-mapcache will serve incoming requests.
+It is an XML file comprising a list of entries, as outlined here:
+
+.. code-block:: xml
+
+   <mapcache>
+      <grid>....</grid>
+      <source>....</source>
+      <cache>...</cache>
+      <format>...</format>
+      <tileset>...</tileset>
+      <service>...</service>
+      <metadata>....</metadata>
+   </mapcache>
+
+
+.. note::
+
+    The MapCache configuration file is only read when the Apache web server starts and the MapCache module is loaded. If you modify this file you will have to restart Apache for the changes to take effect.
+    
+.. _mapcache_config_source:
+
+Source
+================================================================================
+
+A source is a service mod-mapcache can query to obtain image data. This is
+typically a WMS server accessible by a URL. (There are currently only WMS, WMTS
+and mapfile as sources, though others may be added later if the need arises,
+see :ref:`mapcache_sources`).
+    
+.. code-block:: xml
+
+   <source name="vmap0" type="wms">
+
+      <!--
+         Extra parameters that will be added to the GetMap request. You can
+         specify any parameter here, e.g. VERSION if you want to override the
+         version of the WMS request.
+
+         The LAYERS parameter is mandatory.
+
+         Usual parameters here are FORMAT, or MAP if using MapServer.
+      -->
+      <getmap>
+         <params>
+            <FORMAT>image/png</FORMAT>
+            <LAYERS>basic</LAYERS>
+         </params>
+      </getmap>
+
+      <!-- HTTP URL and parameters to be used when making WMS requests -->
+      <http>
+
+         <!-- URL of the WMS service, without any parameters -->
+         <url>http://vmap0.tiles.osgeo.org/wms/vmap0</url>
+
+         <!--
+            HTTP headers added to the request. Make sure you know what you are
+            doing when adding headers here, as they take precedence over any
+            default headers curl will be adding to the request.
+
+            Typical headers that can be added here are User-Agent and Referer.
+
+            When adding a <key>value</key> element here, the request to the WMS
+            source will contain the
+
+            key: value\r\n
+
+            HTTP header.
+
+            You may also forward a header from the incoming client request using
+            the <MyHeader>{X-Header-To-Forward}<MyHeader> syntax.
+         -->
+         <headers>
+            <User-Agent>mod-mapcache/r175</User-Agent>
+            <Referer>http://www.mysite.com?param=2&amp;par=4</Referer>
+         </headers>
+
+         <!-- Timeout in seconds before bailing out from a request -->
+         <connection_timeout>30</connection_timeout>
+      </http>
+   </source>
+
+The name and type attributes are straightforward: `type` is "wms", and `name`
+is the key by which this source will be referenced; `<url>` is the HTTP
+location where the service can be accessed; and `<wmsparams>` is a list of
+parameters that will be added to the WMS request. You should probably at the
+very least add the FORMAT and LAYERS parameters. By convention(?), WMS
+parameters are uppercase, and you should respect this convention in your
+configuration file.
+
+This is where you can also override some default WMS parameters if needed. By
+default, the parameters that will be used are: `<REQUEST>GetMap</REQUEST>`
+`<SERVICE>WMS</SERVICE>` `<STYLES></STYLES>` `<VERSION>1.1.0</VERSION>`
+
+Cache
+================================================================================
+
+A cache is a location where received tiles will be stored.
+
+.. code-block:: xml
+
+   <cache name="disk" type="disk">
+
+      <!-- base
+
+           Absolute filesystem path where the tile structure will be stored.
+
+           This directory needs to be readable and writable by the user running
+           Apache.
+      -->
+      <base>/tmp</base>
+
+      <!-- symlink_blank
+
+           Enable blank (i.e. uniform color) tile detection. Blank tiles will be
+           detected at creation time and linked to a single blank tile on disk
+           to preserve disk space.
+      -->
+      <symlink_blank/>
+   </cache>
+
+   <cache name="tmpl" type="disk" layout="template">
+      <!-- template
+
+           String template that will be used to map a tile (by tileset, grid
+           name, dimension, format, x, y, and z) to a filename on the filesystem.
+
+           The following replacements are performed:
+
+           - {tileset}               : the tileset name
+           - {grid}                  : the grid name
+           - {dim}                   : string concatenating the tile's dimension
+           - {ext}                   : tile's image-format filename extension
+           - {x},{y},{z}             : tile's x,y,z values
+           - {inv_x},{inv_y},{inv_z} : inverted x,y,z values
+                                       
+           (For inverted x,y,z values, (inv_x = level->maxx - x - 1). This is
+           mainly used to support grids where one axis is inverted (e.g. the
+           Google schema) and you want to create on offline cache.)
+
+         * Note that this type of cache does not support blank-tile detection
+           and symlinking.
+
+         * Warning: It is up to you to make sure that the template you choose
+           creates a unique filename for your given tilesets (e.g. do not omit
+           the {grid} parameter if your tilesets reference multiple grids.)
+           Failure to do so will result in filename collisions!
+
+      -->
+      <template>/tmp/template-test/{tileset}#{grid}#{dim}/{z}/{x}/{y}.{ext}</template>
+   </cache>
+
+   <!-- memcache cache
+
+        Entry accepts multiple <server> entries.
+
+        Requires a fairly recent apr-util library and headers.
+   -->
+   <cache name="memcache" type="memcache">
+      <server>
+         <host>localhost</host>
+         <port>11211</port>
+      </server>
+   </cache>
+
+   <!-- sqlite cache
+
+        Requires building with "with-sqlite".
+   -->
+   <cache name="sqlite" type="sqlite3">
+      <!-- dbfile
+
+           Absolute filename path of the SQLite database file to use.
+   
+           This file needs to be readable and writable by the user running the
+           MapCache instance.
+      -->
+   </cache>
+
+   <cache name="mbtiles" type="mbtiles">
+      <dbfile>/path/to/MapBox/tiles/natural-earth-1.mbtiles</dbfile>
+   </cache>
+
+
+Format
+================================================================================
+
+A format is an image format that will be used to return tile data to clients,
+and to store tile data on disk.
+
+.. code-block:: xml
+
+   <format name="PNGQ_FAST" type ="PNG">
+
+      <!-- compression
+
+           PNG compression: best or fast
+
+           Note that "best" compression is CPU intensive for little gain over
+           the default default compression obtained by leaving out this tag.
+      -->
+      <compression>fast</compression>
+
+      <!-- colors
+
+           If supplied, this enables PNG quantization which reduces the number
+           of colors in an image to attain higher compression. This operation is
+           destructive, and can cause artifacts in the stored image.
+
+           The number of colors can be between 2 and 256.
+     -->
+     <colors>256</colors>
+   </format>
+   <format name="myjpeg" type ="JPEG">
+
+      <!-- quality
+
+           JPEG compression quality, ranging from 0 to 100.
+
+           95 produces high quality images with few visual artifacts. Values
+           under around 80 produce small images but with visible artifacts.
+           YMMV.
+      -->
+      <quality>75</quality>
+
+      <!-- photometric
+
+          Photometric interpretation of the bands created in the JPEG image.
+
+          Default is "ycbcr", which produces the smallest images. Can also be
+          "rgb", which usually results in x2 or x3 image sizes.
+      -->
+      <photometric>ycbcr</photometric>
+
+   </format>
+
+   <format name="PNG_BEST" type ="PNG">
+      <compression>best</compression>
+   </format>
+
+   <format name="mixed" type="MIXED">
+      <transparent>PNG_BEST</transparent>
+      <opaque>JPEG</opaque>
+   </format>
+
+
+
+.. _mapcache_grids:
+
+Grid
+================================================================================
+
+A grid is the matrix that maps tiles onto an area, and consists of a spatial
+reference, a geographic extent, resolutions, and tile sizes.
+
+Mandatory Configuration Options
+--------------------------------------------------------------------------------
+
+* **<size>**: The width and height of an individual tile, in pixels. Must be
+  specified as positive integers separated by a space character. The most common
+  tile size is:
+
+  .. code-block:: xml
+
+     <size>256 256</size>
+
+* **<extent>**: The geographical extent covered by the grid, in ground units
+  (e.g. meters, degrees, feet, etc.). Must be specified as 4 floating point
+  numbers separated by spaces, ordered as minx, miny, maxx, maxy.
+
+  MapCache expects all of its extents to be given in lonlat, and does the
+  translation to latlon at request time if needed.
+
+  The (minx,miny) point defines the origin of the grid, i.e. the pixel at the
+  bottom left of the bottom-left most tile is always placed on the (minx,miny)
+  geographical point.
+
+  The (maxx,maxy) point is used to determine how many tiles there are for each
+  zoom level.
+
+  .. code-block:: xml
+
+     <extent>-180 -90 180 90</extent>
+
+* **<srs>**: The projection of the grid, usually given by it EPSG identifier.
+  This value isn't used directly by MapCache to compute reprojections; it is
+  only used to look up which grid to use when receiving WMS requests.
+
+  .. code-block:: xml
+
+     <srs>epsg:4326</srs>
+
+  .. note::
+
+    This is the value that is passed on to the :ref:`source <mapcache_sources>`
+    when requesting a tile that is not already cached for the current grid. You
+    must make sure that the source that is queried is capable of returning image
+    data for this SRS.
+
+* **<units>**: The ground units used by the grid's projection. This entry is not
+  used directly by MapCache aside from calculating scales for the WMTS
+  capabilities document. Allowed values are:
+
+  * **m**  : meters
+  * **dd** : decimal degrees
+  * **ft** : feet
+
+  .. code-block:: xml
+
+     <units>dd</units>
+
+* **<resolutions>**: This is a list of resolutions for each of the zoom levels
+  defined by the grid. This must be supplied as a list of positive floating
+  point values, separated by spaces and ordered from largest to smallest. The
+  largest value will correspond to the grid's zoom level 0. Resolutions are
+  expressed in "units-per-pixel", depending on the unit used by the grid (e.g.
+  resolutions are in meters per pixel for most grids used in webmapping).
+
+  .. code-block:: xml
+
+    <resolutions>0.703125000000000 0.351562500000000 0.175781250000000 8.78906250000000e-2 4.39453125000000e-2 2.19726562500000e-2 1.09863281250000e-2 5.49316406250000e-3 2.74658203125000e-3 1.37329101562500e-3 6.86645507812500e-4 3.43322753906250e-4 1.71661376953125e-4 8.58306884765625e-5 4.29153442382812e-5 2.14576721191406e-5 1.07288360595703e-5 5.36441802978516e-6</resolutions>
+
+
+Optional Configuration Options
+--------------------------------------------------------------------------------
+
+* **<srsalias>**: This tag can be specified multiple times, and allows the user
+  to add multiple SRS entries for a given grid. This is especially useful if
+  the EPSG id for a given projection has evolved over time, or to support
+  catalogs other than the EPSG one (which is the only catalog supported by the
+  WMS specification).
+
+  .. code-block:: xml
+
+    <srs>EPSG:310024802</srs>
+    <srsalias>IGNF:GEOPORTALFXX</srsalias>
+    <srsalias>EPSG:310024001</srsalias>
+
+* **<metadata>**:
+
+  * **<title>**: The name of the grid, in human readable form. Appears in the
+    capabilities documents.
+
+    .. code-block:: xml
+
+      <title>This grid covers the area blah blah blah</title>
+
+
+  * **<WellKnownScaleSet>**: See the WMTS keyword. This will add a
+    WellKnownScaleSet entry to the WMTS capabilities document. It is up to the
+    user to make sure that the supplied resolutions for the grid actually match
+    the pre-defined WellKnownScaleSet.
+
+    .. code-block:: xml
+
+      <WellKnownScaleSet>urn:ogc:def:wkss:OGC:1.0:GoogleCRS84Quad</WellKnownScaleSet>
+
+* **<origin>**: Specifies the origin of the grid. Valid values are `top-left`,
+  `bottom-left`, `top-right` and `bottom-right`.
+
+  If not used, the grid will have the bottom-left corner as reference point.
+
+  .. code-block:: xml
+
+     <origin>top-left</origin>
+
+
+Preconfigured Grids
+--------------------------------------------------------------------------------
+
+There are three predefined grids you can use without defining them in the
+mapcache.xml file:
+
+* The "WGS84" grid corresponds to a grid where the whole world is rendered on
+  two 256x256-pixel tiles at level 0 (i.e. the (-180,-90,180,90) extent fits on
+  a 512x256 image). It goes down to zoom level 17.
+
+  .. code-block:: xml
+
+     <grid name="WGS84">
+        <metadata>
+           <title>GoogleCRS84Quad</title>
+           <WellKnownScaleSet>urn:ogc:def:wkss:OGC:1.0:GoogleCRS84Quad</WellKnownScaleSet>
+        </metadata>
+        <extent>-180 -90 180 90</extent>
+        <srs>EPSG:4326</srs>
+        <units>dd</units>
+        <size>256 256</size>
+        <resolutions>0.703125000000000 0.351562500000000 0.175781250000000 8.78906250000000e-2 4.39453125000000e-2 2.19726562500000e-2 1.09863281250000e-2 5.49316406250000e-3 2.74658203125000e-3 1.37329101562500e-3 6.86645507812500e-4 3.43322753906250e-4 1.71661376953125e-4 8.58306884765625e-5 4.29153442382812e-5 2.14576721191406e-5 1.07288360595703e-5 5.36441802978516e-6</resolutions>
+     </grid>
+
+* The "g" grid may be used to overlay tiles on top of GoogleMaps, and is the
+  default tiling scheme used in webmapping applications. This grid goes down to
+  zoom level 18. Level 0 is a single 256x256 tile. This grid's default SRS is
+  EPSG:900913, which is non-standard but in wider use than than its official
+  EPSG:3857 entry.
+
+  .. code-block:: xml
+
+     <grid name="g">
+        <metadata>
+           <title>GoogleMapsCompatible</title>
+           <WellKnownScaleSet>urn:ogc:def:wkss:OGC:1.0:GoogleMapsCompatible</WellKnownScaleSet>
+        </metadata>
+        <extent>-20037508.3427892480 -20037508.3427892480 20037508.3427892480 20037508.3427892480</extent>
+        <srs>EPSG:900913</srs>
+        <srsalias>EPSG:3857</srsalias>
+        <units>m</units>
+        <size>256 256</size>
+        <resolutions>156543.0339280410 78271.51696402048 39135.75848201023 19567.87924100512 9783.939620502561 4891.969810251280 2445.984905125640 1222.992452562820 611.4962262814100 305.7481131407048 152.8740565703525 76.43702828517624 38.21851414258813 19.10925707129406 9.554628535647032 4.777314267823516 2.388657133911758 1.194328566955879 0.5971642834779395</resolutions>
+     </grid>
+
+* The "GoogleMapsCompatible" grid is nearly identical to the "g" grid, except
+  that its default SRS is EPSG:3857 instead of EPSG:900913.
+
+  .. code-block:: xml
+
+     <grid name="GoogleMapsCompatible">
+        <metadata>
+           <title>GoogleMapsCompatible</title>
+           <WellKnownScaleSet>urn:ogc:def:wkss:OGC:1.0:GoogleMapsCompatible</WellKnownScaleSet>
+        </metadata>
+        <extent>-20037508.3427892480 -20037508.3427892480 20037508.3427892480 20037508.3427892480</extent>
+        <srs>EPSG:3857</srs>
+        <srsalias>EPSG:900913</srsalias>
+        <units>m</units>
+        <size>256 256</size>
+        <resolutions>156543.0339280410 78271.51696402048 39135.75848201023 19567.87924100512 9783.939620502561 4891.969810251280 2445.984905125640 1222.992452562820 611.4962262814100 305.7481131407048 152.8740565703525 76.43702828517624 38.21851414258813 19.10925707129406 9.554628535647032 4.777314267823516 2.388657133911758 1.194328566955879 0.5971642834779395</resolutions>
+     </grid>
+
+.. _mapcache_config_tileset:
+
+Tileset
+================================================================================
+
+A tileset is the essential configuration item for mod-mapcache, and corresponds
+to a set of tiles coming from a *source*, stored in a *cache*, and returned to
+the client in a given *format*.
+
+.. code-block:: xml
+
+   <tileset name="test">
+
+      <!-- source
+
+           The "name" attribute of a preconfigured <source>.
+ 
+           If the tileset does not contain a <source> element, then it is
+           considered read-only and its cache will never be updated. In this
+           case, your seeder and webserver would have slightly different
+           mapcache.xml files.
+
+           Blank tiles may be dealt with by setting the <errors> directive to
+           "empty_img".
+      -->
+      <source>vmap0</source>
+
+      <!-- cache
+
+           The "name" attribute of a preconfigured <cache>
+      -->
+      <cache>sqlite</cache>
+
+      <!-- grid
+
+           The "name" attribute of a preconfigured <grid>.
+
+           You can also use the following notation to limit the area that will
+           be cached and served to clients:
+
+           <grid restricted_extent="-10 40 10 50">WGS84</grid>
+         
+           This is better than using a grid with a limited extent, as in this
+           way the tiles that are already cached are not invalidated should you
+           want to modify the restricted extent in the future. When using the
+           restricted_extent attribute, you should give the corresponding
+           information to the client that will be using the service.
+
+           You can also limit the zoom levels that are cached/accessible by
+           using the `minzoom` and `maxzoom` attributes.
+
+           Moreover, a tolerance of five tiles is added by default to the
+           specified restricted_extent. This tolerance can be manually set with
+           `tolerance` attribute.
+
+           A grid may reference a ruleset to impose certain behaviour:
+
+           <grid ruleset="rules">4326</grid>
+
+           NOTE: When adding a <grid> element, you *MUST* make sure that the
+           source you have selected is able to return images in the grid's SRS.
+      -->
+      <grid restricted_extent="-10 40 10 50" minzoom="4" maxzoom="17">WGS84</grid>
+      <grid ruleset="rules">4326</grid>
+      <grid>g</grid>
+
+      <!-- You may store hidden intermediate levels of tiles to enable higher
+           quality output when reassembling tiles. This may be needed when
+           caching maps containing labels to avoid the text from becoming too
+           small or too blurry when requesting resolutions that are far away
+           from the native grid resolutions.
+
+           Supposing grid "mygrid" consists of 256x256 pixel tiles, with
+           resolutions r1,r2,r3,r4,...rn, MapCache will populate a hidden grid
+           called "mygrid_intermediate_0.5" containing tiles of size
+           256+256*0.5=384 with resolutions r1+(r2-r1)*0.5, r2+(r3-r2)*0.5, ...
+           r(n-1)+(r(n)-r(n-1)*0.5. That is, a tile with a given extent will be
+           stored once in a 256x256 tile, and once in a 384x384 one.
+
+           This intermediate grid is private to MapCache and will not be exposed
+           to tiled requests. It will only be used for WMS requests that require
+           horizontal assembling.
+      -->
+      <grid use_wms_intermediate_resolutions="true">mygrid</grid>
+
+      <!-- metadata
+
+           Optional metadata tags used for responding to GetCapabilities
+           requests. You can put anything here, but only the title, abstract, wgs84boundingbox and
+           keywords tags are currently used to populate the GetCapabilities
+           document.
+      -->
+      <metadata>
+         <title>vmap0 map</title>
+         <abstract>blabla</abstract>
+         <!-- Sets the extent of the tileset. Used by GIS to zoom to the layer. Order is Lon/Lat (example extent 
+         is the region around London). Will be translated 
+         to 
+         <ows:WGS84BoundingBox>
+            <ows:LowerCorner>-0.837 51.058</ows:LowerCorner>
+            <ows:UpperCorner>0.57 51.834</ows:UpperCorner>
+         </ows:WGS84BoundingBox> 
+         -->
+         <wgs84boundingbox>-0.837 51.058 0.57 51.834</wgs84boundingbox>
+         <keywords>
+            <keyword>foo</keyword>
+            <keyword>bar</keyword>
+         </keywords>
+      </metadata>
+
+      <!-- watermark
+
+           Optional tag to add a watermark to the tiles *before* storing them to
+           cache. The supplied image MUST be exactly the same size as the size
+           as the tiles configured in the <grid>.
+
+           The supplied image is read when the configuration is loaded. If you
+           make changes to the image, they will NOT be reflected in tiles
+           already stored in the cache, nor on newly stored tiles, until the
+           server is restarted.
+      -->
+      <watermark>/path/to/static/watermark.png</watermark>
+
+      <!-- format
+
+          (Optional) format to use when storing a tile. This should be a format
+          with high compression, e.g. PNG with compression "best", as the
+          compression operation is only done once at tile creation time. If
+          omitted, no recompression is applied to the image and mod-mapcache
+          will store the exact image received from the <source>.
+   
+          Note that the <format> tag is mandatory if <metatile>, <metabuffer> or
+          <watermark> are supplied, as in those cases recompression must be
+          done.
+      -->
+      <format>PNG</format>
+
+      <!-- metatile
+
+           Number of columns and rows to use for metatiling. See
+           http://geowebcache.org/docs/current/concepts/metatiles.html
+      -->
+      <metatile>5 5</metatile>
+
+      <!-- metabuffer
+
+           Area around the tile or metatile that will be cut off to prevent some
+           edge artifacts. If this is specified, the configured source must be
+           instructed not to put any labels inside this area, as otherwise
+           labels will be truncated. (For MapServer, use the
+           "labelcache_map_edge_buffer" "-10" metadata entry, along with label
+           PARTIALS FALSE.)
+      -->
+      <metabuffer>10</metabuffer>
+
+      <!-- expires
+
+           Optional tile expiration value in seconds. This is expressed as
+           number of seconds after creation date of the tile. This is the value
+           that will be set in the HTTP Expires and Cache-Control headers, and
+           has no effect on the actual expiration of tiles in the caches (see
+           <auto_expire> for that). Defaults to 300 if unset.
+      -->
+      <expires>3600</expires>
+
+      <!-- auto_expire
+
+           Tiles older (in seconds) than this value will be re-requested and
+           updated in the cache. Note that this will only delete tiles from the
+           cache when they are accessed: You cannot use this configuration to
+           limit the size of the created cache. Note that, if set, this value
+           overrides the value given by <expires>. By default tiles don't expire.
+      -->
+      <auto_expire>86400</auto_expire>
+
+      <!-- cache-control
+
+            Optional Cache-Control HTTP header directives.
+            These directives apply to all tiled responses (TMS, WMTS, ...).
+            The "max-age=" directive is always set based on the <expires>
+            and <auto_expire> configuration parameters.
+
+            The specified value is passed verbatim without any validation whatsoever.
+            Please refer to the HTTP header documentation for valid usage:
+            https://developer.mozilla.org/en-US/docs/Web/HTTP/Headers/Cache-Control
+
+            For instance, for historic maps that are not expected to change,
+            set the <expires> option to "31556926" (one year) and <cache-control>
+            to "immutable" (do not check until expired). On clients supporting
+            the "immutable" directive (e.g., Firefox), data will be loaded
+            directly from a local cache without issuing any requests
+            to the server to revalidate it.
+      -->
+      <cache-control>immutable</cache-control>
+
+      <!-- dimensions
+
+           Optional dimensions that should be cached.
+  
+           The order of the <dimension> tags inside the <dimensions> block is
+           important, as it is used to create the directory structure for the
+           disk cache. That is, if you change the order of these values, any
+           tiles that have been previously cached are invalidated: They are not
+           removed from the cache, but they no longer exist for mod-mapcache.
+      -->
+      <dimensions>
+         <!-- values dimension
+
+              The example here creates a DIM1 dimension.
+
+              * WMS and WMTS clients can now add a &DIM1=value to their request
+                string. If they don't specify this key/value, the default will
+                be to use DIM1=foobar.
+              * The allowed values for DIM1= are foobar (it is important to add
+                the default value to the allowed values entry), foobarbaz, foo
+                and bar.
+              * The value specified for DIM1 will be forwarded to the WMS
+                source.
+              * The produced tile will be stored in the file
+                base/gridname/DIM1/value/xx/xx/xx/xx/xx/xx.png. That is, there
+                are as many different caches created as there are values in the
+                <values> tag.
+         -->
+         <dimension type="values" name="DIM1" default="foobar">foobar,foobarbaz,foo,bar</dimension>
+
+         <!-- regex dimension
+ 
+              The following creates a MAPFILE dimension, for using the same
+              mod-mapcache tileset with different MapServer mapfiles. The name
+              of the mapfiles need not be known to mod-mapcache, and can
+              therefore be created even after mod-mapcache has been started.
+            
+              When a user passes a MAPFILE=/path/to/mapfile, the string
+              "/path/to/mapfile" is validated against the supplied (PCRE)
+              regular expression. The one in this example allows a name composed
+              of aphanumeric characters separated by slashes (/) and ending in
+              ".map" ( [a-zA-Z0-9\./]*\.map$ ), but will fail if there are two
+              consecutive dots (..) in the path, to prevent filesystem traversal
+              ( (?!.*\.\.) ).
+         -->
+         <dimension type="regex" name="MAPFILE" default="/path/to/mapfile.map">^(?!.*\.\.)[a-zA-Z0-9\./]*\.map$</dimension>
+
+         <!-- intervals dimension
+
+              The syntax is the same as common-ows, i.e. a comma-separated list
+              of "min/max/resolution" entries, e.g:
+
+              * 0/5000/1000 allows the values 0,1000,2000,3000,4000 and 5000.
+              * 0/100/0 allows any values between 0 and 100.
+              * Both values can be combined: 0/5000/1000,0/100/0.
+         -->
+         <dimension name="ELEVATION" type="intervals" default="0">0/5000/1000</dimension>
+
+         <!-- Coming in a future version: support for ISO8601 date/time dimensions -->
+
+      </dimensions>
+   </tileset>
+
+Services
+================================================================================
+
+Services are the type of request that mod-mapcache will respond to. You should,
+of course, enable at least one.
+
+.. code-block:: xml
+
+   <service type="wms" enabled="true">
+      <!-- 
+           This service should actually be called "ogc". It is different from
+           the other services as it does not listen on the /wms endpoint, but
+           directly on /. It will intercept WMS GetMap requests that can be
+           satisfied from configured tilesets, and can optionally forward all
+           the rest to (an)other server(s).
+
+           TODO: This needs way more documenting.
+
+      <forwarding_rule name="foo rule">
+        <append_pathinfo>true</append_pathinfo>
+        <http>
+          <url>http://localhost/mapcacheproxy</url>
+        </http>
+      </forwarding_rule>
+      -->
+
+      <!-- full_wms
+ 
+           Configure response to WMS requests that are not aligned to a
+           tileset's grids. Responding to requests that are not in the SRS of a
+           configured grid is not supported, but this should never happen as
+           only the supported SRSs are publicized in the capabilities document.
+
+           Allowed values are:
+             
+           - error    : Return a 404 error (default).
+           - assemble : Build the full image by assembling cached tiles.
+           - forward  : Forward the request to the configured source.
+      -->
+      <full_wms>assemble</full_wms>
+
+      <!-- resample mode
+
+           Filter applied when resampling tiles for full WMS requests. Can be
+           either:
+      
+           - nearest  : Fastest, poor quality.
+           - bilinear : Slower, higher qulity.
+      -->
+      <resample_mode>bilinear</resample_mode>
+
+      <!-- format
+
+           Image format to use when assembling tiles.
+      -->
+      <format allow_client_override="true">myjpeg</format>
+
+   </service>
+   <service type="wmts" enabled="true"/>
+   <service type="tms" enabled="true"/>
+   <service type="kml" enabled="true"/>
+   <service type="gmaps" enabled="true"/>
+   <service type="ve" enabled="true"/>
+   <service type="demo" enabled="true"/>
+
+Ruleset
+================================================================================
+
+A ruleset contains a set of rules to impose certain behaviour on zoom levels.
+It is referenced from a grid element inside a tileset. See tileset for more
+information.
+
+It is possible to define rules that:
+
+* Puts limits on the visible extent of zoom levels.
+
+.. code-block:: xml
+
+   <ruleset name="rules">
+
+      <!-- rule
+
+           A rule impose certain behaviour on one or more zoom levels.
+           There is no limit on the number of rules.
+
+           zoom_level attribute contains the levels affected by this rule.
+           A zoom level can not be referenced by multiple rules.
+      -->
+      <rule zoom_level="4 5 6 7">
+
+         <!-- visibility
+
+              Contains a collection of visible extents.
+
+              Tiles inside these extents will be fetched from the cache.
+              Tiles outside will be created on the fly using configured
+              color and returned to the client in declared format,
+              but not stored in the cache.
+              This does not affect the extent announced to the client,
+              but will limit the potentially large number of blank tiles
+              stored in the cache when data only covers small subsets of
+              the total extent.
+
+              hidden_color attribute is the (hex) color (ARGB or RGB) of tiles
+              outside the visible extents. Default is a fully transparent tile.
+         -->
+         <visibility hidden_color="ff000000">
+
+            <!-- extent
+
+                 One or more extents.
+
+                 Extent must be given in the srs of the referencing grid.
+            -->
+            <extent>228355 6085026 953704 7686970</extent>
+         </visibility>
+      </rule>
+
+      <rule zoom_level="8 9 10">
+         <visibility>
+            <extent>335972 6099021 495792 6166722</extent>
+            <extent>309336 6166722 644513 6273268</extent>
+         </visibility>
+      </rule>
+   </ruleset>
+
+Miscellaneous
+================================================================================
+
+.. code-block:: xml
+
+   <!-- default_format
+
+        Format to use when a client asks for an image that is dynamically
+        created from multiple cached tiles. Note that using a PNG format with
+        "best" compression is not recommended here as it is computationally
+        expensive. It is better to use a PNG format with "fast"compression here,
+        unless you have plenty of server CPU power and/or limited bandwidth.
+   -->
+   <default_format>JPEG</default_format>
+
+   <!-- services
+
+        Services that mod-mapcache will respond to. Each service is accessible
+        at the URL http://host/path/to/mapcache/{service}, e.g.
+        http://myhost/mapcache/wms for OGC WMS.
+   -->
+
+   <!-- errors
+
+        Configure how errors will be reported back to a client:
+
+        - log        : No error is reported back, except an HTTP error code.
+        - report     : Return the error message to the client in textual format.
+        - empty_img  : Return an empty image to the client. The actual error
+                       code is in the X-Mapcache-Error HTTP header.
+        - report_img : Return an image with the error text included inside. (Not
+                       implemented yet.)
+
+        The default setting is to report the error message back to the user. In
+        production, you might want to set this to "log" if you're paranoid, or
+        to "empty_img" if you want to play nice with non-conforming clients.
+   -->
+   <errors>report</errors>
+
+
+.. code-block:: xml
+
+   <locker type="disk">  <!-- this is the default -->
+   <!--
+        Where to put lockfiles (to block other clients while a metatile is being
+        rendered). Defaults to /tmp. This location should be writable by the
+        Apache user.
+   -->
+     <directory>/tmp</directory>
+     <retry>0.01</retry> <!-- check back every .01 seconds -->
+     <timeout>60</timeout> <!-- Consider a lock stale after this many seconds.
+                                May cause issues if WMS rendering time exceeds
+                                this value. -->
+   </locker>
+
+For specific information about locking, read :ref:`this <mapcache_locks>`.
+
+.. code-block:: xml
+
+   <!-- log_level
+
+        For CGI/FastCGI only; For the Apache module use the httpd.conf LogLevel
+        key.
+      
+        Defines the verbosity of logged information. Valid values are:
+
+        - debug
+        - info
+        - notice
+        - warn (default)
+        - error
+        - crit
+        - alert
+        - emerg
+   -->
+   <log_level>warn</log_level>
+
+   <!-- auto_reload
+
+        For FastCGI only. If set to true, the configuration will be
+        automatically reloaded if the configuration file has changed. Default is
+        false.
+   -->
+   <auto_reload>true</auto_reload>
+
+.. _mapcache_config_threaded_fetching:
+
+.. code-block:: xml
+
+   <!-- use multiple threads when fetching multiple tiles (used for wms tile assembling -->
+   <threaded_fetching>true</threaded_fetching>
+
+
+Metadata
+================================================================================
+
+The MapCache metadata section contains source contact information for the MapCache WMTS service.
+This information maps to specific attributes in the WMTS GetCapabilities response
+returned by the server. See `OGC WMTS Docs <https://www.ogc.org/standards/wmts>`_ for more on WMTS.
+The entire MapCache metadata section is optional.
+
+* **<metadata>**:
+
+  .. note::
+
+    The first set of elements is for **metadata about this specific server**. These
+    elements will appear in the **<ows:ServiceIdentification>** section of the
+    WMTS GetCapabilities response. Elements in this group include: *title,
+    abstract, keyword, fees, and accessconstraints*.
+
+  * **<title>**: Title of this resource, normally used for display to humans.
+
+    .. code-block:: xml
+
+      <title>World example Web Map Tile Services</title>
+
+  * **<abstract>**: Brief narrative description of this resource, normally
+    used for display to humans.
+
+    .. code-block:: xml
+
+      <abstract>Example service that contains tiles of some world layers</abstract>
+
+  * **<keyword>**: Commonly used or formalised word(s) or phrase(s) used to
+    describe the subject. Multiple allowed, will appear under **<ows:Keywords>**.
+
+    .. code-block:: xml
+
+      <keyword>Administrative Boundaries</keyword>
+      <keyword>Geography</keyword>
+
+  * **<fees>**: Statement of fess required to use this service.
+
+    .. code-block:: xml
+
+      <fees>No fees for this service</fees>
+
+  * **<accessconstraints>**: Statement of fees required to use this service.
+
+    .. code-block:: xml
+
+      <accessconstraints>No fees for this service</accessconstraints>
+
+  .. note::
+
+    The second set of elements is for **metadata about the organization operating this server**. These
+    elements will appear in the **<ows:ServiceProvider>** section of the WMTS GetCapabilities
+    response. Elements in this group include: *providername, providerurl, contactcity, contactstateorprovince,
+    contactpostcode, contactcountry, contactelectronicmailaddres, contactname, contactposition, contactphone,
+    and contactfacsimile*.
+
+  * **<providername>**: A unique identifier for the service provider organization.
+
+    .. code-block:: xml
+
+      <providername>Facultat de Ciències - UAB - CREAF-MiraMon</providername>
+
+  * **<providerurl>**: Reference to the most relevant web site of the service provider.
+
+    .. code-block:: xml
+
+      <providerurl>https://www.creaf.uab.cat/miramon</providerurl>
+
+
+  * **<contactorganization>**: Address line for the location. FYI: This MapCache metadata element is very poorly named, and maps to **<ows:DeliveryPoint>**.
+
+    .. code-block:: xml
+
+      <contactorganization>Av. de Can Domènech - Edifici F</contactorganization>
+
+  * **<contactcity>**: City of the location of the service provider.
+
+    .. code-block:: xml
+
+      <contactcity>Bellaterra</contactcity>
+
+  * **<contactstateorprovince>**: State or Province of the location of the service provider.
+
+    .. code-block:: xml
+
+      <contactstateorprovince>Barcelona</contactstateorprovince>
+
+  * **<contactpostcode>**: Zip or other postal code of the service provider.
+
+    .. code-block:: xml
+
+      <contactpostcode>08193</contactpostcode>
+
+  * **<contactcountry>**: Country of the physical address of the service provider.
+
+    .. code-block:: xml
+
+      <contactcountry>Spain</contactcountry>
+
+  * **<contactelectronicmailaddres>**: Address of the electronic mailbox of the responsible organization or individual.
+
+    .. code-block:: xml
+
+      <contactelectronicmailaddres>joan.maso@uab.cat</contactelectronicmailaddres>
+
+  * **<contactname>**: Name of the responsible person.
+
+    .. code-block:: xml
+
+      <contactname>Joan Maso Pau</contactname>
+
+  * **<contactposition>**: Role or position of the responsible person.
+
+    .. code-block:: xml
+
+      <contactposition>Senior Software Engineer</contactposition>
+
+  * **<contactphone>**: Telephone number by which individuals can speak to the responsible organization or individual.
+
+    .. code-block:: xml
+
+      <contactphone>+34 93 581 1312</contactphone>
+
+  * **<contactfacsimile>**: Telephone number of a facsimile machine for the responsible organization or individual.
+
+    .. code-block:: xml
+
+      <contactfacsimile>+34 93 581 4151</contactfacsimile>
+
+  .. note::
+
+    The next set of elements is specific to **metadata for INSPIRE**. Elements in this group
+    include: *inspire_profile, inspire_metadataurl, defaultlanguage*.
+
+  * **<inspire_profile>**: Enables INSPIRE extended capabilities. Required for other INSPIRE elements to work.
+
+    .. code-block:: xml
+
+      <inspire_profile/>
+
+
+  * **<inspire_metadataurl>**: External XML document or service that provides such an XML document containing metadata for the service.
+
+    .. code-block:: xml
+
+      <inspire_metadataurl>http://www.creaf.uab.cat/miramon/pycsw?SERVICE=CSW</inspire_metadataurl>
+
+  * **<defaultlanguage>**:  The default language of the service.
+
+    .. code-block:: xml
+
+      <defaultlanguage>eng</defaultlanguage>

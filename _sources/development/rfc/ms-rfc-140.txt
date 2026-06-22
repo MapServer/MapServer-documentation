@@ -1,0 +1,234 @@
+.. _rfc140:
+
+================================================
+MS RFC 140: MapServer Index Page
+================================================
+
+:Author: 	Seth Girvin
+:Contact: 	sethg@geographika.co.uk
+:Last Updated:  2025-10-17
+:Version: 	MapServer 8.6
+:Status: 	Adopted
+
+1. Overview
+===========
+
+This RFC proposes adding functionality to MapServer for dynamically generating a index page that lists all map services available in a given deployment. 
+This feature would enable the creation of pages like https://maps.isric.org/ directly from a MapServer deployment, without requiring 
+additional scripting. While scripting can achieve this, integrating the capability into MapServer itself 
+would offer greater convenience and maintainability.
+
+With the introduction of the :ref:`CONFIG file <config>` in MapServer 8.0, it is now possible to centrally manage information about all Mapfiles in a deployment. 
+This would ensure that the index page remains automatically synchronised with both the CONFIG file and the capabilities of the Mapfiles it references.
+
+The index page would be a "superset" of all available Mapfiles in a MapServer deployment, as listed in the CONFIG file. 
+Each individual Mapfile would still have its own OGC API landing page, so the index page is best described as a directory of all landing pages. 
+
+As most MapServer deployments will likely be serving out a combination of WxS and new OGC API services for some time to come, 
+it will allow both types to be listed together.
+
+2.1 Proposed Solution
+=====================
+
+New MapServer functionality will be added to allow details of the MapServer services to be returned. The ``MAPS`` block 
+in the :ref:`CONFIG file <config>` will be read to return a list of available services. By default the index page service will be disabled unless a new
+``ENV`` option ``MS_INDEX_TEMPLATE_DIRECTORY`` has been set. This should be set to a folder containing a ``landing.html`` value. However if only JSON
+responses are required it can be set to any value to enable the index page service.
+
+.. code-block:: mapfile
+
+    ENV
+        MS_INDEX_TEMPLATE_DIRECTORY "/mapserver/share/ogcapi/templates/html-index-bootstrap/" # REQUIRED
+        ...
+    END
+    # Example MAPS block in the CONFIG file
+    MAPS
+        TEST_MAPFILE1 "/opt/mapserver/test/test1.map"
+        TEST_MAPFILE2 "/opt/mapserver/test/test2.map"
+    END
+
+Users will be able to request the Mapfile details in two formats - HTML and JSON. A parameter can be added to the querystring to choose the format - 
+it is proposed the OGC API use of the ``f`` parameter is
+used to select this, for example ``f=html`` or ``f=json``. As with the OGC Features API if not specified JSON will be the default.
+Requests will look as follows:
+
+.. code-block:: bat
+
+    # example web requests
+    # http://localhost/cgi-bin/mapserv.exe?f=json
+    # http://localhost/cgi-bin/mapserv.exe?f=html
+
+    # from the command line
+    mapserv -nh "QUERY_STRING=f=json" -conf "/usr/local/etc/mapserver.conf"
+    mapserv -nh "QUERY_STRING=f=html" -conf "C:\MapServer\apps\mapserver.conf"
+
+As the service returns JSON any client-side library can be used to render the output. However a default HTML template  will be provided
+following the same approach as in OGC Features API.
+
+.. note::
+
+    Even though the JSON format is based on the OGC API, the index page JSON service will still be generated for a Mapfile even if it only supports
+    older WxS services.
+
+JSON Structure
+--------------
+
+JSON will be generated using the nlohmann/json and Inja approach already implemented in :ref:`MS RFC 134: OGC API Support <rfc134>`.
+
+The returned JSON will conform to the the `api-catalog <https://datatracker.ietf.org/doc/draft-ietf-httpapi-api-catalog/08/>`__, 
+a draft IETF (Internet Engineering Task Force) standard. An example implementation is the `pygeoapi homepage <https://demo.pygeoapi.io/>`__
+(see the associated `pull request <https://github.com/geopython/demo.pygeoapi.io/pull/60/files>`__). The JSON structure is available at
+https://demo.pygeoapi.io/api-catalog.json. An extract is shown below:
+
+.. code-block:: json
+
+    {
+      "linkset": [
+        {
+          "anchor": "https://demo.pygeoapi.io/master", 
+          "service-desc": [
+            {
+              "href": "https://demo.pygeoapi.io/master/openapi?f=json", 
+              "title": "pygeoapi - latest GitHub 'master' version (JSON)", 
+              "type": "application/vnd.oai.openapi+json"
+            }
+          ], 
+          "service-doc": [
+            {
+              "href": "https://demo.pygeoapi.io/master/openapi?f=html", 
+              "title": "pygeoapi - latest GitHub 'master' version (HTML)", 
+              "type": "text/html"
+            }
+          ]
+        }, 
+
+The api-catalog specification allows for an additional ``service-meta`` property *"used to link to additional metadata about the API, 
+and is primarily intended for machine consumption."*  This can be used to add any additional properties from Mapfiles
+required to generate a MapServer index page. ``service-doc`` isn't mandatory property, so WxS service links can ignore this. 
+
+An example of the proposed JSON and metadata is shown below:
+
+.. code-block:: json
+
+    {
+      "linkset": [
+        {
+          "anchor": "https://demo.mapserver.org/", 
+          "service-desc": [
+            {
+              "href": "https://demo.mapserver.org/cgi-bin/msautotest?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetCapabilities", 
+              "title": "World WMS service", 
+              "type": "text/xml"
+            }
+          ], 
+          "service-meta": {
+             {
+               "service-type": "wms",
+               "title": "WMS demo server for MapServer, used in the msautotest suite",
+               "keywords": ["layers", "list"],
+               "mapfile": "msautotest.map",
+             }
+          }
+        }, 
+
+``href`` values will be constructed based on settings in each individual Mapfile.
+
+Future Development
+------------------
+
+Once the general approach is in place more details could be added to this structure, such as the EXTENT and default PROJECTION. 
+The OGC Features API JSON can be used as a guide to create the structure, for example for the extent:
+
+.. code-block:: json
+
+    "extent": {
+        "spatial": {
+            "bbox": [
+                [
+                    -180,
+                    -90,
+                    180,
+                    90
+                ]
+            ],
+            "crs": "http://www.opengis.net/def/crs/OGC/1.3/CRS84"
+        }
+    },
+
+It may be beneficial to allow an administrator to choose what data is made available through the service. A similar approach to
+the use of ``ows_enable_request`` could be considered. Additional links could include the OpenLayers Map (see :ref:`rfc63`).
+
+Potentially the approach taken in this RFC could be used to return the same information for a single Mapfile, providing individual home pages
+for each Mapfile.
+
+2.2 Limitations
+===============
+
+Mapfiles will need to be listed in the ``MAPS`` block of the ``CONFIG`` file to be listed as part of the service.
+There will be no support for reading all Mapfiles in a folder - this would be best handled by scripting the MAPS section of the
+CONFIG file.
+
+Available services such as WMS, WFS etc. will be checked for using the ``ows_enable_request`` in the ``METADATA`` section of a Mapfile, however there is no guarantee
+that the URLs will return valid XML if the Mapfile is not configured correctly.
+
+2.3 Testing
+===========
+
+``msautotests`` will be added to validate various CONFIG and Mapfile setups.
+
+2.4 Security Concerns
+=====================
+
+This new feature will make services more discoverable, but with this comes the risk of leaking information.
+The service will be opt-in, and up to the administrators of the deployment if they want this information to be
+visible by setting the ``MS_INDEX_TEMPLATE_DIRECTORY`` value in the ``CONFIG`` file.
+
+2.5 MapScript
+=============
+
+It is not planned to add MapScript support for this RFC.
+None of the current MapServer ``mode`` functionality is supported in MapScript, nor the OGC Features API functions.
+
+3. Implementation Details
+=========================
+
+This section contains notes from prototyping a possible solution. The final approach may differ. 
+
+Requests will be checked in mapserv.c to return JSON and exit.
+
+To list services supported in a Mapfile ``msOWSRequestIsEnabled`` will be used:
+
+- "AO", "OGCAPI"
+- "M", "GetMap", "GetCapabilities"
+- "F" (WFS) "GetCapabilities"
+- "CO" "GetCapabilities"
+
+Example ``int status = msOWSRequestIsEnabled(map, NULL, "AO", "OGCAPI", MS_FALSE);``
+
+For constructing URLs ``msOWSGetOnlineResource`` will be used (which calls ``msBuildOnlineResource``
+if ``ows_onlineresource`` (or ``wms_``, ``wfs_`` etc.) is not set.
+
+3.1 Affected files
+------------------
+
++ mapserv.c
++ mapservutil.c
++ mapserver.h
++ mapserv-config.cpp
+
+3.2 Ticket Reference
+--------------------
+
++ https://github.com/MapServer/MapServer/pull/7350
+
+3.3 Documentation
+-----------------
+
+See https://github.com/MapServer/MapServer-documentation/pull/1039
+
+4. Voting History
+=================
+
++1 from PSC members TomK, SethG, MikeS, DanielM, JeromeB, SteveL
+
+See https://lists.osgeo.org/pipermail/mapserver-dev/2025-March/017219.html

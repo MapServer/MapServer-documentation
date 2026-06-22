@@ -1,0 +1,1051 @@
+.. index::
+   single: OGR
+
+.. _ogr:
+
+*****************************************************************************
+OGR Vector Layers Through MapServer
+*****************************************************************************
+
+:Author:       Jeff McKenna
+:Contact:      jmckenna at gatewaygeomatics.com
+:Last Updated: 2026-06-02
+
+.. contents:: Table of Contents
+    :depth: 3
+    :backlinks: top
+
+
+Introduction
+============
+
+MapServer includes the ability to access vector
+data sets in formats other than Shapefile in their native format using the OGR
+library. The following document describes the process for implementing OGR
+support within MapServer applications.
+
+This document assumes that you are already familiar with certain aspects of
+MapServer:
+
+- MapServer application development and especially setting up :ref:`.map files
+  <mapfile>`.
+
+- Some compilation skills if you don't have ready access to a pre-compiled
+  installation and need to compile your own copy of MapServer with OGR
+  support.
+  
+- access to OGR utilities, such as *ogrinfo* (for Windows users these are 
+  included in `MS4W`_).
+                      
+Readers should also check out the :ref:`Vector Data Access Guide <vector>`,
+which has lots of examples of how to access specific vector formats.
+                        
+What is OGR?
+============
+
+The OGR Simple Features Library is a C++ Open Source library (and command-line
+tools) providing read (and sometimes write) access to a variety of vector file
+formats including ESRI Shapefiles, and MapInfo mid/mif and TAB formats.
+
+OGR is actually part of the GDAL library, so you will notice that some
+references point to GDAL (such as the mailing list).
+
+What Does OGR Add to MapServer?
+-------------------------------
+
+The OGR Simple Features Library allows MapServer users to display several
+types of vector data files in their native formats. For example, MapInfo
+Mid/Mif and TAB data do not need to be converted to ESRI shapefiles when using
+OGR support with MapServer.
+
+.. index::
+   pair: OGR; Formats
+
+What Data Formats are Supported?
+--------------------------------
+
+.. note:: 
+  
+    See https://gdal.org/drivers/vector/index.html for the latest list of supported
+    vector formats. 
+    
+Here is a list of some of the popular vector formats that are supported:
+
+- `ArcInfo Binary Coverages`_
+- `ArcInfo E00 Coverages`_
+- Atlas BNA (see GDAL `extra-drivers <https://github.com/OSGeo/gdal-extra-drivers>`__)
+- `Comma Separated Value (.csv)`_
+- DODS/OPeNDAP (see GDAL `extra-drivers <https://github.com/OSGeo/gdal-extra-drivers>`__)
+- `ESRI Personal GeoDatabase`_
+- `ESRI Shapefiles`_
+- FME (see GDAL `extra-drivers <https://github.com/OSGeo/gdal-extra-drivers>`__)
+- `GeoJSON`_
+- `GeoPackage`_
+- `GeoRSS`_
+- `GML`_
+- `GMT`_  
+- `GRASS`_
+- `GPX`_
+- `Informix DataBlade`_
+- INGRES (see GDAL `extra-drivers <https://github.com/OSGeo/gdal-extra-drivers>`__)
+- `INTERLIS`_
+- `KML`_
+- `MapInfo files`_
+- `Memory`_
+- `Microstation DGN files`_
+- `MySQL`_
+- `ODBC`_
+- `Oracle Spatial`_
+- `PostgreSQL`_
+- `SQLite`_
+- `UK.NTF (National Transfer Format)`_
+- `US Census TIGER/Line`_
+- `VRT - Virtual Datasource`_
+- `WFS`_
+- X-Plane/Flighgear aeronautical data (see GDAL `extra-drivers <https://github.com/OSGeo/gdal-extra-drivers>`__)
+
+.. note:: 
+
+    Some of the above formats (e.g. OGDI) have external dependencies and are
+    not always included in the pre-compiled binary distributions of MapServer
+    with OGR support.
+
+.. note::
+
+    Some of the above formats are not well suited for random access by nature,
+    that's the case of MapInfo MIF/MID files which is a TEXT format and will
+    give very poor performance for a web application. On the other hand, some
+    binary formats such as MapInfo TAB are better suited for random access and
+    will give performance comparable to native shapefile access in MapServer.
+
+How to Get More Information on the OGR Project
+----------------------------------------------
+
+- As OGR is now merged with GDAL as of GDAL 2.0, the main `GDAL site <https://gdal.org/>`__ 
+  is the best resource.
+
+- The legacy pages on the OGR Simple Features Project can be found on the
+  `Wayback Archives <https://web.archive.org/web/20180409041603/http://gdal.org/1.11/ogr/>`__.
+
+- The `GDAL mailing list`_ can be used for OGR related questions. Always
+  search the list archives before sending new questions.
+
+- The old `GDAL Wiki`_ has lots of good information for users and developers.
+
+- The #gdal Matrix (or IRC) channel might also be of help.  For info
+  on connecting through Matrix/IRC see the :ref:`MapServer Matrix/IRC page <matrix-irc>`.
+
+The main developer of the OGR library is currently Even Rouault (with original
+development by Frank Warmerdam) and the integration of OGR within MapServer 
+was done by Daniel Morissette.
+
+.. index::
+   pair: OGR; Installation
+
+Obtaining and Compiling MapServer with OGR Support
+==================================================
+
+- Follow the instructions on the `GDAL page`_ to compile/install OGR/GDAL.
+
+- Obtain the MapServer :ref:`source <download>`.
+
+For UNIX users, see
+the :ref:`UNIX Compilation and Installation <unix>`. If GDAL/OGR is normally
+installed it should be sufficient to add -DWITH_OGR=ON to the cmake line
+before (re)building MapServer. Linux users might want to try `FGS`_, a Linux
+installer for MapServer.
+
+For Windows users, it is recommended to look for a pre-compiled binary on the
+MapServer site (`MS4W`_ is recommended). If you want to compile your own
+then see the README.WIN32 file in the MapServer source.
+
+Starting with MapServer 7.0, 2.5D geometries, when handled by OGR drivers and
+data sources, can be taken into account by MapServer if it is built with
+-DWITH_POINT_Z_M=ON.
+
+.. note:: 
+
+    Output of 2.5D geometries in WFS requires explicit metadata item to be
+    specified at the layer level. See :ref:`WFS server <wfs_server>` documentation.
+
+
+Integrating OGR Support with MapServer Applications
+===================================================
+
+The only change that is needed to integrate OGR support with a MapServer
+application is with the .map file. The LAYER's DATA parameter is expanded to
+three parameters (CONNECTIONTYPE OGR, CONNECTION and DATA).
+
+The syntax for this differs depending on the type of data being used (the
+:ref:`Vector Data Access Guide <vector>` is an excellent resource for this).
+In OGR, a data source can be either a set of files that share a common
+basename (e.g. .shp/.shx/.dbf for ArcView Shapefiles, or
+.tab/.map/.dat/.ind/.id for MapInfo TAB files) or a whole directory of files
+(e.g. TIGER).
+
+Let's call the former "File-based data sources" and the later "Directory-based
+data sources". When accessing a **file-based data source** you specify the
+filename of one of the files in the set (e.g. roads.shp or roads.tab) and when
+accessing a **directory-based data source** you specify the directory name and
+OGR reads all the files in the directory as a single data source with
+potentially several layers (e.g. TIGER files).
+
+Some OGR drivers (e.g. SHP, TAB) can have dual behaviors, that is if they're
+pointed to a single file then they behave as a file-based data source and if
+they're pointed to a directory then they will behave as a directory-based data
+source and then every file in the directory becomes a new layer in the data
+source.
+
+See the `OGR formats page`_ for more info on the specific file format you're
+using. (Click on the format name for more specific driver info on that format)
+
+.. _ogrmapfile:
+
+Using OGR Data Sources in the Map File
+--------------------------------------
+
+The .map file LAYER definition for file-based sources is as follows:
+
+.. code-block:: mapfile
+
+      LAYER
+        ...
+        CONNECTIONTYPE OGR
+        CONNECTION "<datasource_name>"
+        DATA "<layer_definition>"
+        ...
+      END
+              
+
+**<datasource_name>** is the name of the datasource to read from and is
+prefixed by the CONNECTION keyword. The exact organization depends on the
+format driver in use. The format driver to use is automatically selected by
+OGR based on the nature of the string passed as the datasource, and/or the
+format of the file referenced by it.
+
+
+  - For file based datasources this is the name of the file, including the
+    extension, using an absolute path, or a relative path. Relative paths are
+    interpreted relative to the SHAPEPATH first, if not found then we try
+    again relative to the .map file location. 
+    
+    .. note:: 
+        
+        Before version 4.1 the SHAPEPATH was ignored for OGR datasources.
+
+  - For directory based datasources, such as TIGER/Line, or Arc/Info Binary
+    Coverages this is the name of the directory containing the files. If the
+    path is relative it is interpreted relative to the .map file.
+
+  - For virtual datasources such as database systems, and OGDI this is the
+    service connection string and is generally not related to the filesystem.
+    For instance, for Oracle Spatial this might be
+    "OCI:warmerda/Password@gdal800.velocet.ca".
+
+**<layer_definition>** is the name, number or SQL definition of the layer to
+use from the datasource. It is indicated via the DATA keyword in the map file.
+
+  - Layer Name: The (case insenstive) layer name may be used to select a
+    layer.
+
+  - Layer Number: The layer number (starting from 0 for the first layer) may
+    be used to select a layer. Generally the layer name is preferred to this
+    since it is more self describing.
+
+  - Omitted: If no DATA keyword is provided, this is equivalent to selecting
+    layer 0.
+
+  - SQL SELECT: If an SQL SELECT statement is used, it is interpreted in a
+    driver specific manner to try and generate a temporary pseudo-layer. For
+    some formats this a restricted subset of SQL is interpreted within OGR.
+    For RDBMS based drivers (such as PostGIS and Oracle) this is passed
+    through to the underlying database.
+
+The OGRINFO utility can be used to find out the list of layers and their names
+in a data source.
+
+Examples of Layer Definitions Using OGR
+---------------------------------------
+
+Please see the :ref:`Vector Data Access Guide <vector>` for details and
+examples of each data format supported.
+
+**Example 1. MapInfo TAB file**
+
+.. code-block:: mapfile
+
+      LAYER
+        NAME "Builtup_Areas_tab"
+        TYPE POLYGON
+        CONNECTIONTYPE OGR
+        CONNECTION "data/tab/092b06_builtup_a.tab"
+        STATUS ON
+        CLASS
+          ...
+        END
+      ...
+      END
+               
+**Example 2. Microstation DGN file using <layer_index>**
+
+The entire DGN file is represented in OGR as one layer (see the `DGN driver
+page`_ for more details):
+
+.. code-block:: mapfile
+
+      LAYER
+        NAME "dgn"
+        TYPE LINE
+        CONNECTIONTYPE OGR
+        CONNECTION "dgn/santabarbara02.dgn"
+        DATA "0"
+        STATUS ON
+        STYLEITEM "AUTO"
+        CLASS
+          ...
+        END
+      END # Layer
+              
+**Example 3. TIGER/Line file using <layer_name>**
+
+.. code-block:: mapfile
+
+      LAYER
+        NAME "Roads_tig"
+        TYPE line
+        CONNECTIONTYPE OGR
+        CONNECTION "full/path/to/tiger/TGR25001"
+        DATA "CompleteChain"
+        STATUS ON
+        CLASS
+          ...
+        END
+      END
+               
+**Example 4. Directory of Shapefiles using SQL JOIN**
+
+.. code-block:: mapfile
+
+      LAYER
+        NAME "Parks_cov"
+        TYPE POLYGON
+        CONNECTIONTYPE OGR
+        CONNECTION "data/shppoly"
+        DATA "SELECT eas_id, idl.Name FROM pol LEFT JOIN idl ON pol.eas_id = idl.eas_id"
+        STATUS ON
+        CLASSITEM "idlink.Name"
+        CLASS
+          ...
+        END
+      END
+               
+**Example 5. Using an ElasticSearch backend with forwarding of HTTP header Authorization**
+
+.. code-block:: mapfile
+
+      LAYER
+        NAME "elastic_search_layer"
+        TYPE POLYGON
+        CONNECTIONTYPE OGR
+        CONNECTION "ES:"
+        CONNECTIONOPTIONS
+            "FORWARD_HTTP_HEADERS_FROM_ENV" "Authorization=HTTP_AUTHORIZATION"
+        END
+        DATA "my_layer"
+      END
+               
+.. index::
+   single: OGRINFO
+
+How to Use "OGRINFO"
+--------------------
+
+OGRINFO is part of the GDAL/OGR distribution (which is included in `MS4W`_ for Windows users). It is an 
+executable that can be used to obtain layer information about OGR supported files. 
+The parameters are:
+
+  *ogrinfo* [-ro] [-q] datasource_name [layer [layer...]]
+      
+  - -ro opens the file as read only (optional)
+
+  - -q executes in quiet mode, only the layer idex line will be
+    returned (optional)
+
+  - datasource_name is the filename including extension (eg. roads.tab); for 
+    TIGER/Line files, datasource_name is the directory containing the TIGER 
+    files (eg. ogrinfo TGR25001) 
+
+
+**Example 5. To get the list of layers in a file:**
+
+::
+
+    $ ogrinfo  popplace.tab
+
+    Had to open data source read-only.
+    INFO: Open of `popplace.tab'
+    using driver `MapInfo File' successful.
+    1: popplace (Point)
+          
+
+which shows that there is one point layer in the popplace.tab file.
+
+**Example 6. To get a dump of a specific layer, including field names, projection, etc:**
+
+::
+
+    $ ogrinfo popplace.tab popplace
+
+    Had to open data source read-only.
+    INFO: Open of `popplace.tab'
+    using driver `MapInfo File' successful.
+
+    Layer name: popplace
+    Geometry: Point
+    Feature Count: 497
+    Layer SRS WKT: PROJCS["unnamed",GEOGCS["unnamed",DATUM["North ...snipped...
+    AREA: Real (15.3)
+    PERIMETER: Real (15.3)
+    POPPLACE_: Real (11.0)
+    POPPLACE_I: Real (15.0)
+    NAME: String (50.0)
+    OGRFeature(popplace):1
+      AREA (Real) =           0.000
+      PERIMETER (Real) =           0.000
+      POPPLACE_ (Real) =           1
+      POPPLACE_I (Real) =               1
+      NAME (String) = Port Hope Simpson
+      POINT (2437287.249 1153656.751)
+
+    OGRFeature(popplace):2
+      AREA (Real) =           0.000
+      PERIMETER (Real) =           0.000
+      POPPLACE_ (Real) =           2
+      POPPLACE_I (Real) =               1
+      NAME (String) = Hopedale
+
+    ...
+    ...
+                
+
+**Example 7. To get a list of layers in a TIGER/Line Directory:**
+
+::
+
+    $ ogrinfo TGR25001
+  
+    Had to open data source read-only.
+    INFO: Open of `TGR25001'
+    using driver `TIGER' successful.
+    1: CompleteChain (Line String)
+    2: AltName (None)
+    3: FeatureIds (None)
+    4: ZipCodes (None)
+    5: Landmarks (Point)
+    6: AreaLandmarks (None)
+    7: KeyFeatures (None)
+    8: Polygon (None)
+    9: EntityNames (Point)
+    10: IDHistory (None)
+    11: PolyChainLink (None)
+    12: PIP (Point)
+    13: TLIDRange (None)
+    14: ZipPlus4 (None)       
+          
+
+The above example shows that there are 14 layers in the TGR25001 directory.               
+
+**Example 8. To get a summary of a specific TIGER layer, including only field names, projection, and extent**
+
+::
+
+    $ ogrinfo TGR25001 Landmarks -summary
+
+    Had to open data source read-only.
+    INFO: Open of `TGR25001'
+    using driver `TIGER' successful.
+  
+    Layer name: Landmarks
+    Geometry: Point
+    Feature Count: 777
+    Extent: (-70.674324, 41.519817) - (-69.969211, 42.046868)
+    Layer SRS WKT: GEOGCS["NAD83",DATUM["North_American_Datum_1983",
+    SPHEROID["GRS 1980",6378137,298.257222101]],PRIMEM["Greenwich",0],
+          UNIT["degree",0.0174532925199433]]
+    MODULE: String (8.0)
+    FILE: String (5.0)
+    STATE: Integer (2.0)
+    COUNTY: Integer (3.0)
+    LAND: Integer (10.0)
+    SOURCE: String (1.0)
+    CFCC: String (3.0)
+    LANAME: String (30.0)
+
+Queries Through OGR Format
+--------------------------
+
+OGR layers can be queried the same way as regular shapefiles in MapServer.
+
+
+.. index::
+   pair: OGR; TILEINDEX
+
+TILEINDEX with OGR
+------------------
+
+OGR layers can utilize tile indexes in a similar fashion to Shapefile based 
+layers. The TILEINDEX keyword should contain the connection string for the tile 
+index file. The tile index file may be any supported OGR format, including 
+shapefiles.
+
+The TILEITEM keyword in the LAYER definition indicates what attribute
+from the tile index file should be used as the datasource location. If
+omitted, the default TILEITEM value is "location".  The value in the
+location field should be a connection string the same as would have
+been used in the CONNECTION field for OGR layers.
+The CONNECTION keyword is not needed (and will be ignored) for layers
+using the OGR connection type and having the TILEINDEX keyword.
+
+Tileindex files can be prepared in an external GIS, or using the OGR utility 
+ogrtindex. Details can be found on the `OGR Utilities Page`_.
+
+The following is a simple example of a point layer using a tile index.
+
+.. code-block:: mapfile
+
+   LAYER
+     NAME "ogr_points"
+     TYPE POINT
+     CONNECTIONTYPE OGR
+     TILEINDEX "PIP_ogr_tiles.shp,0"
+     STATUS ON
+     CLASS
+       NAME "points"
+       STYLE
+         SYMBOL "default-circle"
+         COLOR 255 0 0
+         SIZE 6
+       END
+     END
+   END
+
+OGR tileindex layers should support all normal query and attribute fetching
+mechanisms, including from MapScript. If
+auto projection support is used for tileindexed OGR layers, the tileindex is
+read for the projection (not the component tiles). Problems may (or may not)
+be encountered if the component tiles have differing schemas (different sets
+of attributes).
+
+Starting with MapServer 7.2, it is possible to use tileindexes of tiles
+referenced in different SRS by specifying the TILESRS keyword to be
+the value of the -src_srs_name option of ogrtindex (as of GDAL 2.2 or
+later)
+
+.. index::
+   pair: OGR; Connection Pooling
+
+Connection Pooling
+------------------
+
+For some OGR supported formats, connecting to the dataset is quite expensive
+in terms of CPU use and amount of disk IO. For instance, establishing access
+to an S-57 dataset results in a complete read into memory of the data files.
+Connection pooling control aims at reducing this overhead in situations where
+the same file is used for several different map layers.
+
+To ensure that an OGR supported dataset is only opened once per map render
+(instead of separately for each map LAYER referencing the dataset, use the
+CLOSE_CONNECTION PROCESSING option. The default value is for CLOSE_CONNECTION
+is NORMAL, but if set to DEFER the dataset will be kept open till the map
+render is complete. It will be reused by any other layers with using the same
+datasource.
+
+**Example 9. Preserve S-57 connection for two layers**
+
+In this example, we are using the same dataset (NO410810.000) for two
+layers. To avoid re-reading the dataset, we mark the first layer to
+defer closing the connection till layer. In the second (or last) layer
+we request NORMAL connection handling (though this could have been
+left out as normal handling is the default).
+
+.. code-block:: mapfile
+
+    LAYER
+      NAME "AdminAreas"
+      TYPE POLYGON
+      CONNECTIONTYPE OGR
+      CONNECTION "NO410810.000"
+      DATA "ADMARE"
+      PROCESSING "CLOSE_CONNECTION=DEFER"
+      STATUS ON
+      ...
+    END
+    LAYER
+      NAME "Land Areas"
+      TYPE POLYGON
+      CONNECTIONTYPE OGR
+      CONNECTION "NO410810.000"
+      DATA "LNDARE"
+      PROCESSING "CLOSE_CONNECTION=NORMAL"
+      STATUS ON
+      ...
+    END
+
+1. The text of the CONNECTION keyword must match exactly between layers for the 
+   connection to be reused.
+   
+2. Some dataset connections are quite memory expensive, and keeping them open 
+   may result in increased memory use.
+   
+3. If all layers rendered for a particular connection defer closing
+   the connection, it will remain open till MapServer terminates. For
+   normal cgi or MapScript use this is likely OK.
+   
+4. This use of CLOSE_CONNECTION handling is unique to OGR layers, and may be 
+   changed at some point in the future as part of a broader implementation of 
+   connection pooling in MapServer.
+    
+.. index::
+   pair: OGR; STYLEITEM "AUTO"
+
+STYLEITEM "AUTO" - Rendering Layers Using Style Information from the OGR File
+=============================================================================
+
+
+.. note::
+
+    This feature is only supported with MapInfo TAB and Microstation DGN files
+    at the moment, but eventually other formats that carry colors and styles
+    at the shape-level may also be supported through OGR.*
+
+In MapServer, ArcView, and other shapefile-based applications, colors
+and styles are usually defined at the layer level. This means that all
+the shapes in a given layer are usually rendered using the same color
+and styles.
+
+On the other hand, some formats supported by OGR such as MapInfo TAB
+do have color and style information attached to each shape. OGR adds
+support for the 'STYLEITEM "AUTO"' layer parameter which allows you to
+request that the shapes in a layer be rendered using colors and styles
+coming from the data source instead of being driven by CLASSes as was
+traditionally done with MapServer.
+
+How to Implement
+----------------
+
+In order to have a layer rendered using colours and styles coming from
+the OGR data source, your must do the following:
+
+- Your layer definition must contain the STYLEITEM "AUTO" parameter.
+
+- Your layer definition needs to contain at least one CLASS (which may
+  be empty) and optionally a CLASSITEM to match the expressions if
+  your CLASS contains an expression. The empty CLASS in the layer will
+  be updated dynamically at runtime to contain colours and styles
+  coming from the data source for each shape.
+
+Examples
+--------
+
+**Example 10. Layer Definition Using STYLEITEM "AUTO" without a CLASSITEM**
+
+.. code-block:: mapfile
+
+
+    LAYER
+      NAME "test_dgn"
+      STATUS ON
+      TYPE POLYGON
+      CONNECTIONTYPE OGR
+      CONNECTION "../data/dgn/test.dgn"
+
+      # This enables use of colors and styles from the source file.
+      STYLEITEM "AUTO"
+
+      # Define an empty class that will be filled at runtime from the
+      # color and styles read on each shape in the source file.
+      CLASS
+      END
+   END  # layer
+                    
+
+**Example 11. Layer Definition Using STYLEITEM "AUTO" with a CLASSITEM**
+
+.. code-block:: mapfile
+
+    LAYER
+     NAME "Builtup_Areas_tab"
+     TYPE POLYGON
+     CONNECTIONTYPE OGR
+     CONNECTION "data/tab/092b06_builtup_a.tab"
+     STATUS ON
+
+     # This enables use of colors and styles from the source file.
+     STYLEITEM "AUTO"
+
+     # Define an empty class that will be filled at runtime from the
+     # color and styles read on each shape in the source file.
+     CLASSITEM "CATEGORY"
+     CLASS
+        EXPRESSION "1"
+     END
+    END     
+      
+
+**Please Note:**
+
+CLASS EXPRESSIONs are still working, so it is still possible to query
+and classify layers that are using STYLEITEM "AUTO". The only
+difference is that instead of using static class definitions, the
+colors and style will be read from the data file.
+
+Important Notes
+---------------
+
+:NOTE 1: Even though MapInfo and other OGR data sources may support
+         layers with mixed geometry types (e.g. points, lines and
+         polygons in the same file) this is not yet supported in
+         MapServer. So you still have to define a layer 'TYPE' and
+         make sure that all the shapes in the OGR data source are
+         compatible with that layer type, otherwise MapServer may
+         produce an error about incompatible geometry types at
+         runtime.
+
+:NOTE 2: Due to the dynamic nature of this feature, it is not
+         compatible with the labelcache, so the labelcache is
+         automatically disabled for layers that make use of 'STYLEITEM
+         "AUTO"'.
+
+:NOTE 3: When you use STYLEITEM AUTO, MapServer tries to match symbol
+         names returned by OGR to names in your symbol file. For a
+         quick solution, try using the following symbol file:
+
+https://demo.mapserver.org/ogr-demos/yk_demo/etc/symbols_mapinfo.txt
+
+The name of the symbols returned by OGR to MapServer depends on the
+file format. In the case of MapInfo files, it will be:
+
+- For "old-style" symbols (default MapInfo 3.0 symbols numbered 32 to
+  67) the symbol name will be 'mapinfo-sym-##' where '##' is the
+  symbol number, e.g. 'mapinfo-sym-32'.
+
+- For "Font Symbols", the symbol name is also 'mapinfo-sym-##' where
+  '##' is the symbol number in the font. In this case, the name of the
+  font itself is ignored by MapServer.
+
+- MapInfo also supports "custom symbols" (bitmap symbols)... I'm not
+  sure what you would get from OGR for this, but I'm pretty sure that
+  MapServer doesn't do anything useful with them.
+
+The OGRINFO utility can be used to find out exactly which symbol names
+OGR will return to MapServer. Look at the "Style" string in the
+ogrinfo output for each shape that is read.
+
+.. index::
+   pair: OGR; Style parameters
+
+Mapping of OGR Style Info to the MapServer CLASS Members
+--------------------------------------------------------
+
+Here is the list of style parameters that are currently supported from
+OGR data sources and how they're mapped in MapServer:
+
+Line color
+    The line colour (PEN.c) is mapped to CLASS.STYLE.COLOR 
+
+Line thickness
+    The line thickness (PEN.w) is mapped to CLASS.STYLE.WIDTH. The default will
+    be 1 pixel line (as it always is with MapServer).
+
+Line pattern
+    The line pattern (PEN.p) is mapped to CLASS.STYLE.PATTERN. The default is a solid line.
+
+Line cap and join
+    The line cap (PEN.cap) is mapped to CLASS.STYLE.CAP and the join to CLASS.STYLE.JOIN.
+
+Line offset
+    The line perpendicular offset (PEN.dp) is mapped to CLASS.STYLE.OFFSET 
+
+Line symbol
+    OGR provides MapServer with symbol names (PEN.id), and 
+    if the symbol name returned by OGR to MapServer matches the name of one of 
+    the symbols in your symbolset then this symbol will be used.
+
+Polygon background color
+    Polygon background color (BRUSH.bc) is mapped directly to CLASS.STYLE.BACKGROUNDCOLOR
+
+Polygon fill color
+    Polygon fill color (BRUSH.fc) is mapped directly to CLASS.STYLE.COLOR
+
+Polygon outline
+    If a polygon has an outline color (PEN.c) and thickness defined in the data source 
+    then the same rule as for line color and thickness above will apply, except 
+    that the outline color is mapped to CLASS.STYLE.OUTLINECOLOR 
+
+Polygon symbols
+    OGR provides MapServer with symbol names (BRUSH.id), and 
+    if the symbol name returned by OGR to MapServer matches the name of one of 
+    the symbols in your symbolset then this symbol will be used.
+
+    Polygon symbol color (BRUSH.fc) is directly mapped to CLASS.STYLE.COLOR.
+    Polygon symbol size (BRUSH.s) is directly mapped to CLASS.STYLE.SIZE.
+    Polygon symbol spacing (note the OGR BRUSH.dx and BRUSH?dy parameters mus be equal) is
+    directly mapped to CLASS.STYLE.GAP.
+    Polygon symbol angle (BRUSH.a) is directly mapped to CLASS.STYLE.ANGLE.
+
+Point symbols
+    Point symbol color (SYMBOL.c) is directly mapped to CLASS.STYLE.COLOR.
+    Point symbol outline color (SYMBOL.c) is directly mapped to CLASS.STYLE.OUTLINECOLOR.
+    Point symbol size (SYMBOL.s) is directly mapped to CLASS.STYLE.SIZE.
+                   
+    If your symbolset contains a symbol called "default-marker" then
+    this symbol will be used, otherwise the default will be
+    CLASS.SYMBOL=0 (i.e. a 1 pixel dot)
+
+    It is also possible (with a bit of work) to control which symbol gets used 
+    in rendering point symbols. OGR provides MapServer with symbol names (SYMBOL.id), and 
+    if the symbol name returned by OGR to MapServer matches the name of one of 
+    the symbols in your symbolset then this symbol will be used.
+
+    For MapInfo point symbols (numbered 32 to 67 in the MapInfo MIF
+    spec), the name returned by OGR is "mapinfo-sym-X" where X should
+    be replaced with the MapInfo symbol number (e.g. "mapinfo-sym-35"
+    is the star symbol).
+    
+    If the OGR symbol id is a web reference (http://.../mysymbol.png),
+    the symbol will be downloaded and a new symbol entry will be
+    created referring to it.
+       
+Text labels
+    The text string (LABEL.t) is mapped to CLASS.LABEL.TEXT
+    
+    Text color (LABEL.c) is mapped to CLASS.LABEL.COLOR
+    
+    Text background color (LABEL.b) is mapped to CLASS.LABEL.BACKGROUNDCOLOR
+    
+    Text shadow color (LABEL.h) is mapped to CLASS.LABEL.SHADOWCOLOR
+
+    Text outline color (LABEL.h) is mapped to CLASS.LABEL.OUTLINECOLOR
+
+    Text height (LABEL.s) is mapped to CLASS.LABEL.SIZE
+    
+    Text angle (LABEL.a) is mapped to CLASS.LABEL.ANGLE
+          
+    Text anchor position (LABEL.p) is mapped to CLASS.LABEL.POSITION
+
+    Text font mapping follows the following rules:
+
+    1. If TTF fonts are supported:
+       
+       a. If the native font name (e.g. "Arial") is found in your
+          fontset then this font will be used.  The font styles `bold`
+          and `italic` are supported as follows: Arial bold fontname
+          maps to `arial-bold`.  Arial italic fontname maps to
+          `arial-italic`.  Arial bold italic fontname maps to
+          `arial-bold-italic`.  If the styles are not available, arial
+          will be used.
+
+       b. If 1a. failed and a font called "default" is present in your
+          fontset then this "default" font will be used.
+          
+    2. If TTF fonts are not supported or if all above cases failed, then BITMAP 
+       MEDIUM font will be used. 
+
+Starting with MapServer 7.0, multiple OGR tools (i.e. pen, brush, symbols) can
+be supported per feature. The corresponding STYLE object are created in the
+order the OGR tools appear in the OGR FeatureStyle string, i.e. the last one
+in the string is drawn on top of previous ones. This rule is true except if
+the priority level parameters (PEN/BRUSH/SYMBOL.l) of OGR tools is defined, in which case it has
+precedence over the apparition order of the OGR tools.
+
+.. _styleitemauto-label-styles:
+
+Accessing OGR STYLEITEMAUTO Label Styles Through MapScript
+----------------------------------------------------------
+
+OGR STYLEITEMAUTO label styles can be accessed through MapScript, such
+as PHP/MapScript's getshape() or getvalue() methods, by setting the
+LAYER's PROCESSING parameter to "GETSHAPE_STYLE_ITEMS=all".
+Therefore, the LAYER must contain:
+
+.. code-block:: mapfile
+
+  LAYER
+    ...
+    PROCESSING "GETSHAPE_STYLE_ITEMS=all"
+    ...
+  END
+
+The following label styles are supported:
+
+==================  =================================== =================
+Label Style         Description                         MapServer Version
+                                                        Implemented
+==================  =================================== =================
+OGR:LabelFont       Comma-delimited list of fonts names 5.4
+OGR:LabelSize       Numeric value with units            5.2.0
+OGR:LabelText       Label text string                   5.2.0
+OGR:LabelAngle      Rotation angle (in degrees)         5.2.0
+OGR:LabelFColor     Foreground color                    5.4
+OGR:LabelBColor     Background color                    5.4
+OGR:LabelPlacement  How is the text drawn               5.4
+                    relative to the feature's geometry
+OGR:LabelAnchor     A value from 1 to 12 defining the   5.4
+                    label's position relative to the 
+                    point to which it is attached.
+OGR:LabelDx         X offset                            5.4
+OGR:LabelDy         Y offset                            5.4
+OGR:LabelPerp       Perpendicular offset                5.4
+OGR:LabelBold       Bold text                           5.4
+OGR:LabelItalic     Italic text                         5.4
+OGR:LabelUnderline  Underlined text                     5.4
+OGR:LabelPriority   Numeric value defining the order    5.4
+                    in which style parts should be 
+                    drawn.    
+OGR:LabelStrikeout  Strike out text (gdal >= 1.4.0)     5.4
+OGR:LabelStretch    Stretch factor changes the width    5.4
+                    of all characters in the font by 
+                    factor percent. (gdal >= 1.4.0)
+OGR:LabelAdjHor     Horizontally adjacent text          5.4
+                    (gdal >= 1.4.0)         
+OGR:LabelAdjVert    Vertically adjacent text            5.4
+                    (gdal >= 1.4.0) 
+OGR:LabelHColor     Shadow color (gdal >= 1.4.0)        5.4
+OGR:LabelOColor     Outline color (gdal > 1.6.0)        5.4   
+==================  =================================== =================
+
+Please see the `OGR Feature Style Specification`_ document for more details
+on those specific styles.
+
+Sample PHP MapScript code to access the "OGR:LabelText" label style follows:
+
+.. code-block:: php
+  
+  <?php
+  
+  // define variables
+  define( "MAPFILE", "D:/ms4w/apps/ogr-demos/nfld_demo/test.map" );
+  
+  // open map
+  $oMap = ms_newMapObj( MAPFILE );
+  
+  //get layer
+  $oLayer = $oMap->getLayerByName("Map_Labels");
+  
+  //get styles
+  $status = $oLayer->open();
+  $status = $oLayer->whichShapes($oMap->extent);
+  while ($oShape = $oLayer->nextShape())
+  {
+    //echo $oShape->index ."<br>\n";
+    echo $oShape->getValue($oLayer,"OGR:LabelText");
+    echo "\n";
+  }
+  $oLayer->close();
+  
+  ?>
+
+Sample Sites Using OGR/MapServer
+================================
+
+The following sites use OGR's STYLEITEM "AUTO" feature:
+
+- https://demo.mapserver.org/ogr-demos/yk_demo/demo_init.html
+
+- https://demo.mapserver.org/ogr-demos/nfld_demo/demo_init.html 
+
+The following site uses OGR, as well as MapInfo's 'Seamless Map Layers' feature:
+
+- https://demo.mapserver.org/ogr-demos/ro_demo/demo_init.html 
+
+The following site uses OGR to display TIGER 2000 files:
+
+- https://demo.mapserver.org/ogr-demos/tig_demo/demo_init.html 
+
+FAQ / Common Problems
+=====================
+
+:Q: **What Does "OGR" Stand For?**
+
+:A: Basically, OGR does not stand for anything. For a detailed
+    explanation of how OGR was named, see GDAL's FAQ at
+    https://gdal.org/en/stable/faq.html.
+  
+-------------
+
+:Q: **When using STYLEITEM AUTO, what should I have in my .sym symbols file?**
+
+:A: When you use STYLEITEM AUTO, MapServer tries to match symbol names returned 
+    by OGR to names in your symbol file. For a quick solution, try using the 
+    following symbol file:
+
+    https://demo.mapserver.org/ogr-demos/yk_demo/etc/symbols_mapinfo.txt
+
+    The name of the symbols returned by OGR to MapServer depends on
+    the file format.
+    In the case of MapInfo files, it will be:
+
+    - For "old-style" symbols (default MapInfo 3.0 symbols numbered 32
+      to 67) the symbol name will be 'mapinfo-sym-##' where '##' is
+      the symbol number, e.g. 'mapinfo-sym-32'.
+
+    - For "Font Symbols", the symbol name is also 'mapinfo-sym-##'
+      where '##' is the symbol number in the font. In this case, the
+      name of the font itself is ignored by MapServer.
+
+    - MapInfo also supports "custom symbols" (bitmap symbols)... I'm
+      not sure what you would get from OGR for this, but I'm pretty
+      sure that MapServer doesn't do anything useful with them.
+
+    The OGRINFO utility can be used to find out exactly which symbol
+    names OGR will return to MapServer. Look at the "Style" string in
+    the ogrinfo output for each shape that is read.
+
+Credits
+=======
+
+Improvements in mapping from OGR Feature style to MapServer styling developed for
+Faunalia (http://www.faunalia.it) with funding from Regione Toscana \- Settore
+SISTEMA INFORMATIVO TERRITORIALE ED AMBIENTALE ( http://www.geografia.toscana.it ) (CIG:Z410C90D94)
+
+.. #### rST Link Section ####
+
+.. _`MS4W`: https://ms4w.com
+.. _`ArcInfo Binary Coverages`: https://gdal.org/drivers/vector/avcbin.html
+.. _`ArcInfo E00 Coverages`: https://gdal.org/drivers/vector/avce00.html
+.. _`Comma Separated Value (.csv)`: https://gdal.org/drivers/vector/csv.html
+.. _`DWG`: https://gdal.org/drivers/vector/dwg.html
+.. _`DXF`: https://gdal.org/drivers/vector/dxf.html
+.. _`ESRI Personal GeoDatabase`: https://gdal.org/drivers/vector/pgeo.html
+.. _`ESRI Shapefiles`: https://gdal.org/drivers/vector/shapefile.html
+.. _`GML`: https://gdal.org/drivers/vector/gml.html
+.. _`GMT`: https://gdal.org/drivers/vector/gmt.html
+.. _`GeoJSON`: https://gdal.org/drivers/vector/geojson.html
+.. _`GeoPackage`: https://gdal.org/drivers/vector/gpkg.html
+.. _`GeoRSS`: https://gdal.org/drivers/vector/georss.html
+.. _`GPX`: https://gdal.org/drivers/vector/gpx.html
+.. _`GRASS`: https://gdal.org/drivers/vector/grass.html
+.. _`Informix DataBlade`: https://gdal.org/drivers/vector/idb.html
+.. _`INTERLIS`: https://gdal.org/drivers/vector/ili.html
+.. _`KML`: https://gdal.org/drivers/vector/kml.html
+.. _`MapInfo files`: https://gdal.org/drivers/vector/mitab.html
+.. _`Memory`: https://gdal.org/drivers/vector/memory.html
+.. _`Microstation DGN files`: https://gdal.org/drivers/vector/dgn.html
+.. _`MySQL`: https://gdal.org/drivers/vector/mysql.html
+.. _`ODBC`: https://gdal.org/en/stable/drivers/vector/odbc.html
+.. _`Oracle Spatial`: https://gdal.org/en/stable/drivers/vector/oci.html
+.. _`PostgreSQL`: https://gdal.org/drivers/vector/pg.html
+.. _`SQLite`: https://gdal.org/drivers/vector/sqlite.html
+.. _`UK.NTF (National Transfer Format)`: https://gdal.org/drivers/vector/ntf.html
+.. _`US Census TIGER/Line`: https://gdal.org/drivers/vector/tiger.html
+.. _`VRT - Virtual Datasource`: https://gdal.org/drivers/vector/vrt.html
+.. _`WFS`: https://gdal.org/drivers/vector/wfs.html
+.. _`GDAL mailing list`: https://lists.osgeo.org/mailman/listinfo/gdal-dev
+.. _`GDAL page`: https://gdal.org/
+.. _`FGS`: http://www.maptools.org/fgs/
+.. _`OGR formats page`: https://gdal.org/drivers/vector/index.html
+.. _`DGN driver page`: https://gdal.org/drivers/vector/dgn.html
+.. _`OGR Utilities Page`: https://gdal.org/programs/index.html#vector-programs
+.. _`GDAL Wiki`: https://web.archive.org/web/20240706042553/https://trac.osgeo.org/gdal/wiki
+.. _`OGR Feature Style Specification`: https://gdal.org/user/ogr_feature_style.html
+

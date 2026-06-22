@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>MS RFC 52: One-pass query processing &#8212; MapServer 8.6.4 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx.css?v=48f05237" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx_collapse.css?v=226d88b4" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=dd298242" />
+    <link rel="stylesheet" type="text/css" href="../../_static/ribbon.css?v=ea091bf4" />
+    
+    <script src="../../_static/jquery.js?v=5d32c60e"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+    <script src="../../_static/documentation_options.js?v=f59c4a7a"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    
+    <link rel="icon" href="../../_static/mapserver.ico"/>
+    <link rel="author" title="About these documents" href="../../about.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="copyright" title="Copyright" href="../../copyright.html" />
+    <link rel="next" title="MS RFC 53: Guidelines for MapScript method return values" href="ms-rfc-53.html" />
+    <link rel="prev" title="MS RFC 51: XML Mapfile Format" href="ms-rfc-51.html" /> 
+  </head><body>
+<!-- add a ribbon to show these docs are the main branch -->
+<h4 class="ribbon">DOCS PREVIEW</h4>
+
+<table width="100%" style="width: 100%; background-color: white;">
+  <tr>
+    <td rowspan="2" style="padding: 10px 0px 10px 10px;">
+      <a href="../../index.html" title="Home"><img src="../../_static/banner.png" alt="MapServer banner" border="0" /></a>
+    </td>
+    <td style="padding: 10px 10px 0px 0px; text-align: right; vertical-align: top;">
+      <a href="../../index.html" title="Home">Home</a> |
+      <a href="../../products.html" title="Products (MapServer core, MapCache, TinyOWS">Products</a> |
+      <a href="https://github.com/MapServer/MapServer/issues/" title="Issue Tracker (MapServer core)">Issue Tracker</a> |
+      <a href="../../community/service_providers.html" title="Professional Service Providers">Service Providers</a> |      
+      <a href="../../faq.html" title="Frequently Asked Questions">FAQ</a> |
+      <a href="https://fosstodon.org/@mapserver" title="Mastodon" target="_blank">Mastodon</a> |
+      <a href="../../download.html" title="Download Source or Binaries">Download </a> |
+      <a class="badge" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KRJ2X44N3HA6U&source=url" target="_blank">
+        <img src="https://img.shields.io/badge/donate-%E2%9D%A4%C2%A0-ff69b4.svg?style=flat" alt="Donate to MapServer">
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0px 10px 0px 0px; text-align: right; vertical-align: bottom;">
+        <img src="../../_static/flagicons/en.png" alt="en" title="en" border="0" width="18px" height="13px"/>
+        
+          <a href="../../ar/development/rfc/ms-rfc-52.html"><img src="../../_static/flagicons/ar.png" alt="ar" title="ar" border="0" /></a>
+        
+        
+          <a href="../../de/development/rfc/ms-rfc-52.html"><img src="../../_static/flagicons/de.png" alt="de" title="de" border="0" /></a>
+        
+        
+          <a href="../../el/development/rfc/ms-rfc-52.html"><img src="../../_static/flagicons/el.png" alt="el" title="el" border="0" /></a>
+        
+        
+          <a href="../../es/development/rfc/ms-rfc-52.html"><img src="../../_static/flagicons/es.png" alt="es" title="es" border="0" /></a>
+        
+        
+          <a href="../../fr/development/rfc/ms-rfc-52.html"><img src="../../_static/flagicons/fr.png" alt="fr" title="fr" border="0" /></a>
+        
+        
+          <a href="../../id/development/rfc/ms-rfc-52.html"><img src="../../_static/flagicons/id.png" alt="id" title="id" border="0" /></a>
+        
+        
+          <a href="../../it/development/rfc/ms-rfc-52.html"><img src="../../_static/flagicons/it.png" alt="it" title="it" border="0" /></a>
+        
+        
+          <a href="../../ja/development/rfc/ms-rfc-52.html"><img src="../../_static/flagicons/ja.png" alt="ja" title="ja" border="0" /></a>
+        
+        
+          <a href="../../nl_NL/development/rfc/ms-rfc-52.html"><img src="../../_static/flagicons/nl_NL.png" alt="nl_NL" title="nl_NL" border="0" /></a>
+        
+        
+          <a href="../../pl/development/rfc/ms-rfc-52.html"><img src="../../_static/flagicons/pl.png" alt="pl" title="pl" border="0" /></a>
+        
+        
+          <a href="../../ru/development/rfc/ms-rfc-52.html"><img src="../../_static/flagicons/ru.png" alt="ru" title="ru" border="0" /></a>
+        
+        
+          <a href="../../sq/development/rfc/ms-rfc-52.html"><img src="../../_static/flagicons/sq.png" alt="sq" title="sq" border="0" /></a>
+        
+        
+          <a href="../../tr/development/rfc/ms-rfc-52.html"><img src="../../_static/flagicons/tr.png" alt="tr" title="tr" border="0" /></a>
+        
+
+    </td>
+  </tr>
+</table>
+
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="ms-rfc-53.html" title="MS RFC 53: Guidelines for MapScript method return values"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ms-rfc-51.html" title="MS RFC 51: XML Mapfile Format"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Home</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Development</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" accesskey="U">Request for Comments</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MS RFC 52: One-pass query processing</a></li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="ms-rfc-52-one-pass-query-processing">
+<span id="rfc52"></span><h1>MS RFC 52: One-pass query processing<a class="headerlink" href="#ms-rfc-52-one-pass-query-processing" title="Link to this heading">¶</a></h1>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2009/03/08</p>
+</dd>
+<dt class="field-even">Authors<span class="colon">:</span></dt>
+<dd class="field-even"><p>Steve Lime</p>
+</dd>
+<dt class="field-odd">Contact<span class="colon">:</span></dt>
+<dd class="field-odd"><p>sdlime at comcast.net</p>
+</dd>
+<dt class="field-even">Last Edited<span class="colon">:</span></dt>
+<dd class="field-even"><p>2009/06/03</p>
+</dd>
+<dt class="field-odd">Status<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Adopted</p>
+</dd>
+<dt class="field-even">Version<span class="colon">:</span></dt>
+<dd class="field-even"><p>MapServer 6.0</p>
+</dd>
+</dl>
+<section id="overview">
+<h2>Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>This RFC proposes change(s) to the current of query (by point, by box, by shape,
+etc…) processing in MapServer.</p>
+<p>Presently MapServer supports a very flexible query mechanism that utilizes two
+passes through the data. This works by caching a list of feature IDs (pass one)
+and then a second pass through the features for presentation: templated output,
+drawing, or retrieval via MapScript. The obvious problem is the performance hit
+incurred from the second pass. The real pain is that the msLayerGetShape() function,
+as implemented, provides random access to the data which can be very expensive for
+certain drivers.</p>
+</section>
+<section id="technical-solution">
+<h2>Technical Solution<a class="headerlink" href="#technical-solution" title="Link to this heading">¶</a></h2>
+<p>There are a number of potential solutions:</p>
+<p>1. One could cache the returned shapes in memory. While this wouldn’t result in
+a true single-pass, you wouldn’t have to go back to the original driver twice.
+However, it could lead to large memory consumption with even moderately-sized
+datasets. Multiple clients accessing services at the same time would only
+compound the problems. Some testing has confirmed this method to be no faster
+and probably even a bit slower than option 3 below.</p>
+<p>2. Another solution would be fold much of the query pre-  and post-processing
+code into the msLayerWhichShapes() and msLayerNextShapes() functions so that
+the access paradigm used in drawing layers could be used. Subsequent research
+has let us to conclude that a true single pass is not possible in some cases.
+For example, GML requires a result set envelope be written out before writing
+individual features. There’s no way to get that initial envelope without a
+pass through the features.</p>
+<p>3. A final solution would be to change how the msLayerGetShape() function
+behaves. We prepose changing the behavior of that function to provide random
+access to a result set (as defined by msLayerWhichShapes()) rather than the
+entire data set. This removes most of the overhead currently incurred by
+referencing the results already returned by the data driver in the initial
+query. For implementation purposes we would retain the current msLayerGetShape()
+implementations to support easy random access and create a new function
+called msLayerResultsGetShape().</p>
+<p>msLayerGetShape() would <em>only</em> be used via MapScript to preserve true random
+access functionality. Note that drawing uses msLayerNextShape() and does not
+rely on index values.</p>
+<p>Under this last solution data drivers would need to do two things:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>update the population of the shapeObj index property (long int) with a value
+that will allow msLayerResultsGetShape() to randomly access a result</p></li>
+<li><p>creation of the driver-specific version of msLayerResultsGetShape() to
+retrieve a shape from the results created in msLayerWhichShapes()</p></li>
+<li><p>the default implementation of msLayerResultsGetShape() would simply wrap
+msLayerGetShape() since most drivers would not have to implement the newer
+function (e.g. OGR or shapefiles)</p></li>
+</ul>
+</div></blockquote>
+<p>The query functions would need to:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>not close the layer when finished with a query (we assume that users will
+want to do something with the results)</p></li>
+<li><p>allow msLayerWhichItems() to retrieve ALL items so that the retrieved
+shapes are presentation-ready (draw, template, or …)</p></li>
+</ul>
+</div></blockquote>
+<p>The presentation functions:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>refrain from calling msLayerOpen(), msLayerWhichItems(), msLayerWhichShapes()
+since that has already been done in the query functions</p></li>
+</ul>
+</div></blockquote>
+<p>MapScript layerObj wrappers:</p>
+<blockquote>
+<div><ul class="simple">
+<li><p>add resultsGetShape() method</p></li>
+</ul>
+</div></blockquote>
+<p>This solution has been piloted in the single-pass sandbox with very promising
+results. In some cases queries run orders of magnitude faster. One positive side
+effect is that primary keys need not be used to retrieve features from the result
+set. It is the drivers responsibility to provide data to uniquely identify a
+row in the result set.</p>
+</section>
+<section id="backwards-compatibility-issues">
+<h2>Backwards Compatibility Issues<a class="headerlink" href="#backwards-compatibility-issues" title="Link to this heading">¶</a></h2>
+<p>This solution will most likely require changes to MapScript applications that
+process query results depending on types of data being processed. Those hitting
+shapefiles for example will still function “as is” since there that driver will
+still be using msLayerGetShape(). Any script hitting a RDBMS data source will
+have to swith to using resultsGetShape() instead of getFeature()/getShape().</p>
+<p>One casualty would be the query save/read functions. Since the processing of
+a set of results would be specific to dataset result handle it won’t be
+possible to get back to a result once a layer is ultimately closed. A proposed
+solution to this problem is presented next.</p>
+</section>
+<section id="query-file-support">
+<h2>Query File Support<a class="headerlink" href="#query-file-support" title="Link to this heading">¶</a></h2>
+<p>Query files have provided a means of saving the results of a query operation for
+use in subsequent map production. The series of indexes gathered during a query
+are written to disk and read later to be used to access the data a feature at a
+time. With the proposed changes this simply won’t work with RDBMS data sources.
+It becomes necessary to instead recreate the result set but re-executing the
+query. Problem is, there’s no easy way to serialize query parameters.</p>
+<p>I propose creating a new object, a queryObj, to store the various parameters
+associated with MapServer queries. It might look something like:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="n">typedef</span> <span class="n">struct</span> <span class="p">{</span>
+   <span class="nb">int</span> <span class="nb">type</span><span class="p">;</span> <span class="o">/</span>\<span class="o">*</span> <span class="n">By</span> <span class="n">rect</span><span class="p">,</span> <span class="n">point</span><span class="p">,</span> <span class="n">shape</span><span class="p">,</span> <span class="n">attribute</span><span class="p">,</span> <span class="n">etc</span><span class="o">...</span> <span class="n">Types</span> <span class="n">match</span> <span class="n">the</span> <span class="n">query</span> <span class="n">functions</span><span class="o">.</span> \<span class="o">*/</span>
+   <span class="nb">int</span> <span class="n">qlayer</span><span class="p">;</span> <span class="o">/</span>\<span class="o">*</span> <span class="n">used</span> <span class="n">by</span> <span class="nb">all</span> <span class="n">functions</span> \<span class="o">*/</span>
+
+   <span class="n">rectObj</span> <span class="o">*</span><span class="n">rect</span><span class="p">;</span> <span class="o">/</span>\<span class="o">*</span> <span class="n">used</span> <span class="n">by</span> <span class="n">msQueryByRect</span><span class="p">()</span> \<span class="o">*/</span>
+
+   <span class="n">char</span> <span class="o">*</span><span class="n">qitem</span><span class="p">;</span> <span class="o">/*</span> <span class="n">used</span> <span class="n">by</span> <span class="n">msQueryByAttribute</span><span class="p">()</span> \<span class="o">*/</span>
+   <span class="n">char</span> <span class="o">*</span><span class="n">qstring</span><span class="p">;</span> <span class="o">/</span>\<span class="o">*</span> <span class="n">used</span> <span class="n">by</span> <span class="n">msQueryByAttribute</span><span class="p">()</span> \<span class="o">*/</span>
+
+   <span class="o">...</span><span class="ow">and</span> <span class="n">so</span> <span class="n">on</span><span class="o">...</span>
+<span class="p">}</span> <span class="n">queryObj</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>A single queryObj would hang off a mapObj and the mapObj would be the sole parameter
+passed to the various query methods. MapServer C code, primarily the CGI and OGC
+interfaces would simply populate the appropriate queryObj members and call the correct
+query function.</p>
+<p>MapScript would be unchanged. The wrappers for the various query functions need only
+use the user supplied parameters to populate the queryObj and then call the query
+function. The queryObj would be immutable.</p>
+<p>By storing all the information in a single store it should be easily serialized to
+disk. When read, the reconsituted queryObj could then be used to re-execute the
+appropriate query. The msSaveQuery() and msLoadQuery() function signatures would
+remain “as is” although the internals would change.</p>
+</section>
+<section id="files-impacted">
+<h2>Files Impacted<a class="headerlink" href="#files-impacted" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>driver files: implement msXXXLayerResultsGetShape() function to shape fetching
+code if necessary</p></li>
+<li><p>maptemplate.c: don’t open/close a layer when presenting results</p></li>
+<li><p>mapgml.c: don’t open/close a layer when presenting results</p></li>
+<li><p>mapdraw.c: don’t open/close a layer etc… IF if drawing a query map</p></li>
+<li><p>maplayer.c: refactor msLayerWhichItems(), add msLayerResultsGetShape() to the
+layer plugin API</p></li>
+<li><p>mapquery.c: re-work msSaveQuery() and msLoadQuery(), change query functions
+to take a lone mapObj as input, add msInitQuery() and msFreeQuery() functions</p></li>
+<li><p>mapserv.c: populate map-&gt;query before calling query functions</p></li>
+<li><p>mapwxs.c (various): populate map-&gt;query before calling query functions</p></li>
+<li><p>mapfile.c: leverage msInitQuery() and msFreeQuery() functions</p></li>
+<li><p>mapserver.h: define queryObj, add to mapObj</p></li>
+<li><p>mapscript (various): update map/layer query methods to populate a queryObj</p></li>
+<li><p>others? (mapcopy.c for one)</p></li>
+</ul>
+<p>Although a number of files are impacted the changes in general are relatively simple.</p>
+</section>
+<section id="unknowns">
+<h2>Unknowns<a class="headerlink" href="#unknowns" title="Link to this heading">¶</a></h2>
+<p>To date only shapefiles, PostGIS and Oracle drivers have been tested with this new
+scheme, all with positive results. Even shapefiles showed a performance improvement
+simply due to incurring the overhead of opening files just once. It’s not clear how
+OGR, SDE and raster queries will be impacted. I hope the owners of those drivers can
+comment further.</p>
+<p>MapServer has supported a rather obscure query method called queryByIndex() as basically
+a wrapper to msLayerGetShape(). This change may render that method obsolete but more
+checking need be done.</p>
+</section>
+<section id="voting-history">
+<h2>Voting History<a class="headerlink" href="#voting-history" title="Link to this heading">¶</a></h2>
+<p>+1 from SteveL, DanielM, HowardB, PerryN, TamasS</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p>
+<a href="../../about.html" title="About">About</a><br>
+<a href="../../products.html" title="Products">Products</a><br>
+<a href="../../community/index.html" title="Community">Community</a><br>
+<a href="../index.html" title="Development">Development</a><br>
+<a href="../../download.html" title="Downloads">Downloads</a><br>
+<a href="../../documentation.html" title="Documentation">Documentation</a><br>
+<a href="../../faq.html" title="FAQ">FAQ</a><br>
+<a href="../../psc.html" title="PSC">PSC</a><br>
+<a href="https://fosstodon.org/@mapserver" title="Mastodon">Mastodon</a>
+</p>
+  <h3>Current Table Of Contents</h3>
+  <ul>
+<li><a class="reference internal" href="#">MS RFC 52: One-pass query processing</a><ul>
+<li><a class="reference internal" href="#overview">Overview</a></li>
+<li><a class="reference internal" href="#technical-solution">Technical Solution</a></li>
+<li><a class="reference internal" href="#backwards-compatibility-issues">Backwards Compatibility Issues</a></li>
+<li><a class="reference internal" href="#query-file-support">Query File Support</a></li>
+<li><a class="reference internal" href="#files-impacted">Files Impacted</a></li>
+<li><a class="reference internal" href="#unknowns">Unknowns</a></li>
+<li><a class="reference internal" href="#voting-history">Voting History</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="ms-rfc-53.html" title="MS RFC 53: Guidelines for MapScript method return values"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ms-rfc-51.html" title="MS RFC 51: XML Mapfile Format"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Home</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Development</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" >Request for Comments</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MS RFC 52: One-pass query processing</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; <a href="../../copyright.html">Copyright</a> 2026, Open Source Geospatial Foundation.
+      Last updated on 2026-06-22.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>
