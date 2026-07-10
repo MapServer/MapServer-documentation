@@ -1,3 +1,27 @@
+**2026-07-10 - MapServer 8.6.5 is released**
+
+.. important::  
+   Security release available
+
+The security release of MapServer 8.6.5 has been issued in order to fix
+six vulnerabilities. See the :ref:`changelog <changelog-8-6-5>` 
+for the list of changes. 
+You may also review the security advisories for this release:
+
+1. `OGCAPI Features support <https://github.com/MapServer/MapServer/security/advisories/GHSA-288j-mhpj-gmmr>`__ advisory
+2. `WCS support <https://github.com/MapServer/MapServer/security/advisories/GHSA-35qh-49hm-5rcx>`__ advisory
+3. `OpenLayers viewer with WMS <https://github.com/MapServer/MapServer/security/advisories/GHSA-52rr-p4x5-2x6x>`__ advisory
+4. `WMS GetLegendGraphic support <https://github.com/MapServer/MapServer/security/advisories/GHSA-4mwc-qc95-5959>`__ advisory
+5. `MySQL JOIN support <https://github.com/MapServer/MapServer/security/advisories/GHSA-7624-4mwh-9cxr>`__ advisory
+6. `PostgreSQL JOIN support <https://github.com/MapServer/MapServer/security/advisories/GHSA-m3xh-ccmh-x8rw>`__ advisory
+
+You may also review MapServer's `Security Policy <https://github.com/MapServer/MapServer/blob/main/SECURITY.md>`__.
+As security for the 7.6 branch has ended, and branches 8.4, 8.2 & 8.0 are not supported, 
+all users are strongly encouraged to upgrade to the MapServer 8.6.5 release (see the 
+:ref:`Migration Guide <migration>`).
+
+Head to :ref:`download` to obtain a copy.
+
 **2026-06-01 - MapServer 8.6.4 is released**
 
 .. important::  
@@ -124,21 +148,3 @@ the MapCache :ref:`changelog <changelog-mapcache-1-14>` and TinyOWS
 :ref:`changelog <changelog-tinyows-1-2>`.
 
 Head to :ref:`download` to obtain a copy.
-
-**2024-07-21 - MapServer 8.2.1, 7.6.7 are released**
-
-Several maintenance releases of MapServer have been issued in order to fix
-a security flaw for the tostring() expression function.
-See the :ref:`8.2.1 changelog <changelog-8-2-1>`,
-:ref:`7.6.7 changelog <changelog-7-6-7>` for the list of changes. You 
-may also review MapServer's `Security Policy <https://github.com/MapServer/MapServer/blob/main/SECURITY.md>`__.
-
-Head to :ref:`download` to obtain a copy.
-
-**2024-07-08 - MapServer 8.2.0 is released**
-
-The major version MapServer 8.2 has been released. The list of
-major changes for this release can be found in the :ref:`8.2 announcement <announce-8-2>`.
-See the :ref:`changelog <changelog-8-2>`
-for the full list of changes and head to :ref:`download` to obtain a copy.
-
