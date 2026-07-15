@@ -6,7 +6,7 @@
 MapServer Migration Guide
 *****************************************************************************
 
-:Last Updated: 2026-05-07
+:Last Updated: 2026-07-15
 
 .. contents:: Table of Contents
     :depth: 2
@@ -501,24 +501,24 @@ MapServer 7.2 to 7.4 Migration
   - all of your PHP scripts (that leverage MapServer objects and functions) must now always 
     first include the generated `mapscript.php` file containing MapServer constants:
 
-    ::
+    .. code-block:: php
     
-     // required SWIG include (contains MapServer constants for PHP7)
-     include("C:/ms4w/apps/phpmapscriptng-swig/include/mapscript.php");    
+        // required SWIG include (contains MapServer constants for PHP7)
+        include("C:/ms4w/apps/phpmapscriptng-swig/include/mapscript.php");    
     
   - take note of the change in how to declare your new objects:
   
-    ::
+    .. code-block:: php
     
-      // open map
-      $oMap = new mapObj("C:/ms4w/apps/phpmapscriptng-swig/sample.map");
+        // open map
+        $oMap = new mapObj("C:/ms4w/apps/phpmapscriptng-swig/sample.map");
       
     instead of the former way:
     
-    ::
+    .. code-block:: php
     
-      // open map
-      $oMap = ms_newMapObj("C:/ms4w/apps/phpmapscript/sample.map");
+        // open map
+        $oMap = ms_newMapObj("C:/ms4w/apps/phpmapscript/sample.map");
       
 MapServer 7.0 to 7.2 Migration
 ==============================
@@ -561,7 +561,7 @@ MapServer 6.4 to 7.0 Migration
 
 - Layer opacity is now deprecated a result of RFC 113 - Layer Compositing. The mapfile parser
   and MapScript getter/setter functions will continue to function but unpredictable results will 
-  occur if used in conjunction with COMPOSITE blocks. For more information see https://mapserver.org/development/rfc/ms-rfc-113.html.
+  occur if used in conjunction with COMPOSITE blocks.
 
   .. code-block:: mapfile
 
@@ -578,6 +578,8 @@ MapServer 6.4 to 7.0 Migration
         OPACITY 70
       END
     END
+    
+  .. seealso:: :ref:`rfc113`
 
 - Handling of non UTF-8 encoded datasources has changed with RFC103. Mapfiles
   now *must* be saved in UTF-8 encoding, and requests returned by MapServer
@@ -636,10 +638,11 @@ MapServer 6.2 to 6.4 Migration
 
 - Validation patterns cannot be specified in metadata blocks (i.e. using
   xxx_validation_pattern and default_xxx metadata entries), use VALIDATION blocks.
-  see #4596 #4604 #4608 or :ref:`runsub`
+  see `#4596 <https://github.com/MapServer/MapServer/issues/4596>`__, `#4604 <https://github.com/MapServer/MapServer/issues/4604>`__, `#4608 <https://github.com/MapServer/MapServer/issues/4608>`__, or :ref:`runsub`
 
 - WFS paging parameter startIndex changed to base on 0 instead of 1 (0 is the first
-  feature). See #4180 for external references.
+  feature). See `#4180 <https://github.com/MapServer/MapServer/issues/4180>`__ 
+  for external references.
 
 - Template substitution tags were case-sensitive, they are now
   case-insensitive.
@@ -682,7 +685,8 @@ Rendering changes
   using the centre to centre distance.
   In earlier versions of MapServer, GAP was used as the approximate
   distance between the symbol boundaries.
-  See ticket #3867 for more information.
+  See ticket `#3867 <https://github.com/MapServer/MapServer/issues/3867>`__ 
+  for more information.
 
   In order to get the same effect with 6.2 as with 6.0, STYLE->GAP
   must be increased with the size of the symbol.
@@ -691,25 +695,27 @@ Rendering changes
   In earlier versions of MapServer, an extra gap of one pixel was
   added between the symbols (in addition to the gap specified in
   STYLE->GAP).  This has been discontinued in 6.2.
-  See ticket #3868 for more information.
+  See ticket `#3868 <https://github.com/MapServer/MapServer/issues/3868>`__ 
+  for more information.
 
   In order to get the same effect with 6.2 as with 6.0, STYLE->GAP
   must be increased with one pixel.
 
 * STYLE->INITIALGAP introduced
   Support for more powerful line styling has been provided with the
-  introduction of STYLE->INITIALGAP.  See ticket #3879 and the
-  documentation for more information.
+  introduction of STYLE->INITIALGAP.  See ticket `#3879 <https://github.com/MapServer/MapServer/issues/3879>`__ 
+  and the documentation for more information.
 
 * SYMBOL->ANCHORPOINT introduced
   A symbol anchorpoint has been introduced to facilitate precise
-  positioning of symbols.  See ticket #4066 and the documentation for
-  more information.
+  positioning of symbols.  See ticket `#4066 <https://github.com/MapServer/MapServer/issues/4066>`__ 
+  and the documentation for more information.
 
 * Change in vector symbol size calculation.
   In 6.2, vector symbol coordinates are shifted to get rid of
   negative x and y coordinate values.
-  See ticket #4116 for more information.
+  See ticket `#4116 <https://github.com/MapServer/MapServer/issues/4116>`__ 
+  for more information.
 
   In order to get the shifting effect that could be obtained using
   negative coordinate values, SYMBOL->ANCHORPOINT should be used
@@ -747,8 +753,7 @@ values and string literals.
 On the plus side you can now control the number of decimal places, round and even commify
 the area value for display.
 
-See https://mapserver.org/development/rfc/ms-rfc-64.html and https://github.com/MapServer/MapServer/issues/3736
-for more information.
+.. seealso:: :ref:`rfc64` and ticket `#3736 <https://github.com/MapServer/MapServer/issues/3736>`__ 
 
 ------------------------------
 Mapfile Changes	- Label Styles
@@ -852,7 +857,8 @@ CGI Changes
 Runtime substitution now *requires* a validation pattern be present before the
 substitution will take place (this had been optional). This can be done via
 a layer metadata tag as before or within layer or web VALIDATION blocks. See
-ticket #3522 for more information.
+ticket `#3522 <https://github.com/MapServer/MapServer/issues/3522>`__ 
+for more information.
 
 All of the query map related modes (e.g. NQUERYMAP, ITEMQUERYMAP, etc...) have 
 been removed in favor of using the "qformat" parameter. That parameter takes 
@@ -871,7 +877,7 @@ MAP::WEB section::
 
  "ows_enable_request"   "*"
 
-See also: https://mapserver.org/development/rfc/ms-rfc-67.html
+.. seealso:: :ref:`rfc67`
 
 ------------------------------
 Mapfile Changes - WCS Metadata
@@ -1028,7 +1034,7 @@ To access shapes independently of a query use the new resultObj class:
   $shape = $layer->getShape(new mapscript::resultObj(1));  
   $layer->close();
 
-See https://mapserver.org/development/rfc/ms-rfc-65.html for more information.
+.. seealso:: :ref:`rfc65`
 
 ------------
 OUTPUTFORMAT
@@ -1094,7 +1100,7 @@ on the data instead of two passes. This is transparent for CGI applications,
 but MapScript scripts must be modified to use the layer.resultsGetShape()
 method instead of layer.getShape().
 
-See also: https://mapserver.org/development/rfc/ms-rfc-52.html
+.. seealso:: :ref:`rfc52`
 
 (Note: the new resultsGetShape() method is not yet available for PHP MapScript 
 in 5.6.0-beta1)
@@ -1118,7 +1124,7 @@ Change of mime-type for the imagemap outputformat
 -------------------------------------------------
 
 RFC 36 added support for templated outputformats, but this new feature
-was not available for WMS GetFeatureInfo output (see ticket #3024). 
+was not available for WMS GetFeatureInfo output (see ticket `#3024 <https://github.com/MapServer/MapServer/issues/3024>`__). 
 In MapServer 5.6 this has been resolved by implementing lookup of output 
 formats for query templates by mime-type. However this caused a conflict 
 for the text/html mime-type between the actual text/html query 
@@ -1163,8 +1169,7 @@ The new requirements are as follows:
 
   * In JavaScript: // MapServer Template
 
-See also: https://mapserver.org/development/rfc/ms-rfc-56.html
-
+.. seealso:: :ref:`rfc56`
 
 MapServer 4.10 to 5.0 Migration
 ===============================
