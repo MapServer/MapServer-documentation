@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Vector Data Management &amp; Optimization &#8212; MapServer 8.6.5 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx.css?v=48f05237" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_collapse.css?v=226d88b4" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=dd298242" />
+    <link rel="stylesheet" type="text/css" href="../_static/ribbon.css?v=ea091bf4" />
+    
+    <script src="../_static/jquery.js?v=5d32c60e"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+    <script src="../_static/documentation_options.js?v=51e4ce63"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    
+    <link rel="icon" href="../_static/mapserver.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="copyright" title="Copyright" href="../copyright.html" />
+    <link rel="next" title="Utilities" href="../utilities/index.html" />
+    <link rel="prev" title="Tile Indexes" href="tileindex.html" /> 
+  </head><body>
+<!-- add a ribbon to show these docs are the main branch -->
+<h4 class="ribbon">DOCS PREVIEW</h4>
+
+<table width="100%" style="width: 100%; background-color: white;">
+  <tr>
+    <td rowspan="2" style="padding: 10px 0px 10px 10px;">
+      <a href="../index.html" title="Home"><img src="../_static/banner.png" alt="MapServer banner" border="0" /></a>
+    </td>
+    <td style="padding: 10px 10px 0px 0px; text-align: right; vertical-align: top;">
+      <a href="../index.html" title="Home">Home</a> |
+      <a href="../products.html" title="Products (MapServer core, MapCache, TinyOWS">Products</a> |
+      <a href="https://github.com/MapServer/MapServer/issues/" title="Issue Tracker (MapServer core)">Issue Tracker</a> |
+      <a href="../community/service_providers.html" title="Professional Service Providers">Service Providers</a> |      
+      <a href="../faq.html" title="Frequently Asked Questions">FAQ</a> |
+      <a href="https://fosstodon.org/@mapserver" title="Mastodon" target="_blank">Mastodon</a> |
+      <a href="../download.html" title="Download Source or Binaries">Download </a> |
+      <a class="badge" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KRJ2X44N3HA6U&source=url" target="_blank">
+        <img src="https://img.shields.io/badge/donate-%E2%9D%A4%C2%A0-ff69b4.svg?style=flat" alt="Donate to MapServer">
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0px 10px 0px 0px; text-align: right; vertical-align: bottom;">
+        <img src="../_static/flagicons/en.png" alt="en" title="en" border="0" width="18px" height="13px"/>
+        
+          <a href="../ar/optimization/vector.html"><img src="../_static/flagicons/ar.png" alt="ar" title="ar" border="0" /></a>
+        
+        
+          <a href="../de/optimization/vector.html"><img src="../_static/flagicons/de.png" alt="de" title="de" border="0" /></a>
+        
+        
+          <a href="../el/optimization/vector.html"><img src="../_static/flagicons/el.png" alt="el" title="el" border="0" /></a>
+        
+        
+          <a href="../es/optimization/vector.html"><img src="../_static/flagicons/es.png" alt="es" title="es" border="0" /></a>
+        
+        
+          <a href="../fr/optimization/vector.html"><img src="../_static/flagicons/fr.png" alt="fr" title="fr" border="0" /></a>
+        
+        
+          <a href="../id/optimization/vector.html"><img src="../_static/flagicons/id.png" alt="id" title="id" border="0" /></a>
+        
+        
+          <a href="../it/optimization/vector.html"><img src="../_static/flagicons/it.png" alt="it" title="it" border="0" /></a>
+        
+        
+          <a href="../ja/optimization/vector.html"><img src="../_static/flagicons/ja.png" alt="ja" title="ja" border="0" /></a>
+        
+        
+          <a href="../nl_NL/optimization/vector.html"><img src="../_static/flagicons/nl_NL.png" alt="nl_NL" title="nl_NL" border="0" /></a>
+        
+        
+          <a href="../pl/optimization/vector.html"><img src="../_static/flagicons/pl.png" alt="pl" title="pl" border="0" /></a>
+        
+        
+          <a href="../ru/optimization/vector.html"><img src="../_static/flagicons/ru.png" alt="ru" title="ru" border="0" /></a>
+        
+        
+          <a href="../sq/optimization/vector.html"><img src="../_static/flagicons/sq.png" alt="sq" title="sq" border="0" /></a>
+        
+        
+          <a href="../tr/optimization/vector.html"><img src="../_static/flagicons/tr.png" alt="tr" title="tr" border="0" /></a>
+        
+
+    </td>
+  </tr>
+</table>
+
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="../utilities/index.html" title="Utilities"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="tileindex.html" title="Tile Indexes"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Home</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../documentation.html" >MapServer 8.6.5 Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" accesskey="U">Optimization</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Vector Data Management &amp; Optimization</a></li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="vector-data-management-optimization">
+<span id="vector-optimization"></span><span id="index-0"></span><h1><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Vector Data Management &amp; Optimization</a><a class="headerlink" href="#vector-data-management-optimization" title="Link to this heading">¶</a></h1>
+<dl class="field-list simple">
+<dt class="field-odd">Author<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Jeff McKenna</p>
+</dd>
+<dt class="field-even">Contact<span class="colon">:</span></dt>
+<dd class="field-even"><p>jmckenna at gatewaygeomatics.com</p>
+</dd>
+<dt class="field-odd">Original Author<span class="colon">:</span></dt>
+<dd class="field-odd"><p>HostGIS</p>
+</dd>
+<dt class="field-even">Last Updated<span class="colon">:</span></dt>
+<dd class="field-even"><p>2026-03-29</p>
+</dd>
+</dl>
+<nav class="contents" id="table-of-contents">
+<p class="topic-title">Table of Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#vector-data-management-optimization" id="id1">Vector Data Management &amp; Optimization</a></p>
+<ul>
+<li><p><a class="reference internal" href="#choose-the-right-vector-format-for-your-needs" id="id2">Choose the right vector format for your needs</a></p></li>
+<li><p><a class="reference internal" href="#spend-time-to-review-gdal-s-associated-driver-page-for-your-chosen-format" id="id3">Spend time to review GDAL’s associated driver page for your chosen format</a></p></li>
+<li><p><a class="reference internal" href="#connect-to-your-data-through-ogr-gdal" id="id4">Connect to your data through OGR/GDAL</a></p></li>
+<li><p><a class="reference internal" href="#learn-review-the-various-ogr-utilities-to-manage-your-vectors" id="id5">Learn &amp; Review the various OGR utilities to manage your vectors</a></p></li>
+<li><p><a class="reference internal" href="#index-your-data" id="id6">Index your data</a></p>
+<ul>
+<li><p><a class="reference internal" href="#tileindexing" id="id7">Tileindexing</a></p></li>
+<li><p><a class="reference internal" href="#add-a-spatial-index-to-your-data" id="id8">Add a Spatial Index to your data</a></p></li>
+<li><p><a class="reference internal" href="#add-an-attribute-index-to-your-data" id="id9">Add an Attribute Index to your data</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#splitting-your-data" id="id10">Splitting your data</a></p></li>
+<li><p><a class="reference internal" href="#handling-your-vector-layers-in-the-mapfile" id="id11">Handling your vector LAYERS in the mapfile</a></p></li>
+<li><p><a class="reference internal" href="#shapefile-notes" id="id12">Shapefile Notes</a></p></li>
+<li><p><a class="reference internal" href="#postgis-notes" id="id13">PostGIS Notes</a></p>
+<ul>
+<li><p><a class="reference internal" href="#indexing-with-postgis" id="id14">Indexing with PostGIS</a></p></li>
+<li><p><a class="reference internal" href="#specifying-a-unique-id-column" id="id15">Specifying a Unique ID column</a></p></li>
+<li><p><a class="reference internal" href="#debugging-speed-issues-with-postgis" id="id16">Debugging speed issues with PostGIS</a></p></li>
+</ul>
+</li>
+<li><p><a class="reference internal" href="#databases-in-general-postgis-oracle-spatialite-geopackage-microsoft-sql-server-mysql" id="id17">Databases in General (PostGIS, Oracle, SpatiaLite, GeoPackage, Microsoft SQL Server, MySQL)</a></p>
+<ul>
+<li><p><a class="reference internal" href="#enable-connection-pooling" id="id18">Enable Connection Pooling</a></p></li>
+<li><p><a class="reference internal" href="#set-extent-at-the-layer-level-of-mapfile" id="id19">Set EXTENT at the LAYER level of mapfile</a></p></li>
+<li><p><a class="reference internal" href="#verify-that-your-table-has-a-spatial-index" id="id20">Verify that your table has a Spatial Index</a></p></li>
+<li><p><a class="reference internal" href="#for-wfs-services-prevent-using-default-full-extent" id="id21">For WFS services, prevent using default/full extent</a></p></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="choose-the-right-vector-format-for-your-needs">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Choose the right vector format for your needs</a><a class="headerlink" href="#choose-the-right-vector-format-for-your-needs" title="Link to this heading">¶</a></h2>
+<ul>
+<li><p>The best/optimal vector data source for MapServer in terms of speed-of-display
+is <a class="reference internal" href="../input/vector/shapefiles.html#shapefiles"><span class="std std-ref">Shapefile</span></a>.</p>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>MapServer 8.0 includes a new <a class="reference internal" href="../utilities/coshp.html#coshp"><span class="std std-ref">coshp</span></a> utility to create
+‘Cloud Optimized Shapefiles’</p>
+</div>
+</li>
+<li><p>A recent format designed for vector performance, with similar map draw
+speed in MapServer as Shapefile, is <a class="reference internal" href="../input/vector/flatgeobuf.html#flatgeobuf"><span class="std std-ref">FlatGeobuf</span></a>, and is
+recommended for cloud performance.</p></li>
+<li><p>For databases, MapServer displays <a class="reference internal" href="../input/vector/postgis.html#input-postgis"><span class="std std-ref">PostGIS</span></a>
+layers very fast, and some custom tricks are included in the MapServer source
+specifically for PostGIS + MapServer draw speed.  PostGIS is therefore recommended.</p></li>
+<li><p><a class="reference internal" href="../input/vector/sqlite.html#sqlite"><span class="std std-ref">SpatiaLite</span></a> is recommended
+for those who require a portable format, and works very well with MapServer.</p></li>
+<li><p><a class="reference internal" href="../input/vector/geopackage.html#geopackage"><span class="std std-ref">GeoPackage</span></a> (“GPKG”) is also very popular for portability,
+and works very well with MapServer.</p></li>
+</ul>
+<p>Here are some rudimentary map draw speed results, with the
+MapServer 8.0 release code (running on Windows with <a class="reference external" href="https://ms4w.com">MS4W</a>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">FlatGeobuf</span> <span class="p">(</span><span class="n">native</span><span class="p">)</span> <span class="mf">0.008</span><span class="n">s</span>
+<span class="n">Shapefile</span> <span class="p">(</span><span class="n">native</span><span class="p">)</span>  <span class="mf">0.010</span><span class="n">s</span>
+<span class="n">FlatGeobuf</span> <span class="p">(</span><span class="n">OGR</span><span class="p">)</span>    <span class="mf">0.013</span><span class="n">s</span>
+<span class="n">Shapefile</span> <span class="p">(</span><span class="n">OGR</span><span class="p">)</span>     <span class="mf">0.023</span><span class="n">s</span>
+<span class="n">GeoPackage</span> <span class="p">(</span><span class="n">OGR</span><span class="p">)</span>    <span class="mf">0.042</span><span class="n">s</span>
+<span class="n">SpatiaLite</span> <span class="p">(</span><span class="n">OGR</span><span class="p">)</span>    <span class="mf">0.045</span><span class="n">s</span>
+<span class="n">PostGIS</span> <span class="p">(</span><span class="n">native</span><span class="p">)</span>    <span class="mf">0.053</span><span class="n">s</span>
+<span class="n">GeoJSON</span> <span class="p">(</span><span class="n">OGR</span><span class="p">)</span>       <span class="mf">0.089</span><span class="n">s</span>
+</pre></div>
+</div>
+</section>
+<section id="spend-time-to-review-gdal-s-associated-driver-page-for-your-chosen-format">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Spend time to review GDAL’s associated driver page for your chosen format</a><a class="headerlink" href="#spend-time-to-review-gdal-s-associated-driver-page-for-your-chosen-format" title="Link to this heading">¶</a></h2>
+<p>This is a critical step, as MapServer relies on GDAL (actually the OGR part of the
+project, which handles vectors) for vector data access.  Each driver (OGR format)
+has its own set of abilities and switches. Find your vector format and review
+its options <a class="reference external" href="https://gdal.org/drivers/vector/index.html">here</a>.</p>
+</section>
+<section id="connect-to-your-data-through-ogr-gdal">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Connect to your data through OGR/GDAL</a><a class="headerlink" href="#connect-to-your-data-through-ogr-gdal" title="Link to this heading">¶</a></h2>
+<p>For data management in MapServer, this should always be one of your first steps.
+Sometimes desktop GIS programs will display a format or its attributes in a certain
+way (such as in uppercase) but your data might not display in MapServer; checking
+how OGR/GDAL reads your data file or database table, will help you manage
+the data.  The <a class="reference internal" href="../input/vector/ogr.html#ogr"><span class="std std-ref">OGR Vector Layers Through MapServer</span></a> document has excellent examples
+(for <em>ogrinfo</em> and other commands) to connect to your data. Here is an
+example connecting to a PostGIS database, and returning a list of spatial tables:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>ogrinfo -ro PG:&quot;host=127.0.0.1 user=postgres password=postgres port=5432 dbname=mydb&quot;
+
+      INFO: Open of `PG:host=127.0.0.1 user=postgres password=postgres port=5432 dbname=mydb&#39;
+            using driver `PostgreSQL&#39; successful.
+      1: popplace (Point)
+      2: province (Multi Polygon)
+</pre></div>
+</div>
+<p>Then get a summary of the ‘popplace’ table through ogrinfo:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>ogrinfo -ro PG:&quot;host=127.0.0.1 user=postgres password=postgres port=5433 dbname=mydb&quot; popplace -summary
+
+
+    INFO: Open of `PG:host=127.0.0.1 user=postgres password=postgres port=5433 dbname=mydb&#39;
+          using driver `PostgreSQL&#39; successful.
+
+        Layer name: popplace
+        Geometry: Point
+        Feature Count: 497
+        Extent: (-2303861.750000, -681502.875000) - (2961766.250000, 3798856.750000)
+        Layer SRS WKT:
+        PROJCS[&quot;NAD83 / Canada Atlas Lambert&quot;,
+            GEOGCS[&quot;NAD83&quot;,
+                DATUM[&quot;North_American_Datum_1983&quot;,
+                    SPHEROID[&quot;GRS 1980&quot;,6378137,298.257222101,
+                        AUTHORITY[&quot;EPSG&quot;,&quot;7019&quot;]],
+                    TOWGS84[0,0,0,0,0,0,0],
+                    AUTHORITY[&quot;EPSG&quot;,&quot;6269&quot;]],
+                PRIMEM[&quot;Greenwich&quot;,0,
+                    AUTHORITY[&quot;EPSG&quot;,&quot;8901&quot;]],
+                UNIT[&quot;degree&quot;,0.0174532925199433,
+                    AUTHORITY[&quot;EPSG&quot;,&quot;9122&quot;]],
+                AUTHORITY[&quot;EPSG&quot;,&quot;4269&quot;]],
+            PROJECTION[&quot;Lambert_Conformal_Conic_2SP&quot;],
+            PARAMETER[&quot;standard_parallel_1&quot;,49],
+            PARAMETER[&quot;standard_parallel_2&quot;,77],
+            PARAMETER[&quot;latitude_of_origin&quot;,49],
+            PARAMETER[&quot;central_meridian&quot;,-95],
+            PARAMETER[&quot;false_easting&quot;,0],
+            PARAMETER[&quot;false_northing&quot;,0],
+            UNIT[&quot;metre&quot;,1,
+                AUTHORITY[&quot;EPSG&quot;,&quot;9001&quot;]],
+            AXIS[&quot;Easting&quot;,EAST],
+            AXIS[&quot;Northing&quot;,NORTH],
+            AUTHORITY[&quot;EPSG&quot;,&quot;3978&quot;]]
+        FID Column = gid
+        Geometry Column = geom
+        area: Real (0.0)
+        perimeter: Real (0.0)
+        popplace_: Real (0.0)
+        popplace_i: Real (0.0)
+        unique_key: String (5.0)
+        name: String (25.0)
+        name_e: String (20.0)
+        name_f: String (20.0)
+        reg_code: Real (0.0)
+        nts50: String (7.0)
+        lat: String (7.0)
+        long: String (7.0)
+        sgc_code: Real (0.0)
+        capital: Real (0.0)
+        pop_range: Real (0.0)
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>You can use the extent values returned from ogrinfo, to paste into your
+mapfile’s EXTENT parameter.  You can also notice in that summary
+the <em>PROJCS/AUTHORITY</em> line, which states that this data is currently
+in the <a class="reference external" href="https://spatialreference.org/ref/epsg/3978/">EPSG:3978</a> projection.</p>
+</div>
+</section>
+<section id="learn-review-the-various-ogr-utilities-to-manage-your-vectors">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Learn &amp; Review the various OGR utilities to manage your vectors</a><a class="headerlink" href="#learn-review-the-various-ogr-utilities-to-manage-your-vectors" title="Link to this heading">¶</a></h2>
+<p>OGR commandline utilities are very useful, making it easy to manipulate
+your source vector file or database, before display in MapServer.  For example,
+you might want to import a spatial file into your existing PostGIS database,
+which you can do easily through
+<a class="reference external" href="https://gdal.org/programs/ogr2ogr.html">ogr2ogr</a> as the following
+(that takes a shapefile, imports it into an existing PostGIS database, and
+renames the new table to ‘roadways’) :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ogr2ogr</span> <span class="n">PG</span><span class="p">:</span><span class="s2">&quot;host=127.0.0.1 user=postgres password=postgres port=5432 dbname=mydb&quot;</span> <span class="n">road</span><span class="o">.</span><span class="n">shp</span> <span class="o">-</span><span class="n">nln</span> <span class="n">roadways</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>where ogr2ogr syntax is actually: <em>ogr2ogr destination source</em></p>
+</div>
+<p>You might also import a spatial file, and reproject it to another EPSG
+projection, as the following (that takes a shapefile, reprojects it into
+the web mercator <a class="reference external" href="https://spatialreference.org/ref/epsg/3857/">EPSG:3857</a>, imports it into an
+existing PostGIS database, and renames the new table to ‘roadways3857’) :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ogr2ogr</span> <span class="o">-</span><span class="n">t_srs</span> <span class="n">EPSG</span><span class="p">:</span><span class="mi">3857</span> <span class="o">-</span><span class="n">s_srs</span> <span class="n">EPSG</span><span class="p">:</span><span class="mi">3978</span> <span class="n">PG</span><span class="p">:</span><span class="s2">&quot;host=127.0.0.1 user=postgres password=postgres port=5432 dbname=mydb&quot;</span> <span class="n">road</span><span class="o">.</span><span class="n">shp</span> <span class="o">-</span><span class="n">nln</span> <span class="n">roadways3857</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>where ogr2ogr syntax is actually: <em>ogr2ogr -t_srs (ouput projection) -s_srs (source projection) destination source</em></p>
+</div>
+<p>Review all of the available OGR vector utilities
+<a class="reference external" href="https://gdal.org/programs/#vector-programs">here</a>.</p>
+</section>
+<section id="index-your-data">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Index your data</a><a class="headerlink" href="#index-your-data" title="Link to this heading">¶</a></h2>
+<p>This of course is an important step for any vector layer, for fast display
+in MapServer.  There are several types of indexes that you can enable to
+speed up the display of your vector data with MapServer:</p>
+<section id="tileindexing">
+<h3><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Tileindexing</a><a class="headerlink" href="#tileindexing" title="Link to this heading">¶</a></h3>
+<p>See <a class="reference internal" href="tileindex.html#tileindex"><span class="std std-ref">Tile Indexes</span></a> for more detailed information about
+on-the-fly mosaicing with MapServer.</p>
+</section>
+<section id="add-a-spatial-index-to-your-data">
+<h3><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Add a Spatial Index to your data</a><a class="headerlink" href="#add-a-spatial-index-to-your-data" title="Link to this heading">¶</a></h3>
+<p>Make sure that your geometry has a spatial index.</p>
+<ul class="simple">
+<li><p>Shapefile: see <a class="reference internal" href="../utilities/shptree.html#shptree"><span class="std std-ref">shptree</span></a></p></li>
+<li><p>See below for databases (and GPKG)</p></li>
+</ul>
+</section>
+<section id="add-an-attribute-index-to-your-data">
+<h3><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Add an Attribute Index to your data</a><a class="headerlink" href="#add-an-attribute-index-to-your-data" title="Link to this heading">¶</a></h3>
+<p>If you will be querying or filtering by a specific column in your
+data, you should setup an attribute index on your vector data.</p>
+<p>Shapefiles:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ogrinfo</span> <span class="o">-</span><span class="n">sql</span>  <span class="s2">&quot;CREATE INDEX ON province USING NAME_E&quot;</span> <span class="n">province</span><span class="o">.</span><span class="n">shp</span>
+</pre></div>
+</div>
+<p>2 files should be created with extensions: <em>.ind &amp; .idm</em></p>
+<p>GeoPackage:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ogrinfo</span> <span class="o">-</span><span class="n">sql</span> <span class="s2">&quot;CREATE INDEX IDXnewindexname ON yourtable (yourcolumn)&quot;</span> <span class="n">file</span><span class="o">.</span><span class="n">gpkg</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="splitting-your-data">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Splitting your data</a><a class="headerlink" href="#splitting-your-data" title="Link to this heading">¶</a></h2>
+<p>If you find yourself making several layers, all of them using the same dataset
+but filtering to only use some of the records, you could probably do it
+better. If the criteria are static, one approach is to pre-split the data.</p>
+<p>The <em>ogr2ogr</em> utility can select on certain features from a datasource, and
+save them to a new data source. Thus, you can split your dataset into several
+smaller ones that are already effectively filtered, and remove the FILTER
+statement.</p>
+<p>If you are using shapefiles, the <a class="reference external" href="https://github.com/woodbri/imaptools.com">shp2tile</a>
+utility is a wonderful commandline tool for this.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For Windows users, <a class="reference external" href="https://ms4w.com">MS4W</a> includes the shp2tile utility, and
+all utilities mentioned here.</p>
+</div>
+</section>
+<section id="handling-your-vector-layers-in-the-mapfile">
+<span id="index-1"></span><h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Handling your vector LAYERS in the mapfile</a><a class="headerlink" href="#handling-your-vector-layers-in-the-mapfile" title="Link to this heading">¶</a></h2>
+<p>Please review the notes in the document <a class="reference internal" href="mapfile.html#mapfile-tuning"><span class="std std-ref">Mapfile Tuning &amp; Management</span></a>.  You should also
+check for any specific MapServer notes for your format in the <a class="reference internal" href="../input/vector/index.html#vector"><span class="std std-ref">Vector Data</span></a>
+document.</p>
+</section>
+<section id="shapefile-notes">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Shapefile Notes</a><a class="headerlink" href="#shapefile-notes" title="Link to this heading">¶</a></h2>
+<p>Use <a class="reference internal" href="../utilities/shptree.html#shptree"><span class="std std-ref">shptree</span></a> to generate a spatial index on your <a class="reference internal" href="../input/vector/shapefiles.html#shapefiles"><span class="std std-ref">shapefile</span></a>. This is
+quick and easy (“shptree foo.shp”) and generates a .qix file. MapServer will
+automagically detect an index and use it.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Tileindexes can also be indexed with <a class="reference internal" href="../utilities/shptree.html#shptree"><span class="std std-ref">shptree</span></a>.</p>
+</div>
+<p>MapServer also comes with the <a class="reference internal" href="../utilities/sortshp.html#sortshp"><span class="std std-ref">sortshp</span></a> utility. This reorganizes a
+shapefile, sorting it according to the values in one of its columns. If you’re
+commonly filtering by criteria and it’s almost always by a specific column,
+this can make the process slightly more efficient.</p>
+<p>Although shapefiles are a very fast data format, <a class="reference internal" href="../input/vector/postgis.html#input-postgis"><span class="std std-ref">PostGIS</span></a> is pretty speedy as well, especially if you use indexes well
+and have memory to throw at caching.</p>
+</section>
+<section id="postgis-notes">
+<span id="index-2"></span><h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">PostGIS Notes</a><a class="headerlink" href="#postgis-notes" title="Link to this heading">¶</a></h2>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../input/vector/postgis.html#input-postgis"><span class="std std-ref">PostGIS Input in MapServer</span></a></p>
+</div>
+<section id="indexing-with-postgis">
+<h3><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Indexing with PostGIS</a><a class="headerlink" href="#indexing-with-postgis" title="Link to this heading">¶</a></h3>
+<p>The single biggest boost to performance is indexing. Make sure that there’s a
+GIST index on the geometry column, and each record should also have an indexed
+primary key. If you used shp2pgsql, then these statements should create the
+necessary indexes:</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">ALTER</span><span class="w"> </span><span class="k">TABLE</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="k">ADD</span><span class="w"> </span><span class="k">PRIMARY</span><span class="w"> </span><span class="k">KEY</span><span class="w"> </span><span class="p">(</span><span class="n">gid</span><span class="p">);</span>
+<span class="k">CREATE</span><span class="w"> </span><span class="k">INDEX</span><span class="w"> </span><span class="n">table_the_geom</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">table</span><span class="w"> </span><span class="p">(</span><span class="n">the_geom</span><span class="p">)</span><span class="w"> </span><span class="k">USING</span><span class="w"> </span><span class="n">GIST</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>PostgreSQL also supports reorganizing the data in a table, such that it’s
+physically sorted by the index. This allows PostgreSQL to be much more
+efficient in reading the indexed data. Use the
+<a class="reference external" href="https://www.postgresql.org/docs/current/sql-cluster.html">CLUSTER command</a>,
+e.g.</p>
+<div class="highlight-sql notranslate"><div class="highlight"><pre><span></span><span class="k">CLUSTER</span><span class="w"> </span><span class="n">the_geom</span><span class="w"> </span><span class="k">ON</span><span class="w"> </span><span class="k">table</span><span class="p">;</span>
+</pre></div>
+</div>
+<p>Then there are numerous optimizations one can perform on the database server
+itself, aside from the geospatial component. The easiest is to increase
+<em>shared_buffers</em> in the <em>postgresql.conf</em> file, which allows PostgreSQL to use
+more memory for caching. It is worth the time to investigate the various options
+in the <a class="reference external" href="https://www.postgresql.org/docs/current/runtime-config-resource.html">Resource Consumption</a>
+section of the PostgreSQL documentation.</p>
+</section>
+<section id="specifying-a-unique-id-column">
+<span id="uniqueid-postgis"></span><h3><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Specifying a Unique ID column</a><a class="headerlink" href="#specifying-a-unique-id-column" title="Link to this heading">¶</a></h3>
+<p>To handle queries, MapServer requires a unique ID column, as part of your
+PostgreSQL table.  MapServer will try to guess the unique ID column, but that
+is costly as several more database queries have to be made; instead, you should
+always specify a unique ID column in your DATA statement of the layer, with the
+<em>using unique</em> syntax, such as:</p>
+<div class="highlight-mapfile notranslate"><div class="highlight"><pre><span></span><span class="k">DATA</span> <span class="s">&quot;geom FROM mydata USING UNIQUE myid USING SRID=3857&quot;</span>
+</pre></div>
+</div>
+<p>If your table does not have a unique ID column, you can add one such as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ALTER</span> <span class="n">TABLE</span> <span class="n">mytable</span> <span class="n">ADD</span> <span class="n">COLUMN</span> <span class="n">unique_id</span> <span class="n">SERIAL</span> <span class="n">PRIMARY</span> <span class="n">KEY</span><span class="p">;</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>In older PostgreSQL versions, a (dirty) trick was to use the existing <em>OID</em> as
+the unique ID, however OIDs were removed from PostgreSQL as of the PostgreSQL 12.0 release.
+So always specify an actual unique ID column instead, in your layer’s
+DATA statement, of your mapfile.</p>
+</div>
+</section>
+<section id="debugging-speed-issues-with-postgis">
+<span id="debugging-postgis"></span><h3><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Debugging speed issues with PostGIS</a><a class="headerlink" href="#debugging-speed-issues-with-postgis" title="Link to this heading">¶</a></h3>
+<p>You may face a situation where your PostGIS table is drawing slowly in MapServer.
+The following steps will help you examine the issue (using a WFS case) :</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="debugging.html#debugging"><span class="std std-ref">Debugging MapServer</span></a></p>
+</div>
+<ul>
+<li><p>Always start by getting the draw time for your layer, with a <a class="reference internal" href="../utilities/map2img.html#map2img"><span class="std std-ref">map2img</span></a>
+command:</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">map2img</span> <span class="o">-</span><span class="n">m</span> <span class="n">postgis</span><span class="o">-</span><span class="n">wfs</span><span class="o">.</span><span class="n">map</span> <span class="o">-</span><span class="n">o</span> <span class="n">ttt</span><span class="o">.</span><span class="n">png</span> <span class="o">-</span><span class="n">map_debug</span> <span class="mi">3</span>
+
+  <span class="n">msDrawMap</span><span class="p">():</span> <span class="n">Layer</span> <span class="mi">0</span> <span class="p">(</span><span class="n">provinces</span><span class="p">),</span> <span class="mf">1.587</span><span class="n">s</span>
+  <span class="n">msDrawMap</span><span class="p">():</span> <span class="n">Drawing</span> <span class="n">Label</span> <span class="n">Cache</span><span class="p">,</span> <span class="mf">0.000</span><span class="n">s</span>
+  <span class="n">msDrawMap</span><span class="p">()</span> <span class="n">total</span> <span class="n">time</span><span class="p">:</span> <span class="mf">1.589</span><span class="n">s</span>
+  <span class="n">msSaveImage</span><span class="p">(</span><span class="n">ttt</span><span class="o">.</span><span class="n">png</span><span class="p">)</span> <span class="n">total</span> <span class="n">time</span><span class="p">:</span> <span class="mf">0.005</span><span class="n">s</span>
+  <span class="n">freeLayer</span><span class="p">():</span> <span class="n">freeing</span> <span class="n">layer</span> <span class="n">at</span> <span class="mf">010E0</span><span class="n">EC0</span><span class="o">.</span>
+  <span class="n">msPostGISLayerIsOpen</span> <span class="n">called</span><span class="o">.</span>
+  <span class="n">msConnPoolClose</span><span class="p">(</span><span class="n">host</span><span class="o">=</span><span class="mf">127.0.0.1</span> <span class="n">user</span><span class="o">=</span><span class="n">postgres</span> <span class="n">password</span><span class="o">=</span><span class="n">postgres</span> <span class="n">port</span><span class="o">=</span><span class="mi">5432</span> <span class="n">dbname</span><span class="o">=</span><span class="n">gmap</span><span class="p">,</span><span class="mi">01197840</span><span class="p">)</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>To diagnose if the problem is with your PostGIS table configuration, or with
+MapServer, execute the exact request sent by MapServer, at the psql.exe
+commandline, by doing the following steps:</p>
+<blockquote>
+<div><ul>
+<li><p>add into your MAP-level of your mapfile:</p>
+<blockquote>
+<div><div class="highlight-mapfile notranslate"><div class="highlight"><pre><span></span><span class="k">CONFIG</span> <span class="s">&quot;CPL_DEBUG&quot;</span> <span class="s">&quot;ON&quot;</span>
+<span class="k">CONFIG</span> <span class="s">&quot;MS_ERRORFILE&quot;</span> <span class="s">&quot;/ms4w/tmp/ms_error.txt&quot;</span>
+<span class="k">DEBUG</span> <span class="mi">5</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>add into your PostGIS LAYER of your mapfile:</p>
+<blockquote>
+<div><div class="highlight-mapfile notranslate"><div class="highlight"><pre><span></span><span class="k">DEBUG</span> <span class="mi">5</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>now use a WFS client such as QGIS and add your WFS PostGIS layer</p></li>
+<li><p>open  “/ms4w/tmp/ms_error.txt” in Notepad++</p></li>
+<li><p>search for “msPostGISLayerWhichShapes query:”</p></li>
+<li><p>that line should list the long exact query sent from MapServer to the
+PostreSQL instance, it may look like:</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="p">[</span><span class="n">Mon</span> <span class="n">Apr</span> <span class="mi">12</span> <span class="mi">11</span><span class="p">:</span><span class="mi">27</span><span class="p">:</span><span class="mi">34</span> <span class="mi">2021</span><span class="p">]</span><span class="mf">.207000</span> <span class="n">msPostGISLayerWhichShapes</span> <span class="n">query</span><span class="p">:</span>
+ <span class="n">SELECT</span> <span class="s2">&quot;gid&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;area&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;perimeter&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;province_&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;province_i&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;status&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;name&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;name_e&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;name_f&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;reg_code&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;poly_featu&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;island&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;island_e&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;island_f&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="n">ST_AsBinary</span><span class="p">((</span><span class="s2">&quot;geom&quot;</span><span class="p">),</span><span class="s1">&#39;NDR&#39;</span><span class="p">)</span>
+ <span class="k">as</span> <span class="n">geom</span><span class="p">,</span><span class="s2">&quot;gid&quot;</span><span class="p">::</span><span class="n">text</span> <span class="n">FROM</span> <span class="n">province</span> <span class="n">WHERE</span> <span class="s2">&quot;geom&quot;</span> <span class="o">&amp;&amp;</span>
+ <span class="n">ST_GeomFromText</span><span class="p">(</span><span class="s1">&#39;POLYGON((-5814679.36987815</span>
+ <span class="o">-</span><span class="mf">1504714.04276694</span><span class="p">,</span><span class="o">-</span><span class="mf">5814679.36987815</span> <span class="mf">4439806.52253364</span><span class="p">,</span><span class="mf">5943763.33635122</span>
+ <span class="mf">4439806.52253364</span><span class="p">,</span><span class="mf">5943763.33635122</span> <span class="o">-</span><span class="mf">1504714.04276694</span><span class="p">,</span><span class="o">-</span><span class="mf">5814679.36987815</span>
+ <span class="o">-</span><span class="mf">1504714.04276694</span><span class="p">))</span><span class="s1">&#39;,3978) LIMIT 2 OFFSET 0</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>For one QGIS action, there could be several queries sent to MapServer,
+so also look for other “msPostGISLayerWhichShapes query:” instances in
+that error log.</p>
+</div>
+</li>
+<li><p>now connect to that database through psql.exe</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">psql</span> <span class="o">-</span><span class="n">U</span> <span class="n">postgres</span> <span class="o">-</span><span class="n">p</span> <span class="mi">5432</span> <span class="o">-</span><span class="n">d</span> <span class="n">mydb</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>using that error file line, grab everything from “SELECT”, and inside
+your database prompt, start the command with “EXPLAIN ANALYZE” and then
+paste your full query, such as:</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mydb</span><span class="o">=</span><span class="c1"># EXPLAIN ANALYZE SELECT</span>
+<span class="s2">&quot;gid&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;area&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;perimeter&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;province_&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;province_i&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;status&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;name&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;name_e&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;name_f&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;reg_code&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;poly_featu&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;island&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;island_e&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="s2">&quot;island_f&quot;</span><span class="p">::</span><span class="n">text</span><span class="p">,</span><span class="n">ST_AsBinary</span><span class="p">((</span><span class="s2">&quot;geom&quot;</span><span class="p">),</span><span class="s1">&#39;NDR&#39;</span><span class="p">)</span>
+<span class="k">as</span> <span class="n">geom</span><span class="p">,</span><span class="s2">&quot;gid&quot;</span><span class="p">::</span><span class="n">text</span> <span class="n">FROM</span> <span class="n">province</span> <span class="n">WHERE</span> <span class="s2">&quot;geom&quot;</span> <span class="o">&amp;&amp;</span>
+<span class="n">ST_GeomFromText</span><span class="p">(</span><span class="s1">&#39;POLYGON((-5814679.36987815</span>
+<span class="o">-</span><span class="mf">1504714.04276694</span><span class="p">,</span><span class="o">-</span><span class="mf">5814679.36987815</span> <span class="mf">4439806.52253364</span><span class="p">,</span><span class="mf">5943763.33635122</span>
+<span class="mf">4439806.52253364</span><span class="p">,</span><span class="mf">5943763.33635122</span> <span class="o">-</span><span class="mf">1504714.04276694</span><span class="p">,</span><span class="o">-</span><span class="mf">5814679.36987815</span>
+<span class="o">-</span><span class="mf">1504714.04276694</span><span class="p">))</span><span class="s1">&#39;,3978) LIMIT 2 OFFSET 0;</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>the response will tell you how long that query took, such as:</p>
+<blockquote>
+<div><div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Execution</span> <span class="n">time</span><span class="p">:</span> <span class="mf">0.293</span> <span class="n">ms</span>
+</pre></div>
+</div>
+</div></blockquote>
+</li>
+<li><p>if the query takes a long time to execute at the psql commandline, then you know
+to focus your efforts on improving the indexing/settings of your PostGIS table.</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+</section>
+</section>
+<section id="databases-in-general-postgis-oracle-spatialite-geopackage-microsoft-sql-server-mysql">
+<span id="vector-database-optimization"></span><span id="index-3"></span><h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Databases in General (PostGIS, Oracle, SpatiaLite, GeoPackage, Microsoft SQL Server, MySQL)</a><a class="headerlink" href="#databases-in-general-postgis-oracle-spatialite-geopackage-microsoft-sql-server-mysql" title="Link to this heading">¶</a></h2>
+<section id="enable-connection-pooling">
+<h3><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Enable Connection Pooling</a><a class="headerlink" href="#enable-connection-pooling" title="Link to this heading">¶</a></h3>
+<p>By default, MapServer opens and closes a new database connection for each
+database-driven layer in the mapfile. If you have several layers reading from
+the same database, this doesn’t make a lot of sense. And with some databases
+(such as Oracle) establishing connections takes enough time that it can become
+significant.</p>
+<p>Try adding this line to your database layers:</p>
+<div class="highlight-mapfile notranslate"><div class="highlight"><pre><span></span><span class="k">PROCESSING</span> <span class="s">&quot;CLOSE_CONNECTION=DEFER&quot;</span>
+</pre></div>
+</div>
+<p>This causes MapServer to not close the database connection for each layer until
+after it has finished processing the mapfile and this may shave a few seconds
+off of map generation times.</p>
+</section>
+<section id="set-extent-at-the-layer-level-of-mapfile">
+<h3><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Set EXTENT at the LAYER level of mapfile</a><a class="headerlink" href="#set-extent-at-the-layer-level-of-mapfile" title="Link to this heading">¶</a></h3>
+<p>Also for performance, each of your LAYERs with a database connection should
+have <a class="reference internal" href="../mapfile/layer.html#layer-extent"><span class="std std-ref">EXTENT</span></a> set at the layer level (as well as <em>ows_extent</em> metadata if you
+are serving through OGC services), such as:</p>
+<blockquote>
+<div><div class="highlight-mapfile notranslate"><div class="highlight"><pre><span></span><span class="cm">/* my database layer */</span>
+<span class="k">LAYER</span>
+  <span class="k">NAME</span> <span class="s">&quot;provinces&quot;</span>
+  <span class="k">METADATA</span>
+    <span class="s">&quot;wms_title&quot;</span> <span class="s">&quot;Land&quot;</span>
+    <span class="s">&quot;wms_extent&quot;</span> <span class="s">&quot;-2340603.75 -719746.0625 3009430.5 3836605.25&quot;</span> <span class="c1">#this helps for performance</span>
+  <span class="k">END</span> <span class="c1">#metadata</span>
+  <span class="k">TYPE</span> <span class="nb">POLYGON</span>
+  <span class="k">STATUS</span> <span class="nb">ON</span>
+  <span class="k">CONNECTIONTYPE</span> <span class="nb">postgis</span>
+  <span class="k">CONNECTION</span> <span class="s">&quot;host=127.0.0.1 user=postgres password=postgres port=5432 dbname=gmap&quot;</span>
+  <span class="k">DATA</span> <span class="s">&quot;geom FROM province USING unique gid using srid=3978&quot;</span>
+  <span class="k">EXTENT</span> <span class="p">-</span><span class="mf">2340603.75</span> <span class="p">-</span><span class="mf">719746.0625</span> <span class="mf">3009430.5</span> <span class="mf">3836605.25</span> <span class="c1">#this helps for performance</span>
+  <span class="k">PROJECTION</span>
+    <span class="s">&quot;init=epsg:3978&quot;</span>
+  <span class="k">END</span> <span class="c1"># projection</span>
+  <span class="p">...</span>
+<span class="k">END</span> <span class="c1"># layer</span>
+</pre></div>
+</div>
+</div></blockquote>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>PostGIS users can use the <a class="reference external" href="https://postgis.net/docs/ST_Extent.html">ST_Extent()</a>
+spatial function to get the bounding box of a table, such as</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">SELECT</span> <span class="n">ST_Extent</span><span class="p">(</span><span class="n">geom</span><span class="p">)</span> <span class="k">as</span> <span class="n">table_extent</span> <span class="n">FROM</span> <span class="n">province</span><span class="p">;</span>
+
+
+              <span class="n">table_extent</span>
+<span class="o">----------------------------------------------------</span>
+    <span class="n">BOX</span><span class="p">(</span><span class="o">-</span><span class="mf">2340603.75</span> <span class="o">-</span><span class="mf">719746.0625</span><span class="p">,</span><span class="mf">3009430.5</span> <span class="mf">3836605.25</span><span class="p">)</span>
+<span class="p">(</span><span class="mi">1</span> <span class="n">row</span><span class="p">)</span>
+</pre></div>
+</div>
+</div>
+</section>
+<section id="verify-that-your-table-has-a-spatial-index">
+<h3><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Verify that your table has a Spatial Index</a><a class="headerlink" href="#verify-that-your-table-has-a-spatial-index" title="Link to this heading">¶</a></h3>
+<section id="postgresql-postgis-example">
+<h4>PostgreSQL/PostGIS example<a class="headerlink" href="#postgresql-postgis-example" title="Link to this heading">¶</a></h4>
+<p>Once connected through psql commandline, describe the table and
+look for an “Indexes” section, mentioning geometry, such as:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">Indexes</span><span class="p">:</span>
+    <span class="s2">&quot;province_pkey&quot;</span> <span class="n">PRIMARY</span> <span class="n">KEY</span><span class="p">,</span> <span class="n">btree</span> <span class="p">(</span><span class="n">ogc_fid</span><span class="p">)</span>
+    <span class="s2">&quot;province_wkb_geometry_geom_idx&quot;</span> <span class="n">gist</span> <span class="p">(</span><span class="n">wkb_geometry</span><span class="p">)</span>
+</pre></div>
+</div>
+</section>
+<section id="geopackage-example">
+<h4>GeoPackage example<a class="headerlink" href="#geopackage-example" title="Link to this heading">¶</a></h4>
+<p>You can use <em>ogrinfo</em> to verify that your GPKG table’s geometry
+has a spatial index, which is very important for performance
+(look for <cite>HasSpatialIndex (Integer) = 1</cite> to confirm that the spatial
+index exists) :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ogrinfo</span> <span class="o">-</span><span class="n">sql</span> <span class="s2">&quot;SELECT HasSpatialIndex(&#39;countries&#39;, &#39;GEOMETRY&#39;)&quot;</span> <span class="n">countries</span><span class="o">.</span><span class="n">gpkg</span>
+
+  <span class="n">Layer</span> <span class="n">name</span><span class="p">:</span> <span class="n">SELECT</span>
+  <span class="n">Geometry</span><span class="p">:</span> <span class="n">Unknown</span> <span class="p">(</span><span class="nb">any</span><span class="p">)</span>
+  <span class="n">Feature</span> <span class="n">Count</span><span class="p">:</span> <span class="mi">1</span>
+  <span class="n">Layer</span> <span class="n">SRS</span> <span class="n">WKT</span><span class="p">:</span>
+  <span class="p">(</span><span class="n">unknown</span><span class="p">)</span>
+  <span class="n">HasSpatialIndex</span><span class="p">:</span> <span class="n">Integer</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+  <span class="n">OGRFeature</span><span class="p">(</span><span class="n">SELECT</span><span class="p">):</span><span class="mi">0</span>
+    <span class="n">HasSpatialIndex</span> <span class="p">(</span><span class="n">Integer</span><span class="p">)</span> <span class="o">=</span> <span class="mi">1</span>
+</pre></div>
+</div>
+<p>and then add a spatial index with ogrinfo :</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">ogrinfo</span> <span class="o">-</span><span class="n">sql</span> <span class="s2">&quot;SELECT CreateSpatialIndex(&#39;parcelle_graphique&#39;, &#39;geom&#39;)&quot;</span> <span class="n">PARCELLES_GRAPHIQUES</span><span class="o">.</span><span class="n">gpkg</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="for-wfs-services-prevent-using-default-full-extent">
+<h3><a class="toc-backref" href="#table-of-contents" role="doc-backlink">For WFS services, prevent using default/full extent</a><a class="headerlink" href="#for-wfs-services-prevent-using-default-full-extent" title="Link to this heading">¶</a></h3>
+<p>For your database connections, MapServer may (by default) use the full
+extents of your data while performing a query (which can cause slow responses
+&gt;30seconds).  You should likely set the following layer METADATA to
+disable this:</p>
+<div class="highlight-mapfile notranslate"><div class="highlight"><pre><span></span><span class="k">METADATA</span>
+  <span class="s">&quot;wfs_use_default_extent_for_getfeature&quot;</span> <span class="s">&quot;false&quot;</span>
+<span class="k">END</span>
+</pre></div>
+</div>
+<p>Here is a fully enhanced layer example:</p>
+<div class="highlight-mapfile notranslate"><div class="highlight"><pre><span></span><span class="k">LAYER</span>
+  <span class="k">NAME</span> <span class="s">&quot;CLUS&quot;</span>
+  <span class="k">METADATA</span>
+    <span class="s">&quot;ows_title&quot;</span>                   <span class="s">&quot;CLUS&quot;</span>
+    <span class="s">&quot;ows_srs&quot;</span>                     <span class="s">&quot;EPSG:3857 EPSG:4326 EPSG:2154&quot;</span>
+    <span class="s">&quot;wfs_getfeature_formatlist&quot;</span>   <span class="s">&quot;geojson&quot;</span>
+    <span class="s">&quot;wfs_geomtype&quot;</span>                <span class="s">&quot;MultiPolygon&quot;</span>
+    <span class="s">&quot;gml_featureid&quot;</span>               <span class="s">&quot;fid&quot;</span>
+    <span class="s">&quot;gml_include_items&quot;</span>           <span class="s">&quot;all&quot;</span>
+    <span class="s">&quot;gml_types&quot;</span>                   <span class="s">&quot;auto&quot;</span>
+    <span class="s">&quot;wfs_extent&quot;</span>                  <span class="s">&quot;115134 6049690 1242200 7108930&quot;</span> <span class="c1">#set to improve performance for all DB layers</span>
+    <span class="s">&quot;wfs_use_default_extent_for_getfeature&quot;</span> <span class="s">&quot;false&quot;</span> <span class="c1">#set to improve performance for all DB layers</span>
+    <span class="s">&quot;ows_enable_request&quot;</span>          <span class="s">&quot;*&quot;</span>
+  <span class="k">END</span> <span class="c1">#metadata</span>
+  <span class="k">TYPE</span> <span class="nb">POLYGON</span>
+  <span class="k">CONNECTIONTYPE</span> <span class="nb">OGR</span>
+  <span class="k">CONNECTION</span> <span class="s">&quot;C:/ms4w/apps/RPG_2-0_GPKG_LAMB93_FR-2019/PARCELLES_GRAPHIQUES.gpkg&quot;</span>
+  <span class="k">DATA</span> <span class="s">&quot;parcelle_graphique&quot;</span>
+  <span class="k">EXTENT</span> <span class="mi">115134</span> <span class="mi">6049690</span> <span class="mi">1242200</span> <span class="mi">7108930</span> <span class="c1">#set to improve performance for all DB layers</span>
+  <span class="k">PROCESSING</span> <span class="s">&quot;CLOSE_CONNECTION=DEFER&quot;</span> <span class="c1">#set to improve performance for all DB layers</span>
+  <span class="k">STATUS</span> <span class="nb">ON</span>
+  <span class="k">PROJECTION</span>
+    <span class="s">&quot;init=epsg:2154&quot;</span>
+  <span class="k">END</span> <span class="c1">#proj</span>
+  <span class="k">COMPOSITE</span>
+    <span class="k">OPACITY</span> <span class="mi">100</span>
+  <span class="k">END</span> <span class="c1">#composite</span>
+  <span class="k">CLASS</span>
+    <span class="k">NAME</span> <span class="s">&quot;CLUS&quot;</span>
+    <span class="k">STYLE</span>
+      <span class="k">OUTLINECOLOR</span> <span class="mi">255</span> <span class="mi">0</span> <span class="mi">255</span>
+    <span class="k">END</span> <span class="c1">#style</span>
+  <span class="k">END</span> <span class="c1">#class</span>
+<span class="k">END</span> <span class="c1">#layer</span>
+</pre></div>
+</div>
+</section>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p>
+<a href="../about.html" title="About">About</a><br>
+<a href="../products.html" title="Products">Products</a><br>
+<a href="../community/index.html" title="Community">Community</a><br>
+<a href="../development/index.html" title="Development">Development</a><br>
+<a href="../download.html" title="Downloads">Downloads</a><br>
+<a href="../documentation.html" title="Documentation">Documentation</a><br>
+<a href="../faq.html" title="FAQ">FAQ</a><br>
+<a href="../psc.html" title="PSC">PSC</a><br>
+<a href="https://fosstodon.org/@mapserver" title="Mastodon">Mastodon</a>
+</p>
+  <h3>Current Table Of Contents</h3>
+  <ul>
+<li><a class="reference internal" href="#">Vector Data Management &amp; Optimization</a><ul>
+<li><a class="reference internal" href="#choose-the-right-vector-format-for-your-needs">Choose the right vector format for your needs</a></li>
+<li><a class="reference internal" href="#spend-time-to-review-gdal-s-associated-driver-page-for-your-chosen-format">Spend time to review GDAL’s associated driver page for your chosen format</a></li>
+<li><a class="reference internal" href="#connect-to-your-data-through-ogr-gdal">Connect to your data through OGR/GDAL</a></li>
+<li><a class="reference internal" href="#learn-review-the-various-ogr-utilities-to-manage-your-vectors">Learn &amp; Review the various OGR utilities to manage your vectors</a></li>
+<li><a class="reference internal" href="#index-your-data">Index your data</a><ul>
+<li><a class="reference internal" href="#tileindexing">Tileindexing</a></li>
+<li><a class="reference internal" href="#add-a-spatial-index-to-your-data">Add a Spatial Index to your data</a></li>
+<li><a class="reference internal" href="#add-an-attribute-index-to-your-data">Add an Attribute Index to your data</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#splitting-your-data">Splitting your data</a></li>
+<li><a class="reference internal" href="#handling-your-vector-layers-in-the-mapfile">Handling your vector LAYERS in the mapfile</a></li>
+<li><a class="reference internal" href="#shapefile-notes">Shapefile Notes</a></li>
+<li><a class="reference internal" href="#postgis-notes">PostGIS Notes</a><ul>
+<li><a class="reference internal" href="#indexing-with-postgis">Indexing with PostGIS</a></li>
+<li><a class="reference internal" href="#specifying-a-unique-id-column">Specifying a Unique ID column</a></li>
+<li><a class="reference internal" href="#debugging-speed-issues-with-postgis">Debugging speed issues with PostGIS</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#databases-in-general-postgis-oracle-spatialite-geopackage-microsoft-sql-server-mysql">Databases in General (PostGIS, Oracle, SpatiaLite, GeoPackage, Microsoft SQL Server, MySQL)</a><ul>
+<li><a class="reference internal" href="#enable-connection-pooling">Enable Connection Pooling</a></li>
+<li><a class="reference internal" href="#set-extent-at-the-layer-level-of-mapfile">Set EXTENT at the LAYER level of mapfile</a></li>
+<li><a class="reference internal" href="#verify-that-your-table-has-a-spatial-index">Verify that your table has a Spatial Index</a><ul>
+<li><a class="reference internal" href="#postgresql-postgis-example">PostgreSQL/PostGIS example</a></li>
+<li><a class="reference internal" href="#geopackage-example">GeoPackage example</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#for-wfs-services-prevent-using-default-full-extent">For WFS services, prevent using default/full extent</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="../utilities/index.html" title="Utilities"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="tileindex.html" title="Tile Indexes"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Home</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../documentation.html" >MapServer 8.6.5 Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" >Optimization</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Vector Data Management &amp; Optimization</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; <a href="../copyright.html">Copyright</a> 2026, Open Source Geospatial Foundation.
+      Last updated on 2026-07-20.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

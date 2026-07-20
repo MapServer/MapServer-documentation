@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>Compiling on Unix &#8212; MapServer 8.6.5 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx.css?v=48f05237" />
+    <link rel="stylesheet" type="text/css" href="../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../_static/sphinx_collapse.css?v=226d88b4" />
+    <link rel="stylesheet" type="text/css" href="../_static/custom.css?v=dd298242" />
+    <link rel="stylesheet" type="text/css" href="../_static/ribbon.css?v=ea091bf4" />
+    
+    <script src="../_static/jquery.js?v=5d32c60e"></script>
+    <script src="../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+    <script src="../_static/documentation_options.js?v=51e4ce63"></script>
+    <script src="../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../_static/copybutton.js?v=f281be69"></script>
+    
+    <link rel="icon" href="../_static/mapserver.ico"/>
+    <link rel="author" title="About these documents" href="../about.html" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="copyright" title="Copyright" href="../copyright.html" />
+    <link rel="next" title="Compiling on Win32" href="win32.html" />
+    <link rel="prev" title="Installation" href="index.html" /> 
+  </head><body>
+<!-- add a ribbon to show these docs are the main branch -->
+<h4 class="ribbon">DOCS PREVIEW</h4>
+
+<table width="100%" style="width: 100%; background-color: white;">
+  <tr>
+    <td rowspan="2" style="padding: 10px 0px 10px 10px;">
+      <a href="../index.html" title="Home"><img src="../_static/banner.png" alt="MapServer banner" border="0" /></a>
+    </td>
+    <td style="padding: 10px 10px 0px 0px; text-align: right; vertical-align: top;">
+      <a href="../index.html" title="Home">Home</a> |
+      <a href="../products.html" title="Products (MapServer core, MapCache, TinyOWS">Products</a> |
+      <a href="https://github.com/MapServer/MapServer/issues/" title="Issue Tracker (MapServer core)">Issue Tracker</a> |
+      <a href="../community/service_providers.html" title="Professional Service Providers">Service Providers</a> |      
+      <a href="../faq.html" title="Frequently Asked Questions">FAQ</a> |
+      <a href="https://fosstodon.org/@mapserver" title="Mastodon" target="_blank">Mastodon</a> |
+      <a href="../download.html" title="Download Source or Binaries">Download </a> |
+      <a class="badge" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KRJ2X44N3HA6U&source=url" target="_blank">
+        <img src="https://img.shields.io/badge/donate-%E2%9D%A4%C2%A0-ff69b4.svg?style=flat" alt="Donate to MapServer">
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0px 10px 0px 0px; text-align: right; vertical-align: bottom;">
+        <img src="../_static/flagicons/en.png" alt="en" title="en" border="0" width="18px" height="13px"/>
+        
+          <a href="../ar/installation/unix.html"><img src="../_static/flagicons/ar.png" alt="ar" title="ar" border="0" /></a>
+        
+        
+          <a href="../de/installation/unix.html"><img src="../_static/flagicons/de.png" alt="de" title="de" border="0" /></a>
+        
+        
+          <a href="../el/installation/unix.html"><img src="../_static/flagicons/el.png" alt="el" title="el" border="0" /></a>
+        
+        
+          <a href="../es/installation/unix.html"><img src="../_static/flagicons/es.png" alt="es" title="es" border="0" /></a>
+        
+        
+          <a href="../fr/installation/unix.html"><img src="../_static/flagicons/fr.png" alt="fr" title="fr" border="0" /></a>
+        
+        
+          <a href="../id/installation/unix.html"><img src="../_static/flagicons/id.png" alt="id" title="id" border="0" /></a>
+        
+        
+          <a href="../it/installation/unix.html"><img src="../_static/flagicons/it.png" alt="it" title="it" border="0" /></a>
+        
+        
+          <a href="../ja/installation/unix.html"><img src="../_static/flagicons/ja.png" alt="ja" title="ja" border="0" /></a>
+        
+        
+          <a href="../nl_NL/installation/unix.html"><img src="../_static/flagicons/nl_NL.png" alt="nl_NL" title="nl_NL" border="0" /></a>
+        
+        
+          <a href="../pl/installation/unix.html"><img src="../_static/flagicons/pl.png" alt="pl" title="pl" border="0" /></a>
+        
+        
+          <a href="../ru/installation/unix.html"><img src="../_static/flagicons/ru.png" alt="ru" title="ru" border="0" /></a>
+        
+        
+          <a href="../sq/installation/unix.html"><img src="../_static/flagicons/sq.png" alt="sq" title="sq" border="0" /></a>
+        
+        
+          <a href="../tr/installation/unix.html"><img src="../_static/flagicons/tr.png" alt="tr" title="tr" border="0" /></a>
+        
+
+    </td>
+  </tr>
+</table>
+
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="win32.html" title="Compiling on Win32"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Installation"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Home</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../documentation.html" >MapServer 8.6.5 Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" accesskey="U">Installation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Compiling on Unix</a></li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="compiling-on-unix">
+<span id="unix"></span><span id="index-0"></span><h1><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Compiling on Unix</a><a class="headerlink" href="#compiling-on-unix" title="Link to this heading">¶</a></h1>
+<dl class="field-list simple">
+<dt class="field-odd">Author<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Howard Butler</p>
+</dd>
+<dt class="field-even">Contact<span class="colon">:</span></dt>
+<dd class="field-even"><p>hobu.inc at gmail.com</p>
+</dd>
+<dt class="field-odd">Author<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Thomas Bonfort</p>
+</dd>
+<dt class="field-even">Contact<span class="colon">:</span></dt>
+<dd class="field-even"><p>thomas.bonfort at gmail.com</p>
+</dd>
+<dt class="field-odd">Author<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Jeff McKenna</p>
+</dd>
+<dt class="field-even">Contact<span class="colon">:</span></dt>
+<dd class="field-even"><p>jmckenna at gatewaygeomatics.com</p>
+</dd>
+<dt class="field-odd">Last Updated<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2026-05-01</p>
+</dd>
+</dl>
+<nav class="contents" id="table-of-contents">
+<p class="topic-title">Table of Contents</p>
+<ul class="simple">
+<li><p><a class="reference internal" href="#compiling-on-unix" id="id2">Compiling on Unix</a></p>
+<ul>
+<li><p><a class="reference internal" href="#introduction" id="id3">Introduction</a></p></li>
+<li><p><a class="reference internal" href="#compiler-requirements" id="id4">Compiler Requirements</a></p></li>
+<li><p><a class="reference internal" href="#obtaining-the-necessary-software" id="id5">Obtaining the necessary software</a></p></li>
+<li><p><a class="reference internal" href="#secure-your-installation" id="id6">Secure your installation</a></p></li>
+<li><p><a class="reference internal" href="#anti-grain-geometry-support" id="id7">Anti-Grain Geometry Support</a></p></li>
+<li><p><a class="reference internal" href="#ogc-support" id="id8">OGC Support</a></p></li>
+<li><p><a class="reference internal" href="#spatial-warehousing" id="id9">Spatial Warehousing</a></p></li>
+<li><p><a class="reference internal" href="#compiling" id="id10">Compiling</a></p></li>
+<li><p><a class="reference internal" href="#installation" id="id11">Installation</a></p></li>
+</ul>
+</li>
+</ul>
+</nav>
+<section id="introduction">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Introduction</a><a class="headerlink" href="#introduction" title="Link to this heading">¶</a></h2>
+<p>The University of Minnesota’s MapServer is an Open Source and freely
+available map rendering engine for the web. Due to its Open Source nature,
+it can be compiled on a wide variety of platforms and operating systems.
+We will focus on how to obtain, compile and install MapServer on UNIX-like
+platforms.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Detailed configuration options are maintained in the <a class="reference external" href="https://github.com/MapServer/MapServer/blob/main/INSTALL_CMAKE.md">INSTALL_CMAKE.md</a>
+file packaged at the root of the source directory:</p>
+</div>
+<div class="admonition tip">
+<p class="admonition-title">Tip</p>
+<p>The minimum CMake version required is 3.16 as of the MapServer 8.4.0 release</p>
+</div>
+<p>The old <a class="reference external" href="https://web.archive.org/web/20240625061519/https://trac.osgeo.org/mapserver/wiki/MapServerCompilation">MapServerCompilation</a> wiki page contains outdated information, but
+could be useful for early versions of MapServer.</p>
+</section>
+<section id="compiler-requirements">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Compiler Requirements</a><a class="headerlink" href="#compiler-requirements" title="Link to this heading">¶</a></h2>
+<p>As of MapServer 8.0, a C++11 and C99 capable compiler is required to build
+MapServer. This means for example using GCC 4.8 or more recent, or CLang 3.3 or
+more recent.</p>
+</section>
+<section id="obtaining-the-necessary-software">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Obtaining the necessary software</a><a class="headerlink" href="#obtaining-the-necessary-software" title="Link to this heading">¶</a></h2>
+<p>You can obtain the MapServer source code as well as the demo package from the
+<a class="reference internal" href="../download.html#download"><span class="std std-ref">Download</span></a> section.</p>
+<p>You can also get the latest MapServer source code from <a class="reference internal" href="../development/git.html#git"><span class="std std-ref">GitHub</span></a>.</p>
+</section>
+<section id="secure-your-installation">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Secure your installation</a><a class="headerlink" href="#secure-your-installation" title="Link to this heading">¶</a></h2>
+<p>During your installation and configuration, it is strongly recommended to review the
+security steps for the <em>MAP=</em> call to the MapServer executable, by setting
+<em>MS_MAP_PATTERN</em> or <em>MS_MAP_NO_PATH</em> or hiding the <em>MAP=</em> parameter on
+public servers, as recommended in the document <a class="reference internal" href="../optimization/limit_mapfile_access.html#limit-mapfile-access"><span class="std std-ref">Limit Mapfile Access</span></a>. All possible
+environment variables to secure your server are listed in <a class="reference internal" href="../optimization/environment_variables.html#environment-variables"><span class="std std-ref">Environment Variables</span></a>.</p>
+<section id="required-external-libraries">
+<h3>Required External Libraries<a class="headerlink" href="#required-external-libraries" title="Link to this heading">¶</a></h3>
+<ul>
+<li><p><a class="reference external" href="https://gdal.org/">GDAL</a>: the GDAL library allows MapServer to read a variety of geospatial
+raster formats (GDAL) and vector formats (OGR).  It can be downloaded at
+<a class="reference external" href="https://gdal.org/">https://gdal.org/</a>.  (some platforms refer to this library as <cite>libgdal-dev</cite>)</p></li>
+<li><p><a class="reference external" href="https://proj.org">PROJ</a>: PROJ provides projection support for MapServer.
+Version 4.4.6 or greater is required.</p></li>
+<li><p><a class="reference external" href="http://www.libpng.org/pub/png/libpng.html">libpng</a>: libpng should be on your system by default.  Versions
+back to 1.2.7 should work.</p></li>
+<li><p><a class="reference external" href="https://freetype.org/">FreeType</a>: Version 2.x or above is required.</p></li>
+<li><p><a class="reference external" href="https://www.ijg.org/">libjpeg</a>: libjpeg allows MapServer to render
+images in JPEG format.  A sufficient version should be installed by
+default on your system (probably version 6b from 1998).</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Direct JPEG support was deprecated in MapServer 5.8+, and you
+should now depend on GDAL for raster read support in
+MapServer. JPEG support is however still required for
+producing (i.e. writing) images.</p>
+</div>
+</li>
+<li><p><a class="reference external" href="https://zlib.net/">zlib</a>: Zlib should be on your system by default.  Though not used
+directly by MapServer, it’s a mandatory dependency of libpng.</p></li>
+</ul>
+</section>
+<section id="highly-recommended-libraries">
+<h3>Highly Recommended Libraries<a class="headerlink" href="#highly-recommended-libraries" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><a class="reference external" href="https://curl.se/libcurl/">libcurl</a>: libcurl is the foundation of OGC (WFS/WMS/WCS) client
+and server support.  Version 7.10 or greater is required.</p></li>
+</ul>
+</section>
+<section id="optional-external-libraries">
+<h3>Optional External Libraries<a class="headerlink" href="#optional-external-libraries" title="Link to this heading">¶</a></h3>
+<ul>
+<li><p><a class="reference external" href="https://libgeos.org/">GEOS</a>:</p>
+<div class="versionadded">
+<p><span class="versionmodified added">Added in version 4.10.</span></p>
+</div>
+<p>GEOS allows MapServer to do
+spatial predicate and algebra operations (within, touches, etc &amp; union,
+difference, intersection).</p>
+</li>
+<li><p><a class="reference external" href="https://gitlab.gnome.org/GNOME/libxml2/-/wikis/home">libxml</a>:</p>
+<div class="versionadded">
+<p><span class="versionmodified added">Added in version 4.10.</span></p>
+</div>
+<p>libxml is required to use <a class="reference internal" href="../ogc/sos_server.html#sos-server"><span class="std std-ref">OGC SOS</span></a> support in MapServer</p>
+</li>
+<li><p><a class="reference external" href="https://www.oracle.com/database/technologies/instant-client/downloads.html">Oracle Spatial OCI</a>: The client libraries for your platform are
+available for download from Oracle’s website.  Ideally, your client
+library matches the database you are querying from, but this is not
+a hard requirement.</p></li>
+<li><p><a class="reference external" href="https://www.postgresql.org/">libpq</a>: libpq is required to support the use of PostGIS geometries
+within the PostgreSQL database.  Ideally, your client library
+matches the database you are querying from.</p></li>
+<li><p><a class="reference external" href="https://giflib.sourceforge.net/">giflib</a>: GIFLIB (or on some platforms “libgif”) is used for reading
+GIF files used as PIXMAP symbols.</p></li>
+<li><p><a class="reference external" href="https://fastcgi-archives.github.io/">FastCGI</a>: FastCGI is a popular protocol for interfacing MapServer
+with various web servers.  You will need to install the development
+package.
+More details on how to use this feature in MapServer is here <a class="reference internal" href="../optimization/fastcgi.html#fastcgi"><span class="std std-ref">FastCGI</span></a>.
+On Ubuntu, that would be:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ apt-get -y install libfcgi-dev
+</pre></div>
+</div>
+</li>
+<li><p><a class="reference external" href="https://www.cairographics.org/">Cairo (SVG, PDF) support</a>: This library is required to produce PDF
+and SVG outputs.  If you’re on an ubuntu system, it can be installed
+with “apt-get install -y libcairo2-dev”</p></li>
+<li><p><a class="reference internal" href="../output/kml_output.html#kml-output"><span class="std std-ref">KML support</span></a>: This renderer is has no external dependency.</p></li>
+</ul>
+<span id="index-1"></span><ul id="index-2">
+<li><p><a class="reference external" href="https://github.com/harfbuzz/harfbuzz">HarfBuzz</a>:</p>
+<div class="versionadded">
+<p><span class="versionmodified added">Added in version 7.0.</span></p>
+</div>
+<p>Support complex script shaping (to simplify: the tool
+that will insert ligatures between characters).  Harfbuzz algorithms
+will be applied on text strings that have been determined to not be
+latin (i.e. the slowdown induced by harfbuzz is limited to those
+languages that actually require shaping).  Requires <a class="reference external" href="https://github.com/fribidi/fribidi">FriBidi</a>.</p>
+<div class="admonition seealso">
+<p class="admonition-title">See also</p>
+<p><a class="reference internal" href="../development/rfc/ms-rfc-98.html#rfc98"><span class="std std-ref">MS RFC 98: Label/Text Rendering Overhaul</span></a></p>
+</div>
+</li>
+<li><p>MySQL: Support joining with MySQL (the WITH_MYSQL option).</p></li>
+</ul>
+</section>
+<section id="optional-features">
+<h3>Optional Features<a class="headerlink" href="#optional-features" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p><a class="reference internal" href="../development/rfc/ms-rfc-73.html#rfc73"><span class="std std-ref">Cairo SVG parser support</span></a>: The WITH_SVGCAIRO option is part of a
+proposal to improve SVG support.  Using this feature requires
+installing the libsvg-cairo library available here:
+<a class="reference external" href="https://www.cairographics.org/snapshots/">https://www.cairographics.org/snapshots/</a> .  You will need to compile and
+install cairo, libsvg, and libsvg-cairo.</p></li>
+<li><p>SVG support can be enabled either through the unmaintained libsvg /
+libsvg-cairo combo, or through librsvg (the WITH_RSVG option) at the
+cost of more dependencies. Use librsvg if your distro provides a
+package for it, or fall back to libsvgcairo if the cost of compiling
+the librsvg dependencies is too important.</p></li>
+</ul>
+</section>
+</section>
+<section id="anti-grain-geometry-support">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Anti-Grain Geometry Support</a><a class="headerlink" href="#anti-grain-geometry-support" title="Link to this heading">¶</a></h2>
+<p>Since version 5.0 MapServer supports the AGG rendering backend.
+MapServer 5.6+ embeds it directly in the source tree and you do not have to
+do anything special to have support for it.</p>
+</section>
+<section id="ogc-support">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">OGC Support</a><a class="headerlink" href="#ogc-support" title="Link to this heading">¶</a></h2>
+<p>MapServer provides support for many <a class="reference external" href="https://www.ogc.org">OGC</a> specifications.  For an
+overview, see <a class="reference internal" href="../ogc/ogc_support.html#ogc-support"><span class="std std-ref">MapServer  OGC Specification support</span></a>.</p>
+<section id="wms-support">
+<h3>WMS support<a class="headerlink" href="#wms-support" title="Link to this heading">¶</a></h3>
+<section id="wms-server">
+<h4>WMS Server<a class="headerlink" href="#wms-server" title="Link to this heading">¶</a></h4>
+<p>Support for <cite>WMS server</cite> is automatically enabled.</p>
+<p>You can check it by looking for the following in your configure
+output:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span>   <span class="o">*</span> <span class="n">WMS</span> <span class="n">SERVER</span><span class="p">:</span> <span class="n">ENABLED</span>
+</pre></div>
+</div>
+<p>If, for some reason you don’t want WMS support, you can force it off
+using “-DWITH_WMS=OFF”.</p>
+<p>More information on using this feature is available in <a class="reference internal" href="../ogc/wms_server.html#wms-server"><span class="std std-ref">WMS Server</span></a>.</p>
+</section>
+<section id="wms-client">
+<h4>WMS Client<a class="headerlink" href="#wms-client" title="Link to this heading">¶</a></h4>
+<p>Cascading is also supported. This allows MapServer to transparently
+fetch remote layers over WMS, basically acting like a client, and combine
+them with other layers to generate the final map.</p>
+<p>In order to enable this feature, you will need to pass the
+WITH_CLIENT_WMS option to the configure script. MapServer will
+automatically look for libcurl, which is also required.</p>
+<p>To verify that this feature is enabled, check the configure output
+for:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span>   <span class="o">*</span> <span class="n">WMS</span> <span class="n">CLIENT</span><span class="p">:</span> <span class="n">ENABLED</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This feature is disabled by default, you have to specifically
+request it.</p>
+</div>
+<p>More information on using this feature is available in <a class="reference internal" href="../ogc/wms_client.html#wms-client"><span class="std std-ref">WMS Client</span></a>.</p>
+</section>
+</section>
+<section id="wfs-support">
+<h3>WFS support<a class="headerlink" href="#wfs-support" title="Link to this heading">¶</a></h3>
+<section id="wfs-server">
+<h4>WFS Server<a class="headerlink" href="#wfs-server" title="Link to this heading">¶</a></h4>
+<p>Support for <cite>WFS server</cite> is enabled by default. GDAL (actually OGR) and PROJ support
+are required.</p>
+<p>To verify that this feature is enabled, check the configure output
+for:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span>   <span class="o">*</span> <span class="n">WFS</span> <span class="n">SERVER</span><span class="p">:</span> <span class="n">ENABLED</span>
+</pre></div>
+</div>
+<p>If, for some reason you don’t want WFS support, you can force it off
+using “-DWITH_WFS=OFF”.</p>
+<p>More information on using this feature is available in
+<a class="reference internal" href="../ogc/wfs_server.html#wfs-server"><span class="std std-ref">WFS Server</span></a>.</p>
+</section>
+<section id="wfs-client">
+<h4>WFS Client<a class="headerlink" href="#wfs-client" title="Link to this heading">¶</a></h4>
+<p>MapServer can also act as a WFS client.  This effectively means that
+MapServer reads it’s data from a remote server’s WFS output and
+renders it into a map, just like it would when reading data from a
+shapefile.</p>
+<p>In order to enable this feature, you will need to make sure you have
+GDAL (actually OGR) built with Xerces support and PROJ support, and pass the
+WITH_CLIENT_WFS option to your configure script.  MapServer will
+automatically look for libcurl, which is also required.</p>
+<p>To verify that this feature is enabled, check the configure output
+for:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span>   <span class="o">*</span> <span class="n">WFS</span> <span class="n">CLIENT</span><span class="p">:</span> <span class="n">ENABLED</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This feature is disabled by default, you have to specifically
+request it.</p>
+</div>
+<p>More information on using this feature is available in <a class="reference internal" href="../ogc/wfs_client.html#wfs-client"><span class="std std-ref">WFS Client</span></a>.</p>
+</section>
+<section id="wcs-server">
+<h4>WCS Server<a class="headerlink" href="#wcs-server" title="Link to this heading">¶</a></h4>
+<p>Support for <cite>WCS server</cite> is enabled by default.  WCS must be compiled
+against certain libraries.  More information on this service is
+available in <a class="reference internal" href="../ogc/wcs_server.html#wcs-server"><span class="std std-ref">WCS Server</span></a>.</p>
+<p>To verify that this feature is enabled, check the configure output
+for:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span>   <span class="o">*</span> <span class="n">WCS</span> <span class="n">SERVER</span><span class="p">:</span> <span class="n">ENABLED</span>
+</pre></div>
+</div>
+<p>If, for some reason you don’t want WCS support, you can force it off
+using “-DWITH_WCS=OFF”.</p>
+</section>
+<section id="sos-server">
+<h4>SOS Server<a class="headerlink" href="#sos-server" title="Link to this heading">¶</a></h4>
+<p>Support for SOS is enabled by using the WITH_SOS option.  More
+information on this service is available in <a class="reference internal" href="../ogc/sos_server.html#sos-server"><span class="std std-ref">SOS Server</span></a>.</p>
+<p>To verify that this feature is enabled, check the configure output
+for:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span>   <span class="o">*</span> <span class="n">SOS</span> <span class="n">SERVER</span><span class="p">:</span> <span class="n">ENABLED</span>
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>This feature is disabled by default, you have to specifically
+request it.</p>
+</div>
+</section>
+</section>
+</section>
+<section id="spatial-warehousing">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Spatial Warehousing</a><a class="headerlink" href="#spatial-warehousing" title="Link to this heading">¶</a></h2>
+<p>MapServer can use a wide variety of sources of data input. One of the
+solutions growing in popularity is to use spatially enabled databases to
+store data, and to use them directly to draw maps for the web.</p>
+<p>Here you will find out how to enable MapServer to talk to one of these
+products. Please refer to the MapFile reference for more details on how to
+use these. This section only details how to compile MapServer for their use.</p>
+<section id="postgis">
+<h3>PostGIS<a class="headerlink" href="#postgis" title="Link to this heading">¶</a></h3>
+<p><a class="reference external" href="https://postgis.net/">PostGIS</a> adds support for geographic objects to the <a class="reference external" href="https://www.postgresql.org/">PostgreSQL</a>
+object-relational database. In effect, PostGIS “spatially enables” the
+PostgreSQL server, allowing it to be used as a backend spatial
+database for geographic information systems (GIS), much like ESRI’s
+SDE or Oracle’s Spatial extension.  PostGIS is included in many
+distributions’ packaging system, but you can also roll your own if
+needed.</p>
+<p>MapServer can use PostGIS as a data source. PostGIS support is enabled
+by default.</p>
+<p>To verify that this feature is enabled, check the configure output
+for:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span>   <span class="o">*</span> <span class="n">POSTGIS</span><span class="p">:</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="n">pgsql</span><span class="o">/</span><span class="n">lib</span><span class="o">/</span><span class="n">libpq</span><span class="o">.</span><span class="n">so</span>
+</pre></div>
+</div>
+<p>If, for some reason you don’t want PostGIS support, you can force it
+off using “-DWITH_POSTGIS=OFF”.  To help CMake find your PostGIS
+installation, you can use the CMAKE_PREFIX_PATH option
+(for instance “-DCMAKE_PREFIX_PATH=/usr/local/pgsql”).</p>
+</section>
+<section id="oracle-spatial">
+<h3>Oracle Spatial<a class="headerlink" href="#oracle-spatial" title="Link to this heading">¶</a></h3>
+<p>Oracle’s Spatial is also supported by MapServer.  In order to connect
+to it, you will need to compile MapServer against the Oracle libraries
+by using the WITH_ORACLESPATIAL option.  You will very likely need an
+ORACLE_HOME environment variable set to have it configure things
+correctly.</p>
+<p>To verify that this feature is enabled, check the configure output
+for:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span>   <span class="o">*</span> <span class="n">Oracle</span> <span class="n">Spatial</span><span class="p">:</span> <span class="o">&lt;</span><span class="n">path</span> <span class="n">to</span> <span class="n">oracle</span> <span class="n">spatial</span> <span class="n">shared</span> <span class="n">library</span><span class="o">&gt;</span>
+</pre></div>
+</div>
+</section>
+</section>
+<section id="compiling">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Compiling</a><a class="headerlink" href="#compiling" title="Link to this heading">¶</a></h2>
+<p>First prepare the ground by making sure all of your required and/or
+recommended libraries are installed before attempting to compile MapServer.
+This will make your life much less complicated ;).  Here is the order that I
+usually use:</p>
+<ol class="arabic">
+<li><p>Compile GDAL.  Describing how to compile GDAL is beyond the scope
+of this document.  If you have requirements for lots of different formats,
+make sure to install those libraries first.  I often find that building
+up a GDAL library often takes as long as compiling MapServer itself!</p></li>
+<li><p>Compile PROJ.  PROJ (formerly <cite>PROJ.4</cite>) is a straight-forward configure/make/make install
+library.</p></li>
+<li><p>Compile libcurl.  libcurl is a straight-forward configure/make/make
+install library.  This library is only used along with other
+features, so “–with-curl-config” won’t do anything unless
+something like “–with-wmsclient” or “–with-wfsclient” is also
+selected.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>If you want to configure MapServer to use SSL when accessing a
+WMS/WFS server libcurl must be configured / compiled with the
+“–with-ssl” option.  Details about how to set this up is
+available in <a class="reference internal" href="../ogc/wxs_secure.html#wxs-secure"><span class="std std-ref">Accessing OGC services over HTTPS</span></a>.</p>
+</div>
+</li>
+<li><p>Compile/install optional libraries.  These might include PostGIS,
+Oracle Spatial, AGG, Ming, PDFlib, or MyGIS.  Mix and match as you need
+them.</p></li>
+<li><p>Unpack the MapServer tarball and cd into the MapServer directory:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ tar -zxvf mapserver-X.Y.Z.tar.gz
+</pre></div>
+</div>
+</li>
+<li><p>Create the build directory and configure your environment.</p>
+<p>Create the build directory:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cd mapserver-X.Y.Z
+$ mkdir build
+$ cd build
+</pre></div>
+</div>
+<p>Configure your environment using “cmake” (this is an example):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cmake -DCMAKE_INSTALL_PREFIX=/opt \
+        -DCMAKE_PREFIX_PATH=/usr/local/pgsql/91:/usr/local:/opt \
+        -DWITH_CLIENT_WFS=ON \
+        -DWITH_CLIENT_WMS=ON \
+        -DWITH_CURL=ON \
+        -DWITH_SOS=ON \
+        -DWITH_PHP=ON \
+        -DWITH_PERL=ON \
+        -DWITH_RUBY=ON \
+        -DWITH_JAVA=ON \
+        -DWITH_CSHARP=ON \
+        -DWITH_PYTHON=ON \
+        -DWITH_SVGCAIRO=ON \
+        -DWITH_ORACLESPATIAL=ON \
+        -DWITH_MSSQL2008=ON \
+        ../ &gt;../configure.out.txt
+</pre></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>As of MapServer 7.4.0, you can pass the <em>–WITH_PHPNG=ON</em> argument for the
+new PHP 7 support through the <a class="reference internal" href="../mapscript/mapscript-api/index.html#swig"><span class="std std-ref">SWIG API</span></a>.</p>
+</div>
+<p>The following options are enabled by default (version 7.0:
+WITH_PROJ, WITH_WMS, WITH_FRIBIDI, WITH_HARFBUZZ, WITH_ICONV,
+WITH_CAIRO, WITH_FCGI, WITH_GEOS, WITH_POSTGIS, WITH_GDAL,
+WITH_OGR, WITH_WFS, WITH_WCS, WITH_LIBXML2, WITH_GIF.</p>
+<p>If you want to also build a static version of the library, the
+BUILD_STATIC and LINK_STATIC_LIBMAPSERVER options can be used,</p>
+<p>There are a number of other options available.  For an up-to-date
+list of available CMake options, refer to the CMakeLists.txt.</p>
+<p>It can be a good idea to place the configuration commands in a file
+and change its mode to executable (+x) to save typing and have a
+record of how MapServer was configured.</p>
+</li>
+<li><p>Now that you have configured your build options and selected all the
+libraries you wish MapServer to use, you’re ready to compile the
+source code.</p>
+<p>This is actually quite simple, just execute “make”:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ make
+</pre></div>
+</div>
+</li>
+<li><p>Install the MapServer libraries:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># make install</span>
+</pre></div>
+</div>
+<p>To make sure all went well, look for the file called <em>mapserv</em>:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ ls -al mapserv
+-rwxr-xr-x  1 user user 13745 mars  11 17:45 mapserv
+</pre></div>
+</div>
+<p>A simple test is to try and run it:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ ./mapserv
+This script can only be used to decode form results and
+should be initiated as a CGI process via a httpd server.
+</pre></div>
+</div>
+<p>The message above is perfectly normal, and means exactly what it says.
+If you get anything else, something went terribly wrong.</p>
+</li>
+</ol>
+</section>
+<section id="installation">
+<h2><a class="toc-backref" href="#table-of-contents" role="doc-backlink">Installation</a><a class="headerlink" href="#installation" title="Link to this heading">¶</a></h2>
+<section id="mapserver-binary">
+<h3>MapServer binary<a class="headerlink" href="#mapserver-binary" title="Link to this heading">¶</a></h3>
+<p>The MapServer program itself consists of only one file, the “mapserv” binary
+executable. This is a CGI executable, meant to be called and run by your
+web server.</p>
+<p>In this section, we will assume you are running Apache under its default
+directory structure in /usr/local/apache2. You may need to have privileges
+to edit your httpd.conf (the main apache configuration file), or have
+someone (such as your webmaster) help you with the configuration details.</p>
+<p>If you don’t have apache installed, and you want apache, php, fastcgi,
+etc, that might look something like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ apt-get install -y apache2 apache2-mpm-worker libapache2-mod-fastcgi
+$ a2enmod actions fastcgi alias
+$ apt-get install libapache2-mod-php5 php5-common php5-cli php5-fpm php5
+</pre></div>
+</div>
+<p>The main goal is to get the “mapserv” binary installed in a publicly
+accessible directory that is configured to run CGI programs and scripts.</p>
+<ol class="arabic">
+<li><p>Locate your cgi-bin directory.  Under a default configuration, the
+CGI directory is “/usr/local/apache2/cgi-bin” (RedHat:
+“/home/httpd/cgi-bin”, Debian: “/usr/lib/cgi-bin”).  If you’re
+using apache, there should be a ScriptAlias directive in your
+http.conf, or default site, something like:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ cat /etc/apache2/sites-available/default | grep &#39;cgi-bin&#39;
+ScriptAlias /cgi-bin/ /usr/lib/cgi-bin/
+</pre></div>
+</div>
+</li>
+<li><p>Locate the installation path of your freshly compiled mapserv
+executable.  This is shown when you run “make install”,
+something like this:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="o">--</span> <span class="n">Installing</span><span class="p">:</span> <span class="o">/</span><span class="n">usr</span><span class="o">/</span><span class="n">local</span><span class="o">/</span><span class="nb">bin</span><span class="o">/</span><span class="n">mapserv</span>
+<span class="o">--</span> <span class="n">Set</span> <span class="n">runtime</span> <span class="n">path</span> <span class="n">of</span> <span class="s2">&quot;/usr/local/bin/mapserv&quot;</span> <span class="n">to</span>
+      <span class="s2">&quot;/usr/local/lib:/usr/local/pgsql/91/lib&quot;</span>
+</pre></div>
+</div>
+</li>
+<li><p>You’ll want to setup a symlink to that executable from your cgi-bin
+directory:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="c1"># ln -s /usr/local/bin/mapserv /usr/lib/cgi-bin/mapserv</span>
+</pre></div>
+</div>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>Make sure you are linking against the installed mapserv file (after
+running ‘make install’) and NOT against where it was compiled in
+your source tree.</p>
+</div>
+</li>
+</ol>
+<section id="testing-your-new-install">
+<h4>Testing your new Install<a class="headerlink" href="#testing-your-new-install" title="Link to this heading">¶</a></h4>
+<p>Placing the mapserv file in this directory makes it accessible by the
+following URL:
+“<a class="reference external" href="http://yourhostname.com/cgi-bin/mapserv">http://yourhostname.com/cgi-bin/mapserv</a>”. When accessing this URL through your
+web client, you should expect the following output if all has worked well:
+“No query information to decode. QUERY_STRING is set, but empty.” If you get
+this message, you’re done installing MapServer.</p>
+</section>
+</section>
+<section id="common-problems">
+<h3>Common problems<a class="headerlink" href="#common-problems" title="Link to this heading">¶</a></h3>
+<section id="file-permissions">
+<h4>File permissions<a class="headerlink" href="#file-permissions" title="Link to this heading">¶</a></h4>
+<p>The most common problem one is likely to encounter when attempting to
+install the binary are permissions issues:</p>
+<ul>
+<li><p>You do not have write permissions into your web server’s CGI Directory.
+Ask your webmaster to install the file for you.</p></li>
+<li><p>The web server gives you a “403 Permission denied” error. Make sure the
+user the web server runs as (usually “nobody”) has execute permission on
+the binary executable. Making the file world executable is perfectly
+fine and safe:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>$ chmod o+x mapserv
+</pre></div>
+</div>
+</li>
+</ul>
+</section>
+<section id="apache-errors">
+<h4>Apache errors<a class="headerlink" href="#apache-errors" title="Link to this heading">¶</a></h4>
+<p>You may receive a few different type of errors as well if your web
+server configuration isn’t right:</p>
+<ul>
+<li><p>500 Internal server error: This is a fairly generic error message.
+All it basically tells you is that the web server was unsuccessful
+in running the program. You will have to consult the web server’s error
+log to find out more, and may need to enlist the help of your
+webmaster/system administrator.  The apache docs also have pointers
+on <a class="reference external" href="https://httpd.apache.org/docs/current/howto/cgi.html">setting up cgi-bin</a>.</p>
+<blockquote>
+<div><dl class="simple">
+<dt>::</dt><dd><p>Check your server logs
+$ tail /var/log/apache2/error.log</p>
+</dd>
+</dl>
+</div></blockquote>
+</li>
+</ul>
+</section>
+</section>
+<section id="where-to-go-once-you-ve-got-it-compiled">
+<h3>Where to go once you’ve got it compiled<a class="headerlink" href="#where-to-go-once-you-ve-got-it-compiled" title="Link to this heading">¶</a></h3>
+<p>The <a class="reference internal" href="../introduction.html#introduction"><span class="std std-ref">An Introduction to MapServer</span></a> document provides excellent coverage of getting started
+with MapServer.</p>
+</section>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p>
+<a href="../about.html" title="About">About</a><br>
+<a href="../products.html" title="Products">Products</a><br>
+<a href="../community/index.html" title="Community">Community</a><br>
+<a href="../development/index.html" title="Development">Development</a><br>
+<a href="../download.html" title="Downloads">Downloads</a><br>
+<a href="../documentation.html" title="Documentation">Documentation</a><br>
+<a href="../faq.html" title="FAQ">FAQ</a><br>
+<a href="../psc.html" title="PSC">PSC</a><br>
+<a href="https://fosstodon.org/@mapserver" title="Mastodon">Mastodon</a>
+</p>
+  <h3>Current Table Of Contents</h3>
+  <ul>
+<li><a class="reference internal" href="#">Compiling on Unix</a><ul>
+<li><a class="reference internal" href="#introduction">Introduction</a></li>
+<li><a class="reference internal" href="#compiler-requirements">Compiler Requirements</a></li>
+<li><a class="reference internal" href="#obtaining-the-necessary-software">Obtaining the necessary software</a></li>
+<li><a class="reference internal" href="#secure-your-installation">Secure your installation</a><ul>
+<li><a class="reference internal" href="#required-external-libraries">Required External Libraries</a></li>
+<li><a class="reference internal" href="#highly-recommended-libraries">Highly Recommended Libraries</a></li>
+<li><a class="reference internal" href="#optional-external-libraries">Optional External Libraries</a></li>
+<li><a class="reference internal" href="#optional-features">Optional Features</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#anti-grain-geometry-support">Anti-Grain Geometry Support</a></li>
+<li><a class="reference internal" href="#ogc-support">OGC Support</a><ul>
+<li><a class="reference internal" href="#wms-support">WMS support</a><ul>
+<li><a class="reference internal" href="#wms-server">WMS Server</a></li>
+<li><a class="reference internal" href="#wms-client">WMS Client</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#wfs-support">WFS support</a><ul>
+<li><a class="reference internal" href="#wfs-server">WFS Server</a></li>
+<li><a class="reference internal" href="#wfs-client">WFS Client</a></li>
+<li><a class="reference internal" href="#wcs-server">WCS Server</a></li>
+<li><a class="reference internal" href="#sos-server">SOS Server</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#spatial-warehousing">Spatial Warehousing</a><ul>
+<li><a class="reference internal" href="#postgis">PostGIS</a></li>
+<li><a class="reference internal" href="#oracle-spatial">Oracle Spatial</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#compiling">Compiling</a></li>
+<li><a class="reference internal" href="#installation">Installation</a><ul>
+<li><a class="reference internal" href="#mapserver-binary">MapServer binary</a><ul>
+<li><a class="reference internal" href="#testing-your-new-install">Testing your new Install</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#common-problems">Common problems</a><ul>
+<li><a class="reference internal" href="#file-permissions">File permissions</a></li>
+<li><a class="reference internal" href="#apache-errors">Apache errors</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#where-to-go-once-you-ve-got-it-compiled">Where to go once you’ve got it compiled</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="win32.html" title="Compiling on Win32"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="index.html" title="Installation"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../index.html">Home</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../documentation.html" >MapServer 8.6.5 Documentation</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" >Installation</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">Compiling on Unix</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; <a href="../copyright.html">Copyright</a> 2026, Open Source Geospatial Foundation.
+      Last updated on 2026-07-20.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,340 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>MS RFC 97: Dynamic creation of higher zoom levels tiles &#8212; MapServer 8.6.5 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx.css?v=48f05237" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx_collapse.css?v=226d88b4" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=dd298242" />
+    <link rel="stylesheet" type="text/css" href="../../_static/ribbon.css?v=ea091bf4" />
+    
+    <script src="../../_static/jquery.js?v=5d32c60e"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+    <script src="../../_static/documentation_options.js?v=51e4ce63"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    
+    <link rel="icon" href="../../_static/mapserver.ico"/>
+    <link rel="author" title="About these documents" href="../../about.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="copyright" title="Copyright" href="../../copyright.html" />
+    <link rel="next" title="MS RFC 98: Label/Text Rendering Overhaul" href="ms-rfc-98.html" />
+    <link rel="prev" title="MS RFC 96: Time Dimension Support in MapCache Tilesets" href="ms-rfc-96.html" /> 
+  </head><body>
+<!-- add a ribbon to show these docs are the main branch -->
+<h4 class="ribbon">DOCS PREVIEW</h4>
+
+<table width="100%" style="width: 100%; background-color: white;">
+  <tr>
+    <td rowspan="2" style="padding: 10px 0px 10px 10px;">
+      <a href="../../index.html" title="Home"><img src="../../_static/banner.png" alt="MapServer banner" border="0" /></a>
+    </td>
+    <td style="padding: 10px 10px 0px 0px; text-align: right; vertical-align: top;">
+      <a href="../../index.html" title="Home">Home</a> |
+      <a href="../../products.html" title="Products (MapServer core, MapCache, TinyOWS">Products</a> |
+      <a href="https://github.com/MapServer/MapServer/issues/" title="Issue Tracker (MapServer core)">Issue Tracker</a> |
+      <a href="../../community/service_providers.html" title="Professional Service Providers">Service Providers</a> |      
+      <a href="../../faq.html" title="Frequently Asked Questions">FAQ</a> |
+      <a href="https://fosstodon.org/@mapserver" title="Mastodon" target="_blank">Mastodon</a> |
+      <a href="../../download.html" title="Download Source or Binaries">Download </a> |
+      <a class="badge" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KRJ2X44N3HA6U&source=url" target="_blank">
+        <img src="https://img.shields.io/badge/donate-%E2%9D%A4%C2%A0-ff69b4.svg?style=flat" alt="Donate to MapServer">
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0px 10px 0px 0px; text-align: right; vertical-align: bottom;">
+        <img src="../../_static/flagicons/en.png" alt="en" title="en" border="0" width="18px" height="13px"/>
+        
+          <a href="../../ar/development/rfc/ms-rfc-97.html"><img src="../../_static/flagicons/ar.png" alt="ar" title="ar" border="0" /></a>
+        
+        
+          <a href="../../de/development/rfc/ms-rfc-97.html"><img src="../../_static/flagicons/de.png" alt="de" title="de" border="0" /></a>
+        
+        
+          <a href="../../el/development/rfc/ms-rfc-97.html"><img src="../../_static/flagicons/el.png" alt="el" title="el" border="0" /></a>
+        
+        
+          <a href="../../es/development/rfc/ms-rfc-97.html"><img src="../../_static/flagicons/es.png" alt="es" title="es" border="0" /></a>
+        
+        
+          <a href="../../fr/development/rfc/ms-rfc-97.html"><img src="../../_static/flagicons/fr.png" alt="fr" title="fr" border="0" /></a>
+        
+        
+          <a href="../../id/development/rfc/ms-rfc-97.html"><img src="../../_static/flagicons/id.png" alt="id" title="id" border="0" /></a>
+        
+        
+          <a href="../../it/development/rfc/ms-rfc-97.html"><img src="../../_static/flagicons/it.png" alt="it" title="it" border="0" /></a>
+        
+        
+          <a href="../../ja/development/rfc/ms-rfc-97.html"><img src="../../_static/flagicons/ja.png" alt="ja" title="ja" border="0" /></a>
+        
+        
+          <a href="../../nl_NL/development/rfc/ms-rfc-97.html"><img src="../../_static/flagicons/nl_NL.png" alt="nl_NL" title="nl_NL" border="0" /></a>
+        
+        
+          <a href="../../pl/development/rfc/ms-rfc-97.html"><img src="../../_static/flagicons/pl.png" alt="pl" title="pl" border="0" /></a>
+        
+        
+          <a href="../../ru/development/rfc/ms-rfc-97.html"><img src="../../_static/flagicons/ru.png" alt="ru" title="ru" border="0" /></a>
+        
+        
+          <a href="../../sq/development/rfc/ms-rfc-97.html"><img src="../../_static/flagicons/sq.png" alt="sq" title="sq" border="0" /></a>
+        
+        
+          <a href="../../tr/development/rfc/ms-rfc-97.html"><img src="../../_static/flagicons/tr.png" alt="tr" title="tr" border="0" /></a>
+        
+
+    </td>
+  </tr>
+</table>
+
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="right" >
+          <a href="ms-rfc-98.html" title="MS RFC 98: Label/Text Rendering Overhaul"
+             accesskey="N">next</a> |</li>
+        <li class="right" >
+          <a href="ms-rfc-96.html" title="MS RFC 96: Time Dimension Support in MapCache Tilesets"
+             accesskey="P">previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Home</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Development</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" accesskey="U">Request for Comments</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MS RFC 97: Dynamic creation of higher zoom levels tiles</a></li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="ms-rfc-97-dynamic-creation-of-higher-zoom-levels-tiles">
+<span id="rfc97"></span><h1>MS RFC 97: Dynamic creation of higher zoom levels tiles<a class="headerlink" href="#ms-rfc-97-dynamic-creation-of-higher-zoom-levels-tiles" title="Link to this heading">¶</a></h1>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2013/04/15</p>
+</dd>
+<dt class="field-even">Author<span class="colon">:</span></dt>
+<dd class="field-even"><p>Thomas Bonfort</p>
+</dd>
+<dt class="field-odd">Contact<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="mailto:thomas&#46;bonfort&#37;&#52;&#48;gmail&#46;com">thomas<span>&#46;</span>bonfort<span>&#64;</span>gmail<span>&#46;</span>com</a></p>
+</dd>
+<dt class="field-even">Status<span class="colon">:</span></dt>
+<dd class="field-even"><p>Adopted</p>
+</dd>
+<dt class="field-odd">Version<span class="colon">:</span></dt>
+<dd class="field-odd"><p>MapCache 1.2</p>
+</dd>
+</dl>
+<section id="overview">
+<h2>1. Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>When tiling raster data, it is common for the native resolution of the original
+data to be somewhat/much lower than the resolutions of the higher zoom levels
+of the standard GoogleMapsCompatible or WGS84 grids.  Users whishing to serve low
+resolution data at high resolutions are currently forced to use one of these
+approaches:</p>
+<ul class="simple">
+<li><p>setting a &lt;grid maxzoom=”15”&gt; attribute in their tilesets, meaning that all
+zoom levels higher than the maximum configured one are considered
+unavailable. Upsampled tiles or images for the higher zoom levels can then be
+obtained through WMS calls only, tile requests will fail.</p></li>
+<li><p>not setting a maxzoom parameter, and therefore caching all tiles at all zoom
+levels, which is inefficient both in terms of storage on the mapcache
+instance, and in terms of load set on the original WMS server when initially
+requesting images before splitting them into tiles.</p></li>
+</ul>
+<p>This RFC proposes to add the concept of “maximum cached level” for a given
+tileset and a given grid. In practice, tiles above the configured maximum
+cached level are still transparently available for an end user or when
+vertically merging multiple tiles, however they are dynamically upscaled from
+the maximum cached level instead of being cached on the mapcache instance
+(after having been requested once from the source WMS service).</p>
+</section>
+<section id="proposed-solution">
+<h2>2. Proposed solution<a class="headerlink" href="#proposed-solution" title="Link to this heading">¶</a></h2>
+<p>In order to be available for all tile operations, the <cite>mapcache_tileset_tile_get</cite>
+function will detect calls that are over the maximum cached level and fall back to
+a new function who’s responsibility is to treat this special case. Two configurations
+will be available for this “over the maximum cached zoom” scenario:</p>
+<ul class="simple">
+<li><p>Reconstruct the requested tile from the lower zoom level, by:</p>
+<ul>
+<li><p>determining the one or four tiles of the maximum cached that interect the extent
+of the requested tile.</p></li>
+<li><p>calling <cite>mapcache_tileset_tile_get</cite> once again, this time with (x,y,z) adapted
+to have z=max-cached-level (to avoid infinite recursion).</p></li>
+<li><p>decoding the image data of the lower zoom level tile(s).</p></li>
+<li><p>upscaling the decoded image data into the final tile.</p></li>
+<li><p>the upscaled image data will not be encoded straight away, as one of the common
+use-cases for this functionality will be when overlaying multiple tilesets (i.e.
+access to the raw pixel data will happen)</p></li>
+</ul>
+</li>
+<li><p>Proxying the requested tile to the source WMS server, thus bypassing mapcache’s
+caching mechanism entirely (this will not be initially implemented):</p>
+<ul>
+<li><p>construct the extent of the tile, eventually account for the metabuffer (but not
+the metatile size).</p></li>
+<li><p>send to the source wms.</p></li>
+<li><p>eventually decode data if using metabuffers or if the requested tile is to be
+a vertical assembly of multiple tilesets.</p></li>
+</ul>
+</li>
+</ul>
+<p>Activating this functionality in the configuration file is done for each grid
+referenced by a tileset:</p>
+<div class="highlight-xml notranslate"><div class="highlight"><pre><span></span><span class="nt">&lt;tileset&gt;</span>
+<span class="w">  </span><span class="cm">&lt;!-- ... --&gt;</span>
+<span class="w">  </span><span class="nt">&lt;grid</span><span class="w"> </span><span class="na">max-cached-zoom=</span><span class="s">&quot;12&quot;</span><span class="w"> </span><span class="na">out-of-zoom-strategy=</span><span class="s">&quot;reassemble&quot;</span><span class="nt">&gt;</span>WGS84<span class="nt">&lt;/grid&gt;</span>
+<span class="w">  </span><span class="nt">&lt;grid</span><span class="w"> </span><span class="na">max-cached-zoom=</span><span class="s">&quot;12&quot;</span><span class="w"> </span><span class="na">out-of-zoom-strategy=</span><span class="s">&quot;proxy&quot;</span><span class="nt">&gt;</span>g<span class="nt">&lt;/grid&gt;</span><span class="w"> </span><span class="cm">&lt;!-- not implemented --&gt;</span>
+<span class="w">  </span><span class="cm">&lt;!-- ... --&gt;</span>
+<span class="nt">&lt;/tileset&gt;</span>
+</pre></div>
+</div>
+</section>
+<section id="implementation-details">
+<h2>3. Implementation Details<a class="headerlink" href="#implementation-details" title="Link to this heading">¶</a></h2>
+<p>Two new functions will be added, and will produce a tile’s image by either
+upscaling lower level tiles or directly querying the source wms. They will be
+called from the <cite>mapcache_tileset_tile_get()</cite> function when such a behavior
+has been requested in the configuration file.</p>
+<section id="files-affected">
+<h3>3.1 Files affected<a class="headerlink" href="#files-affected" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>mapcache.h</p></li>
+<li><p>configuration_xml.c</p></li>
+<li><p>tileset.c</p></li>
+<li><p>mapcache_seed.c</p></li>
+</ul>
+</section>
+<section id="backwards-compatibility-issues">
+<h3>3.2 Backwards Compatibility Issues<a class="headerlink" href="#backwards-compatibility-issues" title="Link to this heading">¶</a></h3>
+<p>None expected, new functionality</p>
+</section>
+<section id="performance-implications">
+<h3>3.3 Performance implications<a class="headerlink" href="#performance-implications" title="Link to this heading">¶</a></h3>
+<p>When upscaling tiles, each tile request will imply at least one image
+decompression and one image compression, along with bilinear resampling on the
+image data. Servicing upsampled tiles will therefore be orders of magnitude
+slower than directly serving them from a cache.</p>
+<p>It should be possible to deactivate bilinear resampling for users wanting better
+performance at the cost of degraded output quality. This could be addressed in a
+later phase should that need arise.</p>
+</section>
+<section id="caveats">
+<h3>3.4 Caveats<a class="headerlink" href="#caveats" title="Link to this heading">¶</a></h3>
+<ul class="simple">
+<li><p>Bilinear resampling fails inside pixman for extreme resampling scales (i.e.
+when a requested tile spans only a couple of pixels in the max-cached-zoom
+tile). See <a class="reference external" href="https://bugs.freedesktop.org/show_bug.cgi?id=46277">https://bugs.freedesktop.org/show_bug.cgi?id=46277</a> For these cases,
+we switch to nearest-neighbour resampling, i.e. we set the tile to a uniform
+color.</p></li>
+<li><p>Bilinear resampling will produce slightly visible artifacts at the edge of
+the max-cached-zoom tile. This is due to the fact that data from adjacent
+tiles would be needed in order to produce a seamless upscaled version.</p></li>
+</ul>
+</section>
+</section>
+<section id="bug-id">
+<h2>5. Bug ID<a class="headerlink" href="#bug-id" title="Link to this heading">¶</a></h2>
+<ul class="simple">
+<li><p>63: <a class="reference external" href="https://github.com/MapServer/mapcache/pull/63">pull63</a></p></li>
+</ul>
+</section>
+<section id="voting-history">
+<h2>6. Voting history<a class="headerlink" href="#voting-history" title="Link to this heading">¶</a></h2>
+<p>+1 from ThomasB, StephanM, MikeS, TomK, JeffM, DanielM, PerryN and SteveW</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p>
+<a href="../../about.html" title="About">About</a><br>
+<a href="../../products.html" title="Products">Products</a><br>
+<a href="../../community/index.html" title="Community">Community</a><br>
+<a href="../index.html" title="Development">Development</a><br>
+<a href="../../download.html" title="Downloads">Downloads</a><br>
+<a href="../../documentation.html" title="Documentation">Documentation</a><br>
+<a href="../../faq.html" title="FAQ">FAQ</a><br>
+<a href="../../psc.html" title="PSC">PSC</a><br>
+<a href="https://fosstodon.org/@mapserver" title="Mastodon">Mastodon</a>
+</p>
+  <h3>Current Table Of Contents</h3>
+  <ul>
+<li><a class="reference internal" href="#">MS RFC 97: Dynamic creation of higher zoom levels tiles</a><ul>
+<li><a class="reference internal" href="#overview">1. Overview</a></li>
+<li><a class="reference internal" href="#proposed-solution">2. Proposed solution</a></li>
+<li><a class="reference internal" href="#implementation-details">3. Implementation Details</a><ul>
+<li><a class="reference internal" href="#files-affected">3.1 Files affected</a></li>
+<li><a class="reference internal" href="#backwards-compatibility-issues">3.2 Backwards Compatibility Issues</a></li>
+<li><a class="reference internal" href="#performance-implications">3.3 Performance implications</a></li>
+<li><a class="reference internal" href="#caveats">3.4 Caveats</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#bug-id">5. Bug ID</a></li>
+<li><a class="reference internal" href="#voting-history">6. Voting history</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="right" >
+          <a href="ms-rfc-98.html" title="MS RFC 98: Label/Text Rendering Overhaul"
+             >next</a> |</li>
+        <li class="right" >
+          <a href="ms-rfc-96.html" title="MS RFC 96: Time Dimension Support in MapCache Tilesets"
+             >previous</a> |</li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Home</a> &#187;</li>
+          <li class="nav-item nav-item-1"><a href="../index.html" >Development</a> &#187;</li>
+          <li class="nav-item nav-item-2"><a href="index.html" >Request for Comments</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MS RFC 97: Dynamic creation of higher zoom levels tiles</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; <a href="../../copyright.html">Copyright</a> 2026, Open Source Geospatial Foundation.
+      Last updated on 2026-07-20.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

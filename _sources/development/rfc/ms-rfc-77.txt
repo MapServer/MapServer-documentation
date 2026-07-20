@@ -1,0 +1,173 @@
+=========================================================================
+MS RFC 77: Support for Multiple Label Objects Within a Class
+=========================================================================
+
+:Date:  2011/10/01
+:Author: Steve Lime, Thomas Bonfort
+:Contact: sdlime at comcast.net, 
+:Status: Adopted on 2011-12-15
+:Version: MapServer 6.2
+
+1. Overview
+-----------
+This RFC proposes allowing for the definition of multiple label objects within a class. There are a number of use cases 
+where this would be valuable. 
+
+* Adding text below a label with different styling, for example an alternate name shown in italics.
+* Labeling roads with multiple shields and road numbers.
+* Supporting complex meteorlogical rendering where many values are placed around a point.
+
+Presently only very limited support for these use cases is available. Basically you have to draw layers multiple times and 
+place each piece of text separately. This is inefficient and does not allow for group label collision avoidance.
+
+2. Proposed Technical Change
+----------------------------
+
+2.1 Core Object Changes
+-----------------------
+Class object would need to support multiple label objects in much the same way as the they support multiple styles. In 
+fact, implementation would follow the styleObj pattern.
+
+A key requirement is that the extra labels be self-contained, that is, they need to allow for the definition of label 
+text and conditional display within the labelObj. To do this we propose adding the following attributes to labelObj's:
+
+* expression
+* text
+
+These attributes behave just like their classObj equivalents. In addition a labelObj will be extended with several attributes 
+that will be used to hold per-feature values in the context of the label cache. They are:
+
+* labeltext (string to be drawn)
+* labelpoly (bounding box shapeObj)
+
+A label's labeltext will be set according to the following order:
+
+* label text (new for this RFC)
+* class text
+* layer labelitem
+* shape text
+
+A NULL labeltext value means that label will not be rendered.
+
+The labelCacheMemberObj will also require change. First, it needs to support multiple labelObj's (see point and polygon 
+discussion below) just like the styles attribute currently supported. A label counter will be added as well. Because the 
+text to be drawn will be carried in a label the text attribute can be removed.
+
+2.2 Label Rendering Changes
+---------------------------
+
+2.2.1 Point and Polygon Labels
+------------------------------
+The labeling of point and polygon features is done based on a single computed label point. Multiple labels within a classObj 
+will be applied to a label point as a group, that is, all label text must be placed successfully or the entire group will not 
+be drawn. In this case a new function, msAddLabelGroup() is available to add all labels from a class to the label cache as 
+a single  element. The bounding shapes for a group of labels will be considered as one for collision avoidance computations. 
+
+Positioning of the multiple labels will be done as always- relative to the label point using label->position and/or 
+label->offset.
+
+In the case of a label group label priority will be taken from the first label defined in a class. Scale thresholds will be
+taken into account when a labels labeltext value is assigned (outside of the cache population code). A label that is out of 
+scale will set labeltext=NULL and will not be drawn although others in the group could be.
+
+Label cache collision functions will have to be updated to look a multiple labels, especially the code that looks for duplicate
+text (label->mindistance).
+
+2.2.2 Line Labels
+-----------------
+
+Line labeling is another story. Lines often are used to derive curved text, repeating labels and sometimes both. In this case
+a single feature might contribute dozens of labels to the cache. It is impractical to handle these as we would a point or
+polygon with a single label point. A for more common use will be to label a line with multiple names or a combination of a 
+name and a marker/text combination. So, for line labels the approach will be to simply use the existing cache faciliities
+but with an added loop to process multiple labels if available.
+
+It might be possible in the future to use the label grouping described above in certain instances but that is outside the
+scope of this work.
+
+2.3 MapScript
+-------------
+
+Class objects will need support for labels similar to what is in place for styles. Presently a classObj supports the following
+methods: getStyle, insertStyle, removeStyle, moveStyleUp and moveStyleDown. We propose adding label equivalents for the first
+three (label order is not nearly as import as style order).
+
+It is not quite clear how classes label is defined/manipulated from within MapScript. In SWIG/MapScript labels are marked as 
+immutable. Further work needs to be done to understand if this represents a regression.
+
+3. Implementation Details
+-------------------------
+
+3.1. Files Affected
+-------------------
+
+Change lis limited primarily to:
+
+* mapserver.h: core structure changes
+* mapfile.c: read/write/initialize changes
+* mapdraw.c: significant changes to msDrawShape() and msDrawLabelCache()
+* maplabel.c: changes to msAddLabel() and addition of msAddLabelGroup()
+* maplayer.c: changes to msLayerWhichItems() to account for label text and expressions
+* maputil.c: changes to msBindLayerToShape() and msShapeGetAnnotation()
+
+Various other files see small changes with the change in classObj from one label to many.
+
+3.2 Documentation Changes
+-------------------------
+Documentation for classObj (labels 0 .. n) and labelObj (text and expression) will need update. MapScript documentation will 
+need changes to document new methods and the change in object hierarchy between classes and labels. Mapfile XML file must
+be changed as well. A number of test cases will added to the MapServer regression test suite- all existing labeling tests
+should continue to be useful.
+
+3.3 Bug ID
+----------
+#4127. Work is underway in a sandbox (http://svn.osgeo.org/mapserver/sandbox/sdlime/rfc-77/).
+
+4 Configuration Examples
+------------------------
+
+Adding optional text below other text:
+
+::
+
+  LABELITEM 'item1'
+  CLASS
+    ...
+    LABEL # always displayed using LAYER:LABELITEM as a source for text
+      FONT 'arial'
+      ...
+    END
+    LABEL # conditionally displayed using LABEL:TEXT as a source for text
+      EXPRESSION ('[item2]' ~ '.') # item2 has something in it
+      FONT 'arial-italic'
+      TEXT '[item2]'
+      OFFSET 0 15
+      ...
+    END
+  END
+
+5. Backwards Compatibility
+--------------------------
+At the mapfile level there are no issues, existing mapfiles should run without any change. It is possible that this could
+introduce regressions within MapScript although the scope is not fully known.
+
+5.1 Relationship to Other Outstanding Label Bugs
+------------------------------------------------
+
+* #1355 - None, test is valid w/grouped labels too.
+* #2866 - None.
+* #2981 - None.
+* #3009 - None.
+* #3044 - This is already supported (ticket can be closed).
+* #3335 - Styles are supported for each additional label.
+* #3675 - This will be addressed by this RFC. Label content will be defined by the new TEXT attribute.
+
+6. Enhancements
+---------------
+Although beyond the scope of this work it seems that some interesting work related to the relative placement of grouped
+labels might be possible. For example, it could be useful to define positions relative to the previous label instead of
+relative to a label point.
+
+7. Voting history
+-----------------
+Adopted on 12-15-2011 with +1 from SteveL, DanM, JeffM, ThomasB, SteveW, HowardW.

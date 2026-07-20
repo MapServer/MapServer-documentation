@@ -1,0 +1,216 @@
+.. index::
+    pair: MapScript; Mapfile
+ 
+.. ms_mapscript:
+
+.. currentmodule:: mapscript
+
+*****************************************************************************
+ Mapfile Manipulation
+*****************************************************************************
+
+:Author: Sean Gillies
+:Author: Seth Girvin
+:Contact: sethg at geographika.co.uk
+:Last Updated: 2026-03-29
+
+.. contents::
+    :depth: 2
+    :backlinks: top
+
+Introduction
+============
+
+The MapScript HowTo docs are intended to complement the API reference with
+examples of usage for specific subjects.  All examples in this document refer
+to the Mapfile and testing layers distributed with MapServer and found in source control
+under ``Mapserver/tests``.
+
+The examples below are written in Python. All MapScript languages use the
+same API, but will need to be rewritten using the relevant language's syntax.
+
+Mapfile Overview
+================
+
+By "Mapfile" here, I mean all the elements that can occur in (nearly)
+arbitrary numbers within a MapScript mapObj: Layers, Classes, and Styles.
+
+.. index::
+    pair: MapScript; mapObj
+
+The mapObj Class
+================
+
+An instance of :class:`mapObj` is a parent for zero to many :class:`layerObj` children.
+
+New instances
+-------------
+
+The mapfile path argument to the :class:`mapObj` constructor is optional. The following 
+generates a default mapObj with no layers. 
+
+.. code-block:: python
+
+    empty_map = mapscript.mapObj()
+
+A :class:`mapObj` is initialized from a Mapfile on disk in the usual manner:
+
+.. code-block:: python
+
+    test_map = mapscript.mapObj('tests/test.map')
+
+.. index::
+    triple: MapScript; Mapfile; Cloning
+
+.. note:: If you receive the following error ``msProcessProjection(): Projection library error. 
+          proj error "No such file or directory" for "init=epsg:4326"`` then make sure you have
+          set the ``PROJ_DATA`` environment variable correctly
+          
+.. TIP::
+   Since the PROJ 9.1 release, the former `PROJ_LIB` variable has 
+   been replaced with `PROJ_DATA`              
+
+Cloning
+-------
+
+An independent copy, less result and label caches, of a :class:`mapObj` can be produced
+by the :func:`mapObj.clone` method:
+
+.. code-block:: python
+
+    clone_map = test_map.clone()
+
+.. note:: the Java MapScript module implements a "cloneMap" method to avoid
+          conflict with the clone method of Java's Object class.
+
+.. index::
+    triple: MapScript; Mapfile; Saving
+
+Saving
+------
+
+A :class:`mapObj` can be saved to disk using the save method:
+
+.. code-block:: python
+
+    clone_map.save('clone.map')
+
+
+Children of mapObj
+==================
+
+There is a common parent/child object API for Layers, Classes, and Styles in MapServer.
+
+Referencing a Child
+-------------------
+
+References to Layer, Class, and Style children are obtained by "getChild"-like
+methods of their parent:
+
+.. code-block:: python
+    
+    i, j, k = 1, 0, 0
+    layer_i = test_map.getLayer(i)
+    class_ij =  layer_i.getClass(j)
+    style_ijk = class_ij.getStyle(k)
+
+These references are for convenience only.  MapScript doesn't have any
+reference counting, and you are certain to run into trouble if you try to use
+these references after the parent :class:`mapObj` has been deleted and freed from 
+memory.
+
+.. index::
+    triple: MapScript; Layer; Cloning
+
+Cloning a Child
+---------------
+
+A completely independent Layer, Class, or Style can be created using the clone
+methods of :class:`layerObj`, :class:`classObj`, and :class:`styleObj`:
+
+.. code-block:: python
+
+    clone_layer = layer_i.clone()
+
+This instance has no parent, and is self-owned.
+
+New Children
+------------
+
+Uninitialized instances of :class:`layerObj`, :class:`classObj`, and 
+:class:`styleObj` can be created with the new constructors:
+
+.. code-block:: python
+
+    new_layer = mapscript.layerObj()
+    new_class = mapscript.classObj()
+    new_style = mapscript.styleObj()
+
+They are added to a parent object using "insertChild"-like methods of the
+parent which returns the index at which the child was inserted:
+
+.. code-block:: python
+
+    li = test_map.insertLayer(new_layer)
+    ci = test_map.getLayer(li).insertClass(new_class)
+    si = test_map.getLayer(li).getClass(ci).insertStyle(new_style)
+
+The insert* methods create a completely new copy of the object and stores it 
+in the parent with all ownership taken on by the parent. See the :ref:`SWIG API <swig>` 
+reference for more details.
+
+Backwards Compatibility
+-----------------------
+
+The old style child object constructors with the parent object as a single
+argument remain in MapServer:
+
+.. code-block:: python
+
+    new_layer = mapscript.layerObj(test_map)
+    new_class = mapscript.classObj(new_layer)
+    new_style = mapscript.styleObj(new_class)
+
+Removing Children
+-----------------
+
+Child objects can be removed with "removeChild"-like methods of parents, which
+return independent copies of the removed object:
+
+.. code-block:: python
+
+    # following from the insertion example ...
+    # remove the inserted style, returns a copy of the original new_style
+    removed_style = test_map.getLayer(li).getClass(ci).removeStyle(si)
+    removed_class = test_map.getLayer(li).removeClass(ci)
+    removed_layer = test_map.removeLayer(li)
+
+Metadata
+========
+
+Map, Layer, and Class metadata are the other arbitrarily numbered elements
+(well, up to the built-in limit of 41) of a mapfile.
+
+The metadata attributes of :class:`webObj`, :class:`layerObj`, and :class:`classObj`
+are instances of :class:`hashTableObj`, a class which functions like a limited dictionary:
+
+.. code-block:: python
+
+    layer = test_map.getLayerByName('POLYGON')
+    layer.metadata.set('wms_name', 'foo')
+    name = layer.metadata.get('wms_name')   # returns 'foo'
+
+You can iterate over all keys in a class:`hashTableObj` as follows:
+
+.. code-block:: python
+
+    key = None
+
+    while (1):
+        key = layer.metadata.nextKey(key)
+        if key == None:
+            break
+        value = layer.metadata.get(key)
+        print(key, value)
+
+Note in Python the :class:`hashTableObj` can be treated as a dictionary. See :ref:`python`.

@@ -1,0 +1,106 @@
+.. _rfc111:
+
+=========================================================
+MS RFC 111: MapCache Support for animated time series
+=========================================================
+
+:Date:  2014/05
+:Author: Jerome Villeneuve-Larouche
+:Contact: jlarouche@mapgears.com
+:Status: Draft
+:Version: MapCache 1.4
+:Last Updated: 2014/05/14
+
+1. Motivation
+==============
+
+Currently if you specify a time frame in a request on a tileset with a
+timedimension, mapcache simply stacks all the frames onto each other. Another
+way to show time series is to produce an animated image of the different frames.
+This implementation will use the Gif format to create an animated version of
+the time series.
+
+2. Implementation details
+=========================
+
+This implementation only work for single tile request, like a single tile map
+in OpenLayers, because there is no way to synchronize the animation of
+multiple Gif tiles on one mapview, seeding multiple tile wouldn't produce a
+good result.
+
+2.1 Gif Encoding
+----------------
+
+- New Gif format output using GifLib
+- New format write_frames function in MapCache to write an animated Gif
+
+
+2.2 Animation configuration
+---------------------------
+
+Adding animation to a time dimension requires two new attributes to it and using
+the Gif output format.
+
+::
+
+    <timedimension type="sqlite" default="2012-01-01" animate="true" delay="150">
+        <dbfile>mapcache-time.sqlite</dbfile>
+            <query>
+            select
+                strftime('%Y-%m-%d',start_time)
+                from
+                time
+            where
+                source_id=:tileset
+            and
+                start_time&gt;=datetime(:start_timestamp,'unixepoch')
+            and
+                start_time&lt;=datetime(:end_timestamp,'unixepoch')
+            order by
+                end_time
+        </query>
+    </timedimension>
+
+   <service type="wms" enabled="true">
+      <full_wms>assemble</full_wms>
+      <resample_mode>bilinear</resample_mode>
+      <format>GIF</format>
+      <maxsize>4096</maxsize>
+   </service>
+
+- The "animate" attribute specifies if we want to animate our timedimension.
+  If it is not present or set to false, we don't animate.
+- The "delay" attribute specifies the delay between two frames in
+  hundreth of a second. If it is not present, it defaults to 100,
+  if it is present but the "animate" attribute isn't, it will simply
+  be ignored. It also has to be bigger than zero.
+
+  You also have to set the output format, for example in the service, to Gif.
+  If you ask for an animated tileset without the Gif format, MapCache will
+  generate an error message.
+
+3. Miscellaneous
+================
+
+- The animation could also be controlled by the service format instead of
+  adding attributes to the timedimension. I think it would make more sense to
+  implement it that way in the code since the core and encoding
+  functions don't normally use the tileset but the map request and
+  the format.
+
+3.1 Backwards Incompatibilities
+-------------------------------
+none expected
+
+3.2 Issue Tracking ID
+---------------------
+
+
+3.4 Files Changed
+-----------------
+- include/mapacache.h
+- lib/configuration.c
+- lib/configuration_xml.c
+- lib/core.c
+- lib/dimension.c
+- lib/imageio_gif.c (new)

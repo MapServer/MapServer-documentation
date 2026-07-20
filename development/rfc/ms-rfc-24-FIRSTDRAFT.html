@@ -1,0 +1,1860 @@
+<!DOCTYPE html>
+
+<html lang="en" data-content_root="../../">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" /><meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <title>MS RFC 24: Mapscript memory management &#8212; MapServer 8.6.5 documentation</title>
+    <link rel="stylesheet" type="text/css" href="../../_static/pygments.css?v=03e43079" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx.css?v=48f05237" />
+    <link rel="stylesheet" type="text/css" href="../../_static/copybutton.css?v=76b2166b" />
+    <link rel="stylesheet" type="text/css" href="../../_static/sphinx_collapse.css?v=226d88b4" />
+    <link rel="stylesheet" type="text/css" href="../../_static/custom.css?v=dd298242" />
+    <link rel="stylesheet" type="text/css" href="../../_static/ribbon.css?v=ea091bf4" />
+    
+    <script src="../../_static/jquery.js?v=5d32c60e"></script>
+    <script src="../../_static/_sphinx_javascript_frameworks_compat.js?v=2cd50e6c"></script>
+    <script src="../../_static/documentation_options.js?v=51e4ce63"></script>
+    <script src="../../_static/doctools.js?v=fd6eb6e6"></script>
+    <script src="../../_static/sphinx_highlight.js?v=6ffebe34"></script>
+    <script src="../../_static/clipboard.min.js?v=a7894cd8"></script>
+    <script src="../../_static/copybutton.js?v=f281be69"></script>
+    
+    <link rel="icon" href="../../_static/mapserver.ico"/>
+    <link rel="author" title="About these documents" href="../../about.html" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="copyright" title="Copyright" href="../../copyright.html" /> 
+  </head><body>
+<!-- add a ribbon to show these docs are the main branch -->
+<h4 class="ribbon">DOCS PREVIEW</h4>
+
+<table width="100%" style="width: 100%; background-color: white;">
+  <tr>
+    <td rowspan="2" style="padding: 10px 0px 10px 10px;">
+      <a href="../../index.html" title="Home"><img src="../../_static/banner.png" alt="MapServer banner" border="0" /></a>
+    </td>
+    <td style="padding: 10px 10px 0px 0px; text-align: right; vertical-align: top;">
+      <a href="../../index.html" title="Home">Home</a> |
+      <a href="../../products.html" title="Products (MapServer core, MapCache, TinyOWS">Products</a> |
+      <a href="https://github.com/MapServer/MapServer/issues/" title="Issue Tracker (MapServer core)">Issue Tracker</a> |
+      <a href="../../community/service_providers.html" title="Professional Service Providers">Service Providers</a> |      
+      <a href="../../faq.html" title="Frequently Asked Questions">FAQ</a> |
+      <a href="https://fosstodon.org/@mapserver" title="Mastodon" target="_blank">Mastodon</a> |
+      <a href="../../download.html" title="Download Source or Binaries">Download </a> |
+      <a class="badge" href="https://www.paypal.com/cgi-bin/webscr?cmd=_s-xclick&hosted_button_id=KRJ2X44N3HA6U&source=url" target="_blank">
+        <img src="https://img.shields.io/badge/donate-%E2%9D%A4%C2%A0-ff69b4.svg?style=flat" alt="Donate to MapServer">
+      </a>
+    </td>
+  </tr>
+  <tr>
+    <td style="padding: 0px 10px 0px 0px; text-align: right; vertical-align: bottom;">
+        <img src="../../_static/flagicons/en.png" alt="en" title="en" border="0" width="18px" height="13px"/>
+        
+          <a href="../../ar/development/rfc/ms-rfc-24-FIRSTDRAFT.html"><img src="../../_static/flagicons/ar.png" alt="ar" title="ar" border="0" /></a>
+        
+        
+          <a href="../../de/development/rfc/ms-rfc-24-FIRSTDRAFT.html"><img src="../../_static/flagicons/de.png" alt="de" title="de" border="0" /></a>
+        
+        
+          <a href="../../el/development/rfc/ms-rfc-24-FIRSTDRAFT.html"><img src="../../_static/flagicons/el.png" alt="el" title="el" border="0" /></a>
+        
+        
+          <a href="../../es/development/rfc/ms-rfc-24-FIRSTDRAFT.html"><img src="../../_static/flagicons/es.png" alt="es" title="es" border="0" /></a>
+        
+        
+          <a href="../../fr/development/rfc/ms-rfc-24-FIRSTDRAFT.html"><img src="../../_static/flagicons/fr.png" alt="fr" title="fr" border="0" /></a>
+        
+        
+          <a href="../../id/development/rfc/ms-rfc-24-FIRSTDRAFT.html"><img src="../../_static/flagicons/id.png" alt="id" title="id" border="0" /></a>
+        
+        
+          <a href="../../it/development/rfc/ms-rfc-24-FIRSTDRAFT.html"><img src="../../_static/flagicons/it.png" alt="it" title="it" border="0" /></a>
+        
+        
+          <a href="../../ja/development/rfc/ms-rfc-24-FIRSTDRAFT.html"><img src="../../_static/flagicons/ja.png" alt="ja" title="ja" border="0" /></a>
+        
+        
+          <a href="../../nl_NL/development/rfc/ms-rfc-24-FIRSTDRAFT.html"><img src="../../_static/flagicons/nl_NL.png" alt="nl_NL" title="nl_NL" border="0" /></a>
+        
+        
+          <a href="../../pl/development/rfc/ms-rfc-24-FIRSTDRAFT.html"><img src="../../_static/flagicons/pl.png" alt="pl" title="pl" border="0" /></a>
+        
+        
+          <a href="../../ru/development/rfc/ms-rfc-24-FIRSTDRAFT.html"><img src="../../_static/flagicons/ru.png" alt="ru" title="ru" border="0" /></a>
+        
+        
+          <a href="../../sq/development/rfc/ms-rfc-24-FIRSTDRAFT.html"><img src="../../_static/flagicons/sq.png" alt="sq" title="sq" border="0" /></a>
+        
+        
+          <a href="../../tr/development/rfc/ms-rfc-24-FIRSTDRAFT.html"><img src="../../_static/flagicons/tr.png" alt="tr" title="tr" border="0" /></a>
+        
+
+    </td>
+  </tr>
+</table>
+
+
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             accesskey="I">index</a></li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Home</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MS RFC 24: Mapscript memory management</a></li> 
+      </ul>
+    </div>
+  
+
+    <div class="document">
+      <div class="documentwrapper">
+        <div class="bodywrapper">
+          <div class="body" role="main">
+            
+  <section id="ms-rfc-24-mapscript-memory-management">
+<span id="rfc24first"></span><h1>MS RFC 24: Mapscript memory management<a class="headerlink" href="#ms-rfc-24-mapscript-memory-management" title="Link to this heading">¶</a></h1>
+<dl class="field-list simple">
+<dt class="field-odd">Date<span class="colon">:</span></dt>
+<dd class="field-odd"><p>2006/12/3</p>
+</dd>
+<dt class="field-even">Author<span class="colon">:</span></dt>
+<dd class="field-even"><p>Umberto Nicoletti</p>
+</dd>
+<dt class="field-odd">Contact<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="mailto:umberto&#46;nicoletti&#37;&#52;&#48;gmail&#46;com">umberto<span>&#46;</span>nicoletti<span>&#64;</span>gmail<span>&#46;</span>com</a></p>
+</dd>
+<dt class="field-even">Last Edited<span class="colon">:</span></dt>
+<dd class="field-even"><p>2006/12/31</p>
+</dd>
+<dt class="field-odd">Status<span class="colon">:</span></dt>
+<dd class="field-odd"><p>Proposed</p>
+</dd>
+<dt class="field-even">Version<span class="colon">:</span></dt>
+<dd class="field-even"><p>MapServer  5.0</p>
+</dd>
+</dl>
+<section id="warning">
+<h2>0. Warning!<a class="headerlink" href="#warning" title="Link to this heading">¶</a></h2>
+<p><em>IMPORTANT: this is the first and obsolete version fo the rfc, which is kept here only for reference purposes and for a limited time.</em></p>
+</section>
+<section id="overview">
+<h2>1. Overview<a class="headerlink" href="#overview" title="Link to this heading">¶</a></h2>
+<p>Memory management in SWIG wrappers has a tradition of being difficult and error prone. The programmer of the wrapper has to deal with memory that can be allocated and then freed in two separate environments: the hosting language such as Java, C# or Perl and the wrapped native code.</p>
+<p>Most modern languages implement garbage collection, so that the developer does not have to care about memory management.
+The programming language tracks memory (or objects, really) allocations and when an object goes out of scope (it is no more reachable from the running program) it marks it as eligible for garbage collection. A background process once in a while wakes up and frees the memory associated with marked objects.
+For the details on GC see this wikipedia entry:
+<a class="reference external" href="https://en.wikipedia.org/wiki/Garbage_collection_(computer_science">https://en.wikipedia.org/wiki/Garbage_collection_(computer_science</a>)</p>
+<p>What happens in most cases is that some memory is allocated in, say, Java, then another pointer is
+pointed to it by invoking some wrapped method.
+Eventually the GC runs and frees the memory.
+As soon as the other pointers are dereferenced the hosting language will crash because of a segmentation fault error (in Unix terms).</p>
+<p>MapServer  SWIG wrappers suffer from issues with garbage collections for example in dinamically adding layers to a map.</p>
+<p>The purpose of this RFC is to address these issues and provide a solution that can be implemented in time for the release of MapServer  5.0.</p>
+<p>This RFC does not address thread safety.</p>
+</section>
+<section id="problem-description">
+<h2>2. Problem description<a class="headerlink" href="#problem-description" title="Link to this heading">¶</a></h2>
+<p>This section gives an overview (along with examples) of errors in mapscript memory management. Most of the examples will be in Java, but they apply to all other mapscripts too.
+They can be reproduced against the latest CVS code of mapserver-HEAD as of 31st December 2006.</p>
+<section id="object-equality-identity">
+<h3>2.1 Object equality/identity<a class="headerlink" href="#object-equality-identity" title="Link to this heading">¶</a></h3>
+<p>Consider the following Java mapscript code:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">mapObj</span> <span class="nb">map</span><span class="o">=</span><span class="n">new</span> <span class="n">mapObj</span><span class="p">(</span><span class="s2">&quot;my.map&quot;</span><span class="p">);</span>
+<span class="n">layerObj</span> <span class="n">layer</span><span class="o">=</span><span class="n">new</span> <span class="n">layerObj</span><span class="p">(</span><span class="n">null</span><span class="p">);</span>
+<span class="o">//</span> <span class="n">add</span> <span class="n">layer</span> <span class="n">to</span> <span class="n">the</span> <span class="nb">map</span>
+<span class="nb">int</span> <span class="n">index</span><span class="o">=</span><span class="nb">map</span><span class="o">.</span><span class="n">insertLayer</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">);</span>
+<span class="o">//</span> <span class="nb">set</span> <span class="n">its</span> <span class="n">name</span>
+<span class="n">layer</span><span class="o">.</span><span class="n">setName</span><span class="p">(</span><span class="s2">&quot;Change me&quot;</span><span class="p">);</span>
+
+<span class="o">//</span> <span class="n">fetch</span> <span class="kn">from</span><span class="w"> </span><span class="nn">map</span>
+<span class="n">layerObj</span> <span class="n">newLayer</span><span class="o">=</span><span class="nb">map</span><span class="o">.</span><span class="n">getLayer</span><span class="p">(</span><span class="n">index</span><span class="p">);</span>
+<span class="o">//</span> <span class="n">they</span> <span class="n">should</span> <span class="n">be</span> <span class="n">the</span> <span class="n">same</span><span class="o">...</span>
+<span class="n">System</span><span class="o">.</span><span class="n">out</span><span class="o">.</span><span class="n">println</span><span class="p">(</span><span class="n">newLayer</span><span class="o">.</span><span class="n">getName</span><span class="p">()</span><span class="o">+</span><span class="s2">&quot;==&quot;</span><span class="o">+</span><span class="n">layer</span><span class="o">.</span><span class="n">getName</span><span class="p">());</span>
+<span class="o">//</span> <span class="ow">and</span> <span class="n">this</span> <span class="n">should</span> <span class="nb">print</span> <span class="n">true</span> <span class="p">(</span><span class="n">it</span> <span class="ow">is</span> <span class="n">a</span> <span class="n">reference</span> <span class="n">comparison</span><span class="p">)</span>
+<span class="n">System</span><span class="o">.</span><span class="n">out</span><span class="o">.</span><span class="n">println</span><span class="p">(</span><span class="n">newLayer</span><span class="o">==</span><span class="n">layer</span><span class="p">);</span>
+</pre></div>
+</div>
+<p>when executed will produce the following output:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">null</span><span class="o">==</span><span class="n">Change</span> <span class="n">me</span>
+<span class="n">false</span>
+</pre></div>
+</div>
+<p>This happens because the current implementation strategy copies
+the layer when it is inserted into the map. The Java reference is not re-pointed
+to the new copy and is therefore ‘disconnected’ from the actual memory area.
+This currently happens for the most used insert methods (i.e. <em>insertClass</em>).</p>
+</section>
+<section id="early-garbage-collection">
+<h3>2.2 Early garbage collection<a class="headerlink" href="#early-garbage-collection" title="Link to this heading">¶</a></h3>
+<p>Objects created through mapscript can be garbage-collected “early”, when there are live objects still referencing them.
+See this example in Java:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>mapObj map=new mapObj(&quot;data/emptymap.map&quot;);
+
+layerObj layer=new layerObj(map);
+layer.setName(&quot;Layer 0&quot;);
+classObj clazz=new classObj(null);
+clazz.setName(&quot;Clazz 0 NULL&quot;);
+int pos=layer.insertClass(clazz, -1);
+
+map=null;
+layer=null;
+
+// force garbage collection
+for(int i=0;i&lt;100;i++)
+        System.gc();
+
+clazz.getLayer().getMap().draw();
+// Java crashes because memory has been freed!
+</pre></div>
+</div>
+<p>and its perl equivalent:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>use mapscript;
+
+$map = new mapscript::mapObj(&quot;../../tests/test.map&quot;);
+$layer = new mapscript::layerObj($map);
+
+print &quot;Before first draw for $layer-&gt;{map}\n&quot;;
+$layer-&gt;{map}-&gt;draw();
+print &quot;Map drawn, now undef map\n&quot;;
+$map = undef;
+$map1=$layer-&gt;{map}-&gt;draw();
+// perl interpreter segfault
+</pre></div>
+</div>
+</section>
+<section id="dynamically-populated-layers-classes-etc">
+<h3>2.3 Dynamically populated layers, classes, etc<a class="headerlink" href="#dynamically-populated-layers-classes-etc" title="Link to this heading">¶</a></h3>
+<p>See the following bug reports:</p>
+<p><a class="reference external" href="http://mapserver.gis.umn.edu/bugs/show_bug.cgi?id=1400">http://mapserver.gis.umn.edu/bugs/show_bug.cgi?id=1400</a></p>
+<p><a class="reference external" href="http://mapserver.gis.umn.edu/bugs/show_bug.cgi?id=1743">http://mapserver.gis.umn.edu/bugs/show_bug.cgi?id=1743</a></p>
+<p><a class="reference external" href="http://mapserver.gis.umn.edu/bugs/show_bug.cgi?id=1841">http://mapserver.gis.umn.edu/bugs/show_bug.cgi?id=1841</a></p>
+<p>Please note that this issue can be difficult to reproduce, credits go to Tamas
+for pointing it out.</p>
+</section>
+</section>
+<section id="proposed-implementation">
+<h2>3. Proposed implementation<a class="headerlink" href="#proposed-implementation" title="Link to this heading">¶</a></h2>
+<p>To solve the problems shown at items 2.1, 2.2 and 2.3 this RCF proposes that:</p>
+<ol class="arabic simple">
+<li><p>each mapscript wrapper objects acting as a container or as content will have its mapscript language class augmented to maintain references to the contained objects and, when it is available, to the container object. These references allow the GC to make better informed decisions on which objects can be freed. From now on, and only for the purpose of this RFC, we will call <em>cache</em> these references.</p></li>
+<li><p>getters must be wrapped so that they look up references in the <em>cache</em> first and setters/mutators must be wrapped so that they keep the references in the <em>cache</em> up to date when they are changed</p></li>
+<li><p>when an object has a non-null parent its memory must be <em>disowned</em> (in SWIG terms) and <em>owned</em> when it is removed from the parent</p></li>
+</ol>
+<p>This RFC should be applicable (with the necessary modifications) to all mapscript languages.
+Examples will be given for Perl or Java because of the author familiarity with these languages.</p>
+<p>The three items above are described in more detail in the following subsections. Subsections 3.4 and 3.5 offer an implementation
+example for the layerObj class. Please note that in the following we limit the scope of our analysis to
+the classes/layer relationship.</p>
+<section id="add-references-to-the-mapscript-wrapper-object">
+<h3>3.1 Add references to the mapscript wrapper object<a class="headerlink" href="#add-references-to-the-mapscript-wrapper-object" title="Link to this heading">¶</a></h3>
+<p>The mapscript objects will be modified so that they keep a reference to
+the other mapscript objects added to them or they are added to, exactly like
+the C struct does.</p>
+<p>In example, in the case of the layerObj the layerObj class will be extended to contain</p>
+<ul class="simple">
+<li><p>a reference to the mapObj that contains the layer</p></li>
+<li><p>an array of classObjs</p></li>
+</ul>
+<p>The purpose of these changes is that whenever a class is added to the layer
+the corresponding object is also added to the class array (the <em>cache</em>). The same when a classObj is returned
+as a result to getClass. By doing so the hosting language knows of the web of relations
+between these objects and we solve the early garbage collection problem.</p>
+<p>The problem of object equality/identity is also resolved if we modify the getClass method to look first
+in the class array (the <em>cache</em>) and only after in the C data structures, as shown above.</p>
+</section>
+<section id="keep-cache-and-c-internal-structure-in-sync">
+<h3>3.2 Keep <em>cache</em> and C internal structure in sync<a class="headerlink" href="#keep-cache-and-c-internal-structure-in-sync" title="Link to this heading">¶</a></h3>
+<p>For the mechanism described at the previous item to work some functions in the mapscript objects and in the native code must
+be modified so that the mapscript objects and the C data structures stay in sync.</p>
+<p>Returning to the example of the layerObj the <em>insertClass</em>, <em>getClass</em> and <em>removeClass</em> methods
+will have to be modified to keep the <em>cache</em> in sync with the C data structures.
+The current methods will be modified by using specific typemaps.
+The constructor will also need to be modified to store the reference to the mapObj.
+Eventually also the native code actually performing the copy-and-insert operation must be modified to
+only perform the insert operation (<em>layerobject.c</em>, line 52, function <em>msInsertClass</em>).</p>
+<p>The API will be kept backward compatible whenever possible.</p>
+</section>
+<section id="disown-memory-allocated-by-swig-for-objects-with-non-null-parents">
+<h3>3.3 Disown memory allocated by swig for objects with non-null parents<a class="headerlink" href="#disown-memory-allocated-by-swig-for-objects-with-non-null-parents" title="Link to this heading">¶</a></h3>
+<p>The patch suggested by Tamas (bug 1743) must be extended so that memory is disowned also when a layer is inserted
+into a map and ported to all mapscript languages.</p>
+</section>
+<section id="java-mapscript-code-example-for-layerobj">
+<h3>3.4 JAVA: mapscript code example for layerObj<a class="headerlink" href="#java-mapscript-code-example-for-layerobj" title="Link to this heading">¶</a></h3>
+<p>Code example for layerObj (<em>javamodule.i</em>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>/*
+   Modified constructor according to:
+   - bug#1743, item 3.3
+   - cache population and sync, item 3.2
+*/
+%typemap(javaconstruct) layerObj(mapObj map) %{ {
+        this($imcall, true);
+        if (map != null) {
+                this.swigCMemOwn = false;
+                /* Store reference in field member*/
+                this.map=map;
+                /* Add myself to the layers array of the map */
+                map.layers[this.getIndex()];
+        }
+}
+%}
+
+%typemap(javaout) int insertClass {
+        // call the C API, which needs to be modified
+        // so that the classObj is not copied anymore
+        int actualIndex=$jnicall;
+        classes[actualIndex]=classobj;
+        // disown the classObj just inserted, item 3.3
+        classobj.swigCMemOwn=false;
+        return actualIndex;
+}
+
+%typemap(javaout) classObj *getClass {
+                if (classes[i]!=null)
+                        return classes[i];
+
+                long cPtr = $jnicall;
+                classObj result = (cPtr == 0) ? null : new classObj(cPtr, false);
+
+                if (result!=null)
+                        classes[i]=result;
+                return result;
+}
+
+%typemap(javacode) layerObj %{
+        /* an array of classes to keep referenced objects alive and prevent
+           their garbage collection, item 3.1
+        */
+        classObj[] classes=new classObj[mapscriptConstants.MS_MAXCLASSES];
+        /* same for the map, item 3.1
+        */
+        mapObj map=null;
+%}
+</pre></div>
+</div>
+</section>
+<section id="perl-mapscript-code-example-for-layerobj">
+<h3>3.5 PERL: mapscript code example for layerObj<a class="headerlink" href="#perl-mapscript-code-example-for-layerobj" title="Link to this heading">¶</a></h3>
+<p>Code example for layerObj (<em>plmodule.i</em>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span>%feature(&quot;shadow&quot;) ~mapObj() %{
+sub DESTROY {
+        return unless $_[0]-&gt;isa(&#39;HASH&#39;);
+        my $self = tied(%{$_[0]});
+        return unless defined $self;
+        delete $ITERATORS{$self};
+        if (exists $OWNER{$self}) {
+                mapscriptc::delete_mapObj($self);
+                delete $OWNER{$self};
+        }
+        delete $mapscript::MAPLAYERS{$self};
+}
+%}
+
+%feature(&quot;shadow&quot;) layerObj(mapObj *map)
+%{
+sub new {
+        my $pkg = shift;
+        my $self = mapscriptc::new_layerObj(@_);
+        bless $self, $pkg if defined($self);
+        if (defined($_[0])) {
+                $self-&gt;DISOWN();
+                mapscript::LAYER_ADD_MAP_REF($self, $_[0]);
+                mapscript::MAP_ADD_LAYER_REF($_[0], $self);
+        }
+        return $self;
+}
+%}
+
+%feature(&quot;shadow&quot;) ~layerObj()
+%{
+sub DESTROY {
+        return unless $_[0]-&gt;isa(&#39;HASH&#39;);
+        my $self = tied(%{$_[0]});
+        return unless defined $self;
+        delete $ITERATORS{$self};
+        if (exists $OWNER{$self}) {
+                mapscriptc::delete_layerObj($self);
+                delete $OWNER{$self};
+        }
+        delete $mapscript::LAYERMAP{$self};
+}
+%}
+
+%perlcode %{
+        %LAYERMAP={};
+        sub LAYER_ADD_MAP_REF {
+                my ($layer, $map)=@_;
+                #print &quot;MAP key=&quot; . tied(%$layer) . &quot;\n&quot;;
+                $LAYERMAP{ tied(%$layer) }=$map;
+        }
+
+        %MAPLAYERS={};
+        sub MAP_ADD_LAYER_REF {
+                my ($map, $layer)=@_;
+                my $layers=$MAPLAYERS{ tied(%$map) };
+                if (defined($layers)) {
+                        $layers-&gt;{$layer-&gt;{index}}=$layer;
+                } else {
+                        $layers={};
+                        $layers-&gt;{$layer-&gt;{index}}=$layer;
+                }
+                $MAPLAYERS{tied(%$map)}= $layers;
+        }
+
+        sub map_get {
+                my $layer=@_[0];
+                #print &quot;GET MAP key&quot; . $layer . &quot;\n&quot;;
+                if ( $LAYERMAP{ $layer } ) {
+                        return \%{$LAYERMAP{$layer}};
+                }
+                return mapscriptc::layerObj_map_get(@_);
+        }
+
+        ##################
+        # DEBUGGING ONLY #
+        ##################
+        sub getLayerFrom {
+                my ($map, $idx)=@_;
+                return $MAPLAYERS{tied(%$map)}-&gt;{$idx};
+        }
+
+        sub getMAPLAYERS {
+                return \%MAPLAYERS;
+        }
+%}
+</pre></div>
+</div>
+<p>Note: this example implements a bidirectional <em>cache</em> (map-&gt;layers and layer-&gt;map), but this
+does not play well with Perl reference-count based GC and will cause memory leaks.
+To address this limitation Perl mapscript will only implement the layer-&gt;map or child-&gt;parent side of the
+<em>cache</em> as described in 4.3.</p>
+</section>
+</section>
+<section id="implementation-plan">
+<h2>4. Implementation plan<a class="headerlink" href="#implementation-plan" title="Link to this heading">¶</a></h2>
+<p>It seems that for most mapscripts (java, csharp, perl and python) there
+is enough functionality in SWIG to implement the features described in this RFC.
+For ruby we’ll probably have to go a different route and implement the <em>%trackobjects</em> feature.
+As of Tcl I currently don’t know if it’s possible.</p>
+<p>The two following section describe in detail the required SWIG-mapscript
+features (injection of code and constructor customization).
+Each language gets then a specific section to deal with its own characteristics</p>
+<section id="checking-swig-mapscript-capabilities-javacode">
+<h3>4.1 Checking SWIG-Mapscript capabilities: %javacode<a class="headerlink" href="#checking-swig-mapscript-capabilities-javacode" title="Link to this heading">¶</a></h3>
+<p>Swig provides the equivalent of <em>%javacode</em> for the following languages:</p>
+<ol class="arabic simple">
+<li><p>perl through %perlcode</p></li>
+<li><p>python through %pythoncode</p></li>
+<li><p>csharp through %cscode</p></li>
+<li><p>ruby does not have any ruby code at all in its wrapper objects</p></li>
+<li><p>swig-Tcl doesn’t support a %tclcode construct</p></li>
+</ol>
+<p>This swig construct will be used to inject in the wrapper the definition for
+the references described in 3.1 and the wrapper methods.</p>
+</section>
+<section id="checking-swig-mapscript-capabilities-constructor-customization">
+<h3>4.1 Checking SWIG-Mapscript capabilities: constructor customization<a class="headerlink" href="#checking-swig-mapscript-capabilities-constructor-customization" title="Link to this heading">¶</a></h3>
+<p>The %csconstruct used to wrap and customize the costructor of mapscript objects (item 3.3)
+is only available in csharp and java.
+It should be possible to simulate its behaviour with <em>%pythonprepend</em> or <em>%pythonprepend</em>
+in python and with <em>%perlcode</em> or <em>%feature(“shadow”)</em> in perl.</p>
+<p>This swig construct will be used to disown memory allocated by SWIG when the object has
+a reference to a valid parent (bug 1743).</p>
+</section>
+<section id="java-and-c-sharp">
+<h3>4.2 Java and C-Sharp<a class="headerlink" href="#java-and-c-sharp" title="Link to this heading">¶</a></h3>
+<p>SWIG-Java and SWIG-CSharp share a common ground and are therefore very similar.
+The names of SWIG-Java constructs can be roughly translated into their C-Sharp equivalents by changing the <em>java</em>
+prefix into <em>cs</em> (i.e. <em>javacode</em> in <em>cscode</em>, <em>javaconstruct</em> in <em>csconstruct</em> and <em>javaout</em> in <em>csout</em>).</p>
+<p>The implementation should follow exactly this RCF.</p>
+</section>
+<section id="perl">
+<h3>4.3 Perl<a class="headerlink" href="#perl" title="Link to this heading">¶</a></h3>
+<p>As in the example above most of the perl customization can be done
+with the use of the <em>shadow</em> construct.</p>
+<p>The implementation will differ from the RFC in the following manners:</p>
+<p>1) the Perl wrapper will maintain references only in one direction (layer -&gt; map, or generally
+contained -&gt; container)
+and not both because of the implementation of the Perl GC (<a class="reference external" href="http://www.perl.com/doc/manual/html/pod/perlobj.html">http://www.perl.com/doc/manual/html/pod/perlobj.html</a>).
+If we had circular references this <em>island</em> of objects would normally never be garbage collected.</p>
+<p>2) to wrap the <em>layerObj-&gt;{map}</em> invocation we must edit the <em>mapscript.pm</em> file manually.
+To overcome this limitation and automate find/replace we will use perl <em>pies</em> in the Makefile
+like the following two:</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="n">perl</span> <span class="o">-</span><span class="n">pi</span> <span class="o">-</span><span class="n">e</span> <span class="s2">&quot;s/\*swig_map_get = \*mapscriptc::layerObj_map_get/\*swig_map_get = \*mapscript::map_get/&quot;</span> <span class="n">mapscript</span><span class="o">.</span><span class="n">pm</span>
+<span class="n">perl</span> <span class="o">-</span><span class="n">pi</span> <span class="o">-</span><span class="n">e</span> <span class="s2">&quot;s/\*getMap = \*mapscriptc::layerObj_getMap/\*swig_map_get = \*mapscript::map_get/&quot;</span> <span class="n">mapscript</span><span class="o">.</span><span class="n">pm</span>
+</pre></div>
+</div>
+</section>
+<section id="python">
+<h3>4.4 Python<a class="headerlink" href="#python" title="Link to this heading">¶</a></h3>
+<p>Python enjoys first-grade support in SWIG so the RFC should be implemented exactly
+as described.
+Differently from Perl Python’s GC can find and free cycles of objects (<a class="reference external" href="http://arctrix.com/nas/python/gc/">http://arctrix.com/nas/python/gc/</a>).</p>
+</section>
+<section id="ruby">
+<h3>4.5 Ruby<a class="headerlink" href="#ruby" title="Link to this heading">¶</a></h3>
+<p>Needs investigation, probably we’ll have to use rb_gc_* functions to mark objects
+and prevent their garbage collection or use <em>%trackobjects</em>.
+Ruby will not implement this RFC.</p>
+</section>
+<section id="tcl">
+<h3>4.6 Tcl<a class="headerlink" href="#tcl" title="Link to this heading">¶</a></h3>
+<p>Needs investigation and a Tcl expert.
+At the time of this writing Tcl will probably not implement this RFC.</p>
+</section>
+</section>
+<section id="implementation-checklist">
+<h2>5.1 Implementation checklist<a class="headerlink" href="#implementation-checklist" title="Link to this heading">¶</a></h2>
+<p>The following table will be used to track the implementation status of this RFC.
+There is a table for each mapscript object and when a language has implemented this RFC
+for a given object the maintainer will populate the relative cell with one of the following
+marks:</p>
+<ul class="simple">
+<li><p>&gt; if <em>cache</em> and wrappers have been implemented in the parent-&gt;child direction</p></li>
+<li><p>&lt; if <em>cache</em> and wrappers have been implemented in the child-&gt;parent direction</p></li>
+<li><p>&lt;&gt; if <em>cache</em> and wrappers have been implemented in both directions</p></li>
+<li><p>a plus sign (+) if object has been disowned</p></li>
+<li><p>a minus sign (-) if object has been owned</p></li>
+</ul>
+<section id="mapobj">
+<h3>5.2 mapObj<a class="headerlink" href="#mapobj" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>java</p></th>
+<th class="head"><p>C#</p></th>
+<th class="head"><p>perl</p></th>
+<th class="head"><p>python</p></th>
+<th class="head"><p>tcl</p></th>
+<th class="head"><p>ruby</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>getSymbolset</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getFontset</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getLabelcache</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getExtent</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>setSaved_extent</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getSaved_extent</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getImagecolor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getOutputformat</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getReference</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getScalebar</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getLegend</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getQuerymap</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getWeb</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getConfigoptions</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>insertLayer</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>removeLayer</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getLayer</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getLayerByName</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>prepareImage</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>setOutputFormat</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>draw</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>drawQuery</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>drawLegend</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>drawScalebar</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>drawReferenceMap</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getLabel</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>nextLabel</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getOutputFormatByName</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>appendOutputFormat</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>removeOutputFormat</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="layerobj">
+<h3>5.3 layerObj<a class="headerlink" href="#layerobj" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>java</p></th>
+<th class="head"><p>C#</p></th>
+<th class="head"><p>perl</p></th>
+<th class="head"><p>python</p></th>
+<th class="head"><p>tcl</p></th>
+<th class="head"><p>ruby</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>layerObj (constructor)</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getMap</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getOffsite</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getMetadata</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>cloneLayer</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>insertClass</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>removeClass</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>nextShape</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getFeature</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getShape</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getResult</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getClass</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getResults</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>addFeature</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getExtent</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="classobj">
+<h3>5.4 classObj<a class="headerlink" href="#classobj" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>java</p></th>
+<th class="head"><p>C#</p></th>
+<th class="head"><p>perl</p></th>
+<th class="head"><p>python</p></th>
+<th class="head"><p>tcl</p></th>
+<th class="head"><p>ruby</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>classObj (constructor)</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getLabel</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getMetadata</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getLayer</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>clone</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>createLegendIcon</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>drawLegendIcon</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getStyle</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>insertStyle</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>removeStyle</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="webobj">
+<h3>5.5 webObj<a class="headerlink" href="#webobj" title="Link to this heading">¶</a></h3>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>java</p></th>
+<th class="head"><p>C#</p></th>
+<th class="head"><p>perl</p></th>
+<th class="head"><p>python</p></th>
+<th class="head"><p>tcl</p></th>
+<th class="head"><p>ruby</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>webObj (constructor)</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getMap</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getExtent</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>setExtent</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getMetadata</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="styleobj">
+<h3>5.5 styleObj<a class="headerlink" href="#styleobj" title="Link to this heading">¶</a></h3>
+<p>For styleObjs it is enough to disown them when they are fetched from the container object.
+It is not necessary to add the reference pointing back to the container object.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>java</p></th>
+<th class="head"><p>C#</p></th>
+<th class="head"><p>perl</p></th>
+<th class="head"><p>python</p></th>
+<th class="head"><p>tcl</p></th>
+<th class="head"><p>ruby</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>styleObj (constructor)</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>setColor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getColor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getBackgroundcolor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>setBackgroundcolor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getOutlinecolor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>setOutlinecolor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getMincolor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>setMincolor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getMaxcolor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>setMaxcolor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>clone</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="labelobj">
+<h3>5.6 labelObj<a class="headerlink" href="#labelobj" title="Link to this heading">¶</a></h3>
+<p>For labelObjs it is enough to disown them when they are fetched from the container object.
+It is not necessary to add the reference pointing back to the container object.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>java</p></th>
+<th class="head"><p>C#</p></th>
+<th class="head"><p>perl</p></th>
+<th class="head"><p>python</p></th>
+<th class="head"><p>tcl</p></th>
+<th class="head"><p>ruby</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>labelObj (constructor)</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getColor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>setColor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>setOutlinecolor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getOutlinecolor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>setShadowcolor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getShadowcolor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getBackgroundcolor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>setBackgroundcolor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>setBackgroundshadowcolor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getBackgroundshadowcolor</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="hashtableobj">
+<h3>5.7 hashTableObj<a class="headerlink" href="#hashtableobj" title="Link to this heading">¶</a></h3>
+<p>For hashTableObjs it is enough to disown them when they are fetched from the container object (i.e. a layerObj).
+It is not necessary to add the reference pointing back to the container object.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>java</p></th>
+<th class="head"><p>C#</p></th>
+<th class="head"><p>perl</p></th>
+<th class="head"><p>python</p></th>
+<th class="head"><p>tcl</p></th>
+<th class="head"><p>ruby</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>hashTableObj (constructor)</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="colorobj">
+<h3>5.8 colorObj<a class="headerlink" href="#colorobj" title="Link to this heading">¶</a></h3>
+<p>For colorObjs it is enough to disown them when they are fetched from the container object.
+It is not necessary to add the reference pointing back to the container object.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>java</p></th>
+<th class="head"><p>C#</p></th>
+<th class="head"><p>perl</p></th>
+<th class="head"><p>python</p></th>
+<th class="head"><p>tcl</p></th>
+<th class="head"><p>ruby</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>colorObj (constructor)</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="imageobj">
+<h3>5.9 imageObj<a class="headerlink" href="#imageobj" title="Link to this heading">¶</a></h3>
+<p>For imageObjs it is enough to own them when they are fetched from the container object.
+It is not necessary to add the reference pointing back to the container object.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>java</p></th>
+<th class="head"><p>C#</p></th>
+<th class="head"><p>perl</p></th>
+<th class="head"><p>python</p></th>
+<th class="head"><p>tcl</p></th>
+<th class="head"><p>ruby</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>imageObj (constructor)</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="shapeobj">
+<h3>5.10 shapeObj<a class="headerlink" href="#shapeobj" title="Link to this heading">¶</a></h3>
+<p>For shapeObjs it is enough to set ownership properly when they are fetched from or added to the container object.
+It is not necessary to add the reference pointing back to the container object.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>java</p></th>
+<th class="head"><p>C#</p></th>
+<th class="head"><p>perl</p></th>
+<th class="head"><p>python</p></th>
+<th class="head"><p>tcl</p></th>
+<th class="head"><p>ruby</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>shapeObj (constructor)</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getLine</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getBounds</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>get</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>add</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>clone</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>copy</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>buffer</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>convexHull</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>boundary</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getCentroid</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>Union</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>intersection</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>difference</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>symDifference</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="lineobj">
+<h3>5.11 lineObj<a class="headerlink" href="#lineobj" title="Link to this heading">¶</a></h3>
+<p>For lineObjs it is enough to set ownership properly when they are fetched from or added to the container object.
+It is not necessary to add the reference pointing back to the container object.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>java</p></th>
+<th class="head"><p>C#</p></th>
+<th class="head"><p>perl</p></th>
+<th class="head"><p>python</p></th>
+<th class="head"><p>tcl</p></th>
+<th class="head"><p>ruby</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>lineObj (constructor)</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getPoint</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>get</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>add</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>set</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="pointobj">
+<h3>5.12 pointObj<a class="headerlink" href="#pointobj" title="Link to this heading">¶</a></h3>
+<p>For pointObjs it is enough to set ownership properly when they are fetched from or added to the container object.
+It is not necessary to add the reference pointing back to the container object.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>java</p></th>
+<th class="head"><p>C#</p></th>
+<th class="head"><p>perl</p></th>
+<th class="head"><p>python</p></th>
+<th class="head"><p>tcl</p></th>
+<th class="head"><p>ruby</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>pointObj (constructors)</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>toShape</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="symbolsetobj">
+<h3>5.13 symbolsetObj<a class="headerlink" href="#symbolsetobj" title="Link to this heading">¶</a></h3>
+<p>For symbolsetObjs it is not necessary to add the reference pointing back to the map.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>java</p></th>
+<th class="head"><p>C#</p></th>
+<th class="head"><p>perl</p></th>
+<th class="head"><p>python</p></th>
+<th class="head"><p>tcl</p></th>
+<th class="head"><p>ruby</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>symbolsetObj (constructor)</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>setSymbol(symbolObj value)</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getSymbol</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getSymbol(int i)</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getSymbolByName</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>index</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>appendSymbol</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>removeSymbol</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+<section id="symbolobj">
+<h3>5.14 symbolObj<a class="headerlink" href="#symbolobj" title="Link to this heading">¶</a></h3>
+<p>For symbolObjs it is enough to set ownership properly when they are fetched from or added to the container object.
+It is not necessary to add the reference pointing back to the container object.</p>
+<table class="docutils align-default">
+<thead>
+<tr class="row-odd"><th class="head"><p>Method</p></th>
+<th class="head"><p>java</p></th>
+<th class="head"><p>C#</p></th>
+<th class="head"><p>perl</p></th>
+<th class="head"><p>python</p></th>
+<th class="head"><p>tcl</p></th>
+<th class="head"><p>ruby</p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p>symbolObj (constructor)</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>setPoints</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>getPoints</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-odd"><td><p>getImage</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+<tr class="row-even"><td><p>setImage</p></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+<td></td>
+</tr>
+</tbody>
+</table>
+</section>
+</section>
+<section id="open-issues">
+<h2>6. Open issues<a class="headerlink" href="#open-issues" title="Link to this heading">¶</a></h2>
+<p>Fetching an object from a map and then adding it to another map is likely to cause a segfault.
+The solution would be to remove it from the first map and then add it the second or implement a
+check before updating the reference to its parent and bail out (throw and exception).</p>
+</section>
+<section id="status">
+<h2>7. Status<a class="headerlink" href="#status" title="Link to this heading">¶</a></h2>
+<p>RFC opened for comments on Jan, the 10th 2007 with a post on mapserver-dev.
+RFC undergoing revision after discussion on mapserver-dev.</p>
+</section>
+</section>
+
+
+            <div class="clearer"></div>
+          </div>
+        </div>
+      </div>
+      <div class="sphinxsidebar" role="navigation" aria-label="Main">
+        <div class="sphinxsidebarwrapper">
+<search id="searchbox" style="display: none" role="search">
+  <h3 id="searchlabel">Quick search</h3>
+    <div class="searchformwrapper">
+    <form class="search" action="../../search.html" method="get">
+      <input type="text" name="q" aria-labelledby="searchlabel" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false"/>
+      <input type="submit" value="Go" />
+    </form>
+    </div>
+</search>
+<script>document.getElementById('searchbox').style.display = "block"</script><h3>Navigation</h3>
+<p>
+<a href="../../about.html" title="About">About</a><br>
+<a href="../../products.html" title="Products">Products</a><br>
+<a href="../../community/index.html" title="Community">Community</a><br>
+<a href="../index.html" title="Development">Development</a><br>
+<a href="../../download.html" title="Downloads">Downloads</a><br>
+<a href="../../documentation.html" title="Documentation">Documentation</a><br>
+<a href="../../faq.html" title="FAQ">FAQ</a><br>
+<a href="../../psc.html" title="PSC">PSC</a><br>
+<a href="https://fosstodon.org/@mapserver" title="Mastodon">Mastodon</a>
+</p>
+  <h3>Current Table Of Contents</h3>
+  <ul>
+<li><a class="reference internal" href="#">MS RFC 24: Mapscript memory management</a><ul>
+<li><a class="reference internal" href="#warning">0. Warning!</a></li>
+<li><a class="reference internal" href="#overview">1. Overview</a></li>
+<li><a class="reference internal" href="#problem-description">2. Problem description</a><ul>
+<li><a class="reference internal" href="#object-equality-identity">2.1 Object equality/identity</a></li>
+<li><a class="reference internal" href="#early-garbage-collection">2.2 Early garbage collection</a></li>
+<li><a class="reference internal" href="#dynamically-populated-layers-classes-etc">2.3 Dynamically populated layers, classes, etc</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#proposed-implementation">3. Proposed implementation</a><ul>
+<li><a class="reference internal" href="#add-references-to-the-mapscript-wrapper-object">3.1 Add references to the mapscript wrapper object</a></li>
+<li><a class="reference internal" href="#keep-cache-and-c-internal-structure-in-sync">3.2 Keep <em>cache</em> and C internal structure in sync</a></li>
+<li><a class="reference internal" href="#disown-memory-allocated-by-swig-for-objects-with-non-null-parents">3.3 Disown memory allocated by swig for objects with non-null parents</a></li>
+<li><a class="reference internal" href="#java-mapscript-code-example-for-layerobj">3.4 JAVA: mapscript code example for layerObj</a></li>
+<li><a class="reference internal" href="#perl-mapscript-code-example-for-layerobj">3.5 PERL: mapscript code example for layerObj</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#implementation-plan">4. Implementation plan</a><ul>
+<li><a class="reference internal" href="#checking-swig-mapscript-capabilities-javacode">4.1 Checking SWIG-Mapscript capabilities: %javacode</a></li>
+<li><a class="reference internal" href="#checking-swig-mapscript-capabilities-constructor-customization">4.1 Checking SWIG-Mapscript capabilities: constructor customization</a></li>
+<li><a class="reference internal" href="#java-and-c-sharp">4.2 Java and C-Sharp</a></li>
+<li><a class="reference internal" href="#perl">4.3 Perl</a></li>
+<li><a class="reference internal" href="#python">4.4 Python</a></li>
+<li><a class="reference internal" href="#ruby">4.5 Ruby</a></li>
+<li><a class="reference internal" href="#tcl">4.6 Tcl</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#implementation-checklist">5.1 Implementation checklist</a><ul>
+<li><a class="reference internal" href="#mapobj">5.2 mapObj</a></li>
+<li><a class="reference internal" href="#layerobj">5.3 layerObj</a></li>
+<li><a class="reference internal" href="#classobj">5.4 classObj</a></li>
+<li><a class="reference internal" href="#webobj">5.5 webObj</a></li>
+<li><a class="reference internal" href="#styleobj">5.5 styleObj</a></li>
+<li><a class="reference internal" href="#labelobj">5.6 labelObj</a></li>
+<li><a class="reference internal" href="#hashtableobj">5.7 hashTableObj</a></li>
+<li><a class="reference internal" href="#colorobj">5.8 colorObj</a></li>
+<li><a class="reference internal" href="#imageobj">5.9 imageObj</a></li>
+<li><a class="reference internal" href="#shapeobj">5.10 shapeObj</a></li>
+<li><a class="reference internal" href="#lineobj">5.11 lineObj</a></li>
+<li><a class="reference internal" href="#pointobj">5.12 pointObj</a></li>
+<li><a class="reference internal" href="#symbolsetobj">5.13 symbolsetObj</a></li>
+<li><a class="reference internal" href="#symbolobj">5.14 symbolObj</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#open-issues">6. Open issues</a></li>
+<li><a class="reference internal" href="#status">7. Status</a></li>
+</ul>
+</li>
+</ul>
+
+        </div>
+      </div>
+      <div class="clearer"></div>
+    </div>
+    <div class="related" role="navigation" aria-label="Related">
+      <h3>Navigation</h3>
+      <ul>
+        <li class="right" style="margin-right: 10px">
+          <a href="../../genindex.html" title="General Index"
+             >index</a></li>
+        <li class="nav-item nav-item-0"><a href="../../index.html">Home</a> &#187;</li>
+        <li class="nav-item nav-item-this"><a href="">MS RFC 24: Mapscript memory management</a></li> 
+      </ul>
+    </div>
+    <div class="footer" role="contentinfo">
+    &#169; <a href="../../copyright.html">Copyright</a> 2026, Open Source Geospatial Foundation.
+      Last updated on 2026-07-20.
+      Created using <a href="https://www.sphinx-doc.org/">Sphinx</a> 9.1.0.
+    </div>
+  </body>
+</html>

@@ -1,0 +1,2085 @@
+.. index::
+   single: LAYER
+
+.. _layer:
+
+*****************************************************************************
+ LAYER
+*****************************************************************************
+
+.. image:: ../images/layer_classes.png
+    :align: center
+    :height: 248
+    :width: 1024
+    :class: no-scaled-link
+
+.. index::
+   pair: LAYER; BINDVALS
+   :name: mapfile-layer-bindvals
+
+BINDVALS
+    .. versionadded:: 6.0
+
+    This keyword allows name value pairs to be created to bind variables in SQL statements.
+    Variable binding prevents SQL injection by properly escaping strings and integers. 
+    Applies to :ref:`PostGIS <input_postgis>` and :ref:`Oracle <oci>` connections only. 
+
+    .. seealso::
+
+       :ref:`rfc59`
+
+    Example:
+
+    .. code-block:: mapfile
+
+        DATA "the_geom from (select * from province where name_e = $1) as foo using unique gid"
+        BINDVALS
+                "1"  "Nova Scotia"
+        END
+
+    .. note::
+        |RUNSUB|
+
+.. index::
+   pair: LAYER; CLASS
+   :name: mapfile-layer-class
+
+.. _layer-class:
+
+:ref:`CLASS`
+    Signals the start of a :ref:`CLASS` object.
+
+    Inside a layer, only a single class will be used for the rendering
+    of a feature. Each feature is tested against each class in the order
+    in which they are defined in the mapfile. The first class that matches
+    its min/max scale constraints and its :ref:`EXPRESSION <expressions>`
+    check for the current feature will be used for rendering.
+
+    This can be controlled with
+    :ref:`RENDERMODE <layer-processing-rendermode>` processing directive.
+
+.. index::
+   pair: LAYER; CLASSGROUP
+   :name: mapfile-layer-classgroup
+
+CLASSGROUP  [string]
+    Specify the class's group that would be considered at rendering time.
+    The :ref:`CLASS` object's GROUP parameter must be used in combination with
+    CLASSGROUP.
+
+.. index::
+   pair: LAYER; CLASSITEM
+   :name: mapfile-layer-classitem
+
+.. _CLASSITEM:
+
+CLASSITEM [attribute]
+    Item name in attribute table to use for class lookups.
+
+.. index::
+   pair: LAYER; CLUSTER
+   :name: mapfile-layer-cluster
+
+:ref:`CLUSTER`
+    Signals the start of a :ref:`CLUSTER` object.
+
+    The CLUSTER configuration option provides to combine multiple
+    features from the layer into single (aggregated) features based on
+    their relative positions.  Supported only for POINT layers.
+
+    .. seealso::
+
+       :ref:`rfc69`
+
+.. index::
+   pair: LAYER; COMPOSITE
+   :name: mapfile-layer-composite
+
+:ref:`COMPOSITE`
+    Signals the start of a :ref:`COMPOSITE` object.
+
+    One or more COMPOSITE blocks can be used to signal that rendering
+    should be done in a temporary image and merged onto the final map
+    image in a final step. The options defined inside the COMPOSITE block
+    will determine how this merging should be done (e.g. by applying opacity,
+    composition operator, or pixel filters)
+
+    .. seealso::
+
+       :ref:`rfc113`
+
+
+.. index::
+   pair: LAYER; CONNECTION
+   :name: mapfile-layer-connection
+
+CONNECTION [string]
+    Database connection string to retrieve remote data.
+
+    A PostGIS connection string is basically a regular PostgreSQL connection
+    string, it takes the form of
+    "user=nobody password=****** dbname=dbname host=localhost port=5432"
+
+    An Oracle connection string: user/pass[@db]
+    
+    An SDE connection string consists of a hostname, instance name,
+    database name, username and password separated by commas.
+    
+    .. WARNING::
+       MapServer's native SDE driver was removed for the MapServer 7.0 release 
+       (see `discussion <https://lists.osgeo.org/pipermail/mapserver-dev/2015-February/014349.html>`__).
+       GDAL's SDE driver was removed in the GDAL `3.2.0 release <https://github.com/OSGeo/gdal/blob/v3.2.0/gdal/NEWS>`__.    
+
+    .. seealso::
+
+       :ref:`vector` for specific connection information for various
+       data sources.
+
+    .. seealso::
+        See :ref:`kerneldensity` for specific connection information
+        for kernel density estimation.
+
+    .. note::
+        |RUNSUB|
+
+.. index::
+   pair: LAYER; CONNECTIONOPTIONS
+   :name: mapfile-layer-connectionoptions
+
+CONNECTIONOPTIONS
+    .. versionadded:: 7.6.0
+
+    This keyword allows to define connection options expressed as key / value
+    pairs. This is currently only implemented for CONNECTIONTYPE OGR or
+    raster layers, to pass open options to GDAL/OGR drivers.
+
+    Example for a GeoJSON datasource to specify the FLATTEN_NESTED_ATTRIBUTES
+    open option of the OGR GeoJSON driver.
+
+    .. code-block:: mapfile
+
+        CONNECTIONOPTIONS
+            "FLATTEN_NESTED_ATTRIBUTES" "YES"
+        END
+
+    .. seealso::
+
+       :ref:`rfc125`
+
+.. index::
+   pair: LAYER; CONNECTIONTYPE
+   :name: mapfile-layer-connectiontype
+
+.. index::
+   triple: LAYER; CONNECTIONTYPE; contour
+
+.. index::
+   triple: LAYER; CONNECTIONTYPE; kerneldensity
+
+.. index::
+   triple: LAYER; CONNECTIONTYPE; idw
+
+.. index::
+   triple: LAYER; CONNECTIONTYPE; local
+
+.. index::
+   triple: LAYER; CONNECTIONTYPE; ogr
+
+.. index::
+   triple: LAYER; CONNECTIONTYPE; oraclespatial
+
+.. index::
+   triple: LAYER; CONNECTIONTYPE; plugin
+
+.. index::
+   triple: LAYER; CONNECTIONTYPE; postgis
+
+.. index::
+   triple: LAYER; CONNECTIONTYPE; rasterlabel
+
+.. index::
+   triple: LAYER; CONNECTIONTYPE; sde
+
+.. index::
+   triple: LAYER; CONNECTIONTYPE; union
+
+.. index::
+   triple: LAYER; CONNECTIONTYPE; uvraster
+
+.. index::
+   triple: LAYER; CONNECTIONTYPE; wfs
+
+.. index::
+   triple: LAYER; CONNECTIONTYPE; wms
+
+CONNECTIONTYPE [contour|kerneldensity|idw|local|ogr|oraclespatial|plugin|postgis|rasterlabel|sde|union|uvraster|wfs|wms]
+    Type of connection. Default is local. See additional documentation for
+    any other type.
+
+    .. seealso::
+
+       :ref:`vector` for specific connection information for various
+       data sources.  See :ref:`union` for combining layers, added in
+       MapServer 6.0
+
+    .. seealso::
+        See :ref:`kerneldensity` for specific connection information
+        for kernel density estimation.
+
+    .. seealso::
+        See :ref:`idw` for specific connection information
+        for inverse distance weighted interpolation.
+
+    .. note::
+
+       *mygis* is another connectiontype, but it is deprecated; please
+       see the :ref:`MySQL section <mysql>` of the Vector Data
+       document for connection details.
+
+.. index::
+   pair: LAYER; DATA
+   :name: mapfile-layer-data
+
+DATA [filename]|[sde parameters][postgis table/column][oracle table/column]
+    Full filename of the spatial data to process. No file extension is
+    necessary for shapefiles. Can be specified relative to the
+    SHAPEPATH option from the Map Object.
+
+    If this is an SDE layer, the parameter should include the name of
+    the layer as well as the geometry column, i.e. "mylayer,shape,myversion".
+
+    If this is a PostGIS layer, the parameter should be in the form of
+    "<columnname> from <tablename>", where "columnname" is the name of the
+    column containing the geometry objects and "tablename" is the name of the
+    table from which the geometry data will be read.
+
+    For Oracle, use "shape FROM table" or "shape FROM (SELECT statement)" or
+    even more complex Oracle compliant queries! Note that there are important
+    performance impacts when using spatial subqueries however. Try using
+    MapServer's FILTER_ whenever possible instead. You can also see the SQL
+    submitted by forcing an error, for instance by submitting a DATA parameter
+    you know won't work, using for example a bad column name.
+
+    In a standard use case, when PostGIS, SpatiaLite, or GeoPackage are used as data
+    source the BBOX filter (bounding boxes intersect, `&&` with PostGIS) is used
+    automatically. However in some rare use case, a subquery can be very time
+    consuming if data is really important as the final data will be filtered only
+    in the query. In order to filter data sooner, ie before the final query, one
+    can filter data directly in the subquery using the !BOX! variable: 
+    `WHERE ST_Intersects(wkb_geometry,!BOX!)`.
+
+    .. seealso::
+
+       :ref:`vector` for specific connection information for various
+       data sources.
+
+    .. note::
+        |RUNSUB|
+
+.. index::
+   pair: LAYER; DEBUG
+   :name: mapfile-layer-debug
+
+DEBUG [off|on|0|1|2|3|4|5]
+    Enables debugging of a layer in the current map.
+
+    *Debugging with MapServer versions >= 5.0:*
+
+    Verbose output is generated and sent to the standard error output
+    (STDERR) or the MapServer errorfile if one is set using the
+    "MS_ERRORFILE" environment variable.  You can set the environment
+    variable by using the CONFIG parameter at the MAP level of the
+    mapfile, such as:
+
+    .. code-block:: mapfile
+
+      CONFIG "MS_ERRORFILE" "/ms4w/tmp/ms_error.txt"
+
+    You can also set the environment variable in Apache by adding the
+    following to your httpd.conf:
+
+    ::
+
+      SetEnv MS_ERRORFILE "/ms4w/tmp/ms_error.txt"
+
+    Once the environment variable is set, the DEBUG mapfile parameter
+    can be used to control the level of debugging output.  Here is a
+    description of the possible DEBUG values:
+
+    - **DEBUG O or OFF** - only msSetError() calls are logged to
+      MS_ERRORFILE. No msDebug() output at all. This is the default
+      and corresponds to the original behavior of MS_ERRORFILE in
+      MapServer 4.x
+
+    - **DEBUG 1 or ON** - includes all output from DEBUG 0 plus
+      msDebug() warnings about common pitfalls, failed assertions or
+      non-fatal error situations (e.g. missing or invalid values for
+      some parameters, missing shapefiles in tileindex, timeout error
+      from remote WMS/WFS servers, etc.)
+
+    - **DEBUG 2** - includes all output from DEBUG 1 plus notices and timing
+      information useful for tuning mapfiles and applications
+
+    - **DEBUG 3** - all of DEBUG 2 plus some debug output useful in
+      troubleshooting problems such as WMS connection URLs being called,
+      database connection calls, etc. This is the recommended level for
+      debugging mapfiles.
+
+    - **DEBUG 4** - DEBUG 3 plus even more details...
+
+    - **DEBUG 5** - DEBUG 4 plus any msDebug() output that might be
+      more useful to the developers than to the users.
+
+    You can also set the debug level by using the "MS_DEBUGLEVEL" environment
+    variable.
+
+    The DEBUG setting can also be specified for the entire map, by setting the
+    DEBUG parameter in the :ref:`MAP` object.
+
+    For more details on this debugging mechanism, please see :ref:`debugging`.
+
+    *Debugging with MapServer versions < 5:*
+
+    Verbose output is generated and sent to the standard error output (STDERR)
+    or the MapServer logfile if one is set using the LOG parameter in the WEB
+    object.  Apache users will see timing details for drawing in Apache's
+    error_log file.  Requires MapServer to be built with the DEBUG=MSDEBUG
+    option (--with-debug configure option).
+
+.. index::
+   pair: LAYER; DUMP
+   :name: mapfile-layer-dump
+
+DUMP [true|false]
+    .. versionremoved:: 8.0 
+       Please use *LAYER* *METADATA* instead.
+
+    Switch to allow MapServer to return data in GML format. Useful when
+    used with WMS GetFeatureInfo operations. "false" by default.
+
+    .. seealso::
+
+       :ref:`WMS_SERVER`
+
+.. index::
+   pair: LAYER; ENCODING
+   :name: mapfile-layer-encoding
+
+ENCODING [string]
+    .. versionadded:: 7.0
+
+    The encoding used for text in the layer data source.  The value
+    must be supported by ICONV (for example "LATIN1").  When
+    `ENCODING` is set (and not equal to "UTF-8"), the data source text
+    attributes will be converted to UTF-8.
+    
+    Required for displaying international characters in MapServer.
+    More information can be found in the :ref:`Label Encoding document
+    <encoding>`.
+
+.. index::
+   pair: LAYER; EXTENT
+   :name: mapfile-layer-extent
+   
+.. _layer-extent:
+
+EXTENT [minx] [miny] [maxx] [maxy]
+    The spatial extent of the data. In most cases you will not need
+    to specify this, but it can be used to avoid the speed cost of having
+    MapServer compute the extents of the data.  An application can also
+    possibly use this value to override the extents of the map.
+    
+    .. TIP::
+       Setting EXTENT at the layer-level is a common optimization step
+       for database connections (see :ref:`Vector Data Management & Optimization <vector-database-optimization>`)       
+
+.. index::
+   pair: LAYER; FEATURE
+   :name: mapfile-layer-feature
+
+:ref:`FEATURE`
+    Signals the start of a :ref:`FEATURE` object.
+
+.. index::
+   pair: LAYER; FILTER
+   :name: mapfile-layer-filter
+
+.. _FILTER:
+
+FILTER [string]
+
+    This parameter allows for data specific attribute filtering that
+    is done at the same time spatial filtering is done, but before any
+    CLASS expressions are evaluated.  The string is simply a MapServer
+    :ref:`expression <expressions>`::
+
+      FILTER ("[type]"='road' and [size]<2)
+
+    Native filters are supported through the `NATIVE_FILTER`
+    `PROCESSING` key::
+
+      PROCESSING 'NATIVE_FILTER=id=234'
+
+    .. note::
+
+      Until MapServer 6, native filters could be specified as::
+
+        FILTER 'where id=234'.
+
+      But this is no longer supported.
+
+    .. note::
+        |RUNSUB|
+
+.. index::
+   pair: LAYER; FILTERITEM
+   :name: mapfile-layer-filteritem
+
+FILTERITEM [attribute]
+    Item to use with simple FILTER_ expressions. OGR and shapefiles only.
+
+.. index::
+   pair: LAYER; FOOTER
+   :name: mapfile-layer-footer
+
+FOOTER [filename]
+    Template to use *after* a layer's set of results have been sent.
+    Multiresult query modes only.
+
+.. index::
+   pair: LAYER; GEOMTRANSFORM
+   :name: mapfile-layer-geomtransform
+
+GEOMTRANSFORM [<expression>|<Javascript file>]
+    .. versionadded:: 6.4
+
+    Used to indicate that the current feature will be transformed.
+
+    .. index::
+       triple: LAYER; GEOMTRANSFORM; expression
+
+    - *<expression>*: Applies the given expression to the geometry.
+
+      Supported expressions:
+
+      .. index::
+         triple: LAYER; GEOMTRANSFORM; buffer
+
+      - *(buffer([shape],dist))*: Buffer the geometry (`[shape]`)
+        using `dist` ground units as buffer distance. For polygons, a
+        negative `dist` will produce a setback.
+        
+      .. index::
+         triple: LAYER; GEOMTRANSFORM; centerline
+         
+      .. versionadded:: 8.0 centerline()
+
+      - *(centerline([shape])*:  Useful for labeling polygons, creates a 
+        centered line (`[shape]`) using a Voronoi diagram generated by GEOS 
+        and then additional simplification. Requires GEOS >= 3.5
+        Centerlines can *only* be computed for polygon shapes.
+
+        - an example showing a generated red centerline that is used
+          to label lakes, from a polygon datasource `lakes.db` (and uses 
+          `densify()` to add more vertices to the generated red line, so it 
+          follows the lake's shape) :
+
+          .. code-block:: mapfile
+
+              LAYER
+                NAME "red-line"
+                TYPE LINE    
+                CONNECTIONTYPE OGR
+                CONNECTION "lakes.db"
+                DATA "lakes"
+                GEOMTRANSFORM (centerline(densify([shape], 0.1)))
+                ...
+                CLASS
+                  NAME "red"
+                  STYLE
+                    COLOR 255 0 0
+                  END #style      
+                  LABEL
+                    COLOR  0 0 0
+                    FONT sans
+                    TYPE truetype
+                    SIZE 7
+                    POSITION cc      
+                    FORCE TRUE
+                    ANGLE FOLLOW
+                  END #label      
+                END #class
+                ...   
+              END #layer
+
+          .. image:: ../images/centerline-greatlakes.png    
+             :height: 300
+             :width: 400
+             :class: no-scaled-link              
+
+      .. index::
+         triple: LAYER; GEOMTRANSFORM; densify
+
+      .. versionadded:: 8.0 densify()      
+
+      - *(densify([shape],tolerance)*:  Add more vertices to the 
+        feature (`[shape]`). Requires a positive tolerance
+        value.  Might be useful in combination with `centerline()` to 
+        add more vertices to the generated labeled line.        
+        
+      .. index::
+         triple: LAYER; GEOMTRANSFORM; generalize
+
+      - *(generalize([shape],tolerance))*: simplifies a geometry
+        (`[shape]`) in way comparable to FME's ThinNoPoint
+        algorithm. See https://trac.osgeo.org/gdal/ticket/966 for more
+        information. 
+
+      .. index::
+         triple: LAYER; GEOMTRANSFORM; inner
+         
+      .. versionadded:: 8.0 inner()                 
+
+      - *(inner([shape])*:
+        creates an inner corresponding ring from an input polygon, as a 
+        new `[shape]`        
+
+      .. index::
+         triple: LAYER; GEOMTRANSFORM; simplify
+
+      - *(simplify([shape],tolerance))*: simplifies a geometry
+        (`[shape]`) using the standard Douglas-Peucker algorithm.
+        
+        - an example showing a generated red centerline that is used
+          to label a province, from a polygon datasource `ns.db` (and uses 
+          `simplify()` to reduce the vertices in the generated line) :
+
+          .. code-block:: mapfile
+
+              LAYER
+                NAME "red-line"
+                TYPE LINE    
+                STATUS ON
+                CONNECTIONTYPE OGR
+                CONNECTION "ns.db"
+                DATA "ns"
+                ...
+                GEOMTRANSFORM (simplify((centerline([shape])), 10000))
+                CLASS
+                  NAME "red"
+                  STYLE
+                    COLOR 255 0 0
+                  END #style      
+                  LABEL
+                    COLOR  0 0 0
+                    FONT sans
+                    TYPE truetype
+                    SIZE 10
+                    POSITION AUTO      
+                    MINFEATURESIZE AUTO
+                    ANGLE FOLLOW
+                  END #label      
+                END #class
+                ...  
+              END #layer
+
+          .. image:: ../images/centerline-novascotia.png    
+             :height: 300
+             :width: 400
+             :class: no-scaled-link          
+
+      .. index::
+         triple: LAYER; GEOMTRANSFORM; simplifypt
+
+      - *(simplifypt([shape], tolerance))*: simplifies a geometry
+        (`[shape]`), ensuring that the result is a valid geometry
+        having the same dimension and number of components as the
+        input. `tolerance` must be non-negative.
+
+      .. index::
+         triple: LAYER; GEOMTRANSFORM; smoothsia
+
+      - *(smoothsia([shape], smoothing_size, smoothing_iteration, preprocessing))*:
+        will smooth a geometry (`[shape]`) using the SIA algorithm
+        
+      .. index::
+         triple: LAYER; GEOMTRANSFORM; outer
+         
+      .. versionadded:: 8.0 outer()                 
+
+      - *(outer([shape])*:
+        creates an outer corresponding ring from an input polygon, as a 
+        new `[shape]`.  This might be useful when you want to ignore islands
+        when labeling a lake.        
+
+        .. seealso::
+
+           :ref:`geomtransform` and :ref:`shape_smoothing`
+
+      There is a difference between STYLE and LAYER
+      GEOMTRANSFORM. LAYER-level will receive ground coordinates
+      (meters, degrees, etc) and STYLE-level will receive pixel
+      coordinates. The argument to methods such as simplify() must be
+      in the same units as the coordinates of the shapes at that point
+      of the rendering workflow, i.e. pixels at the STYLE-level and in
+      ground units at the LAYER-level.
+
+      .. code-block:: mapfile
+
+        LAYER NAME "my_layer"
+            TYPE LINE
+            STATUS DEFAULT
+            DATA "lines.shp"
+            GEOMTRANSFORM (simplify([shape], 10))  ## 10 ground units
+            CLASS
+                STYLE
+                    GEOMTRANSFORM (buffer([shape], 5)  ## 5 pixels
+                    WIDTH 2
+                    COLOR 255 0 0
+                END
+            END
+        END
+
+      The [map_cellsize] variable is available if you need to pass a pixel value
+      at the LAYER-level.
+
+      .. code-block:: mapfile
+
+        LAYER NAME "my_layer"
+            TYPE LINE
+            STATUS DEFAULT
+            DATA "lines.shp"
+            UNITS meters
+            # 10 * [map_cellsize] == 10 pixels converted to ground units
+            GEOMTRANSFORM (simplify([shape], [map_cellsize]*10))
+        ...
+
+      To get this variable working in the math expression parser,
+      the [map_cellsize] has to be converted into the layer ground unit.
+      If you choose to use [map_cellsize] in your GEOMTRANSFORM expression,
+      you must explicitly set the UNITS option in the layer.
+
+    .. index::
+       triple: LAYER; GEOMTRANSFORM; Javascript
+
+    - *<Javascript file>*: A Javascript file that returns a new geometry.  See :ref:`geomtransformjs`.
+
+      .. versionadded:: 7.0
+
+      .. code-block:: mapfile
+
+        LAYER
+          ...
+          GEOMTRANSFORM "javascript://transform.js" # relative path
+        END
+
+      or
+
+      .. code-block:: mapfile
+
+        LAYER
+          ...
+          GEOMTRANSFORM "javascript:///home/user/transform.js" # absolute path
+        END
+
+      .. note:: Requires :ref:`v8_support`.
+
+      .. seealso::
+
+         :ref:`geomtransform`
+
+.. index::
+   pair: LAYER; GRID
+   :name: mapfile-layer-grid
+
+:ref:`GRID`
+    Signals the start of a :ref:`GRID` object.
+
+.. index::
+   pair: LAYER; GROUP
+   :name: mapfile-layer-group
+
+GROUP [name]
+    Name of a group that this layer belongs to. The group name can then be
+    reference as a regular layer name in the template files, allowing to do
+    things like turning on and off a group of layers at once.
+
+    If a group name is present in the LAYERS parameter of a CGI
+    request, all the layers of the group are returned (the `STATUS` of
+    the `LAYER`\s have no effect).
+
+.. index::
+   pair: LAYER; HEADER
+   :name: mapfile-layer-header
+
+HEADER [filename]
+    Template to use *before* a layer's set of results have been sent.
+    Multiresult query modes only.
+
+.. index::
+   pair: LAYER; IDENTIFY
+   :name: mapfile-layer-identify
+
+.. _layer-identify:
+
+:ref:`IDENTIFY`
+    .. versionadded:: 8.6.0
+
+    Signals the start of an :ref:`IDENTIFY` object.
+
+    Controls how vector features are identified, typically through WMS GetFeatureInfo
+    or MODE=QUERY requests.
+
+.. index::
+   pair: LAYER; JOIN
+   :name: mapfile-layer-join
+
+:ref:`JOIN`
+    Signals the start of a :ref:`JOIN` object.
+
+LABELANGLEITEM [attribute]
+    .. versionremoved:: 5.0
+       Please see the :ref:`LABEL` object's ANGLE parameter instead.
+       
+    For MapServer versions < 5.0, this is the item name in attribute table
+    to use for class annotation angles. Values should be in degrees.
+
+.. index::
+   pair: LAYER; LABELCACHE
+   :name: mapfile-layer-labelcache
+
+LABELCACHE [on|off]
+    Specifies whether labels should be drawn as the features for this layer
+    are drawn, or whether they should be cached and drawn after all layers
+    have been drawn. Default is on. Label overlap removal, auto placement
+    etc... are only available when the label cache is active.
+
+.. index::
+   pair: LAYER; LABELITEM
+   :name: mapfile-layer-labelitem
+
+LABELITEM [attribute]
+    Item name in attribute table to use for class annotation (i.e. labeling).
+
+.. index::
+   pair: LAYER; LABELMAXSCALEDENOM
+   :name: mapfile-layer-labelmaxscaledenom
+
+LABELMAXSCALEDENOM [double]
+    Minimum scale at which this LAYER is labeled.  Scale is given as the
+    denominator of the actual scale fraction, for example for a map at a scale
+    of 1:24,000 use 24000.  Implemented in MapServer 5.0, to replace the
+    deprecated LABELMAXSCALE parameter. Must be greater or equal to 0.
+
+    .. seealso::
+
+       :term:`Map Scale`
+
+.. index::
+   pair: LAYER; LABELMINSCALEDENOM
+   :name: mapfile-layer-labelminscaledenom
+
+LABELMINSCALEDENOM [double]
+    Maximum scale at which this LAYER is labeled.  Scale is given as the
+    denominator of the actual scale fraction, for example for a map at a scale
+    of 1:24,000 use 24000.  Implemented in MapServer 5.0, to replace the
+    deprecated LABELMINSCALE parameter. Must be greater or equal to 0.
+
+    .. seealso::
+
+       :term:`Map Scale`
+
+.. index::
+   pair: LAYER; LABELREQUIRES
+   :name: mapfile-layer-labelrequires
+
+.. _LABELREQUIRES:
+
+LABELREQUIRES [expression]
+    Sets context for labeling this layer, for example:
+
+    .. code-block:: mapfile
+
+        LABELREQUIRES "![orthoquads]"
+
+    means that this layer would NOT be labeled if a layer named
+    "orthoquads" is on. The expression consists of a boolean expression based
+    on the status of other layers, each [layer name] substring is replaced by
+    a 0 or a 1 depending on that layer's STATUS_ and then evaluated as normal.
+    Logical operators AND and OR can be used.
+
+LABELSIZEITEM [attribute]
+    .. versionremoved:: 5.0
+       Please see the :ref:`LABEL` object's SIZE parameter instead.
+       
+    For MapServer versions < 5.0, this is the item name in attribute table to
+    use for class annotation sizes. Values should be in pixels.
+
+.. index::
+   pair: LAYER; MASK
+   :name: mapfile-layer-mask
+
+MASK [layername]
+    The data from the current layer will only be rendered where it intersects
+    features from the [layername] layer. [layername] must reference the NAME of
+    another LAYER_ defined in the current mapfile. can be any kind of
+    MapServer layer, i.e. vector or raster. If the current layer has labelling
+    configured, then only labels who's label-point fall inside the unmasked
+    area will be added to the labelcache (the actual glyphs for the label
+    may be rendered ontop of the masked-out area.
+
+    .. note::
+
+       Unless you want the features of [layername] to actually appear on the
+       generated map, [layername] should usually be set to STATUS_ OFF.
+
+    .. seealso::
+
+       :ref:`rfc79`
+
+    .. note::
+        |RUNSUB|
+
+.. index::
+   pair: LAYER; MAXFEATURES
+   :name: mapfile-layer-maxfeatures
+
+MAXFEATURES [integer]
+    Specifies the number of features that should be drawn for this layer in
+    the CURRENT window. Has some interesting uses with annotation and with
+    sorted data (i.e. lakes by area). Must be greater than 0.
+
+.. index::
+   pair: LAYER; MAXGEOWIDTH
+   :name: mapfile-layer-maxgeowidth
+
+MAXGEOWIDTH [double]
+    .. versionadded:: 5.4.0
+
+    Maximum width, in the map's geographic units, at which this LAYER
+    is drawn.  If MAXSCALEDENOM is also specified then MAXSCALEDENOM
+    will be used instead. Must be greater than 0.
+
+    The width of a map in geographic units can be found by calculating the
+    following from the extents::
+
+      [maxx] - [minx]
+
+.. index::
+   pair: LAYER; MAXSCALEDENOM
+   :name: mapfile-layer-maxscaledenom
+
+MAXSCALEDENOM [double]
+    .. versionadded:: 5.0.0
+       Replaced MAXSCALE.
+     
+    Minimum scale at which this LAYER is drawn.  Scale is given as the
+    denominator of the actual scale fraction, for example for a map at a scale
+    of 1:24,000 use 24000. Must be greater or equal to 0.
+
+    .. seealso::
+
+       :term:`Map Scale`
+
+.. index::
+   pair: LAYER; METADATA
+   :name: mapfile-layer-metadata
+
+METADATA
+    This keyword allows for arbitrary data to be stored as name value pairs.
+    This is used with :ref:`OGC WMS <wms_server>` to define things such as
+    layer title. It can also allow more flexibility in creating templates, as
+    anything you put in here will be accessible via template tags.
+
+    Example:
+
+    .. code-block:: mapfile
+
+        METADATA
+            "title" "My layer title"
+            "author" "Me!"
+        END
+
+    .. note::
+        Runtime substitution can be used to replace metadata values, but not keys. See :ref:`RUNSUB`
+
+.. index::
+   pair: LAYER; MINFEATURESIZE
+   :name: mapfile-layer-minfeaturesize
+
+MINFEATURESIZE [integer]
+    Minimum feature size (in pixels) for shapes in the layer.
+    Must be greater than 0.
+
+.. index::
+    pair: LAYER; MINGEOWIDTH
+    :name: mapfile-layer-mingeowidth
+
+MINGEOWIDTH [double]
+    .. versionadded:: 5.4.0
+
+    Minimum width, in the map's geographic units, at which this LAYER
+    is drawn.  If MINSCALEDENOM is also specified then MINSCALEDENOM
+    will be used instead. Must be greater than 0.
+
+    The width of a map in geographic units can be found by calculating the
+    following from the extents::
+
+      [maxx] - [minx]
+
+.. index::
+   pair: LAYER; MINSCALEDENOM
+   :name: mapfile-layer-minscaledenom
+
+MINSCALEDENOM [double]
+    Maximum scale at which this LAYER is drawn.  Scale is given as the
+    denominator of the actual scale fraction, for example for a map at a scale
+    of 1:24,000 use 24000.  Implemented in MapServer 5.0, to replace the
+    deprecated MINSCALE parameter. Must be greater or equal to 0.
+
+    .. seealso::
+
+       :term:`Map Scale`
+
+.. index::
+   pair: LAYER; NAME
+   :name: mapfile-layer-name
+
+NAME [string]
+    Short name for this layer. This name is the link between the
+    mapfile and web interfaces that refer to this name. They must be
+    identical. The name should be unique, unless one layer replaces
+    another at different scales. Use the GROUP option to associate
+    layers with each other.  It is recommended that the name not
+    contain spaces, special characters, or begin with a number (which
+    could cause problems through interfaces such as OGC services).
+    
+    .. TIP::
+       It is **strongly recommended** that you set a NAME parameter for every LAYER.
+
+.. index::
+   pair: LAYER; OFFSITE
+   :name: mapfile-layer-offsite
+
+OFFSITE [r] [g] [b] | [hexadecimal string]
+    Sets the color index to treat as transparent for raster layers.
+    
+    - `r`, `g` and `b` shall be integers [0..255].  To specify black 
+      pixels, the following is used:
+
+        .. code-block:: mapfile
+
+           OFFSITE 0 0 0
+
+    - `hexadecimal string` can be
+
+      - RGB value: "#rrggbb".  To specify magenta, the following is
+        used:
+
+        .. code-block:: mapfile
+
+           OFFSITE "#FF00FF"
+
+      - RGBA value (adding translucence): "#rrggbbaa".  To specify a
+        semi-translucent magenta, the following is used:
+
+        .. code-block:: mapfile
+
+           OFFSITE "#FF00FFCC"    
+
+.. index::
+   pair: LAYER; OPACITY
+   :name: mapfile-layer-opacity
+
+.. _layer-opacity:
+
+OPACITY [integer|alpha]
+
+    .. versionremoved:: 8.0
+       Use a :ref:`COMPOSITE` block instead.
+
+.. index::
+   pair: LAYER; PLUGIN
+   :name: mapfile-layer-plugin
+
+PLUGIN [filename]
+    Additional library to load by MapServer, for this layer.  This is commonly
+    used to load specific support for Oracle and Microsoft SQL Server layers,
+    such as:
+    
+    **For MapServer >=8:**
+
+      .. code-block:: mapfile
+
+        CONNECTIONTYPE PLUGIN
+        CONNECTION "username/password@hostname:port/database"
+        PLUGIN "oci"
+        DATA "geometrycolumn FROM schema.table USING UNIQUE column SRID 4326"
+	
+    Where "oci" is an alias mapped in the global :ref:`CONFIG <config>` 
+    file:
+    
+      .. code-block:: mapfile
+      
+        PLUGINS
+          # new keyed approach to plugins
+          "mssql" "C:/apps/gisinternals/bin/ms/plugins/mssql2008/msplugin_mssql2008.dll"
+          "oci" "C:/apps/gisinternals/bin/ms/plugins/oci/msplugin_oracle.dll"
+          "mssql_ms4w" "C:/ms4w/msplugins/mssql/msplugin_mssql2008.dll"
+        END
+        
+    **For MapServer <8:**
+    
+      .. code-block:: mapfile    
+    
+        CONNECTIONTYPE PLUGIN
+        CONNECTION "server=mysqlserver2008.com;uid=dbusername;pwd=dbpassword;database=Roads Database;Integrated Security=false"
+        PLUGIN "C:/ms4w/msplugins/mssql/msplugin_mssql2008.dll"
+        DATA "the_geom from roads"    
+
+.. index::
+   pair: LAYER; POSTLABELCACHE
+   :name: mapfile-layer-postlabelcache
+
+POSTLABELCACHE [true|false]
+    Tells MapServer to render this layer after all labels in the cache have
+    been drawn. Useful for adding neatlines and similar elements.
+    Default is false.
+
+.. index::
+   pair: LAYER; PROCESSING
+   :name: mapfile-layer-processing
+
+.. index:: PROCESSING, Raster options, Special options
+
+PROCESSING [string]
+    Passes a processing directive to be used with this layer. The supported
+    processing directives vary by layer type, and the underlying driver that
+    processes them.
+
+    .. note::
+        |RUNSUB|
+
+    .. index::
+       triple: LAYER; PROCESSING; ArcSDE options
+
+    - **ArcSDE Directives** - All ArcSDE processing options are described
+      in :ref:`arcsde`.  Here are two examples.
+
+      .. code-block:: mapfile
+
+          PROCESSING "QUERYORDER=ATTRIBUTE"
+          PROCESSING "OBJECTID=OBJECTID"
+
+    .. index::
+       triple: LAYER; PROCESSING; ITEMS
+
+    - **Attributes Directive** - The ITEMS processing option allows to
+      specify the name of attributes for inline layers or specify the subset
+      of the attributes to be used by the layer, such as:
+
+      .. code-block:: mapfile
+
+          PROCESSING "ITEMS=itemname1,itemname2,itemname3"
+
+    .. index::
+       triple: LAYER; PROCESSING; cluster options
+
+    .. index::
+       triple: LAYER; PROCESSING; CLUSTER_GET_ALL_SHAPES
+       
+    .. index::
+       triple: LAYER; PROCESSING; CLUSTER_KEEP_LOCATIONS
+       
+    .. index::
+       triple: LAYER; PROCESSING; CLUSTER_USE_MAP_UNITS
+       
+    .. index::
+       triple: LAYER; PROCESSING; ITEMS       
+
+    - **Clustering** - cluster object directives are described in
+      :ref:`cluster`
+
+      .. code-block:: mapfile
+
+          PROCESSING "CLUSTER_GET_ALL_SHAPES=ON"
+	  PROCESSING "CLUSTER_KEEP_LOCATIONS=ON"
+          PROCESSING "CLUSTER_USE_MAP_UNITS=ON"
+          PROCESSING "ITEMS=attribute1,attribute2,attribute3"
+
+    .. index::
+       triple: LAYER; PROCESSING; CLOSE_CONNECTION
+
+    - **Connection Pooling Directive** - This is where you can enable
+      connection pooling for certain layer layer types. Connection pooling
+      will allow MapServer to share the handle to an open database or layer
+      connection throughout a single map draw process. Additionally, if you
+      have FastCGI enabled, the connection handle will stay open indefinitely,
+      or according to the options specified in the
+      :ref:`FastCGI <fastcgi>` configuration. :ref:`oci`, :ref:`arcsde`,
+      :ref:`ogr` and :ref:`input_postgis` currently support this approach.
+      "**DEFER**" enables connection pooling; "**ALWAYS**" will always close 
+      the connection after use, and will also not try to reuse a shared 
+      connection from the pool that might come from another layer.
+
+      .. code-block:: mapfile
+
+          PROCESSING "CLOSE_CONNECTION=DEFER"
+          
+      or
+          
+      .. code-block:: mapfile
+
+          PROCESSING "CLOSE_CONNECTION=ALWAYS"          
+
+    .. index::
+       triple: LAYER; PROCESSING; contour options
+
+    .. index::
+       triple: LAYER; PROCESSING; CONTOUR_INTERVAL
+
+    .. index::
+       triple: LAYER; PROCESSING; CONTOUR_LEVELS
+
+    .. index::
+       triple: LAYER; PROCESSING; CONTOUR_ITEM
+
+    - **Contour Directives** - contour directives are described in
+      :ref:`contour`.
+
+      .. code-block:: mapfile
+
+          PROCESSING "BANDS=1"
+          PROCESSING "CONTOUR_INTERVAL=5"
+          PROCESSING "CONTOUR_LEVELS=100,500,1000"
+          PROCESSING "CONTOUR_ITEM=elevation"
+
+    .. index::
+       triple: LAYER; PROCESSING; KERNELDENSITY_RADIUS
+
+    - **Kernel density radius**
+    
+      .. versionadded:: 7.0
+      
+      Radius in pixels of the gaussian
+      filter to apply to the bitmap array once all features have been
+      accumulated.  Higher values result in increased cpu time needed
+      to compute the filtered data.
+
+      .. code-block:: mapfile
+
+           PROCESSING "KERNELDENSITY_RADIUS=10"
+
+    .. index::
+       triple: LAYER; PROCESSING; KERNELDENSITY_COMPUTE_BORDERS
+
+    - **Kernel density compute borders**
+    
+      .. versionadded:: 7.0
+
+      A kernel of radius "r"
+      cannot be applied to "r" pixels along the borders of the image.
+      The default is to extend the search rectangle of the input
+      datasource to include features "r" pixels outside of the current
+      map extent so that the computed heatmap extends to the full
+      extent of the resulting image.  This can be deactivated when
+      tiling if the tiling software applies a metabuffer of "r" pixels
+      to its requests, to avoid the performance overhead of computing
+      this extra information.
+
+      .. code-block:: mapfile
+
+          PROCESSING "KERNELDENSITY_COMPUTE_BORDERS=ON|OFF"
+
+    .. index::
+       triple: LAYER; PROCESSING; KERNELDENSITY_NORMALIZATION
+
+    - **Kernel density normalization**
+    
+      .. versionadded:: 7.0
+    
+      If set to "AUTO", the created
+      raster band will be scaled such that its intensities range from
+      0 to 255, in order to fully span the configured color ramp.
+      Such behavior may not be desirable (typically for tiling) as the
+      resulting intensity of a pixel at a given location will vary
+      depending on the extent of the current map request.  If set to a
+      numeric value, the samples will be multiplied by the given value.
+      It is up to the user to determine which scaling value to use to
+      make the resulting pixels span the full 0-255 range; determining
+      that value is mostly a process of trial and error.  Pixels that
+      fall outside the 0-255 range will be clipped to 0 or 255.
+
+      .. code-block:: mapfile
+
+          PROCESSING "KERNELDENSITY_NORMALIZATION=AUTO|numeric"
+
+    .. index::
+       triple: LAYER; PROCESSING; IDW_RADIUS
+
+    - **Inverse distance weight interpolation radius**
+    
+      .. versionadded:: 8.0
+      
+      Radius in pixels of the search radius of features to take into account.
+      Higher values result in increased cpu time needed to compute the filtered data.
+      The default is the dimension of the image to render.
+
+      .. code-block:: mapfile
+
+           PROCESSING "IDW_RADIUS=10"
+
+    .. index::
+       triple: LAYER; PROCESSING; IDW_COMPUTE_BORDERS
+
+    - **Inverse distance weight interpolation compute borders**
+    
+      .. versionadded:: 8.0
+
+      A kernel of radius "r"
+      cannot be applied to "r" pixels along the borders of the image.
+      The default is to extend the search rectangle of the input
+      datasource to include features "r" pixels outside of the current
+      map extent so that the computed result extends to the full
+      extent of the resulting image.  This can be deactivated when
+      tiling if the tiling software applies a metabuffer of "r" pixels
+      to its requests, to avoid the performance overhead of computing
+      this extra information.
+
+      .. code-block:: mapfile
+
+          PROCESSING "IDW_COMPUTE_BORDERS=ON|OFF"
+
+    .. index::
+       triple: LAYER; PROCESSING; IDW_POWER
+
+    - **Inverse distance weight interpolation power**
+    
+      .. versionadded:: 8.0
+
+      Value such that 1 / distance^power is the weight applied when computing
+      pixel values. The default is 1.0.
+
+      .. code-block:: mapfile
+
+          PROCESSING "IDW_POWER=1"
+
+    .. index::
+       triple: LAYER; PROCESSING; RANGE_COLORSPACE
+
+    - **Raster colour ramping**
+    
+      .. versionadded:: 7.0
+      
+      RANGE_COLORSPACE=RGB|HSL - The
+      default RANGE support interpolates colors between stops in RGB
+      space, which usually results in washed out colors. The
+      interpolation can be done in HSL space which usually results in
+      wanted output for heatmaps.
+
+      .. code-block:: mapfile
+
+          PROCESSING "RANGE_COLORSPACE=HSL"
+
+    .. index::
+       triple: LAYER; PROCESSING; LABEL_NO_CLIP
+
+    - **Label Directive** - The LABEL_NO_CLIP processing option can be
+      used to skip clipping of shapes when determining associated
+      label anchor points. This avoids changes in label position as
+      extents change between map draws. It also avoids duplicate
+      labels where features appear in multiple adjacent tiles when
+      creating tiled maps.
+
+      .. code-block:: mapfile
+
+          PROCESSING "LABEL_NO_CLIP=True"
+
+    .. index::
+       triple: LAYER; PROCESSING; POLYLINE_NO_CLIP
+
+    - **Line Rendering Directive** - The POLYLINE_NO_CLIP processing
+      option can be used to skip clipping of shapes when rendering
+      styled lines (dashed or styled with symbols).  This avoids
+      changes in the line styling as extents change between map
+      draws. It also avoids edge effects where features appear in
+      multiple adjacent tiles when creating tiled maps.
+
+      .. code-block:: mapfile
+
+          PROCESSING "POLYLINE_NO_CLIP=True"
+
+    .. index::
+       triple: LAYER; PROCESSING; RENDERMODE
+
+    .. _layer-processing-rendermode:
+
+    - **Class Rendering Directive**
+    
+      .. versionadded:: 7.6
+	  
+      The RENDERMODE processing option
+      specifies how classes are selected for rendering a layer. Default value,
+      and historic behaviour, is FIRST_MATCHING_CLASS: only the first
+      applicable class is selected to render a feature (see :ref:`CLASS
+      description <layer-class>`). The other available value is
+      ALL_MATCHING_CLASSES: all applicable classes are used to render a
+      feature, each one being used on top of the previous ones. This is the
+      default behaviour with SLD styles.
+
+      .. code-block:: mapfile
+
+          PROCESSING "RENDERMODE=ALL_MATCHING_CLASSES"
+		  
+    .. index::
+       triple: LAYER; PROCESSING; GETSHAPE_STYLE_ITEMS
+
+    - **OGR Styles Directive** - This directive can be used for obtaining
+      label styles through MapScript.  For more information see the
+      :ref:`MapServer's OGR document <styleitemauto-label-styles>`.
+
+      .. code-block:: mapfile
+
+          PROCESSING "GETSHAPE_STYLE_ITEMS=all"
+
+    .. index::
+       triple: LAYER; PROCESSING; MSSQL_READ_WKB
+
+    - **MSSQL specific options** - MSSQL_READ_WKB=TRUE - Uses WKB
+      (Well Known Binary) format instead of native format when
+      fetching geometries.
+
+      .. code-block:: mapfile
+
+          PROCESSING "MSSQL_READ_WKB=TRUE"
+
+    .. index::
+       triple: LAYER; PROCESSING; NATIVE_FILTER
+
+    - **Native filter Directive**
+    
+      .. versionadded:: 7.0
+      
+      This directive can be used to do
+      driver specific filtering.  For database connections the string
+      is a SQL WHERE clause that is valid with respect to the
+      underlying database.
+
+      .. code-block:: mapfile
+
+          PROCESSING "NATIVE_FILTER=id=234"
+
+    .. index::
+       triple: LAYER; PROCESSING; FORCE2D
+
+    - **PostGIS specific options** - FORCE2D=YES can be used to force
+      2D only geometries to be retrieved from PostGIS.
+
+      .. code-block:: mapfile
+
+          PROCESSING "FORCE2D=YES"
+
+    .. index::
+       triple: LAYER; PROCESSING; UV_SPACING
+
+    .. index::
+       triple: LAYER; PROCESSING; UV_SIZE_SCALE
+
+    - **Vector field specific rendering options** - UV_SPACING: The
+      spacing is the distance, in pixels, between arrows to be
+      displayed in the vector field.  Default is 32.  UV_SIZE_SCALE:
+      Used to convert the vector lengths (magnitude) of the raster to
+      pixels for a better rendering. Default is 1.
+
+      .. code-block:: mapfile
+
+          PROCESSING "UV_SPACING=40"
+          PROCESSING "UV_SIZE_SCALE=0.2"
+
+     .. index::
+       triple: LAYER; PROCESSING; GAMMA
+
+    - **AGG renderer tweaking** - This directive can be used for setting
+      the linear gamma to be used when rendering polygon features. The
+      default value of 0.75 (that can be overridden at the :ref:`outputformat`
+      level) can be set to a lower value to limit/remove the faint outlines
+      that appear between adjacent polygons. A value of 0.5 is usually good
+      enough.
+
+      Note that starting with MapServer 8.4, a GAMMA processing option is
+      also available for rasters, but its default value is 1.0.
+
+      .. code-block:: mapfile
+
+          PROCESSING "GAMMA=0.5"
+
+    .. index::
+       triple: LAYER; PROCESSING; raster options
+
+    - **Raster Directives** - All raster processing options are described
+      in :ref:`raster`.  Here we see the SCALE and BANDs directives used to
+      autoscale raster data and alter the band mapping.
+
+      .. code-block:: mapfile
+
+          PROCESSING "SCALE=AUTO"
+          PROCESSING "BANDS=3,2,1"
+
+    .. index::
+       triple: LAYER; PROCESSING; union options
+
+    .. index::
+       triple: LAYER; PROCESSING; UNION_STATUS_CHECK
+
+    .. index::
+       triple: LAYER; PROCESSING; UNION_SCALE_CHECK
+
+    .. index::
+       triple: LAYER; PROCESSING; UNION_SRCLAYER_CLOSE_CONNECTION
+
+    - **Union layer Directives** - The following processing options
+      can be used with the union layers: UNION_STATUS_CHECK (TRUE or
+      FALSE) - controls whether the status of the source layers should
+      be checked and the invisible layers (STATUS=OFF) should be
+      skipped. Default value is FALSE.  UNION_SCALE_CHECK (TRUE or
+      FALSE) - controls whether the scale range of the source layers
+      should be checked and the invisible layers (falling outside of
+      the scale range and zoom range) should be skipped. Default value
+      is TRUE.  UNION_SRCLAYER_CLOSE_CONNECTION - override the
+      connection pool setting of the source layers. By introducing
+      this setting we alter the current behaviour which is equivalent
+      to: "UNION_SRCLAYER_CLOSE_CONNECTION=ALWAYS"
+
+      .. code-block:: mapfile
+
+          PROCESSING "UNION_STATUS_CHECK=FALSE"
+          PROCESSING "UNION_SCALE_CHECK=TRUE"
+          PROCESSING "UNION_SRCLAYER_CLOSE_CONNECTION=ALWAYS"
+
+.. index::
+   pair: LAYER; PROJECTION
+   :name: mapfile-layer-projection
+
+:ref:`PROJECTION`
+    Signals the start of a :ref:`PROJECTION` object.
+
+.. index::
+   pair: LAYER; REQUIRES
+   :name: mapfile-layer-requires
+
+REQUIRES [expression]
+    Sets context for displaying this layer (see LABELREQUIRES_).
+    
+    An example could be that you have a *states_poly* layer that you
+    want turned off whenever a *modis* layer is turned on; in this case
+    you would set the *REQUIRES* parameter in the *states_poly* layer such as:
+    
+    .. code-block:: mapfile
+    
+      LAYER
+        NAME "states_poly"
+        TYPE POLYGON
+        REQUIRES "![modis]"
+        ...
+        
+    with REQUIRES: 
+        
+    .. image:: ../images/requires-enabled.png
+       :height: 300
+       :width: 400
+       :class: no-scaled-link
+       
+    without REQUIRES 
+              
+    .. image:: ../images/requires-disabled.png    
+       :height: 300
+       :width: 400
+       :class: no-scaled-link
+               
+    The *REQUIRES* setting should affect all modes (confirmed through testing is: 
+    mode=map, WMS GetMap, MapScript, and map2img commandline).
+
+.. index::
+   pair: LAYER; SCALETOKEN
+   :name: mapfile-layer-scaletoken
+
+SCALETOKEN
+    .. versionadded:: 6.4
+
+    Signals the start of a `SCALETOKEN` object.
+    Allows scale dependent string substitutions.
+    See :ref:`rfc86`.
+
+    .. code-block:: mapfile
+
+      LAYER
+        ...
+        SCALETOKEN
+          NAME "%pri%"
+          VALUES
+            "0" "1"
+            "1000" "2"
+            "10000" "3"
+          END # VALUES
+        END # SCALETOKEN
+        # data from a specific table:
+        DATA "geom from mytable_%pri%"
+        # data from a specific Shapefile format dataset:
+        DATA "/path/to/roads_%pri%.shp"
+        # data from a specific column in the table:
+        DATA "geom_%pri% from roads"
+        # filtering:
+        DATA "geom_%pri% from (select * from roads where pri > %pri%) as foo"
+        CLASS
+          ...
+        END # CLASS
+      END # LAYER
+
+    In the previous example, %pri% would be replaced by:
+
+    - "1" for scale denominators smaller than 1,000, giving:
+
+      .. code-block:: mapfile
+
+        DATA "geom from mytable_1"
+        DATA "/path/to/roads_1.shp"
+        DATA "geom_1 from roads"
+        DATA "geom_1 from (select * from roads where pri > 1) as foo"
+
+    - "2" for scale denominators between 1,000 and 10,000:
+
+      .. code-block:: mapfile
+
+        DATA "geom from mytable_2"
+        DATA "/path/to/roads_2.shp"
+        DATA "geom_2 from roads"
+        DATA "geom_2 from (select * from roads where pri > 2) as foo"
+
+    - "3" for scale denominators larger than 10,000:
+
+      .. code-block:: mapfile
+
+        DATA "geom from mytable_3"
+        DATA "/path/to/roads_3.shp"
+        DATA "geom_3 from roads"
+        DATA "geom_3 from (select * from roads where pri > 3) as foo"
+
+
+.. index::
+   pair: LAYER; SIZEUNITS
+   :name: mapfile-layer-sizeunits
+
+.. index::
+   triple: LAYER; SIZEUNITS; feet
+
+.. index::
+   triple: LAYER; SIZEUNITS; inches
+
+.. index::
+   triple: LAYER; SIZEUNITS; kilometers
+
+.. index::
+   triple: LAYER; SIZEUNITS; meters
+
+.. index::
+   triple: LAYER; SIZEUNITS; miles
+
+.. index::
+   triple: LAYER; SIZEUNITS; nauticalmiles
+
+.. index::
+   triple: LAYER; SIZEUNITS; pixels
+
+SIZEUNITS [feet|inches|kilometers|meters|miles|nauticalmiles|pixels]
+    Sets the unit of :ref:`STYLE` object SIZE values (default is
+    pixels).  Useful for simulating buffering. `nauticalmiles` was
+    added in MapServer 5.6.
+
+.. index::
+   pair: LAYER; STATUS
+   :name: mapfile-layer-status
+
+.. _STATUS:
+
+STATUS [on|off|default]
+    Sets the current status of the layer. Often modified by MapServer itself.
+    Default turns the layer on permanently.
+
+    .. note::
+
+        In :ref:`CGI <cgi>` mode, layers with STATUS DEFAULT cannot be turned
+        off using normal mechanisms. It is recommended to set layers to STATUS
+        DEFAULT while debugging a problem, but set them back to ON/OFF in
+        normal use.
+
+    .. note::
+
+        For :ref:`WMS <wms_server>`, layers in the server mapfile with STATUS
+        DEFAULT are always sent to the client.
+
+    .. note::
+       The STATUS of the individual layers of a GROUP has no effect
+       when the group name is present in the LAYERS parameter of a CGI
+       request - all the layers of the group will be returned.
+
+.. index::
+   pair: LAYER; STYLEITEM
+   :name: mapfile-layer-styleitem
+
+STYLEITEM [<attribute>|auto|<javascript file>|<sld file>]
+    Styling based on attributes, generated with JavaScript, or generated
+    from an SLD file.
+
+    .. index::
+       triple: LAYER; STYLEITEM; attribute
+
+    - *<attribute>*: Item to use for feature specific styling. The
+      style information may be represented by a separate attribute
+      (style string) attached to the feature.  MapServer supports the
+      following style string representations:
+
+      - **MapServer STYLE definition**
+      
+        - The style string can be
+          represented as a MapServer :ref:`STYLE` block according to the
+          following example:
+
+          .. code-block:: mapfile
+
+            STYLE BACKGROUNDCOLOR 128 0 0 COLOR 0 0 208 END
+
+      - **MapServer CLASS definition**
+      
+        - By specifying the entire
+          :ref:`CLASS` instead of a single style allows to use further
+          options (like setting expressions, label attributes, multiple
+          styles) on a per feature basis.
+
+      - **OGR Style String**
+      
+        - MapServer support rendering the OGR
+          style string format according to the `OGR - Feature Style
+          Specification`_ documentation.  Currently only a few data
+          sources support storing the styles along with the features
+          (like MapInfo, AutoCAD DXF, Microstation DGN), however those
+          styles can easily be transferred to many other data sources as
+          a separate attribute by using the `ogr2ogr`_ command line tool
+          as follows:
+
+          .. code-block:: bash
+
+            ogr2ogr -sql "select *, OGR_STYLE from srclayer" "dstlayer" "srclayer"          
+
+      - **SLD String**
+      
+          .. versionadded:: 8.2.0
+      
+        - Different Styled Layer Descriptor documents (see :ref:`sld`) can be stored 
+          as strings in the feature attribute to allow styling on a per feature basis. The SLD string
+          must end with ``StyledLayerDescriptor>`` (part of the SLD closing tag) for it to be interpreted as SLD.
+
+          To use the first NamedLayer in the SLD string, whether or not the LAYER :ref:`NAME <mapfile-layer-name>`
+          matches the NamedLayer Name, add a **SLD_USE_FIRST_NAMEDLAYER**
+          :ref:`METADATA <mapfile-layer-metadata>` key and set its value to **"true"**.
+
+          .. code-block:: mapfile
+
+            LAYER
+              ...
+              STYLEITEM "STYLE" # name of the attribute containing styling information
+              METADATA
+                "SLD_USE_FIRST_NAMEDLAYER" "true"
+              END
+            END
+
+          .. seealso::
+
+             :ref:`rfc138`
+
+    .. index::
+       triple: LAYER; STYLEITEM; AUTO
+
+    - *AUTO*: The value: `AUTO` can be used for automatic styling.
+
+      - Automatic styling can be provided by the driver. Currently,
+        only the OGR driver supports automatic styling.
+
+      - When used for a :ref:`union`, the styles from the source
+        layers will be used.
+
+    .. index::
+       triple: LAYER; STYLEITEM; Javascript
+
+
+    - *<Javascript file>*:
+    
+      .. versionadded:: 6.6
+    
+      A Javascript file that returns a new string
+      containing either a :ref:`STYLE` definition or a :ref:`CLASS`
+      definition with one or multiple styles.  See :ref:`styleitemjs`.
+
+      .. code-block:: mapfile
+
+        LAYER
+          ...
+          STYLEITEM "javascript://myscript.js" # relative path
+          CLASS
+          END
+        END
+
+      or
+
+      .. code-block:: mapfile
+
+        LAYER
+          ...
+          STYLEITEM "javascript:///home/user/myscript.js" # absolute path
+          CLASS
+          END
+        END
+
+      .. note:: Requires :ref:`v8_support`.
+
+    - *<SLD file>*:
+
+      .. versionadded:: 8.2.0
+
+      A path to an SLD file. The path mush start with the prefix **sld://**, and
+      can be a path relative to the mapfile, or an absolute path.
+      :ref:`CLASS` and :ref:`STYLE` blocks will then be generated based on the SLD document.
+
+      .. code-block:: mapfile
+
+        LAYER
+          ...
+          STYLEITEM "sld://mysldfile.xml"
+        END
+
+      For SLD files containing multiple NamedLayers, if Name matches the LAYER name then this
+      style will be used. If there is no name match then the first NamedLayer in the SLD will be used.
+      See :ref:`sld-named-styles` for more details.
+
+      To enforce matching of a NamedLayer Name and the LAYER :ref:`NAME <mapfile-layer-name>` a
+      :ref:`METADATA <mapfile-layer-metadata>` key can be set to **"false"** as in the example below:
+
+      .. code-block:: mapfile
+
+        LAYER
+          ...
+          STYLEITEM "sld://mysldfile.xml"
+          METADATA
+            "SLD_USE_FIRST_NAMEDLAYER" "false"
+          END
+        END
+
+      .. seealso::
+
+        :ref:`rfc138`
+
+.. index::
+   pair: LAYER; SYMBOLSCALEDENOM
+   :name: mapfile-layer-symbolscaledenom
+
+.. _SYMBOLSCALEDENOM:
+
+SYMBOLSCALEDENOM [double]
+    The scale at which symbols and/or text appear full size. This
+    allows for dynamic scaling of objects based on the scale of the
+    map. If not set then this layer will always appear at the same
+    size. Scaling only takes place within the limits of MINSIZE and
+    MAXSIZE as described above.  Scale is given as the denominator of
+    the actual scale fraction, for example for a map at a scale of
+    1:24,000 use 24000.  Implemented in MapServer 5.0, to replace the
+    deprecated SYMBOLSCALE parameter. Must be greater or equal to 1.
+
+    .. seealso::
+
+       :term:`Map Scale`
+
+.. index::
+   pair: LAYER; TEMPLATE
+   :name: mapfile-layer-template
+
+:ref:`TEMPLATE <template>` [file|url]
+    Used as a global alternative to :ref:`CLASS` `TEMPLATE`.
+    See :ref:`template` for more info.
+
+.. index::
+   pair: LAYER; TILEINDEX
+   :name: mapfile-layer-tileindex
+
+.. _TILEINDEX_keyword:
+
+:ref:`TILEINDEX <tileindex>` [filename|layername]
+    Name of the tileindex file or layer.  A tileindex is similar to
+    an ArcInfo library index.  The tileindex contains polygon features for
+    each tile. The item that contains the location of the tiled data is given
+    using the TILEITEM parameter.  When a file is used as the tileindex for
+    shapefile or raster layers, the tileindex should be a shapefile.  For
+    CONNECTIONTYPE OGR layers, any OGR supported datasource can be a
+    tileindex.  Normally the location should contain the path to the tile
+    file relative to the shapepath, not relative to the tileindex itself.
+    If the DATA parameter contains a value then it is added to the end of
+    the location.  When a tileindex layer is used, it works similarly to
+    directly referring to a file, but any supported feature source can
+    be used (ie. postgres, oracle).
+
+    .. note::
+
+        All files in the tileindex should have the same coordinate system, and
+        for vector files the same set of attributes in the same order.
+
+    .. note::
+
+        Starting with MapServer 6.4 for raster layers and MapServer 7.2 for
+        vector layers, tileindexes with tiles of different projections can be
+        used. For that, the :ref:`TILESRS <tilesrs>` parameter must be specified.
+
+    .. note::
+        |RUNSUB|
+
+.. index::
+   pair: LAYER; TILEITEM
+   :name: mapfile-layer-tileitem
+
+.. _TILEITEM:
+
+TILEITEM [attribute]
+    Item that contains the location of an individual tile, default is
+    "location".
+
+.. index::
+   pair: LAYER; TILESRS
+   :name: mapfile-layer-tilesrs
+
+.. _TILESRS:
+
+TILESRS [attribute]
+    Name of the attribute that contains the SRS of an individual tile.
+    That SRS can be expressed in WKT format, as an EPSG:XXXX code or as a
+    PROJ string.
+    If the tileindex contains rasters in different projections, this option
+    must be specified. If the tileindex has been generated with
+    gdaltindex (GDAL >= 2.0) or ogrtindex (GDAL >= 2.2), the value of TILESRS
+    is the value of the -src_srs_name option of gdaltindex/ogrtindex.
+    See :ref:`tileindex_mixed_srs`
+
+    .. note::
+
+        This option is currently available only on raster layers.
+
+.. index::
+   pair: LAYER; TOLERANCE
+   :name: mapfile-layer-tolerance
+
+.. _TOLERANCE:
+
+TOLERANCE [double]
+    Sensitivity for point based queries (i.e. via mouse and/or map
+    coordinates). Given in TOLERANCEUNITS. If the layer is a POINT or a LINE,
+    the default is 3. For all other layer types, the default is 0.  To
+    restrict polygon searches so that the point must occur in the polygon
+    set the tolerance to zero. This setting does not apply to WFS GetFeature
+    operations.
+
+    .. note:: Starting with MapServer 8.6, the TOLERANCE value can also be
+              defined as a :ref:`child of an IDENTIFY block <identify_tolerance>`.
+
+.. index::
+   pair: LAYER; TOLERANCEUNITS
+   :name: mapfile-layer-toleranceunits
+
+TOLERANCEUNITS [pixels|feet|inches|kilometers|meters|miles|nauticalmiles|dd]
+    Units of the TOLERANCE value. Default is pixels.
+    `Nauticalmiles` was added in MapServer 5.6.
+
+    .. note:: Starting with MapServer 8.6, the TOLERANCEUNITS value can also be
+              defined as a :ref:`child of an IDENTIFY block <identify_tolerance_units>`.
+
+.. index::
+   pair: LAYER; TRANSFORM
+   :name: mapfile-layer-transform
+
+TRANSFORM [true|false] | [ul|uc|ur|cl|cc|cr|ll|lc|lr]
+    Tells MapServer whether or not a particular layer needs to be transformed
+    from some coordinate system to image coordinates. Default is true. This
+    allows you to create shapefiles in image/graphics coordinates and
+    therefore have features that will always be displayed in the same location
+    on every map. Ideal for placing logos or text in maps. Remember that the
+    graphics coordinate system has an origin in the upper left hand corner of
+    the image, contrary to most map coordinate systems.
+
+    Version 4.10 introduces the ability to define features with coordinates
+    given in pixels (or percentages, see UNITS), most often inline features,
+    relative to something other than the UL corner of an image. That is what
+    'TRANSFORM FALSE' means. By setting an alternative origin it allows you
+    to anchor something like a copyright statement to another portion of the
+    image in a way that is independent of image size.
+
+.. index::
+   pair: LAYER; TYPE
+   :name: mapfile-layer-type
+
+.. index::
+   triple: LAYER; TYPE; annotation
+
+.. index::
+   triple: LAYER; TYPE; chart
+
+.. index::
+   triple: LAYER; TYPE; circle
+
+.. index::
+   triple: LAYER; TYPE; line
+
+.. index::
+   triple: LAYER; TYPE; point
+
+.. index::
+   triple: LAYER; TYPE; polygon
+
+.. index::
+   triple: LAYER; TYPE; raster
+
+.. index::
+   triple: LAYER; TYPE; query
+   
+TRANSPARENCY [integer|alpha]
+
+    .. versionremoved:: 8.0
+       Use :ref:`COMPOSITE` instead.   
+
+TYPE [chart|circle|line|point|polygon|raster|query]
+    Specifies how the data should be drawn. Need not be the same as the
+    shapefile type. For example, a polygon shapefile may be drawn as a point
+    layer, but a point shapefile may not be drawn as a polygon layer. Common
+    sense rules.
+
+    In order to differentiate between POLYGONs and POLYLINEs (which do not
+    exist as a type), simply respectively use or omit the COLOR keyword when
+    classifying. If you use it, it's a polygon with a fill color, otherwise
+    it's a polyline with only an OUTLINECOLOR.
+
+    A `circle` must be defined by a a minimum bounding rectangle. That
+    is, two points that define the smallest square that can contain
+    it. These two points are the two opposite corners of said box.
+    The following is an example using inline points to draw a circle:
+
+    .. code-block:: mapfile
+
+      LAYER
+        NAME 'inline_circles'
+        TYPE CIRCLE
+        STATUS ON
+        FEATURE
+          POINTS
+            74.01 -53.8
+            110.7 -22.16
+          END
+        END
+        CLASS
+          STYLE
+            COLOR 0 0 255
+          END
+        END
+      END
+
+    `TYPE` `query` means the layer can be queried but not drawn.
+
+    .. note::
+
+      `TYPE` `annotation` has been deprecated since version 6.2.
+      Identical functionality can be obtained by adding :ref:`LABEL`
+      level :ref:`STYLE` blocks, and do not require loading the
+      datasets twice in two different layers as was the case with
+      layers of `TYPE` `annotation`.
+
+    .. seealso::
+
+       The :ref:`Dynamic Charting<dynamic_charting>` HowTo for `TYPE`
+       `chart`.
+
+.. index::
+   pair: LAYER; UNITS
+   :name: mapfile-layer-units
+
+.. index::
+   triple: LAYER; UNITS; dd
+
+.. index::
+   triple: LAYER; UNITS; feet
+
+.. index::
+   triple: LAYER; UNITS; inches
+
+.. index::
+   triple: LAYER; UNITS; kilometers
+
+.. index::
+   triple: LAYER; UNITS; meters
+
+.. index::
+   triple: LAYER; UNITS; miles
+
+.. index::
+   triple: LAYER; UNITS; nauticalmiles
+
+.. index::
+   triple: LAYER; UNITS; percentages
+
+.. index::
+   triple: LAYER; UNITS; pixels
+
+UNITS [dd|feet|inches|kilometers|meters|miles|nauticalmiles|percentages|pixels]
+    Units of the layer.  `percentages` (in this case a value between 0
+    and 1) was added in MapServer 4.10 and is mostly geared for inline
+    features.  `nauticalmiles` was added in MapServer 5.6.
+
+.. index::
+   pair: LAYER; UTFDATA
+   :name: mapfile-layer-utfdata
+
+UTFDATA [string]
+    .. versionadded:: 7.0
+
+    A UTFGrid JSON template.  MapServer expression syntax
+    (expressionObj).  If no `UTFDATA` is provided, no data beyond the
+    `UTFITEM` values will be exposed.  If `UTFITEM` is set, the
+    `UTFDATA` expose those so that keys and data can be connected.
+    See :ref:`rfc93` and :ref:`utfgrid_output`.
+
+    .. code-block:: mapfile
+
+       UTFDATA "{\"id\":\"[fid]\", \"name\":\"[name]\", \"area\":\"[area]\"}"
+
+.. index::
+   pair: LAYER; UTFITEM
+   :name: mapfile-layer-utfitem
+
+UTFITEM [string]
+    .. versionadded:: 7.0
+
+    The attribute to use as the ID for the UTFGrid.  If a `UTFITEM` is
+    not set, the sequential id (based on rendering order) is being
+    used.  If `UTFITEM` is set, the `UTFDATA` expose those so that
+    keys and data can be connected.  See :ref:`rfc93` and
+    :ref:`utfgrid_output`.
+
+    .. code-block:: mapfile
+
+        UTFITEM "fid"
+
+.. index::
+   pair: LAYER; VALIDATION
+   :name: mapfile-layer-validation
+
+:ref:`VALIDATION`
+    Signals the start of a :ref:`VALIDATION` block.
+
+    As of MapServer 5.4.0, `VALIDATION` blocks are the preferred
+    mechanism for specifying validation patterns for CGI param runtime
+    substitutions.  See :ref:`RUNSUB`.
+
+.. _`OGR - Feature Style Specification`: https://gdal.org/user/ogr_feature_style.html
+.. _`ogr2ogr`: https://gdal.org/programs/ogr2ogr.html
