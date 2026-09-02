@@ -39,6 +39,7 @@ Links to SLD-related Information
 - `Styled Layer Descriptor Implementation Specification`_.
 - :ref:`MapServer WMS Client HowTo <wms_client>`.
 - :ref:`MapServer WMS Server HowTo <wms_server>`.
+- :ref:`rfc124`.
 - `MapServer OGC Web Services Workshop`_.
 - `Open GIS Consortium (OGC) home page`_.
 
@@ -162,7 +163,7 @@ Method GET : SLD URL   Yes
 Method GET : SLD_BODY  Yes       Additional item
 Describer Layer        Yes
 GetLegendGraphic       Yes
-GetStyles              Yes       Uses MapScript to get the SLD
+GetStyles              Yes
 =====================  ========= =============================
 
 .. note::
@@ -656,47 +657,233 @@ the layer in the mapfile configuration)
 Client Side Support
 ===================
 
-Client side support of the SLD consists of two parts:
+GetMap Requests
+---------------
 
-- The first part is using MapServer as a WMS client to send a GetMap request 
-  with an SLD. This is done using two metadata that can be placed at a layer 
-  level in a MapServer mapfile. These two metadata are:
+MapServer can be used as a WMS client to send a GetMap request
+with an SLD. This is done using two metadata settings that can be
+placed at the layer level in a MapServer Mapfile:
 
-  - `wms_sld_url`, which takes a valid URL as a value and appends
-    SLD=xxx to the GetMap request.
+- ``wms_sld_url``, which takes a valid URL as its value and appends
+  ``SLD=xxx`` to the GetMap request.
 
-  - `wms_sld_body`, which takes a valid SLD string and appends SLD_BODY=xxx to 
-    the GetMap request. If the value of wms_sld_body is set to AUTO, MapServer 
-    generates an SLD based on the classes found in the layer and send this SLD 
-    as the value of the SLD_BODY parameter in the GetMap request. 
+- ``wms_sld_body``, which takes a valid SLD string as its value and
+  appends ``SLD_BODY=xxx`` to the GetMap request. If ``wms_sld_body``
+  is set to ``AUTO``, MapServer generates an SLD based on the classes
+  found in the layer and sends this SLD as the value of the
+  ``SLD_BODY`` parameter in the GetMap request.
 
-- The other major item is the generation of an SLD document from MapServer 
-  classes. These functions are currently available through MapServer/MapScript 
-  interface. Here are the functions available:
-  
-  - on a map object: `generatesld`
+.. _getstyles:
 
-  - on a layer object: `generatesld`
+GetStyles Requests
+------------------
 
-  Additional MapScript functions have been added or will be added to
-  complement these functions:
+As part of the WMS implementation, MapServer supports ``GetStyles`` requests, which return an SLD document describing the styles available for a given layer.
+An example of a GetStyles request is https://demo.mapserver.org/cgi-bin/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetStyles&LAYERS=country_bounds.
 
-  - on a map object: `applysld`
- 
-  - on a layer object: `applysld` 
+This allows Mapfile styling to be used by other clients that support SLD, and can be used to style vector data to match the WMS server's style.
+
+The following MapServer style properties are supported when generating SLD:
+
+- :ref:`ANGLE <mapfile-style-angle>`
+- :ref:`COLOR <mapfile-style-color>`
+- :ref:`WIDTH <mapfile-style-width>`
+- :ref:`OPACITY <mapfile-style-opacity>`
+- :ref:`OFFSET <mapfile-style-offset>`
+
+The following MapServer style features are currently supported when generating SLD, and are documented in the following sections:
+
+- WellKnownName Symbols
+- Hatching Fills
+- Custom Vector Symbols
+- Pixmap Symbols
+
+WellKnownName Symbols
++++++++++++++++++++++
+
+The following ``WellKnownName`` values are defined by the SLD specification and are supported by MapServer:
+
+- ``square``
+- ``circle``
+- ``triangle``
+- ``star``
+- ``cross``
+- ``x``
+
+These symbols are exported as SLD ``WellKnownName`` elements. The symbol name must match the SLD ``WellKnownName`` value and must be lower-case.
+For example, the following symbol and style:
+
+.. code-block:: mapfile
+
+    SYMBOL
+        NAME "x"
+        TYPE VECTOR
+        FILLED FALSE
+        POINTS
+            0 0
+            1 1
+            -99 -99
+            0 1
+            1 0
+        END
+    END
+
+    STYLE
+        SYMBOL "x"
+        COLOR 0 0 0
+        WIDTH 2
+        SIZE 10
+    END
+
+The resulting SLD is:
+
+.. code-block:: xml
+
+    <se:PointSymbolizer>
+      <se:Graphic>
+        <se:Mark>
+          <se:WellKnownName>x</se:WellKnownName>
+          <se:Stroke>
+            <se:SvgParameter name="stroke">#000000</se:SvgParameter>
+            <se:SvgParameter name="stroke-width">2</se:SvgParameter>
+          </se:Stroke>
+        </se:Mark>
+        <se:Size>10</se:Size>
+      </se:Graphic>
+    </se:PointSymbolizer>
+
+Hatching Fills
+++++++++++++++
+
+The following are the supported hatching fills. They are mapped to ``WellKnownName`` values in the SLD,
+which are supported by several SLD clients, including `GeoStyler <https://geostyler.org/>`_ and `GeoServer <https://geoserver.org/>`_.
+
+- a 0° angle maps to ``shape://horline`` (horizontal line)
+- a 45° angle maps to ``shape://slash`` (forward slash)
+- a 90° angle maps to ``shape://vertline`` (vertical line)
+- a 135° angle maps to ``shape://backslash`` (backslash)
+
+For example, this symbol and style:
+
+.. code-block:: mapfile
+
+    SYMBOL
+        NAME "hatch"
+        TYPE HATCH
+    END
+
+    STYLE
+        COLOR 0 0 255
+        SYMBOL "hatch"
+        ANGLE 45
+        WIDTH 0.5
+        SIZE 6 # not output to the SLD
+    END
+
+The resulting SLD is:
+
+.. code-block:: xml
+
+    <se:PolygonSymbolizer>
+      <se:Fill>
+        <se:GraphicFill>
+          <se:Graphic>
+            <se:Mark>
+              <se:WellKnownName>shape://slash</se:WellKnownName>
+              <se:Stroke>
+                <se:SvgParameter name="stroke">#0000ff</se:SvgParameter>
+                <se:SvgParameter name="stroke-width">0.5</se:SvgParameter>
+              </se:Stroke>
+            </se:Mark>
+          </se:Graphic>
+        </se:GraphicFill>
+      </se:Fill>
+    </se:PolygonSymbolizer>
 
 .. note::
-    
-    When generating an SLD from MapServer classes, if there is a pixmap symbol 
-    you need to have this symbol available through a URL so it can be converted 
-    as an ExternalGraphic symbol in the SLD. To do this, you need to define 
-    the URL through a web object level metadata called WMS_SLD_SYMBOL_URL in 
-    your map file. The SLD generated uses this URL and concatenates the 
-    name of the pixmap symbol file to get the value that is generated as 
-    the ExternaGraphic URL. 
+
+    - The ``SIZE`` parameter, which controls hatch spacing, is not currently exported to the SLD.
+
+    - When angles do not exactly match one of the four values above, the closest matching angle is used. For example, 80° is mapped to 90°.
+
+Custom Vector Symbols
++++++++++++++++++++++
+
+Custom vector :ref:`SYMBOL <symbol>` definitions are supported, including those with multiple paths (points split with ``-99 -99``).
+The symbol is converted to SVG, and the SLD contains an ``ExternalGraphic`` element with a data URI containing the SVG. This
+allows the SLD to be used without referencing an external file. The SVG is base64-encoded to ensure that it can be safely embedded in
+the XML.
+
+For example, this symbol and style:
+
+.. code-block:: mapfile
+
+    SYMBOL
+        NAME "pentagon"
+        TYPE VECTOR
+        FILLED TRUE
+        POINTS
+            0.5 0
+            1 0.38
+            0.81 1
+            0.19 1
+            0 0.38
+            0.5 0
+        END
+    END
+
+    STYLE
+        SYMBOL "pentagon"
+        COLOR "#156082"
+        OUTLINECOLOR 255 0 0
+        SIZE 16
+    END
+
+The resulting SLD is:
+
+.. code-block:: xml
+
+    <se:PointSymbolizer>
+      <se:Graphic>
+        <se:ExternalGraphic>
+          <se:OnlineResource xlink:type="simple" xlink:href="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxNyIgaGVpZ2h0PSIxNyIgdmlld0JveD0iMCAwIDE3IDE3Ij4KPHBhdGggZD0iTSA4LjUsMC41IEwgMTYuNSw2LjU4IEwgMTMuNDYsMTYuNSBMIDMuNTQsMTYuNSBMIDAuNSw2LjU4IEwgOC41LDAuNSBaIiBmaWxsPSIjMTU2MDgyIiBzdHJva2U9IiNmZjAwMDAiIHN0cm9rZS13aWR0aD0iMSIvPgo8L3N2Zz4K"/>
+          <se:Format>image/svg+xml</se:Format>
+        </se:ExternalGraphic>
+        <se:Size>16</se:Size>
+      </se:Graphic>
+    </se:PointSymbolizer>
+
+Custom vector symbols can also be used as a fill pattern for polygons.
+
+Pixmap Symbols
+++++++++++++++
+
+When generating an SLD from MapServer classes, pixmap symbols must be
+available through a URL so they can be referenced as an
+``ExternalGraphic`` in the SLD.
+
+To specify the URL, define the ``WMS_SLD_SYMBOL_URL`` metadata at the
+``WEB`` level in the Mapfile. MapServer appends the filename of the
+pixmap symbol to this URL to generate the ``ExternalGraphic`` URL.
+
+Generate SLD with MapScript
+---------------------------
+
+MapScript can also be used to generate SLD documents from MapServer 
+classes. These functions are currently available through MapServer/MapScript 
+interface. Here are the functions available:
+
+- on a Map object: :py:meth:`mapscript.mapObj.generateSLD`
+
+- on a Layer object: :py:meth:`mapscript.layerObj.generateSLD`
+
+Additional MapScript functions have been added to complement these functions:
+
+- on a Map object: :py:meth:`mapscript.mapObj.applySLD`
+- on a Layer object: :py:meth:`mapscript.layerObj.applySLD` 
 
 PHP/MapScript Example that Generates an SLD from a Mapfile
-----------------------------------------------------------
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
 The following is a small script that calls the generateSLD() function 
 to create an SLD for a specific layer in a mapfile:
