@@ -1,0 +1,83 @@
+.. _rfc59:
+
+MS RFC 59: Add Variable Binding to Database Connection Types
+============================================================
+
+:Author: Dan "Ducky" Little
+:Contact: danlittle at yahoo.com
+:Last Edited: 2010/02/20
+:Status: Adopted 
+:Version: MapServer 6.0
+
+Purpose
+-------
+
+Both of the major databases used for spatial data storage with MapServer, PostgreSQL and Oracle, offer the ability to "bind" variables in SQL statements.  The reason they provide variable binding is to prevent needing to resolve data-type issues in the SQL and it prevent SQL injection.  Various MapServer applications take untrusted user input from the CGI request and insert it into an SQL statement.  This leaves an open vector for SQL injection.  This also causes some issues as SQL requires properly escaping strings and integers.  Not having to know that ahead of time is useful.
+
+Implementation Details
+----------------------
+
+There is a need to be able to create the key-value pairings for the various databases in a flexible format.  For example, Oracle can use a named bind variable but PostgreSQL only accepts numbers.  These are some examples of variable binding in PostgreSQL and Oralce to illustrate the differences:
+
+PostgreSQL
+::
+
+	select count(*) from parcels where city_id = $1
+
+Oracle
+::
+
+	select count(*) from parcels where city_id = :city_id
+
+Alternatively, Oracle Could Also be Written
+::
+
+	select count(*) from parcels where city_id = :1
+
+This need for flexibility lends itself well to a hash object and it may be appropriate to create a new block in the LAYER object to support it.  For example::
+
+	LAYER
+		...
+		BINDVALS
+			'1'  '1345'
+		END
+		...
+	END
+
+	LAYER
+		...
+		BINDVALS
+			'city_id' '1345'
+		END
+		...
+	END
+
+
+Backward Compatibility Issues
+-----------------------------
+The implementation would be completely optional and not provide any backward compatibility issues.
+
+Documentation
+--------------------------------------------------------------------------------
+The mainline documentation will need to add the description of the BINDVALS block and its functionality.
+
+Files Impacted
+--------------
+
+* mapfile.c
+* mapfile.h
+* mappostgis.c
+* maporaclespatial.c
+* mapserver.h
+* maplexer.c
+* maplexer.l
+
+
+Comments from Review period
+--------------------------------------------------------------------------------
+
+
+Voting History
+--------------------------------------------------------------------------------
+
+Voted by the PSC during an in-person code sprint

@@ -1,0 +1,414 @@
+.. index::
+   single: Template-driven output
+
+.. _template_output:
+
+*****************************************************************************
+ Template-Driven Output
+*****************************************************************************
+
+:Author: Chris Hodgson
+:Contact: chodgson at refractions.net
+:Author: Seth Girvin
+:Contact: sethg at geographika.co.uk
+:Last Updated: 2019-10-04
+
+.. contents:: Table of Contents
+    :depth: 3
+    :backlinks: top
+
+
+Introduction
+============
+
+RFC 36 added support for defining template-driven OUTPUTFORMATs for use with 
+feature queries, including WMS GetFeatureInfo and WFS GetFeature. This allows
+for custom text-oriented output such as GeoJSON, KML, or XML.
+The templates are essentially the same as with the standard MapServer query 
+:ref:`Template`, however there are some additional tags to allow for template 
+definition in a single file instead of the standard header/template/footer.
+
+.. note::
+
+    There are other, simpler, ways to output some of these formats
+    using MapServer.  However, template-driven output provides maximal
+    flexibility and customization of the output, at the cost of
+    additional complexity and configuration.
+
+.. note::
+
+   In order for template-driven output to work, layers that are to
+   be output need to have the `TEMPLATE` key word included::
+
+     TEMPLATE "dummy"
+
+.. note::
+
+   In order for template-driven output to work through WFS, the format
+   needs to be listed in wfs_getfeature_formatlist in the `WEB`
+   `METATDATA` section or the `LAYER` `METATDATA` section (the geojson
+   format from the example below)::
+
+     "wfs_getfeature_formatlist" "gml,geojson"
+
+
+.. index::
+   pair: Template-driven output; OUTPUTFORMAT
+
+OUTPUTFORMAT Declarations
+=========================
+
+Details of template-driven output formats are controlled by an
+:ref:`OUTPUTFORMAT` declaration.  The declarations define the template
+file to be used, as well as other standard OUTPUTFORMAT options.
+
+Examples:
+
+.. code-block:: mapfile
+
+  OUTPUTFORMAT
+    NAME "kayml"
+    DRIVER "TEMPLATE"
+    MIMETYPE "application/vnd.google-earth.kml+xml"
+    FORMATOPTION "FILE=myTemplate.kml"
+    FORMATOPTION "ATTACHMENT=queryResults.kml"
+  END
+
+  OUTPUTFORMAT
+    NAME "geojson"
+    DRIVER "TEMPLATE"
+    FORMATOPTION "FILE=myTemplate.js"
+  END
+
+  OUTPUTFORMAT
+    NAME "customxml"
+    DRIVER "TEMPLATE"
+    FORMATOPTION "FILE=myTemplate.xml"
+  END
+
+The template file to be used is determined by the "FILE=..." `FORMATOPTION`.
+The template filename is relative to the mapfile's path. As is standard with
+MapServer template files, the file must contain the magic string
+‘mapserver template’ in the first line of the file, usually within a comment,
+but this line is not output to the client.
+
+.. note::
+   Valid suffixes for the template file are:
+   .xml, .wml, .html, .htm, .svg, .kml, .gml, .js, .tmpl.
+
+The MIMETYPE and FORMATOPTION "ATTACHMENT=..." parameters are
+very useful for controlling how a web browser handles the output file.
+
+.. index::
+   pair: Template-driven output; Template substitution tags
+
+Template Substitution Tags
+==========================
+
+These tags only work in query result templates, and their purpose is primarily
+to simplify the templating to a single file for custom output formats.
+
+[include src="otherTemplate.txt"]
+    Includes another template file; the path to the template file is relative
+    to the mapfile path.
+
+    Attributes:
+
+    * src: The file to be included.
+
+[resultset layer=layername]...[/resultset]
+    Defines the location of the results for a given layer.
+
+    Attributes:
+
+    * layer: The layer to be used
+
+    * nodata: (optional) A string to return if no results are returned.
+
+[feature]...[/feature]
+    Defines the loop around the features returned for a given layer.
+
+    Attributes:
+
+    * limit: (optional) Specifies the maximum number of features to
+      output for this layer.
+   
+    * trimlast: (optional) Specifies a string to be trimmed off of the
+      end of the final feature that is output.  This is intended to
+      allow for trailing record delimiters to be removed.  See the
+      examples below.
+
+[join name=join1]...[/join]
+    defines the loop around the features join from another layer.
+
+.. seealso::
+   :ref:`template`
+
+Examples
+========
+
+Below are some examples of the different kind of outputs that can be achieved with templates. 
+
+Header, Body, Footer
+--------------------
+
+This example shows how to emulate the old 3-file system using the new system,
+to compare the usage:
+
+::
+
+  <!-- mapserver template -->
+  [include src="templates/header.html"]
+  [resultset layer=lakes]
+    ... old layer HEADER stuff goes here, if a layer has no results
+        this block disappears...
+    [feature]
+      ...repeat this block for each feature in the result set...
+      [join name=join1]
+        ...repeat this block for each joined row...
+      [/join]
+    [/feature]
+    ...old layer FOOTER stuff goes here...
+  [/resultset]
+  [resultset layer=streams]
+    ... old layer HEADER stuff goes here, if a layer has no results
+        this block disappears...
+    [feature]
+      ...repeat this block for each feature in the result set...
+    [/feature]
+    ...old layer FOOTER stuff goes here...
+  [/resultset]
+  [include src="templates/footer.html"]
+
+GML3
+----
+
+::
+
+  <!-- mapserver template -->
+  <?xml version="1.0" encoding="ISO-8859-1"?>
+  [resultset layer=mums]
+  <MapServerUserMeetings xmlns="http://localhost/ms_ogc_workshop"
+      xmlns:xlink="http://www.w3.org/1999/xlink" xmlns:gml="http://www.opengis.net/gml"
+      xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+      xsi:schemaLocation="http://localhost/ms_ogc_workshop ./mums.xsd">
+   <gml:description>This is a GML document which provides locations of
+      all MapServer User Meeting that have taken place</gml:description>
+   <gml:name>MapServer User Meetings</gml:name>
+   <gml:boundedBy>
+    <gml:Envelope>
+     <gml:coordinates>-93.093055556,44.944444444 -75.7,45.4166667</gml:coordinates>
+    </gml:Envelope>
+   </gml:boundedBy>
+   [feature]
+   <gml:featureMember>
+    <Meeting>
+     <gml:description>[desc]</gml:description>
+     <gml:name>[name]</gml:name>
+     <gml:location>
+      <gml:Point srsName="http://www.opengis.net/gml/srs/epsg.xml#4326">
+       <gml:pos>[x] [y]</gml:pos>
+      </gml:Point>
+     </gml:location>
+     <year>[year]</year>
+     <venue>[venue]</venue>
+     <website>[url]</website>
+    </Meeting>
+   </gml:featureMember>
+   [/feature]
+   <dateCreated>2007-08-13T17:17:32Z</dateCreated>
+  </MapServerUserMeetings>
+  [resultset]
+
+GeoJSON
+-------
+
+Could be called using ...&layer=mums&mode=nquery&qformat=geojson
+
+Or by adding &outputformat=geojson to a WFS getfeature request::
+
+  // mapserver template
+  [resultset layer=mums] 
+  {
+    "type": "FeatureCollection",
+    "features": [
+      [feature trimlast=","]
+      {
+        "type": "Feature",
+        "id": "[myuniqueid]",
+        "geometry": {
+          "type": "PointLineString",
+          "coordinates": [
+            {
+              "type": "Point",
+              "coordinates": [[x], [y]]
+            }
+          ]
+        },
+        "properties": {
+          "description": "[description]",
+          "venue": "[venue]",
+          "year": "[year]"
+        }
+      },
+      [/feature]
+    ]
+  }
+  [/resultset]
+
+KML
+---
+
+A more complicated KML example. Note the use of [shpxy] to support multipolygons
+with holes, and also that a point placemark is included with each feature using
+[shplabel]:
+
+::
+
+  <!--MapServer Template-->
+  <?xml version="1.0" encoding="UTF-8"?>
+  <kml xmlns="http://www.opengis.net/kml/2.2"
+       xmlns:gx="http://www.google.com/kml/ext/2.2"
+       xmlns:kml="http://www.opengis.net/kml/2.2"
+       xmlns:atom="http://www.w3.org/2005/Atom">
+  <Document>
+    <Style id="parks_highlight">
+      <IconStyle>
+        <scale>1.4</scale>
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/shapes/parks.png</href>
+        </Icon>
+        <hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
+      </IconStyle>
+      <LineStyle>
+        <color>ffff5500</color>
+        <width>4.2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>aaaaaaaa</color>
+      </PolyStyle>
+      <BalloonStyle>
+        <text>
+          <![CDATA[
+            <p ALIGN="center"><b>$[name]</b></p>
+            $[description]
+          ]]>
+        </text>
+      </BalloonStyle>
+    </Style>
+    <Style id="parks_normal">
+      <IconStyle>
+        <scale>1.2</scale>
+        <Icon>
+          <href>http://maps.google.com/mapfiles/kml/shapes/parks.png</href>
+        </Icon>
+        <hotSpot x="0.5" y="0" xunits="fraction" yunits="fraction"/>
+      </IconStyle>
+      <LineStyle>
+        <color>ffff5500</color>
+        <width>4.2</width>
+      </LineStyle>
+      <PolyStyle>
+        <color>ff7fff55</color>
+      </PolyStyle>
+      <BalloonStyle>
+        <text>
+          <![CDATA[
+            <p ALIGN="center"><b>$[name]</b></p>
+            $[description]
+          ]]>
+        </text>
+      </BalloonStyle>
+    </Style>
+    <StyleMap id="parks_map">
+      <Pair>
+        <key>normal</key>
+        <styleUrl>#parks_normal</styleUrl>
+      </Pair>
+      <Pair>
+        <key>highlight</key>
+        <styleUrl>#parks_highlight</styleUrl>
+      </Pair>
+    </StyleMap>
+  [resultset layer=parks]
+    <Folder>
+      <name>Parks</name>
+  [feature trimlast="," limit=1]
+      <Placemark>
+        <name>[NAME]</name>
+        <Snippet/>
+        <description>
+          <![CDATA[
+            <p>Year Established: [YEAR_ESTABLISHED]</p>
+            <p>Area: [AREA_KILOMETERS_SQUARED] sq km</p>
+          ]]>
+        </description>
+        <styleUrl>#parks_map</styleUrl>
+        <ExtendedData>
+          <Data name="Year Established">[YEAR_ESTABLISHED]</Data>
+          <Data name="Area">[AREA_KILOMETERS_SQUARED]</Data>
+        </ExtendedData>
+        <MultiGeometry>
+          <Point>
+            <coordinates>[shplabel proj=epsg:4326 precision=10],0</coordinates>
+          </Point>
+  [shpxy     ph="<Polygon><tessellate>1</tessellate>" pf="</Polygon>"
+             xf="," xh=" " yh=" " yf=",0 "
+             orh="<outerBoundaryIs><LinearRing><coordinates>"
+             orf="</coordinates></LinearRing></outerBoundaryIs>"
+             irh="<innerBoundaryIs><LinearRing><coordinates>"
+             irf="</coordinates></LinearRing></innerBoundaryIs>"
+             proj=epsg:4326 precision=10]
+        </MultiGeometry>
+      </Placemark>
+  [/feature]
+    </Folder>
+  [/resultset]
+  </Document>
+  </kml> 
+
+reStructuredText Table
+----------------------
+
+This example creates a reStructuredText table from feature records, making use of the `padding` formatting option. 
+To test from the command line use syntax similar to below:
+
+::
+
+  mapserv -nh "QUERY_STRING=map=./msautotest/query/query.map&mode=nquery&qlayer=bdry_counpy2&qformat=formattmpl"
+
+::
+
+  # MapServer Template
+  [resultset layer=bdry_counpy2]
+  ==================== ============
+  City Name            Abbreviation 
+  ==================== ============
+  [feature][item name="cty_name" padding="20"] [item name="cty_abbr" uc="true" padding="12"]
+  [/feature]
+  ==================== ============
+  [/resultset]
+
+The RST output can then be rendered as a table. 
+
+==================== ============
+City Name            Abbreviation
+==================== ============
+Lake of the Woods    LOTW
+Kittson              KITT
+Roseau               ROSE
+Koochiching          KOOC
+Marshall             MARS
+St. Louis            STLO
+==================== ============
+
+.. warning::
+
+   For templates (:ref:`Template`), there are a number of reserved
+   words.  If you have want to expose an attribute with a name that is
+   equal to a reserved word, you can not use the shorthand
+   [attribute_name], but will have to use construct [item
+   name=attribute_name] instead.  For example, in a template, [id] is
+   a system generated unique session id (see :ref:`Template`).  So if
+   you have an attribute named "id" that you want to expose, you will
+   either have to rename it or use the construct [item name=id].

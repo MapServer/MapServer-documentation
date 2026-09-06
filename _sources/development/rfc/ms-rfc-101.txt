@@ -1,0 +1,136 @@
+.. _rfc101:
+
+=========================================================================
+MS RFC 101: Add Support for Content Dependent Legend Responses
+=========================================================================
+
+:Date:  2013-07-19
+:Author: Thomas Bonfort
+:Contact: thomas.bonfort@gmail.com
+:Status: Adopted
+:Version: MapServer 6.4
+
+1. Summary
+========================
+
+The WMS GetLegendGraphic currently returns a legend image whose content matches
+the classes that are defined in the mapfile (which may also be overridden by an
+SLD), as specified by the WMS specification. This RFC proposes an extension to
+the GetLegendGraphic response by returning a legend that corresponds to the
+features that are actually present/rendered in the requested extent.
+
+The use-case of this RFC is to be able to display a legend alongside a mapview,
+with the content of the legend that only matches features that are actually
+present in the mapview.
+
+1.1 Example
+---------------------------
+
+Let us suppose we have a legend for a road network, comprising three classes
+for motorways, major roads and minor roads.
+
+* When fully zoomed out, a GetLegendGraphic call will return an image
+  containing the 3 road legend icons, one for each class.
+* When zooming into a remote rural area (i.e. with only small roads), a
+  GetLegendGraphic call will return an image with a single road icon, for minor
+  roads.
+* When zooming into the ocean, a GetLegendGraphic will return an image with no
+  icons for road features.
+
+
+2. Implementation Details
+=========================
+
+2.1 Activating the feature
+--------------------------
+
+Support for content dependent legends will be supported for WMS
+GetLegendGraphic calls on POINT, LINE and POLYGON layers, when the client
+includes the (non-standard) BBOX, SRS/CRS and WIDTH/HEIGHT parameters (i.e. like for
+a GetMap request) in the request URL. If these parameters are not present, the
+classical legend rendering will occur.
+
+  ::
+
+     http://server/wms?SERVICE=WMS&VERSION=1.1.0
+     &REQUEST=GetLegendGraphic&SRS=EPSG:3978
+     &WIDTH=560&HEIGHT=350&LAYER=layer1&FORMAT=image/png
+     &BBOX=2258982,-70747,2615354,495480
+
+
+2.2 Code Impacts
+----------------
+
+- Inside msWMSDispatch(), if the BBOX parameter is detected during a
+  GetLegendGraphic request, then the processing will skip the current
+  GetLegendGraphic codepath, and instead pass through the initialization phases
+  of GetMap requests (setting up layer groups, applying SLDs, etc...)
+- Once the GetMap initialization phases have occurred without error, go through
+  msHitTestMap() instead of msDrawMap(). This new function mimics msDrawMap in
+  the sense that it loops through active layers and calls
+  msLayerWhichShapes/msLayerNextShape on them, but instead of rendering the
+  features it marks their LAYER/CLASS/STYLE/LABEL as being activated or not by
+  the map draw.
+- msDrawLegend/msDrawLegenIcon get passed a new parameter that corresponds to
+  the hit-test result and will draw the map's legend icons or not depending if
+  they are activated in the hit-test or not.
+- mode=maplegend and mode=maplegendicon are added to the traditional mapserver
+  cgi. The mapserverObj struct gets an added map_hittest member that is used by
+  the legend templating code to produce content dependent html legends.
+
+2.3 Quirks and Backwards Incompatibility Issues
+-----------------------------------------------
+
+- Clients that send BBOX, SRS and WIDTH/HEIGHT parameters expecting to obtain a non
+  content dependent legend will be returned erroneous results. It can be argued
+  that these clients should not be sending out-of-spec parameters in the first 
+  place.
+
+- MapServer currently treats WIDTH and HEIGHT as the size to use for the legend
+  icons. For content dependent legends these two parameters are used along with
+  BBOX to compute the scale at which the current mapview is being rendered, and
+  not for the size of the returned legend icons. While other parameter names
+  might have been chosen to avoid this overlap, the implementation sticks with
+  WIDTH and HEIGHT as on the one hand they permit an implementation that reuses
+  the current GetMap codepaths, and on the second hand these are the parameters
+  that are already being used by the (only?) other WMS implementation to
+  support this extension, namely Cubewerx.
+
+- RULE is ignored for content-dependant legend requests
+
+- GetLegendGraphic uses a LAYER= parameter to specify which layer to use
+  (MapServer has the extension to support multiple layers, by using
+  LAYER=layer1,layer2), whereas GetMap requests use the plural LAYERS= . For
+  content dependent GetLegendGraphic calls the code will duplicate the LAYER
+  parameter into the LAYERS parameter in order to use the GetMap codepaths. The
+  GetLegendGraphic response will be undefined if the client has included a
+  LAYERS parameter in the URL that does not coincide with the LAYER parameter.
+
+
+2.4 Performance impacts, mapscripts
+-----------------------------------
+
+- No performance impacts (aside from the fact that content dependent legend
+  rendering will be obviously slower than traditional legend rendering)
+- No user visible mapscript impacts (the mapscript code itself will need a few
+  tweaks when calling the msDrawLegend() and msDrawLegenIcon() functions.
+- The result of a hittest will not be available to mapscripts. Work in this
+  direction may be accomplished in the longer run once the APIs and hittest
+  structs have stabilized.
+
+3. Miscellaneous
+================
+
+3.1 Issue Tracking ID
+---------------------
+
+https://github.com/MapServer/MapServer/issues/4713
+
+
+3.2 Voting History
+------------------
+
++1 from ThomasB, MikeS, TomK, StephanM, PerryN, SteveL, SteveW and JeffM
+
+
+ 

@@ -1,0 +1,132 @@
+.. _rfc104:
+
+=========================================================================
+MS RFC 104: Replace BITMAP labels with embedded Truetype font
+=========================================================================
+
+:Date:  2013/09
+:Author: Thomas Bonfort
+:Contact: thomas.bonfort@gmail.com
+:Status: Adopted
+:Version: MapServer 7.0
+
+1. The Current Situation
+========================
+
+MapServer supports embedded BITMAP fonts for the simple rendering
+of text without need for external font files or fontsets. These are
+activated by using the TINY, SMALL, MEDIUM, LARGE and HUGE keywords
+in the LABEL block, but have a number of limitations:
+
+- They are only supported by the AGG renderer. The Cairo and KML renderers
+  will bailout if they are supplied with a bitmap font. GD was the other 
+  only renderer to support them, it has however been removed in the 7.0 release.
+- They only support the ASCII character set. Accented letters
+  or common symbols are either ignored or replaced with a stopgap character
+- They do not support rotation. FOLLOW labels will result in an error, while
+  explicitly rotated or AUTO labels will be incorrectly rendered horizontally.
+- The quality of their rendering is not up to par with today's cartographic
+  rendering expectations. 
+
+They do however have the following advantages:
+
+- They require no dependency on external font files, and therefore do not
+  require creating or maintaining a fontset file. As such they are ideal
+  for rapid mapfile prototyping.
+- They do not go through freetype for rendering and thus are extremely fast
+  to render (which seems only fair given their limitations)
+
+1.1 Upcoming Evolution
+----------------------
+
+With the arrival of :ref:`rfc98` and :ref:`rfc99`, maintaining the support
+for bitmap fonts requires quite a number of warts in the code. Given this and
+the other limitations enumerated beforehand, this RFC proposes the removal of
+the BITMAP font support throughout the MapServer codebase.
+
+To maintain the ability to rapidly prototype mapfiles and/or to not have to
+rely on external truetype fonts and fontsets, they will however be replaced 
+by an embedded truetype font.
+
+2. Embedded Truetype Font
+=========================
+
+A Truetype font will be encoded and included as a binary blob inside the
+mapserver library. It will be used whenever no specific font has been supplied
+by the mapfile user, or as a backwards compatibility fallback when bitmap
+fonts are requested.
+
+2.1 Implications
+================
+
+- Embedded truetype fonts will be automatically supported by all renderers
+- Embedded truetype fonts will cover a much larger character set
+- Embedded truetype fonts will support rotation and FOLLOW labels
+- Code will be cleaned up and easier to maintain
+- Rendering will be marginally slower than with bitmap fonts
+- Due to the graphic quality of the rendered text, image sizes will be slightly
+  larger than with bitmap fonts (due to the antialiasing).
+
+2.2 Backwards Compatibility
+===========================
+
+Rendered images when using embedded fonts will differ compared to the previous
+renderings with bitmap fonts. Aside from this point, no backwards incompatibility
+is to be expected: The bitmap keyword and label type will be ignored, and the
+TINY, SMALL, MEDIUM, LARGE and HUGE keyboard will be mapped to integer font
+sizes of matching visual height.
+
+2.3 Performance Implications
+============================
+
+Might be noticeable:
+
+- Slower rendering of bitmap glyphs
+- Larger image sizes
+
+2.4 Future Improvements
+=======================
+
+These are not planned immediately, but could be investigated in the future
+depending on interest or funding:
+
+- Choosing at compile-time which truetype font should be embedded
+- Embedding multiple fonts
+- Allowing aliased glyph rendering from freetype to minimize image size
+
+3. Implementation Details
+=========================
+
+3.1 Affected files
+------------------
+
+- mapfile.c/h: parser, backwards compatibility
+- mapagg.cpp, maplabel.c, textlayout.c, others...: bitmap support removal
+
+3.2 MapScript
+-------------
+
+Bitmap related functions could be extended to provide a warning the feature
+has been removed. No other changes should be required due to the transparent
+backwards compatibility handling.
+
+3.3 Tracking Issue
+------------------
+
+TBD
+
+4. Discussion
+=============
+
+The truetype file we embed shall have a licence that allows such usage,
+and a glyph coverage supporting most used languages while not being too large
+to limit memory consumption. Unless decided otherwise during the comment period,
+the chosen font will be the DejaVuSansCondensed.ttf truetype font commonly 
+supplied with Linux distros.
+
+5. Voting History
+=================
+
++1 from SteveL, ThomasB, PericlesN, TamasS, TomK,
+StephanM, YewondwosssenA, MikeS, DanielM and StephenW
+

@@ -1,0 +1,122 @@
+:orphan:
+
+.. _shape_smoothing:
+
+=========================================================================
+Shape Smoothing
+=========================================================================
+
+1. Overview
+-----------
+
+MapServer can smooth a vector layer for a better rendering result using
+the SIA algorithm: Smoothing via Iterative Averaging.
+
+2. How it works
+------------------------
+
+To enable the smoothing for a layer with the default settings, we only need 
+to set the geomtransform:
+
+ * GEOMTRANSFORM (smoothsia([shape]))
+
+Smoothing settings:
+
+ * smoothing_size: The window size (number of points) used by the algorithm. The
+   default is 3.
+ * smoothing_iteration: The number of iterations of the algorithm. The default
+   is 1.
+ * preprocessing: Optional preprocessing method to add more vertices to the shape prior to smoothing, described below.
+
+You can pass those optional parameters using the following geomtransform:
+
+ * GEOMTRANSFORM (smoothsia([shape], [smoothing_size], [smoothing_iteration], [preprocessing]))
+
+Example of a simple layer definition:
+
+::
+
+  LAYER NAME "my_layer"
+    TYPE LINE
+    STATUS DEFAULT
+    DATA roads.shp
+    GEOMTRANSFORM (smoothsia([shape], 3, 1))    
+    CLASS
+      STYLE
+        WIDTH 2
+        COLOR 255 0 0
+      END
+    END
+
+3. Examples
+-----------
+
+Here are some examples showing results with different parameter values.
+
+ .. image:: ../images/smoothing1.png
+ .. image:: ../images/smoothing2.png
+
+4. Smoothing result factors
+---------------------------
+
+Since the smoothing algorithm is performed on a window of x vertices (3 by 
+default), there are some factors that might affect the result.
+
+4.1 Dataset resolution is too high
+----------------------------------
+
+If you are trying to smooth a line that has a very high resolution (high 
+density of vertices at the current view scale), you may not get the expected 
+result because the vertices are too dense for the smoothing window size. 
+In this case you might want to simplify the shapes before the smoothing. 
+You can combine smoothing and simplification in a single geomtransform for that.
+
+ * GEOMTRANSFORM (smoothsia(simplifypt([shape], 10))) 
+
+See :ref:`RFC 89: Layer Geomtransform <rfc89>` for more info. Here's a
+visualization of the issue:
+
+ .. image:: ../images/smoothing_highres.png
+ 
+4.2 Dataset resolution is too low
+---------------------------------
+
+If you are trying to smooth a long line that has a low density of
+vertices, you may not get the expected result in some situations where
+you may lose some important parts of the shape during the smoothing,
+for instance around acute angles. You can improve the result by
+enabling a pre-processing step to add intermediate vertices along the
+line prior to smoothing. 
+
+This behavior is controlled using the "all" value in the preprocessing
+argument of the smoothsia() geomtransform:
+
+ * GEOMTRANSFORM (smoothsia([shape], [smoothing_size], [smoothing_iteration], 'all'))
+
+This preprocessing will be performed before the smoothing. It adds 2
+intermediate vertices on each side of each original vertex. This is
+useful if we really need to preserve the general shape of the shape
+with low res data. Note that this might have an impact on the
+rendering since there are more vertices in the output.
+
+Here's a visualization of the issue:
+
+ .. image:: ../images/smoothing_lowres.png
+
+4.3 Curves
+----------
+
+The preprocessing step might not be appropriate for all cases since it can
+impact a lot the smoothing result (maybe too much?). However, without it, you
+might notice some bad smoothing with big curves. See this example:
+
+ .. image:: ../images/smoothing_curve1.png
+
+
+You can improve that by enabling another type of preprocessing: angle. This one
+will add points at some specific places based on angle detection to recognize
+the curves. Here's how you can enable it:
+
+ * GEOMTRANSFORM (smoothsia([shape], [smoothing_size], [smoothing_iteration], 'angle'))
+
+ .. image:: ../images/smoothing_curve2.png

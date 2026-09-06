@@ -1,0 +1,440 @@
+.. _rfc142:
+
+====================================================================
+MS RFC 142: Scalebar Measurement Modes
+====================================================================
+
+:Author: Tamas Szekeres
+:Contact: szekerest at gmail.com
+:Last Updated: 2026-05-16
+:Version: MapServer 8.8
+:Status: Draft
+
+Overview
+--------
+
+This RFC proposes adding explicit measurement modes to the MapServer
+``SCALEBAR`` object. The goal is to preserve the current Cartesian scalebar
+behavior by default while allowing users to request local geodesic ground
+distance measurement for projections where projected map units are not equal to
+ground distance.
+
+The main motivating case is Web Mercator / EPSG:3857. In that projection,
+coordinates are expressed in meters, but projected meters increasingly differ
+from local ground meters away from the equator. The current scalebar
+implementation treats projected coordinate units as a flat Cartesian plane, so
+metric scalebars can overstate local ground distance in EPSG:3857 and similar
+projections.
+
+This RFC introduces an explicit ``MEASURE`` keyword:
+
+.. code-block:: mapfile
+
+    SCALEBAR
+      UNITS KILOMETERS
+      MEASURE CARTESIAN
+    END
+
+    SCALEBAR
+      UNITS KILOMETERS
+      MEASURE GEODESIC
+    END
+
+``MEASURE CARTESIAN`` remains the default and preserves existing output.
+``MEASURE GEODESIC`` computes a local ground distance for the sampled scalebar
+pixel span.
+
+Current Implementation
+----------------------
+
+The current scalebar implementation is centered in ``mapscale.c``.
+
+The main functions are:
+
+- ``msDrawScalebar()``: computes the interval length, creates the scalebar
+  image, and renders the scalebar graphics and labels.
+- ``msEmbedScalebar()``: renders the scalebar into a temporary image and embeds
+  it as a generated symbol through a synthetic layer.
+- ``msInchesPerUnit()``: returns the unit conversion factor used by the
+  Cartesian calculation.
+- ``msCalculateScale()``: computes the map scale denominator. This is related
+  map state, but it is not the scalebar measurement algorithm itself.
+
+The current distance calculation in ``msDrawScalebar()`` is approximately:
+
+::
+
+  distance =
+    map.cellsize * desired_pixel_width /
+    (inches_per_scalebar_unit / inches_per_map_unit)
+
+The implementation then rounds the interval value, converts the rounded
+interval back to pixels, and shrinks the desired pixel width until the bar and
+label fit the requested image width.
+
+This algorithm is fast and stable, but it assumes a Cartesian coordinate plane.
+MapServer documentation already describes the scalebar as Cartesian and not
+geodesic.
+
+Problem Statement
+-----------------
+
+The current implementation is not suitable when users expect a scalebar to
+represent local ground distance in a distorted projected CRS.
+
+For example, with ``MAP PROJECTION`` set to EPSG:3857 and ``SCALEBAR UNITS
+METERS`` or ``KILOMETERS``, the current implementation treats a horizontal pixel
+span in projected meters as if it were a ground-distance span. This is only
+approximately true near the equator.
+
+Issue https://github.com/MapServer/MapServer/issues/7397 reports this behavior
+for EPSG:3857 and compares MapServer output against distance calculations in a
+client map library.
+
+Proposed Solution
+-----------------
+
+Add a new ``MEASURE`` keyword to the ``SCALEBAR`` object.
+
+Supported values:
+
+- ``CARTESIAN``: existing projected-plane behavior.
+- ``GEODESIC``: local ellipsoidal ground-distance behavior.
+
+An optional ``SPHERICAL`` mode may be considered later as an explicitly
+approximate mode, but it is not required for the first implementation.
+
+The default value is:
+
+.. code-block:: mapfile
+
+    MEASURE CARTESIAN
+
+The default must not change existing scalebar output.
+
+Mapfile Syntax
+--------------
+
+Example:
+
+.. code-block:: mapfile
+
+    SCALEBAR
+      STATUS EMBED
+      POSITION LL
+      UNITS KILOMETERS
+      INTERVALS 4
+      SIZE 200 3
+      MEASURE GEODESIC
+      LABEL
+        SIZE 10
+        COLOR 0 0 0
+      END
+    END
+
+``MEASURE`` should be parsed, serialized, and exposed consistently with other
+``scalebarObj`` properties.
+
+The following paths must round-trip the new setting:
+
+- mapfile parsing through ``loadScalebar()``
+- mapfile writing through ``writeScalebar()``
+- runtime string updates through ``msUpdateScalebarFromString()``
+- string serialization through ``msWriteScalebarToString()``
+- MapScript bindings for ``scalebarObj``
+
+Architecture
+------------
+
+The implementation should introduce a measurement layer between
+``msDrawScalebar()`` and the existing interval fitting logic.
+
+::
+
+  msDrawScalebar()
+    measure desired pixel span
+    choose rounded interval
+    convert interval to pixels
+    fit width
+    render existing scalebar styles
+
+The measurement layer should replace only the distance estimate. The existing
+rounding, fit-shrinking, style rendering, label placement, and image creation
+structure should remain as close to the current implementation as practical.
+
+A possible helper API is:
+
+.. code-block:: c
+
+    static int msScalebarMeasurePixelSpan(mapObj *map,
+                                          const scalebarObj *scalebar,
+                                          double pixel_width,
+                                          scalebarDistanceObj *distance);
+
+where ``scalebarDistanceObj`` contains a numeric value and output unit.
+
+The helper dispatches to the configured backend:
+
+- Cartesian backend
+- Geodesic backend
+- Optional spherical backend, if later accepted
+
+Cartesian Measurement
+---------------------
+
+The Cartesian backend preserves the current calculation:
+
+::
+
+  distance =
+    map.cellsize * pixel_width /
+    (inches_per_scalebar_unit / inches_per_map_unit)
+
+This backend is the default and must keep current behavior unchanged.
+
+Geodesic Measurement
+--------------------
+
+The geodesic backend computes a local distance for the horizontal pixel span
+used by the scalebar fitting loop.
+
+Algorithm:
+
+1. Choose a deterministic representative sample pixel from ``SCALEBAR
+   POSITION`` and ``SCALEBAR OFFSET``.
+2. Convert the pixel endpoints to map coordinates.
+3. If the map CRS is geographic, use the endpoint coordinates directly as
+   longitude/latitude.
+4. Otherwise transform endpoints from ``map->projection`` to ``map->latlon``.
+5. Compute inverse geodesic distance on the appropriate ellipsoid.
+6. Convert the measured distance in meters to ``scalebar->units``.
+
+This work must reuse MapServer's existing projection context lifecycle and
+thread-safety model. It should not introduce an independent projection context
+management path.
+
+If endpoint transformation or geodesic distance calculation fails, the scalebar
+draw operation must fail with a clear error. ``MEASURE GEODESIC`` must not
+silently fall back to Cartesian output.
+
+Sample Position
+---------------
+
+Geodesic scalebars are local measurements. A deterministic sample-position
+policy is therefore required.
+
+Initial policy:
+
+- lower positions (``LL``, ``LC``, ``LR``) sample near the lower map edge
+- upper positions (``UL``, ``UC``, ``UR``) sample near the upper map edge
+- unsupported positions fall back to the map vertical centerline
+- ``OFFSET`` is treated as a simple vertical adjustment of the sample row
+- generated scalebar image height is ignored for the first implementation
+- the horizontal sample coordinate is always the map horizontal center
+- the final sample row is clamped to the valid map image extent
+- the same policy applies to standalone and embedded scalebars
+
+This intentionally uses existing ``POSITION`` and ``OFFSET`` settings as
+measurement hints instead of adding a separate ``SAMPLEPOSITION`` or
+``MEASUREPOSITION`` keyword. For standalone scalebars, these settings describe
+where the user intends to place the generated scalebar relative to the map in
+the surrounding user interface.
+
+A representative implementation shape is:
+
+.. code-block:: c
+
+    static void msScalebarSamplePixel(const mapObj *map, double *px,
+                                      double *py) {
+      double x = map->width * 0.5;
+      double y;
+
+      switch (map->scalebar.position) {
+      case MS_LL:
+      case MS_LR:
+      case MS_LC:
+        y = map->height - map->scalebar.offsety - 1.0;
+        break;
+
+      case MS_UL:
+      case MS_UR:
+      case MS_UC:
+        y = map->scalebar.offsety;
+        break;
+
+      default:
+        y = map->height * 0.5;
+        break;
+      }
+
+      *px = x;
+      *py = MS_MAX(0.0, MS_MIN(y, map->height - 1.0));
+    }
+
+Documentation must clearly explain that a geodesic scalebar reports local scale
+at the selected sample position. It is not a globally valid scale for every
+part of the map.
+
+Unit Conversion
+---------------
+
+The local measurement backends should produce a canonical distance in meters.
+The result is then converted to the configured scalebar output unit.
+
+Existing supported scalebar output units must continue to work:
+
+- inches
+- feet
+- miles
+- meters
+- kilometers
+- nautical miles
+
+Decimal degrees should remain invalid as scalebar output units unless a
+separate RFC changes that behavior.
+
+Scale Denominator
+-----------------
+
+This RFC does not change ``msCalculateScale()`` semantics.
+
+Scale denominator calculation and scalebar distance measurement must remain
+separate concerns. Any broader change to scale denominator behavior should be
+covered by a separate RFC.
+
+Backwards Compatibility Issues
+------------------------------
+
+The default behavior remains ``MEASURE CARTESIAN``. Existing mapfiles that do
+not use the new keyword should render the same scalebars as before.
+
+The new behavior is opt-in:
+
+.. code-block:: mapfile
+
+    SCALEBAR
+      MEASURE GEODESIC
+    END
+
+No implicit behavior change is proposed for existing metric scalebars. This is
+intentional: some users may rely on projected-plane scalebars, even when the
+output unit is meters or kilometers.
+
+Security Implications
+---------------------
+
+No new security implications are expected.
+
+The geodesic backend may perform additional projection operations during
+scalebar rendering. These should use existing MapServer projection handling and
+error reporting paths.
+
+MapScript Implications
+----------------------
+
+MapScript must expose the new measurement mode on ``scalebarObj``.
+
+MapScript should be able to:
+
+- read the default measurement mode
+- set the measurement mode
+- preserve the setting when maps are serialized or written
+
+Documentation Needs
+-------------------
+
+The following documentation should be updated:
+
+- ``MapServer-documentation/en/mapfile/scalebar.txt``
+- ``MapServer-documentation/en/utilities/scalebar.txt``
+- MapScript documentation where ``scalebarObj`` properties are listed
+
+Documentation must cover:
+
+- ``MEASURE CARTESIAN`` as the default
+- ``MEASURE GEODESIC`` as opt-in local ground-distance measurement
+- how ``POSITION`` and ``OFFSET`` select the representative geodesic sample
+  location
+- failure behavior when geodesic measurement cannot be computed
+- the local nature of geodesic scalebars
+
+Testing
+-------
+
+Numeric measurement tests should be added before relying on rendered-image
+comparisons.
+
+Required test cases:
+
+- default Cartesian behavior remains unchanged
+- EPSG:3857 at a higher latitude where local ground distance differs from
+  projected distance
+- invalid projection or endpoint transformation failure
+- parser and writer round-trip for ``MEASURE CARTESIAN`` and
+  ``MEASURE GEODESIC``
+- runtime string update through ``msUpdateScalebarFromString()``
+- string serialization through ``msWriteScalebarToString()``
+- MapScript read/write access to the measurement mode
+
+Rendering tests should include:
+
+- Test explicit cartesian scalebar measurement in EPSG:3857
+- Test local geodesic scalebar measurement in EPSG:3857
+- Test geodesic scalebar failure without a usable map projection
+
+Implementation Plan
+-------------------
+
+1. Refactor scalebar distance calculation into an internal measurement helper.
+   Route existing Cartesian behavior through the helper without changing
+   output.
+
+2. Add ``MEASURE`` to ``scalebarObj``, the parser, writer, string update path,
+   string serialization path, and MapScript bindings.
+
+3. Implement the geodesic backend using endpoint sampling, existing MapServer
+   projection context management, and ellipsoidal inverse distance.
+
+4. Add numeric tests for measurement behavior.
+
+5. Add rendering tests for default behavior and opt-in geodesic behavior.
+
+6. Update user and MapScript documentation.
+
+Out of Scope
+------------
+
+The following topics are explicitly out of scope:
+
+- changing scalebar visual styles
+- changing ``msCalculateScale()``
+
+Affected Files
+--------------
+
+Expected affected source files:
+
+- ``mapserver.h``
+- ``mapfile.c``
+- ``mapscale.c``
+- ``mapcopy.c`` if ``scalebarObj`` copy handling requires updates
+- ``mapscript/swiginc/scalebar.i``
+- relevant MapScript generated files, depending on the binding update workflow
+- ``msautotest`` test files
+
+Expected affected documentation files:
+
+- ``en/mapfile/scalebar.txt``
+- ``en/utilities/scalebar.txt``
+- relevant MapScript documentation
+
+Ticket ID and References
+------------------------
+
+- EPSG:3857 scalebar report:
+  https://github.com/MapServer/MapServer/issues/7397
+
+Voting History
+--------------
+
+No vote yet. Draft RFC for discussion.

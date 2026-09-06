@@ -1,0 +1,113 @@
+.. _v8_support:
+
+*****************************************************************************
+ V8 MapScript Support
+*****************************************************************************
+
+:Author: Alan Boudreault
+:Contact: aboudreault@mapgears.com
+
+.. contents:: Table of Contents
+    :depth: 2
+    :backlinks: top
+
+
+.. index::
+    pair: MapScript; V8
+
+Introduction
+============
+
+The V8/MapScript cannot be used as its own like other mapscripts. V8 is
+currently used internally to add 2 functionalities:
+
+- Javascript Styleitem: :ref:`rfc102`
+- Javascript Geomtransform: :ref:`rfc106`
+
+These instructions are for Unix/Linux users.
+
+Version of V8 supported
+-----------------------
+
+You have to use v8 3.20, which is the version of the nodejs release:0.11.7. For
+future compatibility, this is a good thing to be synchronized to nodejs project.
+
+Obtaining, Compiling, and Installing V8 and V8/MapScript
+========================================================
+
+Download and Compile V8
+-----------------------
+
+- The V8 source can be obtained from the `v8 website`_.
+
+**Download v8:**
+
+::
+
+    git clone git://github.com/v8/v8.git v8
+
+**Compile the v8 library:**
+
+::
+
+    cd v8
+    git checkout 3.20
+    make dependencies
+    library=shared make -j8 x64.release
+
+.. note::
+
+   Use ia32.release if you are using a 32bits machine.
+
+**Install the v8 library and include headers:**
+
+::
+
+   mkdir -p /opt/v8/lib && cp ./out/x64.release/lib.target/libv8.so /opt/v8/lib
+   mkdir /opt/v8/include && cp include/v8* /opt/v8/include
+
+.. note::
+
+   Modify the library path if needed (32bits)
+
+**Setup the v8 lib in the system paths:**
+
+::
+
+    echo "/opt/v8/lib" > /etc/ld.so.conf.d/v8.conf
+    ldconfig
+
+
+Compile MapServer with V8 Support
+---------------------------------
+
+**Configure:**
+
+::
+
+    cd MapServer
+    mkdir build
+    cd build
+    cmake -DCMAKE_PREFIX_PATH=/opt/v8 -DWITH_V8=yes ..
+
+**Compile and install:** (from the build directory)
+
+::
+
+    make install
+
+**Verify the V8 support:**
+
+::
+
+  /path/to/mapserv -v
+
+
+You should see: **SUPPORTS=V8**. You can now refer to the following pages to try the javascript functionalities:
+
+- Javascript Styleitem: :ref:`styleitemjs`
+- Javascript Geomtransform: :ref:`geomtransformjs`
+
+.. #### rST Link Section ####
+
+.. _`v8 website`: https://code.google.com/p/v8/
