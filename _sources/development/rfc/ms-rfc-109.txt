@@ -1,0 +1,153 @@
+.. _rfc109:
+
+============================================
+MS RFC 109: Optimizing Runtime Substitutions
+============================================
+
+:Date:  2014/03
+:Author: Thomas Bonfort
+:Contact: tbonfort@terriscope.fr
+:Status: Adopted
+:Version: MapServer 7.0
+:Amended: 2015/02
+:Last Updated: 2014/03/07
+
+1. Motivation
+==============
+
+- While profiling the WMS shootout queries, a noticeable amount of time was
+  spent in the :ref:`runsub` code, even though the functionality was not being
+  used at all. As runtime substitutions apply to **all** mapserv requests, an
+  optimization in this part of the code is beneficial for all mapserv
+  operations.
+
+- For some specific cases, there can be the need to apply runtime substitutions
+  inside metadata entries (e.g. modify ows_enable_request when using a proxy
+  between mapserver and the client, to enable specific operations for
+  authenticated clients). The current implementation prohibits this as it would
+  put a far too noticeable hit on performance.
+
+
+2. Proposed Rewrite
+====================
+
+In pseudo-code, the current algorithm is: (KVP stands for key-value-pair, and
+is one of the parameters passed in the URL to mapserver, e.g.
+...&map=path/to/mapfile.map&...)
+
+::
+
+  foreach KVP:
+    foreach outputformat:
+      if KVP appears in "FILENAME" formatoption:
+        if KVP validates against MAP_>WEB->VALIDATION:
+          apply substitution 
+    
+    foreach layer:
+      foreach class:
+        if KVP appears in a substitutable CLASS keyword (EXPRESSION, TEXT, TITLE):
+          if KVP validates against CLASS->VALIDATION:
+            apply substitution
+          else if KVP validates against LAYER->VALIDATION:
+            apply substitution
+          else if KVP validates against MAP->WEB->VALIDATION:
+            apply substitution
+        if KVP appears in a substitutable LAYER keyword (DATA, CONNECTION, FILTER, TILEINDEX):
+          else if KVP validates against LAYER->VALIDATION:
+            apply substitution
+          else if KVP validates against MAP->WEB->VALIDATION:
+            apply substitution
+
+For a typical request where the number of KVPs is relatively high (e.g. all OWS
+requests) and where the number of layers/classes is also relatively high, this
+results in a very large number of strcasestr calls being made for the "if KVP
+appears in XXX keyword" parts. These happen whether or not actual runtime
+substitutions are going to be used or not.
+    
+
+With this RFC, we will be switching to this pseudo-code:
+
+::
+
+  foreach layer:
+    foreach class:
+      foreach class->validation:
+        if validation_key in kvp:
+          if kvp validates:
+            apply class substitutions
+    foreach layer->validation:
+      if validation_key in kvp:
+        if kvp validates:
+          apply layer substitutions
+          foreach class:
+            apply class substitutions
+  foreach map->web->validation:
+    if validation_key in kvp:
+      if kvp validates:
+        apply outputformat validations
+        foreach layer:
+          apply layer substitutions
+          foreach class:
+            apply class substitutions
+
+This has the advantage of requiring very little overhead if no substitutions
+are in use, and somewhat simplifying the code. This optimization becomes
+possible because we require VALIDATION entries to be present (since 6.0).
+    
+3. Miscellaneous
+================
+
+In exchange for this speedup, we now allow substitutions to occur on
+layer->metadata and map->web->metadata entries, which would have had a too
+large impact on performance with the previous method. We can also imagine
+adding substitutions to other mapfile elements, now that the cost of this
+operation does not impact performance when not in use.
+
+For performance reasons, validations should be put in the validation block
+"closest" to where they will actually be used. Putting a validation in
+map->web->validation is practical as it will apply to the whole mapfile, it
+however will behave slightly slower than duplicating it in the needed
+layer/class validations.
+
+Update from 2015/02, with +1 from ThomasB, StephanM, DanielM, MikeS and SteveW:
+As discussed on the email list, this RFC is extended with the two following features:
+
+- Allow substitutions to happen in PROCESSING entries (needed for RFC91
+  native filters, could also be used to e.g. allow to dynamically set resampling
+  methods for raster layers)
+
+- Allow substitution values to be read in priority from an envirronment variable.
+  This would allow a server administrator to set substitutions based on a user id, etc...
+  As an envirronment lookup would only happen if the mapfile contains the corresponding
+  entry in a VALIDATION block, this feature would not allow the global environment to
+  be leaked, unless the user has chosen a substitution key that matches an existing
+  environment value. Note that a key from the envirronment would take precedence over
+  the same key passed in the URL.
+
+3.1 Backwards Incompatibilities
+-------------------------------
+
+As substitutions can now apply to metadata, there is a potential
+incompatibility for this uncommon scenario:
+
+ * a metadata block contains a %variable% substring in one of its entries
+ * **and** the mapfile contains a VALIDATION block for the "variable" runsub.
+
+In this case, a substitution will occur if variable=foo is present in the URL,
+whereas this would not have been the case beforehand.
+
+
+3.2 Issue Tracking ID
+---------------------
+
+https://github.com/MapServer/MapServer/pull/4877
+
+see also:
+
+* https://github.com/MapServer/MapServer/issues/4596
+
+
+3.3 Voting History
+------------------
+
++1 from ThomasB, TomK, SteveW, YewondwossenA, SteveL, PerryN, MikeS, JeffM and StephanM

@@ -1,0 +1,159 @@
+.. _rfc61:
+
+===============================================================
+  MS RFC 61: Enhance MapServer Feature Style Support
+===============================================================
+
+:Date: 2010/09/11
+:Author: Tamas Szekeres
+:Contact: szekerest at gmail.com
+:Status: Adopted (Implemented on 2010/09/29, Documentation added)
+
+Description: This RFC proposes a generic implementation for rendering
+the feature styles retrieved from the various data sources. In this
+regard we intend to enhance the existing STYLEITEM option
+which could now be specified for all layer types and not restricted
+to the OGR driver.
+
+Background
+~~~~~~~~~~
+
+Currently only the OGR driver supports rendering the styles attached
+to a feature in the OGR data sources. Theoretically only a few data
+sources support storing the styles along with the features
+(like MapInfo, AutoCAD DXF, Microstation DGN), however those styles 
+can easily be transferred to many other data sources as a separate attribute 
+by using the ogr2ogr SQL option as follows:
+
+::
+
+   ogr2ogr -sql "select *, OGR_STYLE from srclayer" "dstlayer" "srclayer"
+
+
+As a result of the transfer, the OGR style string is added to the 
+destination layer as a separate attribute. We could also rename this
+attribute during the transfer according to the following example:
+
+::
+
+  ogr2ogr -sql "select *, OGR_STYLE as mystyleattribute from srclayer" "dstlayer" "srclayer"
+
+
+Currently the style string transferred this way can only be rendered by
+the MapServer OGR driver, however it would be reasonable to implement such
+option for all layer types in MapServer.
+
+Proposed New Syntax
+~~~~~~~~~~~~~~~~~~~
+
+This RFC wouldn't alter the current behaviour of STYLEITEM "AUTO" option, which causes
+the driver specific LayerGetAutoStyle vtable method to be called as before.
+If LayerGetAutoStyle is not implemented by a driver an error message is
+provided to the user "'STYLEITEM AUTO' not supported for this data source."
+
+We will however add support for specifying the feature attribute containing
+the style string in the form: STYLEITEM "mystyleattribute" which
+will tell mapserver to initialize the style from the specified attribute in
+a generic way.
+
+Supported Style Representations
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+We will implement support for either the current mapserver and OGR specific
+style representations. 
+
+The mapserver style representation follows the syntax of the STYLE and CLASS 
+entries in the mapfile format like the following sample:
+
+::
+
+  "STYLE BACKGROUNDCOLOR 128 0 0 COLOR 0 0 208 END"
+  
+By specifying the entire CLASS instead of a single style allows to use further options
+(like setting expressions, label attributes, multiple styles) on a per feature basis.
+
+In addition to the mapserver style the OGR style string format will also be supported
+as described in the following documentation: https://gdal.org/user/ogr_feature_style.html
+
+The actual style format will be identifyed at run-time according to the first characters of the
+style strings. This solution will allow to specify multiple style formats within the same layer.
+
+
+Implementation Details
+~~~~~~~~~~~~~~~~~~~~~~
+
+In order to implement this enhancement the following changes should be
+made in the MapServer codebase:
+
+1) Modify msDrawVectorLayer (in mapdraw.cpp) to invoke a new method (msLayerGetFeatureStyle) 
+   when STYLEITEM is set for a particular layer.
+   
+2) Implement msLayerGetFeatureStyle in maplayer.c which will call either msUpdateStyleFromString,
+   msUpdateClassFromString or the new method: msOGRUpdateStyleFromString according to
+   the actual style format retrieved from the layer.
+
+3) Modify msOGRLayerGetAutoStyle (in mapogr.cpp) and extract the bulk of the style
+   initialization into a separate function (msOGRUpdateStyle). We will add a new function 
+   (msOGRUpdateStyleFromString) where the style manager will be initialized by using 
+   OGRStyleMgr::InitStyleString instead of OGRStyleMgr::InitFromFeature
+   
+4) Modify msLayerWhichItems in (maplayer.c) to retrieve the attribute containing the style string
+   specified in the STYLEITEM parameter. By using STYLEITEM "AUTO" no additional attribute 
+   will be retrieved just as before.
+
+MapScript Issues
+~~~~~~~~~~~~~~~~
+
+There's no need to modify the MapScript interface since the styleitem parameter has
+already been exposed. However this attribute will now support the name of the style
+attribute not only the "AUTO" value.
+
+Files affected
+~~~~~~~~~~~~~~
+
+To implement the solution the following files would require to be changed:
+
+- mapserver.h => Add the declaration for msLayerGetFeatureStyle and msOGRUpdateStyleFromString
+- mapogr.cpp => Add msOGRUpdateStyleFromString and msOGRUpdateStyle
+- maplayer.c => Modify msLayerWhichItems and implement msLayerGetFeatureStyle
+- mapdraw.c => Call msLayerGetFeatureStyle in addition to msLayerGetAutoStyle
+
+Backwards Compatibility Issues
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Currently 'STYLEITEM "AUTO"' has only been implemented in the OGR driver which
+overrides LayerGetAutoStyle with a custom implementation. This behaviour would
+continue to work as previously since the generic implementation would not affect those
+drivers which provide custom auto style implementation.
+
+When using the 'STYLEITEM "mystyleattribute"' setting, we provide a generic implementation
+to set the style directly from the feature attribute and no driver specific
+function will be called. This option will work for all drivers in the same way.
+
+Further Considerations
+~~~~~~~~~~~~~~~~~~~~~~
+
+In the future we may provide support further style representations in addition to
+the mapserver and OGR style strings. Each new representation will require a 
+proper (and fast) method to identify the format from the style string itself.
+
+Using the OGR style format will require the OGR driver to be compiled in. If we compile
+MapServer without OGR support and the 'STYLEITEM "mystyleattribute"' option is used,
+those features may not be rendered correctly where the actual style format is OGR
+style string.
+
+Bug ID
+~~~~~~
+
+The ticket for RFC-61 (containing the implementation) can be found here.
+
+Bug 3544_
+ 
+.. _3544: https://github.com/MapServer/MapServer/issues/3544 
+
+Voting history
+~~~~~~~~~~~~~~
+
++1 from SteveW, DanielM, SteveL, PericlesN, AssefaY, FrankW, ThomasB, HowardB and TamasS
+
+

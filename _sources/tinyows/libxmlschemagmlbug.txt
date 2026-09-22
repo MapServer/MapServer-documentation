@@ -1,0 +1,103 @@
+.. _tinyows_libxmlschemagmlbug:
+
+*****************************************************************************
+Working Around the LibXML2 XSD Schema GML Bug
+*****************************************************************************
+
+Issue
+-----------------------------------------------------------------------------
+TinyOWS makes use of GML, an XML-based language that encodes
+geometry. Frequently the input and the output of TinyOWS are in GML.
+
+Even if LibXML2 is a great lib, older versions (i.e previous to 2.8) didn't 
+handled correctly GML 3.1.1 XSD Schema (see https://bugzilla.gnome.org/show_bug.cgi?id=630130).
+
+
+Workaround and options
+----------------------
+
+For TinyOWS users, you have several options
+
+- Take a recent libxml2 version (i.e 2.8 or later) 
+
+
+- Patch your oldest copy of LibXML2 release and link TinyOWS against your
+  local copy:
+
+
+.. code-block:: bash
+
+  --- xmlschemas.c.orig   2011-04-24 14:58:16.000000000 +0000
+  +++ xmlschemas.c        2011-04-24 15:47:50.000000000 +0000
+  @@ -15158,7 +15158,11 @@
+     }
+     if ( (WXS_IS_LIST(type) || WXS_IS_UNION(type)) &&
+         (WXS_IS_RESTRICTION(type) == 0) &&
+  -        (! WXS_IS_ANY_SIMPLE_TYPE(baseType))) {
+  +        (
+  +          (! WXS_IS_ANY_SIMPLE_TYPE(baseType))
+  +          && (baseType->type != XML_SCHEMA_TYPE_SIMPLE)
+  +        )
+  +       ) {
+        xmlSchemaPCustomErr(ctxt,
+            XML_SCHEMAP_ST_PROPS_CORRECT_1,
+            WXS_BASIC_CAST type, NULL,
+  }}}
+
+
+
+- Modify the XSD GML Schema itself (but you violate the OGC License if you do this!):
+   
+
+.. code-block:: bash
+
+ Index: schema/gml/3.1.1/base/valueObjects.xsd
+ ===================================================================
+ --- schema/gml/3.1.1/base/valueObjects.xsd (revision 550)
+ +++ schema/gml/3.1.1/base/valueObjects.xsd (revision 561)
+ @@ -200,11 +200,13 @@
+	 <group name="ValueExtent">
+		 <choice>
+ +<!--
+			 <element ref="gml:CategoryExtent"/>
+			 <element ref="gml:QuantityExtent"/>
+ +-->
+			 <element ref="gml:CountExtent"/>
+		 </choice>
+	 </group>
+ -       <!-- ======================================================================
+ -       <element name="QuantityExtent" type="gml:QuantityExtentType" substitutionGroup="gml:_Value"> -->
+ +       <!-- ====================================================================== 
+ +       <element name="QuantityExtent" type="gml:QuantityExtentType" substitutionGroup="gml:_Value"> 
+	 <element name="QuantityExtent" type="gml:QuantityExtentType">
+		 <annotation>
+ @@ -212,5 +214,4 @@
+		 </annotation>
+	 </element>
+ -       <!-- -->
+	 <complexType name="QuantityExtentType">
+		 <annotation>
+ @@ -223,6 +224,7 @@
+		 </simpleContent>
+	 </complexType>
+ +-->
+	 <!-- ======================================================================
+ -       <element name="CategoryExtent" type="gml:CategoryExtentType" substitutionGroup="gml:_Value"> -->
+ +       <element name="CategoryExtent" type="gml:CategoryExtentType" substitutionGroup="gml:_Value"> 
+	 <element name="CategoryExtent" type="gml:CategoryExtentType">
+		 <annotation>
+ @@ -230,5 +232,4 @@
+		 </annotation>
+	 </element>
+ -       <!-- -->
+	 <complexType name="CategoryExtentType">
+		 <annotation>
+ @@ -241,4 +242,5 @@
+		 </simpleContent>
+	 </complexType>
+ +-->
+	 <!-- ======================================================================
+	 <element name="CountExtent" type="gml:CountExtentType" substitutionGroup="gml:_Value"> -->
+
+
+- Or choose to use only GML 2.1.2 in the meantime.

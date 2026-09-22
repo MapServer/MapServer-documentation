@@ -1,0 +1,104 @@
+.. _rfc95:
+
+=========================================================================
+MS RFC 95: Support for lists in expression parser
+=========================================================================
+
+:Date:  2013/04/04
+:Author: Thomas Bonfort
+:Contact: thomas.bonfort@gmail.com
+:Status: Adopted
+:Version: MapServer 6.4
+
+1. Overview
+-----------
+
+We have a relatively low hanging performance speedup related to expressions
+when doing class filtering. The context relates to when there's the need to
+apply a given :ref:`class` to multiple attribute values.
+
+Currently, to apply a single class to multiple values of an attribute, you can
+either use regular expressions, or use the `IN` operator, like this:
+
+.. code-block:: mapfile
+
+  LAYER
+    ...
+    CLASSITEM "type"
+    CLASS
+      EXPRESSION /primary|secondary|tertiary/ #regular expression on CLASSITEM
+      EXPRESSION ("[type]" IN "primary,secondary,tertiary") #"complex" parser expression
+      ...
+    END
+  END
+
+Both methods require quite a bit of overhead, either in the regex system calls,
+or by using quite a few mallocs when going through the IN parser operation.
+
+
+2. Proposed solution
+--------------------
+
+We can cut down on this overhead by adding a "list" expression type, denoted by
+the `{ }` delimiters, where the previous layer definition becomes:
+
+.. code-block:: mapfile
+
+  LAYER
+    ...
+    CLASSITEM "type"
+    CLASS
+      EXPRESSION {primary,secondary,tertiary}
+      ...
+    END
+  END
+
+In that case, the expression parsing is a simple string lookup inside
+`msEvalExpression()` instead of having to go down into the system regex or the
+parser.
+
+
+3. Implementation Details
+-------------------------
+
+The modifications to the code are fairly straightforward:
+
+* Support for the {} delimiters in the lexer (maplexer.l)
+* New expression type `MS_LIST` in mapserver.h
+* support for finding an attribute value in the given list in
+  `msEvalExpression()` in maputil.c
+* Loading, saving and copying the expression in mapfile.c and mapcopy.c
+
+4. Limitations
+--------------
+
+* setters and getters will not be initially added for mapscript (use
+  `classObj.updateFromString("EXPRESSION {foo,bar,baz}")`
+* Quoting and escaping inside the list is not supported, i.e. attribute values
+  cnanot contain the `'` , `"` or `,` characters. 
+
+
+4. Backwards Compatibility Issues
+---------------------------------
+
+None, new functionality
+
+
+
+5. Performance implications
+---------------------------
+
+The expression parser had already been sped up in 6.0 with the use of precompiled
+expressions, this goes one step further for the specific case where a given :ref:`class`
+should match multiple attribute values
+
+6. Bug ID
+---------
+
+https://github.com/MapServer/MapServer/issues/4648
+
+
+7. Voting history
+-----------------
+
++1: MikeS, TomK, DanielM, SteveW, ThomasB

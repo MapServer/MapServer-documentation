@@ -1,0 +1,287 @@
+.. _rfc123:
+
+=========================================================================
+MS RFC 123: Support for MapML output in MapServer
+=========================================================================
+
+:Author: Daniel Morissette
+:Contact: dmorissette@mapgears.com
+:Status: Adopted (2020-03-31)
+:Last update: 2020-03-31
+:Version: MapServer 8.0
+
+1. Overview
+-----------
+
+A common way to deploy web mapping sites in 2019 is to embed JavaScript code in a web page using OpenLayers or Leaflet as the navigation interface.  Those JavaScript libraries can interact with OGC WMS and Tile Services (as well as other OGC service types) if provided with the correct configuration via JavaScript code.  In other words, the map contents, the list of layers, SRS, zoom levels, extents, etc, are specified as JavaScript statements and then rendered by a JavaScript library in a "custom" way that the web browser itself does not "understand". 
+
+The W3C Maps for HTML Community Group is working to define a (new) "map" HTML element that would be used to define map contents in a web page and would be directly supported and rendered by web browsers in a standardized way. All this is done by building on existing standards such as WMS, WFS and Tile Services. In addition to standardizing the encoding and access to map elements in web browsers, this encoding also aims to make the map contents more easily discoverable and indexable by search bots on the Web.
+
+A draft specification is available through the working group, and the goal of this RFC is to provide a reference implementation to test the draft spec in real life use cases and promote its more widespread usage.  A similar reference implementation is also available for GeoServer, and we will aim to align this implementation with the GeoServer implementation when possible.
+
+This project is supported by funding from Natural Resources Canada.
+
+
+2. Proposed solution
+--------------------
+
+This RFC proposes the implementation of MapML output in MapServer which consists in two parts:
+
+1. Enabling generation of a <mapml> document for a given layer in a mapfile. This will be implemented as a vendor-specific REQUEST=GetMapML extension.
+
+2. Enabling text/mapml as a new INFO_FORMAT for WMS GetFeatureInfo requests, and as a new feature encoding format for WFS GetFeature requests.
+ 
+
+2.1 Building/enabling the MapML option
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+MapML support will be enabled by default if WMS support is enabled. It can be disabled at compile time using the following CMake options:
+
+   cmake .. -DWITH_MAPML=0
+
+There are no additional dependencies required for basic MapML support.
+
+If the (optional) OGR MapML driver is available then it will be used for enhanced text/mapml output in WMS GetFeatureInfo and WFS GetFeature responses (see section 4.3 below).
+
+
+2.2 MapFile configuration parameters
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Since MapML is mostly a mechanism to refer to OGC services (WMS, WFS and tile services), the MapML implementation automatically leverages existing WMS and WFS mapfile configuration parameters for the map and layers being served.
+
+In particular, the following mapfile configuration parameters will impact the MapML output and behaviours:
+
+- **ows_enable_requests**: Either use "*" or add "GetMapML" to the list of requests to enable <mapml> output for specific layers (or at the map level for all layers)
+
+- **wms_getfeatureinfo_formatlist**: add "text/mapml" to the list to enable WMS GetFeatureInfo in text/mapml format for a specific layer (or at the map level for all layers)
+
+- **wfs_getfeature_formatlist**: add "text/mapml" to the list to enable WFS GetFeature in text/mapml format for a specific layer (or at the map level for all layers)
+
+- **ows_srs**: the list of SRS codes specified in the ows_srs (or wms_srs/wfs_srs) metadata controls the MapML projection codes that will be enabled for <mapml> output
+   - EPSG:3857 enables MapML PROJECTION OSMTILE
+   - EPSG:3978 enables MapML PROJECTION CBMTILE
+   - EPSG:5936 enables MapML PROJECTION APSTILE
+   - EPSG:4326 and CRS:84 enable MapML PROJECTION WGS84
+
+Other mapml-specific metada entries will also be supported:
+
+- **mapml_wms_link_rel**: one of "tile" or "image". Controls whether WMS outputs URL templates as <link rel="image"...> or <link rel="tile"...>.  Defaults to "image".
+
+- **mapml_wms_image_format**: can be used to specify the preferred image format to use for a given WMS layer (e.g. image/png, image/jpeg)
+
+- TBD: other metadata entries may be added as needed during the final implementation.
+
+
+2.4 The Vendor-specific GetMapML Request
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+A new vendor-specific "REQUEST=GetMapML" has been added to MapServer to request a <mapml> document for a specified service type (WMS, WFS) and map/layer/style/projection combination. A valid WMS mapfile is required and the request supports the following URL parameters:
+
+========== === ===========================================================================================================
+Name       R/O Value
+========== === ===========================================================================================================
+MAP        R   /path/to/mapfile.map
+SERVICE    R   Type of service that the <mapml> response should link to.
+                 - WMS: links to WMS GetMap, GetFeatureInfo, etc
+                 - WFS: links to WFS GetFeature
+				 
+               Note: support for other service types such as MapCache xyz/tms/wmts references may be added at a later time
+REQUEST    R   GetMapML
+LAYER      R   A layer name
+STYLE      O   WMS Style name (an empty value will be used by default)
+PROJECTION O   One of OSMTILE, CBMTILE, APSTILE or WGS84, defaults to OSMTILE if not specified (as per spec)
+========== === ===========================================================================================================
+
+R/O: R=Required or O=Optional
+
+Example:
+
+..
+
+  http://localhost/cgi-bin/mapserv?map=/path/to/test.map&service=WMS&request=GetMapML&layer=layer1&style=&projection=OSMTILE
+
+The returned MapML document will contain URL templates for the requested service type and layer with all the required MapML <input> parameter definitions to allow the client viewer to implement the logic required to zoom/pan the map and automatically generate the new GetMap (for WMS) or GetFeature (for WFS) on the client side.
+
+.. note:: The MapML spec does not define a GetMapML request, so this is a vendor-specific extension, and it is worth noting that the behaviour proposed in this RFC for the GetMapML request is slightly different from the approach which was discussed in OGC Testbed 13 (https://docs.ogc.org/per/17-019.html#_wms_to_serve_mapml) which expected the client viewer to go back to the server for each zoom/pan operation to evaluate the new extents and return a static set of image or tile URLs for each operation. The URL template approach is simpler to implement for the server and will result in a better user experience in the viewer. 
+
+
+2.5 Updates to GetCapabilities
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If MapML is enabled in the mapfile then:
+ - WMS GetCapabilities will include a reference to the vendor-specific GetMapML request, and text/mapml will be listed as a GetFeatureInfo format if enabled.
+ - WFS GetCapabilities will include a reference to the vendor-specific GetMapML request, and text/mapml will be listed as a GetFeature format.
+
+
+2.6 MapML usage example
+^^^^^^^^^^^^^^^^^^^^^^^
+
+In a typical use case, a web developer includes a <mm-map> HTML element in a web page as follows (this example uses the Leaflet polyfill viewer):
+
+.. code-block:: html
+
+  <html>
+    <head>
+      <title>MapServer MapML Demo</title>
+      <meta charset='utf-8'>
+      <script src="/mapml/viewer/bower_components/webcomponentsjs/webcomponents-lite.min.js"></script>
+      <link rel="import" href="/mapml/viewer/bower_components/web-map/web-map.html">
+      <style>
+       * {margin: 0;padding: 0;}
+       map { display: flexbox; height: 100vh;}
+      </style>
+    </head>
+    <body>
+      <mm-map is="web-map" projection="OSMTILE" zoom="5" lat="45" lon="-80" controls>
+        <layer- label="MapServer Demo WMS" src="http://localhost/cgi-bin/mapserv?map=/path/to/test.map&service=WMS&request=GetMapML&layer=layer1&style=&projection=OSMTILE" checked></layer->
+      </mm-map>
+    </body>
+  </html>
+
+
+The src attribute of the <layer-> in the <mm-map> element above links to a <mapml> document that defines the map contents (layers, projections, query urls, etc.) and how the browser should interact with them.
+
+In the WMS case, the <mapml> document returned by MapServer in response to a SERVICE=WMS&REQUEST=GetMapML looks like this:
+
+http://localhost/cgi-bin/mapserv?map=/path/to/test.map&service=WMS&request=GetMapML&layer=layer1&style=&projection=OSMTILE
+
+.. code-block:: html
+
+  <mapml>
+  <head>
+  <title>Demo WMS</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/mapml;projection=OSMTILE" />
+  </head>
+  <body>
+    <extent units="OSMTILE">
+      <input name="w" type="width" />
+      <input name="h" type="height" />
+      <input name="xmin" type="location" units="pcrs" position="top-left" axis="easting" min="-9.50126e+06" max="-7.57178e+06" />
+      <input name="ymin" type="location" units="pcrs" position="bottom-left" axis="northing" min="5.00048e+06" max="6.17829e+06" />
+      <input name="xmax" type="location" units="pcrs" position="top-right" axis="easting" min="-9.50126e+06" max="-7.57178e+06" />
+      <input name="ymax" type="location" units="pcrs" position="top-left" axis="northing" min="5.00048e+06" max="6.17829e+06" />
+      <link rel="image" tref="http://localhost/cgi-bin/mapserv?map=/path/to/test.map&amp;SERVICE=WMS&amp;REQUEST=GetMap&amp;FORMAT=image/png&amp;TRANSPARENT=TRUE&amp;VERSION=1.3.0&amp;LAYERS=layer1&amp;STYLES=&amp;WIDTH={w}&amp;HEIGHT={h}&amp;CRS=EPSG:3857&amp;BBOX={xmin},{ymin},{xmax},{ymax}&amp;m4h=t"/>
+      <input name="i" type="location" axis="i" units="map" min="0.0" max="0.0" />
+      <input name="j" type="location" axis="j" units="map" min="0.0" max="0.0" />
+      <link rel="query" tref="http://localhost/cgi-bin/mapserv?map=/path/to/test.map&amp;SERVICE=WMS&amp;REQUEST=GetFeatureInfo&amp;INFO_FORMAT=text/mapml&amp;FEATURE_COUNT=1&amp;TRANSPARENT=TRUE&amp;VERSION=1.3.0&amp;LAYERS=layer1&amp;STYLES=&amp;QUERY_LAYERS=layer1&amp;WIDTH={w}&amp;HEIGHT={h}&amp;CRS=EPSG:3857&amp;BBOX={xmin},{ymin},{xmax},{ymax}&amp;x={i}&amp;y={j}&amp;m4h=t"/>
+    </extent>
+  </body>
+  </mapml>
+
+
+Don't worry about the complexity of the <mapml> document. It is automatically generated by MapServer and consumed by the viewer. It is not intended to be generated by humans.
+
+Finally, when the user queries the map, the resulting WMS GetFeatureInfo or WFS GetFeature requests can return a "text/mapml" feature collection response which look like this:
+
+.. code-block:: html
+
+  <mapml>
+  <head>
+  <title>GetFeatureInfo Results</title>
+  <meta charset="utf-8" />
+  <meta http-equiv="Content-Type" content="text/mapml" />
+  </head>
+  <body>
+    <extent />
+      <feature id="pop_place.1696" class="pop_place">
+        <properties>
+          <table>
+            <thead>
+              <tr>
+                <th role="columnheader" scope="col">Property Name</th>
+                <th role="columnheader" scope="col">Property Value</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr>
+                <th scope="row">pname_en</th>
+                <td itemprop="pname_en">Ottawa</td>
+              </tr>
+            </tbody>
+          </table>
+        </properties>
+      </feature>
+  </body>
+  </mapml>
+
+
+
+
+
+3. Implementation Details
+-------------------------
+
+Most of the MapML support code will live in mapml.c, with hooks calling it from mapwms.c and mapwfs.c.
+
+A set of msautotests will be added to test the new features.
+
+
+4. Limitations / caveats
+------------------------
+
+4.1 MapML Viewer Polyfill
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Since there is no direct support for MapML in web browsers at this time, the use of a MapML polyfill (based on Leaflet) is required in order to use MapML in web pages.  More details will be provided in the docs for this feature.
+
+
+4.2 Experimental spec
+^^^^^^^^^^^^^^^^^^^^^
+
+This reference implementation should be considered experimental since the MapML spec itself is still a work in progress by the W3C Maps for HTML Community Group. The spec is likely to change over time until an official version is adopted and this should be kept in mind when deploying services.
+
+You are also encouraged to get involved and provide feedback by joining the Maps for HTML Community Group at https://www.w3.org/community/maps4html/
+
+Most of the implementation is in a single mapml.c source file, so if this extension ever becomes unused or unsupported then it can be removed from the source base in a future release relatively easily.
+
+
+
+4.3 WMS GetFeatureInfo and WFS GetFeature output
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+In the initial implementation, WMS GetFeatureInfo queries will only produce a basic attribute table response without the geometry, suitable for use in a popup over a map for instance.
+
+In a second phase of work, an OGR <mapml> driver will be implemented and once it is available then MapServer will be upgraded to use this OGR driver for the text/mapml feature collection output format in response to WMS GetFeatureinfo and WFS GetFeature requests.  This will introduce a dependency on this OGR driver for full feature collection support but the rest of the MapML code can still work without the driver if not available.
+
+5. Backwards Compatibility Issues
+---------------------------------
+
+None anticipated as this is a new feature.
+
+6. Security implications
+-------------------------
+
+None anticipated at the moment.
+
+7. Performance implications
+---------------------------
+
+No impacts on core performance are anticipated.
+
+8. Documentation needs
+----------------------
+
+A new documentation page will be added outlining the various MapML output configuration scenarios and parameters (in the style of the OGC WMS Server page for instance).
+
+A step by step example will also be provided including instructions to deploy the Leaflet viewer polyfill on a server and how to use it in a webpage.
+
+9. Ticket ID and references
+---------------------------
+
+* MapServer Ticket: https://github.com/MapServer/MapServer/issues/6024
+* W3C Maps For HTML Community Group: https://www.w3.org/community/maps4html/
+* Maps for HTML Community Group Resources Page: https://maps4html.github.io/
+* HTML <map> Element Spec: https://maps4html.org/HTML-Map-Element/spec/
+* Map Markup Language (MapML) Spec: https://maps4html.org/MapML/spec/
+* MapML Spec github repository: https://github.com/Maps4HTML/MapML
+* GeoServer MapML Support Docs: https://docs.geoserver.org/latest/en/user/community/mapml/index.html
+* OGC Testbed-13 MapML ER: https://docs.ogc.org/per/17-019.html
+
+
+10. Voting history
+------------------
+
+Adopted with +1 from PSC members EvenR, SethG, JeromeB, MichaelS, JukkaR, TomK, JeffM, SteveL, DanielM.
+
+

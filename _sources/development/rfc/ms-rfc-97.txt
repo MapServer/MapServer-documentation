@@ -1,0 +1,147 @@
+.. _rfc97:
+
+=========================================================================
+MS RFC 97: Dynamic creation of higher zoom levels tiles
+=========================================================================
+
+:Date:  2013/04/15
+:Author: Thomas Bonfort
+:Contact: thomas.bonfort@gmail.com
+:Status: Adopted
+:Version: MapCache 1.2
+
+1. Overview
+-----------
+
+When tiling raster data, it is common for the native resolution of the original
+data to be somewhat/much lower than the resolutions of the higher zoom levels
+of the standard GoogleMapsCompatible or WGS84 grids.  Users whishing to serve low
+resolution data at high resolutions are currently forced to use one of these
+approaches:
+
+- setting a <grid maxzoom="15"> attribute in their tilesets, meaning that all
+  zoom levels higher than the maximum configured one are considered
+  unavailable. Upsampled tiles or images for the higher zoom levels can then be
+  obtained through WMS calls only, tile requests will fail.
+
+- not setting a maxzoom parameter, and therefore caching all tiles at all zoom
+  levels, which is inefficient both in terms of storage on the mapcache
+  instance, and in terms of load set on the original WMS server when initially
+  requesting images before splitting them into tiles.
+
+This RFC proposes to add the concept of "maximum cached level" for a given
+tileset and a given grid. In practice, tiles above the configured maximum
+cached level are still transparently available for an end user or when
+vertically merging multiple tiles, however they are dynamically upscaled from
+the maximum cached level instead of being cached on the mapcache instance
+(after having been requested once from the source WMS service).
+
+
+2. Proposed solution
+--------------------
+
+In order to be available for all tile operations, the `mapcache_tileset_tile_get`
+function will detect calls that are over the maximum cached level and fall back to
+a new function who's responsibility is to treat this special case. Two configurations
+will be available for this "over the maximum cached zoom" scenario:
+
+- Reconstruct the requested tile from the lower zoom level, by:
+  
+  - determining the one or four tiles of the maximum cached that interect the extent
+    of the requested tile.
+  - calling `mapcache_tileset_tile_get` once again, this time with (x,y,z) adapted
+    to have z=max-cached-level (to avoid infinite recursion).
+  - decoding the image data of the lower zoom level tile(s).
+  - upscaling the decoded image data into the final tile.
+  - the upscaled image data will not be encoded straight away, as one of the common
+    use-cases for this functionality will be when overlaying multiple tilesets (i.e.
+    access to the raw pixel data will happen)
+
+- Proxying the requested tile to the source WMS server, thus bypassing mapcache's
+  caching mechanism entirely (this will not be initially implemented):
+
+  - construct the extent of the tile, eventually account for the metabuffer (but not
+    the metatile size).
+  - send to the source wms.
+  - eventually decode data if using metabuffers or if the requested tile is to be
+    a vertical assembly of multiple tilesets.
+
+
+Activating this functionality in the configuration file is done for each grid
+referenced by a tileset:
+
+.. code-block:: xml
+
+   <tileset>
+     <!-- ... -->
+     <grid max-cached-zoom="12" out-of-zoom-strategy="reassemble">WGS84</grid>
+     <grid max-cached-zoom="12" out-of-zoom-strategy="proxy">g</grid> <!-- not implemented -->
+     <!-- ... -->
+   </tileset>
+    
+
+
+3. Implementation Details
+-------------------------
+
+Two new functions will be added, and will produce a tile's image by either
+upscaling lower level tiles or directly querying the source wms. They will be
+called from the `mapcache_tileset_tile_get()` function when such a behavior
+has been requested in the configuration file.
+
+
+3.1 Files affected
+..................
+
+* mapcache.h
+* configuration_xml.c
+* tileset.c
+* mapcache_seed.c
+
+
+3.2 Backwards Compatibility Issues
+..................................
+
+None expected, new functionality
+
+
+3.3 Performance implications
+.................................
+
+When upscaling tiles, each tile request will imply at least one image
+decompression and one image compression, along with bilinear resampling on the
+image data. Servicing upsampled tiles will therefore be orders of magnitude
+slower than directly serving them from a cache.
+
+It should be possible to deactivate bilinear resampling for users wanting better
+performance at the cost of degraded output quality. This could be addressed in a
+later phase should that need arise.
+
+3.4 Caveats
+............
+
+- Bilinear resampling fails inside pixman for extreme resampling scales (i.e.
+  when a requested tile spans only a couple of pixels in the max-cached-zoom
+  tile). See https://bugs.freedesktop.org/show_bug.cgi?id=46277 For these cases,
+  we switch to nearest-neighbour resampling, i.e. we set the tile to a uniform
+  color.
+
+- Bilinear resampling will produce slightly visible artifacts at the edge of
+  the max-cached-zoom tile. This is due to the fact that data from adjacent
+  tiles would be needed in order to produce a seamless upscaled version.
+
+5. Bug ID
+---------
+
+* 63: `pull63`_
+
+
+6. Voting history
+-----------------
+
++1 from ThomasB, StephanM, MikeS, TomK, JeffM, DanielM, PerryN and SteveW
+
+
+
+
+.. _`pull63`: https://github.com/MapServer/mapcache/pull/63

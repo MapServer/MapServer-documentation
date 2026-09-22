@@ -1,0 +1,177 @@
+.. _rfc119:
+
+============================================
+MS RFC 119: Mapbox Vector Tile (MVT) Support
+============================================
+
+:Date:  2017-08-07
+:Authors: Thomas Bonfort, Stephen Lime
+:Contacts: thomas.bonfort@gmail.com, sdlime@comcast.net
+:Status: Draft
+:Version: MapServer 7.2
+
+1. Overview
+-------------
+
+Mapbox vector tiles (MVT) represent an alternative to delivering tiled map data to the client. In contrast to raster tiles, vector tiles encode coordinate and attribute information across any number of geospatial layers. This allows for rich application development where geospatial data can be filtered and symbolized on the client without the need for extra server interactions. See the `specification <https://www.mapbox.com/vector-tiles/specification/>`_.
+
+2. Proposed solution
+--------------------
+
+This RFC proposes the implementation of the MVT specification (version 2.1) within MapServer and MapCache. Highlights include:
+
+- the introduction of no new mapfile keywords, all configuration uses existing mechanisms
+- MVT are implemented as a new output driver and can be used with mode=map, mode=tile or WMS actions
+- the implementation introduces a new dependency on protobuf/protobuf-c
+
+2.1 New and Updated Files
+-------------------------
+
+New and updated files are described here:
+
+2.1.1 MapServer
+---------------
+
+- mapmvt.c (new): MVT implementation code
+- renderers/mvt/vector_tile.proto (new): protocol buffer definition file
+- mapoutput.c (updated): register MVT renderer and default output format (application/x-protobuf)
+- mapservutil.c (updated): intercept calls to produce MVT output
+- mapwfs.c (updated): there are remnants of Thomas' original work where bounding box (bbox) is expanded using the EDGE_BUFFER output format option. Currently there is no mechanism to create MVT output via WFS or queries in general although it could be added in the future (similar to drawing a query map).
+- mapwms.c (updated): intercept calls to produce MVT output
+- mapserver.h (updated): register MVT renderer and public function (e.g. msMVTWriteTile())
+- CMakeLists.txt (updated): add protobuf/protobuf-c rules
+
+2.1.2 MapCache
+--------------
+
+- include/mapcache.h (updated): new definitions for raw image format
+- lib/cache_disk.c (updated): add raw image format support
+- lib/configuration_xml.c (updated): process raw image format related configuration
+- lib/core.c (updated): handle response for raw image format
+- lib/image.c (updated): add raw image format support - no metatiling
+- lib/image_raw.c (new): add raw image format support
+- lib/service_wms.c (updated): add raw image format support
+- lib/source_wms.c (updated): add raw image format support
+- lib/tileset.c (updated): add raw image format support
+
+2.2 Configuration Notes
+-----------------------
+
+2.2.1 MapServer
+---------------
+
+- configuration of attribute data uses `gml_` or `ows_` metadata elements
+- WMS_SRS metadata (layer and server) should include epsg:3857 and epsg:900913
+- layers must define a projection
+- the MVT output format supports an option called EDGE_BUFFER which defines the amount of overlap between tiles in map units (default is 10)
+- the MVT output format supports an option called EXTENT which defines tile extent in coordinate units (default is 4096). Feature geometries are converted from map coordinates to tile coordinates using this value.
+
+2.2.2 MapCache
+--------------
+
+Sample configuration follows:
+
+::
+
+   <format name="MVT" type="RAW"> 
+     <extension>mvt</extension>
+     <mime_type>application/vnd.mapbox-vector-tile</mime_type>
+   </format>
+
+   <source name="test_wms_mvt" type="wms">
+     <http>
+       <url>http://mapserver.localhost/cgi-bin/mapserv?</url>
+     </http>
+     <getmap>
+       <params>
+         <LAYERS>layer1,layer2,layer3</LAYERS>
+         <FORMAT>application/vnd.mapbox-vector-tile</FORMAT>
+         <MAP>/mapserver/test.map</MAP>
+       </params>
+     </getmap>
+   </source>
+
+   <tileset name="test_mvt">
+     <source>test_wms_mvt</source>
+     <grid>g</grid>
+     <cache>sqlite</cache>
+     <format>MVT</format>
+   </tileset>
+
+2.3 Sample MapServer Requests
+-----------------------------
+
+::
+
+  /cgi-bin/mapserv?map=mvt.map&mode=tile&tilemode=gmap&tile=1935+2856+13&layers=all&map.imagetype=mvt
+
+::
+
+  /cgi-bin/mapserv?map=mvt.map&SERVICE=WMS&VERSION=1.1.1&REQUEST=GetMap&LAYERS=major_roads,lakes,sna,wma&STYLES=
+  &SRS=EPSG:3857&BBOX=-10434562.049185,5909509.084589,-10429689.188632,5914381.945142&WIDTH=256&HEIGHT=256&FORMAT=application/x-protobuf
+
+3. Implementation Details
+-------------------------
+
+3.1.1 MapServer
+---------------
+
+The implementation has three primary components. The MVT output driver, driver registration and calling the driver as appropriate when making a map, tile or WMS request, The implementation is non-invasive and has mimimal impact on the existing code base.
+
+3.1.2 MapCache
+---------------
+
+The implementation implements a new raw image format. Basically we don't know anything about the format other that a file extension and mime-type. As a result features like metatile support and symbolic links for blank tiles are not supported. One bonus is that this image format can also be used for UTFGrids generated by MapServer - and presumably other sources.
+
+4. Limitations
+---------------
+
+4.1.1 MapServer
+---------------
+
+The current implementation can only be used with mode=map, mode=tile and WMS requests. Rendering a query result (think QUERYMAP) is possible but is not implemented at this time. It is not clear what the use case is for that support.
+
+4.1.2 MapCache
+--------------
+
+Only the WMS source was updated to handle the raw image format.
+
+Testing was done with disk and SQLite caches. The latter required no changes so it is possible that other caches will work out-of-the-box. The disk cache needed update to address blank tile handling.
+
+The WMS service does not support pass-through requests for raw image caches. It may be possible but seems like it would provide limited value.
+
+5. Backwards Compatibility Issues
+---------------------------------
+
+None anticipated, but as mentioned previously this does introduce new dependencies on the protobuf and protobuf-c libraries.
+
+6. Security implications
+-------------------------
+
+None anticipated.
+
+7. Performance implications
+---------------------------
+
+No impacts on core performance are anticipated.
+
+8. Documentation needs
+------------------------
+
+The primary need will be in educating users on what do with MVT files. In reality that goes beyond the scope of MapServer but letting folks know what clients exist to render MVT tiles will be important. A number of clients exist at this point with the most prominent being Mapbox GL JS and OpenLayers 3.x.
+
+9. Bug ID and references
+-------------------------
+
+- MapServer `pull request#5376 <https://github.com/MapServer/MapServer/pull/5376>`_
+- MapCache `pull request#166 <https://github.com/MapServer/mapcache/pull/166>`_
+
+- initial MapServer `implementation <https://github.com/sdlime/mapserver/tree/vector-tiles>`_
+- demo using `Mapbox GL JS and mode=tile <https://github.com/sdlime/mvt-demo>`_
+- loads of resources at `openmaptiles.org <https://openmaptiles.org/>`_
+- `Mapbox GL JS <https://www.mapbox.com/mapbox-gl-js/api/>`_
+
+10. Voting history
+------------------
+
+No vote yet

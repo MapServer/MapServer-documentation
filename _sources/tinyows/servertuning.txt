@@ -1,0 +1,73 @@
+.. _tinyows_servertuning:
+
+*****************************************************************************
+Server Tuning: How to speed up your TinyOWS server
+*****************************************************************************
+
+
+Tips and Tricks for PostgreSQL / PostGIS databases
+-----------------------------------------------------------------------------
+ * Use Spatial Indexes on your geometry/geography columns
+   `PostGIS Spatial Indexes <https://postgis.net/docs/using_postgis_dbmanagement.html#build-indexes>`_.
+ * Index any column that could be used frequently as a filter
+ * General `PostGIS Performance tips <https://postgis.net/docs/performance_tips.html>`_
+ * General `PostgreSQL Performance tips <https://wiki.postgresql.org/wiki/Performance_Optimization>`_
+ * `Even more tips on Tuning PostgreSQL <https://wiki.postgresql.org/wiki/Tuning_Your_PostgreSQL_Server>`_
+
+Tips and Tricks for Apache
+-----------------------------------------------------------------------------
+
+Using Fast-CGI
+-----------------------------------------------------------------------------
+* Check that your TinyOWS is compiled with FastCGI support:
+
+    ::
+
+        [user@host mapserver]$ tinyows --check
+        TinyOWS version:   1.2.0
+        FCGI support:      Yes
+        ...
+
+Fast-CGI in Apache
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+  * In Apache, activate mod_fastcgi
+
+    ::
+
+       $ sudo apt-get install -y libapache2-mod-fastcgi
+       $ sudo a2enmod fastcgi
+
+
+  * Apache fast-cgi configuration:
+
+    ::
+
+        #in your cgi-bin directive, add the following to run all cgi-bin using FastCGI
+        SetHandler fastcgi-script
+
+        #in your FastCGI config file (typically something like /etc/apache2/mods-enabled/fastcgi.conf)
+        FastCgiServer /usr/lib/cgi-bin/tinyows.fcgi -processes 10
+
+
+Fast-CGI in MS4W
+~~~~~~~~~~~~~~~~~~~~~~
+* Please refer to the  `fastcgi doc in ms4w <https://ms4w.com/README_INSTALL.html#fastcgi>`_
+* Add the following 2 lines:
+
+    ::
+
+        DefaultInitEnv TINYOWS_CONFIG_FILE "/ms4w/apps/tinyows/config.xml"
+        DefaultInitEnv TINYOWS_SCHEMA_DIR "/ms4w/apps/tinyows/schema/"
+
+
+
+HTTP GZip compression
+-----------------------------------------------------------------------------
+* In Apache, activate `mod_deflate <https://httpd.apache.org/docs/current/mod/mod_deflate.html>`_
+* Deflate basic configuration, (note we're including xml so gml and json):
+
+    ::
+
+        AddOutputFilterByType DEFLATE text/html text/plain text/xml application/xml application/json
+

@@ -1,0 +1,219 @@
+.. _rfc133:
+
+================================================================================
+MS RFC 133: Mapfile Syntax Cleanup
+================================================================================
+
+:Date: 2021-01-26
+:Author: Seth Girvin
+:Contact: sethg@geographika.co.uk
+:Status: Adopted
+:Last update: 2022-03-29
+:Version: MapServer 8.0
+
+Overview
+--------
+
+This RFC proposes removing deprecated Mapfile keywords and syntax as part of the 8.0 release. 
+Keywords have been deprecated in previous MapServer releases for various reasons, and continuing to support them could
+cause confusion for new MapServer users. 
+
+See :ref:`rfc26` for an RFC with similar aims. Note forming the basis for the RFC can be found in the 
+`MapServer Wiki <https://github.com/MapServer/MapServer/wiki/Mapfile-Syntax-Changes-for-8.0>`__. 
+
+Deprecation Options
+-------------------
+
+There are a number of options for each keyword listed as deprecated.
+
+- Full removal
+
+  - Remove from parser
+  - Remove all code paths and references
+  - Remove from docs
+  - Remove from all msautotests and examples
+  
+- Reinstate the keyword
+
+  - Remove deprecated reference from the docs
+
+- Leave as deprecated
+- Add DEBUG warnings if used, aiming to remove in a future MapServer 9.0
+
+Note this RFC is a first draft and aims to set out options to discuss on the MapServer dev mailing list.
+
+Upgrading Mapfiles
+------------------
+
+In order to help users upgrade Mapfiles, version validation has been added to the Python `mappyfile <https://mappyfile.readthedocs.io/en/latest/>`__ project. 
+The online validator is currently hosted at http://mappyfile.geographika.net/ but could be hosted on the mapserver.org domain if
+desired. 
+
+The mappyfile project can also be run locally on the command-line to validate Mapfiles against specific versions of MapServer using the
+following command:
+
+.. code-block:: bat
+
+    mappyfile validate C:\Code\mapserver\mapserver\msautotest\**\*.map --version=8.0
+
+This will log any Mapfile syntax errors for the specified version in the following format:
+
+.. code-block:: bat
+
+    class16.map (Line: 26 Column: 3) ERROR: Invalid value in CLASS - 'color' does not match any of the regexes: '^__[a-z]+__$'
+
+Proposed Keyword Changes
+------------------------
+
+The following Mapfile syntax changes are proposed. 
+
+CLASS
++++++
+
+Remove the following deprecated keywords. These were used to apply direct styling in ``CLASS`` blocks, rather than in ``STYLE`` blocks. 
+
++ `BACKGROUNDCOLOR <https://mapserver.org/mapfile/class.html#mapfile-class-backgroundcolor>`__ deprecated since 6.0
++ `COLOR <https://mapserver.org/mapfile/class.html#mapfile-class-color>`__ deprecated since 6.0
++ `MAXSIZE <https://mapserver.org/mapfile/class.html#mapfile-class-maxsize>`__ deprecated since 6.0
++ `MINSIZE <https://mapserver.org/mapfile/class.html#mapfile-class-minsize>`__ deprecated since 6.0
++ `OUTLINECOLOR <https://mapserver.org/mapfile/class.html#mapfile-class-outlinecolor>`__ deprecated since 6.0
++ `SIZE <https://mapserver.org/mapfile/class.html#mapfile-class-size>`__ deprecated since 6.0
++ `SYMBOL <https://mapserver.org/mapfile/class.html#mapfile-class-symbol>`__ deprecated since 6.0
++ MAXSCALE - not in docs
+
+Also the following ``OVERLAY`` shortcuts used for style 1 (undocumented):
+
++ OVERLAYBACKGROUNDCOLOR
++ OVERLAYCOLOR
++ OVERLAYMAXSIZE
++ OVERLAYMINSIZE
++ OVERLAYOUTLINECOLOR
++ OVERLAYSIZE
++ OVERLAYSYMBOL
+
+Deprecated approach of styles directly in a CLASS:
+
+.. code-block:: mapfile
+
+    LAYER
+      NAME 'bdry_counpy2'
+      TYPE LINE
+      DATA '../query/data/bdry_counpy2.shp'
+      STATUS DEFAULT
+      CLASS
+          COLOR 231 231 231 
+      END
+    END
+  
+New (since 2002) approach:
+
+.. code-block:: mapfile
+
+    LAYER
+      NAME 'bdry_counpy2'
+      TYPE LINE
+      DATA '../query/data/bdry_counpy2.shp'
+      STATUS DEFAULT
+      CLASS
+          STYLE
+              COLOR 231 231 231
+          END
+      END
+    END
+  
+LABEL
++++++
+
++ `ANTIALIAS <https://mapserver.org/mapfile/label.html#mapfile-label-antialias>`__ GD support removed in 7.0
++ `BACKGROUNDCOLOR <https://mapserver.org/mapfile/label.html#mapfile-label-backgroundcolor>`__ removed in 6.0
++ `BACKGROUNDSHADOWCOLOR <https://mapserver.org/mapfile/label.html#mapfile-label-backgroundshadowcolor>`__ removed in 6.0
++ `BACKGROUNDSHADOWSIZE <https://mapserver.org/mapfile/label.html#mapfile-label-backgroundshadowsize>`__ removed in 6.0
++ `ENCODING <https://mapserver.org/mapfile/label.html#mapfile-label-encoding>`__ deprecated since 7.0
++ MINLENGTH - unused and undocumented
+
+LAYER
++++++
+
++ `DUMP <https://mapserver.org/mapfile/layer.html#mapfile-layer-dump>`__ deprecated since 6.0
++ `LAYERANGLEITEM <https://mapserver.org/mapfile/layer.html#mapfile-layer-layerangleitem>`__ already removed?
++ `LABELSIZEITEM <https://mapserver.org/mapfile/layer.html#mapfile-layer-labelsizeitem>`__ already removed?
++ `OPACITY <https://mapserver.org/mapfile/layer.html#mapfile-layer-opacity>`__ deprecated since 7.0
++ `TRANSPARENCY <https://mapserver.org/mapfile/layer.html#mapfile-layer-transparency>`__ deprecated since 5.0
+
+MAP
++++
+
++ `DATAPATTERN <https://mapserver.org/mapfile/map.html#mapfile-map-datapattern>`__ deprecated since 5.4
++ `IMAGEQUALITY <https://mapserver.org/mapfile/map.html#mapfile-map-imagequality>`__ deprecated since 4.6
++ `INTERLACE <https://mapserver.org/mapfile/map.html#mapfile-map-interlace>`__ deprecated since 4.6
++ `TEMPLATEPATTERN <https://mapserver.org/mapfile/map.html#mapfile-map-templatepattern>`__ deprecated since 5.4
++ `TRANSPARENT <https://mapserver.org/mapfile/map.html#mapfile-map-transparent>`__ deprecated since 4.6
+
+SYMBOL
+++++++
+
++ `ANTIALIAS <https://mapserver.org/mapfile/symbol.html#mapfile-symbol-antialias>`__ GD support removed in 7.0
++ `TRANSPARENT <https://mapserver.org/mapfile/symbol.html#mapfile-symbol-transparent>`__ GD support removed in 7.0
+
+STYLE
++++++
+
++ `ANGLEITEM <https://mapserver.org/mapfile/style.html#mapfile-style-angleitem>`__ deprecated since 5.0
++ `ANTIALIAS <https://mapserver.org/mapfile/style.html#mapfile-style-antialias>`__ GD support removed in 7.0
++ `BACKGROUNDCOLOR <https://mapserver.org/mapfile/style.html#mapfile-style-backgroundcolor>`__ deprecated since 6.2
++ MINSIZE - not in docs, unused?
++ MAXSIZE - not in docs, unused?
+
+SCALEBAR
+++++++++
+
++ `INTERLACE <https://mapserver.org/mapfile/scalebar.html#mapfile-scalebar-interlace>`__ deprecated since 4.6
++ `TRANSPARENT <https://mapserver.org/mapfile/scalebar.html#mapfile-scalebar-transparent>`__ deprecated since 4.6
+
+WEB
++++
+
++ `LOG <https://mapserver.org/mapfile/web.html#mapfile-web-log>`__ deprecated since 5.0
++ `MINSCALE <https://mapserver.org/mapfile/web.html#mapfile-web-minscale>`__ deprecated since 5.0
++ `MAXSCALE <https://mapserver.org/mapfile/web.html#mapfile-web-maxscale>`__ deprecated since 5.0
+
+Backward compatibility issues
+-----------------------------
+
+Users will need to remove deprecated keywords from Mapfiles to use MapServer 8.0
+
+Documentation needs
+-------------------
+
+Mapfile documentation will be updated to reflect any changes in the Mapfile syntax. 
+
+Files
+-----
+
+- mapfile.c
+- mapfile.h
+- maplexer.l
+- maplexer.c
+- mapserver.h
+- mapserver/msautotest Mapfiles
+- mapcopy.c
+- maplegend.c
+
+Ticket ID and reference
+-----------------------
+
++ Remove LOG, EXTENT, MAXSCALE, and MINSCALE keywords from WEB object: https://github.com/MapServer/MapServer/pull/6333
++ Remove MAP TRANSPARENT keyword: https://github.com/MapServer/MapServer/pull/6329
++ Remove INTERLACE, IMAGEQUALITY, OPACITY keywords from SCALEBAR, LEGEND and MAP classes: https://github.com/MapServer/MapServer/pull/6342
++ Removal of styling keywords from a Mapfile CLASS: https://github.com/MapServer/MapServer/pull/6317
++ Remove DUMP keyword from LAYER - RFC133: https://github.com/MapServer/MapServer/pull/6264
++ Remove BACKGROUNDCOLOR from STYLE object: https://github.com/MapServer/MapServer/pull/6343
++ Remove unused LABEL>MINLENGTH property: https://github.com/MapServer/MapServer/pull/6462
++ Remove URL update functionality (DATAPATTERN and TEMPLATEPATTERN): https://github.com/MapServer/MapServer/pull/6469
+
+Voting history
+--------------
+
++1 from ThomasB, TomK, JeromeB, JukkaR, MikeS, EvenR, JeffM, SethG, SteveL
+
+See https://lists.osgeo.org/pipermail/mapserver-dev/2021-May/016476.html

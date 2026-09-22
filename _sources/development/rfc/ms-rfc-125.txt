@@ -1,0 +1,114 @@
+.. _rfc125:
+
+=========================================================================
+MS RFC 125: Support for CONNECTIONOPTIONS in mapfiles
+=========================================================================
+
+:Date: 2019-09-30
+:Author: Even Rouault
+:Contact: even.rouault@spatialys.com
+:Status: Adopted
+:Last update: 2019-10-10
+:Version: MapServer 8.0
+
+Overview
+--------
+
+Since GDAL 2.0, GDAL/OGR raster and vector drivers can accept open options,
+that control certain aspects of te behaviour of the drivers. Those options
+are driver specific, and can be specified with the `GDALOpenEx() <https://gdal.org/api/raster_c_api.html#gdal_8h_1aca05455472359964151f9c891d678d5e>`_
+C API. Currently, MapServer has no straightforward way of specifying such
+options, and people have to fallback to workarounds such as using a GDAL or OGR
+.vrt file, in which they embed the open option(s).
+
+Proposed solution
+-----------------
+
+A CONNECTIONOPTIONS keyword is added as a child of the LAYER object in MapFile
+syntax and defines a new block that must be ended with END.
+It can accept a sequence of "KEY" "VALUE" open options.
+This syntax is similar to the METADATA block. 
+
+Example
+-------
+
+.. code-block:: mapfile
+
+    LAYER
+        NAME "test"
+        CONNECTIONTYPE OGR
+        CONNECTION "./data/nested_attrs.geojson"
+        CONNECTIONOPTIONS
+            "FLATTEN_NESTED_ATTRIBUTES" "YES"
+        END
+        [...]
+    END
+
+
+Implementation Details
+----------------------
+
+The following files are modified:
+
+* mapfile.c: load and serialize CONNECTIONOPTIONS
+* mapfile.h: define a value for CONNECTIONOPTIONS
+* mapgdal.c: add msGetStringListFromHashTable() to transform a hash table in a char** list expected by GDAL
+* maplexer.l: modified to recognize CONNECTIONOPTIONS
+* mapogr.cpp: use CONNECTIONOPTIONS when opening a vector dataset
+* mapraster.c: use CONNECTIONOPTIONS when opening a raster dataset
+* maprasterquery.c: use CONNECTIONOPTIONS when opening a raster dataset
+* mapserver.h: layerObj structure extended to hold a hashTableObj connectionoptions
+* mapuvraster.c: use CONNECTIONOPTIONS when opening a raster dataset
+* mapwcs.c: use CONNECTIONOPTIONS when opening a raster dataset
+* mapwcs20.c: use CONNECTIONOPTIONS when opening a raster dataset
+
+The following files are added:
+
+* msautotest/gdal/connectionoptions.map: test CONNECTIONOPTIONS for raster
+* msautotest/wxs/ogr_connectionoptions.map: test CONNECTIONOPTIONS for vetor
+* msautotest/wxs/expected/ogr_connectionoptions.xml: test data
+* msautotest/wxs/data/nested_attrs.geojson: expected result
+
+Limitations
+-----------
+
+Current implementation is limited to the GDAL and OGR drivers. But CONNECTIONOPTIONS
+could be used by other datasource backends.
+
+Backwards Compatibility Issues
+-------------------------------
+
+None.
+
+Security implications
+---------------------
+
+None.
+
+Performance implications
+------------------------
+
+None.
+
+Documentation needs
+-------------------
+
+The documentation page of the LAYER object will be extended to document
+CONNECTIONOPTIONS.
+
+Ticket ID and references
+------------------------
+
+Pull request available at: https://github.com/MapServer/MapServer/pull/5883
+
+Voting history
+--------------
+
++1 from PSC members Even Rouault, Tom Kralidis,
+Mickael Smith, Seth Girvin, Daniel Morissette, Steve Lime and Jukka Rahkonen.
+
+Credits
+-------
+
+Thanks to funding from the French Ministry of Defense.
+

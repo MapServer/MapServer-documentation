@@ -1,0 +1,187 @@
+.. _rfc110:
+
+============================================
+MS RFC 110: MapCache REST Cache Backends
+============================================
+
+:Date:  2014/04
+:Author: Thomas Bonfort
+:Contact: tbonfort@terriscope.fr
+:Status: Draft
+:Version: MapServer 7.0
+:Last Updated: 2014/04/17
+
+1. Motivation
+==============
+
+In addition to the supported cache backends, it is desirable for mapcache to
+be able to store and retrieve tiles through a HTTP REST interface, using the
+GET, PUT and DELETE verbs. While any webdav enabled server could be used, the
+final aim for this improvement is to be able to store tiles to well known cloud
+storage providers (initially: S3, Azure and Google).
+
+2. Implementation details
+=========================
+
+2.2 Generic REST backends
+-------------------------
+
+Adding a cache backend has no architectural impacts, as it implies only adding
+the cache specific vtable functions. The REST caches themselves are rather 
+specific, as there's usually an authentication/authorization step that is 
+specific to each provider, and usually consists in signing the given payload
+with a secret key attached to an account.
+
+A rest cache is configured with an xml block:
+
+::
+
+  <cache name="myrestcache" type="rest">
+     <url>https://myserver/webdav/{tileset}/{grid}/{z}/{x}/{y}.{ext}</url>
+     <headers>
+       <Host>my-virtualhost-alias.domain.com</Host>
+     </headers>
+     <operation type="put">
+       <headers>
+         <X-my-specific-put-header>foo</X-my-specific-put-header>
+       </headers>
+     </operation>
+     <operation type="get">
+       <headers>
+         <X-my-specific-get-header>foo</X-my-specific-get-header>
+       </headers>
+     </operation>
+     <operation type="head">
+       <headers>
+         <X-my-specific-head-header>foo</X-my-specific-head-header>
+       </headers>
+     </operation>
+     <operation type="delete">
+       <headers>
+         <X-my-specific-delete-header>foo</X-my-specific-delete-header>
+       </headers>
+     </operation>
+  </cache>
+
+- The <url> block configures the template URL to use when addressing a specific tile,
+  and follows the same syntax used when defining a templated based disk backend.
+- The initial <header> block contains a list of HTTP headers that will be added to any
+  HTTP request going to the third party server
+- Each <operation> block can also contain a <header> list of specific headers to be added
+  to the request for a particular operation, specified by it's "type" attribute:
+
+  - "get" is used when requesting a tile from the server
+  - "head" is used when querying the server for the existence of a tile (only used by the
+    seeder).
+  - "put" is used when uploading a newly created tile
+  - "delete" is used when deleting a tile from the server
+
+2.2 Adding Support for Well Known Cloud Services
+------------------------------------------------
+
+The REST cache backends become really useful once associated with a third party
+cloud storage provider, to be able to store tiles in the cloud. Architecturally,
+each vendor specific implementation in mapcache provides a hook that can add
+specific headers to the HTTP request to allow for signing/authenticating the
+request. To allow signing, specific code for calculating SHAs of a payload will
+be added to mapcache.
+
+2.2.1 Amazon S3
+...............
+
+::
+
+   <cache name="s3" type="s3">
+     <url>https://mybucket.s3.amazonaws.com/tiles/{tileset}/{grid}/{z}/{x}/{y}.{ext}</url>
+     <headers>
+       <Host>mybucket.s3.amazonaws.com</Host>
+     </headers>
+     <id>XXXXXXXXXXXXXXX</id>
+     <secret>foobaregrwq1235234532/3245234sadgfwevsd</secret>
+     <region>eu-west-1</region>
+     <operation type="put">
+       <headers>
+         <x-amz-storage-class>REDUCED_REDUNDANCY</x-amz-storage-class>
+         <x-amz-acl>public-read</x-amz-acl>
+       </headers>
+     </operation>
+   </cache>
+
+This cache uses 3 mandatory configuration options: <id>,<secret>, and <region>. Values for
+each are self-explanatory and can be found on the S3 documentation. In the previous example,
+we add S3 specific headers to "put" requests, specifying we want publicly readable tiles, stored
+in a less expensive backend. Other x-amz-* headers can be added once looked up from the S3 documentation
+site.
+
+2.2.2 Microsoft Azure
+.....................
+
+::
+  
+  <cache name="azure" type="azure">
+     <url>https://mytiles.blob.core.windows.net/tilestore/{tileset}/{grid}/{z}/{x}/{y}.{ext}</url>
+     <headers>
+       <Host>mytiles.blob.core.windows.net</Host>
+     </headers>
+     <id>mytiles</id>
+     <secret>base64encodedsecretkey==</secret>
+     <container>tilestore</container>
+   </cache>
+
+This cache again has 3 configuration options: <id>, <secret> and <container>. There are no Azure
+specific headers added to the previous example, as the redundancy and access rights are configured
+for the container not each individual file in Azure.
+
+2.2.3 Google Cloud Storage
+..........................
+
+::
+
+  <cache name="google" type="google">
+     <url>https://storage.googleapis.com/mytiles-mapcache/{tileset}/{grid}/{z}/{x}/{y}.{ext}</url>
+     <access>GOOGPGDWFDG345SDFGSD</access>
+     <secret>sdfgsdSDFwedfwefr2345324dfsGdsfgs</secret>
+     <operation type="put">
+       <headers>
+         <x-amz-acl>public-read</x-amz-acl>
+       </headers>
+     </operation>
+   </cache>
+
+The google implementation uses google's S3 compatibility layer (which in practice is different
+than mapcache's S3 implementation, as it uses a previous version of the authentication/signing
+payloads). x-amz-* headers are therefore used to configure options for a given tile file.
+    
+3. Miscellaneous
+================
+
+- A rest <cache> entry can contain a <use_redirects>true</use_redirects> entry to inform
+  mapcache that single tile requests can be returned as a HTTP 302 redirect directly to
+  the cloud url of the tile rather than being returned by mapcache. This would only typically
+  be used for fully-seeded caches, as in that case mapcache does not query the cache to know
+  if the tile is actually present or not.
+
+- MapCache opens an HTTP connection to the cloud storage per request. In practice this has
+  shown to be potentially slow with some providers, the bottleneck being the DNS lookup. To
+  mitigate this, you can either use an IP address directly in the <url> member, or install a
+  local DNS caching server (dnsmasq comes to mind). Further developments (awaiting funding) could
+  implement reusing HTTP connections across requests.
+
+3.1 Backwards Incompatibilities
+-------------------------------
+
+none expected, new functionality
+
+3.2 Issue Tracking ID
+---------------------
+
+https://github.com/MapServer/mapcache/pull/98
+
+
+3.4 Files Changed
+------------------
+
+- include/mapcache.h
+- lib/cache_rest.c (added)
+- lib/hmac-sha.c (added) - used to sign payloads for cloud providers
+- minor modifications to support "redirect" mode

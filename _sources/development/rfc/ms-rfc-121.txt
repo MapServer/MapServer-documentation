@@ -1,0 +1,441 @@
+.. _rfc121:
+
+=======================================================================
+MS RFC 121: PostgreSQL and ElasticSearch Support in MapCache dimensions
+=======================================================================
+
+:Date: 2018-06-25
+:Author: Jerome Boue
+:Version: MapCache TBD
+
+1. Overview
+-----------
+
+MapCache dimension management provides dynamic storage of second level
+dimensions in SQLite files, see *Second Level Dimensions* in
+:ref:`mapcache_dimensions`. This proposal describes a support for storing
+second level dimensions in a PostgreSQL database or an ElasticSearch index.
+Moreover, Time Dimensions being implemented as a second level dimension, it
+shall also benefit from these new dimension back-ends. A new configuration
+interface is proposed to explicitly select a Time Dimension back-end.
+
+2. Proposed Enhancements
+------------------------
+
+2.1. PostgreSQL Dimensions
+==========================
+
+Being both based on SQL, PostgreSQL Dimensions are very similar to SQLite
+Dimensions. On a configuration point of view, `<list_query>` and
+`<validate_query>` elements are identical to the ones of SQLite Dimension
+configuration. The `<dbfile>` element (path of SQLite file containing
+dimension values) is replaced by a `<connection>` element which specifies
+connection information to the PostgreSQL database containing dimension values.
+This element contains the string required by the `PQconnectdb()`_ function of
+the libpq - C library.
+
+.. code-block:: xml
+
+   <!-- PostgreSQL Dimension -->
+   <dimension type="postgresql" name="sensor" default="phr">
+
+       <!-- Access Point -->
+       <connection>
+           host=localhost user=mapcache password=mapcache dbname=mapcache port=5433
+       </connection>
+
+       <!-- All-values Query -->
+       <list_query>
+           SELECT distinct(product) FROM dim
+       </list_query>
+
+       <!-- Selected-values Query -->
+       <validate_query>
+           SELECT product FROM dim
+           WHERE sensor=:dim
+       </validate_query>
+
+   </dimension>
+
+2.2. ElasticSearch Dimensions
+=============================
+
+ElasticSearch main difference with SQLite and PostgreSQL is its query language,
+Query-DSL, based on JSON instead of SQL. Therefore, `<list_query>` and
+`<validate_query>` elements shall contain queries expressed in that language.
+Inserting JSON data in XML configuration may need to encapsulate it in a
+`<![CDATA[ ... ]]>` element.
+
+In addition, the complex structure of ElasticSearch responses, also expressed
+in JSON, raises the need for extraction instructions to get sub-dimension
+values from query responses.
+
+For example, let’s assume that this ElasticSearch query:
+
+.. code-block:: json
+
+   {   "size": 0,
+       "aggs": { "distinct_product": { "terms": { "field": "product/keyword" } } },
+       "query": { "term": { "sensor": "phr" } }
+   }
+
+returns this response:
+
+.. code-block:: json
+
+   {   "took": 0,
+       "timed_out": false,
+       "_shards": { "total": 5, "successful": 5, "skipped": 0, "failed": 0 },
+       "hits": { "total": 5, "max_score": 0, "hits": [] },
+       "aggregations": {
+           "distinct_product": {
+               "doc_count_error_upper_bound": 0,
+               "sum_other_doc_count": 0,
+               "buckets": [
+                   { "key": "phr_img1", "doc_count": 1 },
+                   { "key": "phr_img2", "doc_count": 1 },
+                   { "key": "phr_img3", "doc_count": 1 }
+               ]
+           }
+       }
+   }
+
+The expected sub-dimension values are then:
+
+.. code-block:: json
+
+   [ "phr_img1", "phr_img2", "phr_img3" ]
+
+This list is obtained by extracting the `aggregations` item from the outer
+dictionary, then `distinct_product` , then `buckets`. Finally the `key`
+item is to be extracted from each dictionary of the `bucket` list. The
+extraction instructions take the form of a path-like list of keywords to be
+used to extract sub-dimension values from JSON response provided by
+ElasticSearch:
+
+.. code-block:: json
+
+   [ "aggregations", "distinct_product", "buckets", "key" ]
+
+This is specified in the MapCache configuration file by way of new XML
+elements, namely  `<list_response>` and `<validate_response>`, containing
+extraction instructions respectively for `<list_query>` and
+`<validate_query>` queries.
+
+Access point to an ElasticSearch index is configured with a `<http>` element
+in place of SQLite's `<dbfile>` or PostgreSQL's `<connection>`. In that
+`<http>` element, both `<url>` and `<Content-Type>` shall be specified.
+
+.. code-block:: xml
+
+   <!-- ElasticSearch Dimension -->
+   <dimension type="elasticsearch" name="sensor" default="phr">
+
+       <!-- Access Point -->
+       <http>
+           <url>http://localhost:9200/sensor/_search</url>
+           <headers>
+               <Content-Type>application/json</Content-Type>
+           </headers>
+       </http>
+
+       <!-- All-values Query -->
+       <list_query><![CDATA[
+           {   "size": 0,
+               "aggs": {
+                   "products": { "terms": { "field": "product.keyword" } }
+               }
+           }
+       ]]></list_query>
+
+       <!-- All-values Response Extration Instructions -->
+       <list_response>
+           [ "aggregations", "products", "buckets", "key" ]
+       </list_response>
+
+       <!-- Selected-values Query -->
+       <validate_query><![CDATA[
+           {   "size": 0,
+               "aggs": {
+                   "products": { "terms": { "field": "product.keyword" } }
+               },
+               "query": { "term": { "sensor": ":dim" } }
+           }
+       ]]></validate_query>
+
+       <!-- Selected-values Response Extration Instructions -->
+       <validate_response>
+           [ "aggregations", "products", "buckets", "key" ]
+       </validate_response>
+
+   </dimension>
+
+2.3. Time Dimensions
+====================
+
+Time Dimensions currently use a SQLite back-end for storing allowed dimension
+values. Hereafter is an example of current Time Dimension configuration:
+
+.. code-block:: xml
+   :emphasize-lines: 10
+
+    <!-- "time" dimension, "old-style" definition
+
+         This example defines a "time" dimension whose possible values are
+         stored in the /data/times.sqlite SQLite file. The default value is
+         "d1".
+
+         A WMS request with that dimension may contain, e.g.
+         "... &time=1999-08-11T11:03:07Z/2001-09-21T08:17:56Z& ..."
+    -->
+    <dimension type="time" name="time" default="d1">
+      <dbfile>/data/times.sqlite</dbfile>
+      <query>
+           SELECT strftime("%Y-%m-%dT%H:%M:%SZ",ts) FROM timedim
+            WHERE ts &gt;= datetime(:start_timestamp,"unixepoch")
+              AND ts &lt;= datetime(:end_timestamp,"unixepoch")
+         ORDER BY ts DESC
+      </query>
+    </dimension>
+
+In a perspective where Dimensions back-ends will be implemented in other ways
+than SQLite, it may be relevant to make Time Dimensions back-end agnostic. In a
+configuration point of view this is achieved by adding a boolean `time`
+attribute to a dimension of any type among `sqlite`, `postgresql` or
+`elasticsearch`. Following are examples of such configurations.
+
+.. code-block:: xml
+   :emphasize-lines: 10
+
+    <!-- "time" dimension, "new-style" definition using a SQLite back-end
+
+         This example defines a "time" dimension whose possible values are
+         stored in the /data/times.sqlite SQLite file. The default value is
+         "d1".
+
+         A WMS request with that dimension may contain, e.g.
+         "... &time=1999-08-11T11:03:07Z/2001-09-21T08:17:56Z& ..."
+    -->
+    <dimension type="sqlite" name="time" default="d1" time="true">
+      <dbfile>/data/times.sqlite</dbfile>
+      <list_query>SELECT ts FROM timedim</list_query>
+      <validate_query>
+           SELECT strftime("%Y-%m-%dT%H:%M:%SZ",ts) FROM timedim
+            WHERE ts &gt;= datetime(:start_timestamp,"unixepoch")
+              AND ts &lt;= datetime(:end_timestamp,"unixepoch")
+         ORDER BY ts DESC
+      </validate_query>
+    </dimension>
+
+.. code-block:: xml
+   :emphasize-lines: 10
+
+    <!-- "time" dimension, "new-style" definition using a PostgreSQL back-end
+
+         This example defines a "time" dimension whose possible values are
+         stored in the postgresql://mapcache:mapcache@localhost:5433/time
+         PostgreSQL database. The default value is "d1".
+
+         A WMS request with that dimension may contain, e.g.
+         "... &time=1999-08-11T11:03:07Z/2001-09-21T08:17:56Z& ..."
+    -->
+    <dimension type="postgresql" name="time" default="d1" time="true">
+      <connection>
+        host=localhost user=mapcache password=mapcache dbname=times port=5433
+      </connection>
+      <list_query>SELECT ts FROM timedim</list_query>
+      <validate_query>
+           SELECT to_char(ts,'YYYY-MM-DD"T"HH24:MI:SS"Z"') FROM timedim
+            WHERE ts &gt;= to_timestamp(:start_timestamp)
+              AND ts &lt;= to_timestamp(:end_timestamp)
+         ORDER BY ts DESC
+      </validate_query>
+    </dimension>
+
+.. code-block:: xml
+   :emphasize-lines: 10
+
+    <!-- "time" dimension, "new-style" definition using an ElasticSearch back-end
+
+         This example defines a "time" dimension whose possible values are
+         stored in the http://localhost:9200/times ElasticSearch index. The
+         default value is "d1".
+
+         A WMS request with that dimension may contain, e.g.
+         "... &time=1999-08-11T11:03:07Z/2001-09-21T08:17:56Z& ..."
+    -->
+    <dimension type="elasticsearch" name="time" default="d1" time="true">
+      <http>
+        <url>http://localhost:9200/times/_search</url>
+        <headers>
+          <Content-Type>application/json</Content-Type>
+        </headers>
+      </http>
+
+      <list_query><![CDATA[
+        { "query": { "match_all": { } } }
+      ]]></list_query>
+      <list_response><![CDATA[
+        [ "hits", "hits", "_source", "ts" ]
+      ]]></list_response>
+
+      <validate_query><![CDATA[
+        { "query": {
+            "range": {
+              "ts": { "gte": :start_timestamp, "lte": :end_timestamp }
+            }
+          },
+          "sort": { "ts": { "order": "desc" } },
+          "script_fields": {
+            "iso_ts": {
+              "lang": "painless",
+              "source": "SimpleDateFormat f=new SimpleDateFormat(params.fmt); f.setTimeZone(params.tz); return (f.format(doc.ts.value.getMillis()))",
+              "params": {
+                "fmt": "yyyy-MM-dd'T'HH:mm:ss'Z'",
+                "tz: "UTC"
+              }
+            }
+          }
+        }
+      ]]></validate_query>
+      <validate_response><![CDATA[
+        [ "hits", "hits", "fields", "iso_ts", 0 ]
+      ]]></validate_response>
+
+    </dimension>
+
+Compatibility issue on Time Dimension with implicit SQLite back-end
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+Together with explicit back-end configuration, an almost backward compatible
+configuration of Time dimension is still provided with an implicit SQLite
+back-end. Following example highlights the differences:
+
+.. list-table::
+
+   * - .. code-block:: xml
+          :emphasize-lines: 12,17
+
+          <!-- "time" dimension
+
+               This example defines a "time" dimension whose possible values
+               are stored in the /data/times.sqlite SQLite file. The
+               default value is "2010".
+
+               A WMS request with that dimension may contain, e.g.  "...
+               &time=1999-08-11T11:03:07Z/2001-09-21T08:17:56Z& ..."
+          -->
+          <dimension type="time" name="time" default="2010">
+              <dbfile>/data/times.sqlite</dbfile>
+              <query>
+                   SELECT strftime("%Y-%m-%dT%H:%M:%SZ",ts) FROM time
+                    WHERE ts &gt;= datetime(:start_timestamp,"unixepoch")
+                      AND ts &lt;= datetime(:end_timestamp,"unixepoch")
+                 ORDER BY ts DESC
+              </query>
+
+          </dimension>
+
+     - .. code-block:: xml
+          :emphasize-lines: 12,17,18
+
+          <!-- "time" dimension
+
+               This example defines a "time" dimension whose possible values
+               are stored in the /data/times.sqlite SQLite file. The
+               default value is "2010".
+
+               A WMS request with that dimension may contain, e.g.  "...
+               &time=1999-08-11T11:03:07Z/2001-09-21T08:17:56Z& ..."
+          -->
+          <dimension type="time" name="time" default="2010">
+              <dbfile>/data/times.sqlite</dbfile>
+              <validate_query>
+                   SELECT strftime("%Y-%m-%dT%H:%M:%SZ",ts) FROM time
+                    WHERE ts &gt;= datetime(:start_timestamp,"unixepoch")
+                      AND ts &lt;= datetime(:end_timestamp,"unixepoch")
+                 ORDER BY ts DESC
+              </validate_query>
+              <list_query>SELECT ts FROM time</list_query>
+          </dimension>
+
+   * - Up to MapCache 1.6.1
+     - From MapCache > 1.6.1 on
+
+
+
+3. Implementation Details
+-------------------------
+
+3.1. Dependencies
+=================
+
+Both PostgreSQL and ElasticSearch Dimensions need specific libraries to work.
+Both needs are fulfilled with off-the-shelf solutions. PostgreSQL interface
+uses a third party library whereas ElasticSearch interface uses code that is
+embedded into MapCache.
+
+**PostgreSQL**
+   `libpq`_ is the C API to PostgreSQL. This is a third party library that
+   shall be linked to MapCache in order for PostgreSQL Dimension back-end to
+   work.
+
+**ElasticSearch**
+   While ElasticSearch JSON queries can be passed to the server as simple text
+   strings, ElasticSearch JSON responses must be parsed in order to extract
+   relevant information to be further handled by MapCache. For that purpose an
+   off-the-shelf solution is proposed, namely `cJSON`_, available on GitHub
+   through a MIT license. Files `cJSON.h` and `cJSON.c` are simply copied
+   in MapCache project, respectively in `include/` and `lib/` directories.
+
+3.2. Affected files
+===================
+
++------------------------------+----------+-----------------------------------+
+| File name                    | Status   | Description                       |
++==============================+==========+===================================+
+| include/mapcache.h           | Modified | Interface changes introduced by   |
+|                              |          | proposed features                 |
++------------------------------+----------+-----------------------------------+
+| lib/dimension.c              | Modified | Only processings common to all    |
+|                              |          | dimension backends are kept in    |
+|                              |          | this file.                        |
++------------------------------+----------+-----------------------------------+
+| lib/dimension_sqlite.c,      | New      | Backend-specific processings get  |
+| lib/dimension_es.c,          |          | their own source files.           |
+| lib/dimension_pg.c           |          |                                   |
++------------------------------+----------+-----------------------------------+
+| lib/dimension_time.c         | New      | Time dimension gets its own source|
+|                              |          | file                              |
++------------------------------+----------+-----------------------------------+
+| include/cJSON.h, lib/cJSON.c | New      | Embedded JSON parser for          |
+|                              |          | ElsaticSearch backend             |
++------------------------------+----------+-----------------------------------+
+| CMakeLists.txt,              | Modified | Account for optional external     |
+| include/mapcache-config.h.in |          | PostgreSQL library                |
++------------------------------+----------+-----------------------------------+
+| lib/util.c                   | Modified | New ancillary needs from proposed |
+|                              |          | features                          |
++------------------------------+----------+-----------------------------------+
+| lib/service_wms.c,           | Modified | Various impacts of proposed       |
+| lib/tileset.c,               |          | features on existing code         |
+| lib/configuration_xml.c,     |          |                                   |
+| util/mapcache_seed.c         |          |                                   |
++------------------------------+----------+-----------------------------------+
+| mapcache.xml                 | Modified | Configuration example of a        |
+|                              |          | PostgreSQL dimension              |
++------------------------------+----------+-----------------------------------+
+
+3.3. Documentation
+==================
+
+MapCache's :ref:`mapcache_dimensions` document shall be updated accordingly.
+
+.. #### rST Link Section ####
+
+.. _`PQconnectdb()`: https://www.postgresql.org/docs/current/static/
+                     libpq-connect.html#id-1.7.3.8.2.12.2.1.2
+
+.. _`libpq`: https://www.postgresql.org/docs/current/static/libpq.html
+
+.. _`cJSON`: https://github.com/DaveGamble/cJSON

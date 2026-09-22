@@ -1,0 +1,134 @@
+.. _rfc114:
+
+===========================================
+MS RFC 114: Faster retrieval of shape count
+===========================================
+
+:Date:  2016/02
+:Author: Even Rouault
+:Contact: even.rouault@spatialys.com
+:Status: Adopted
+:Version: MapServer 7.2
+:Funding: Meteorological Service of Canada
+
+1. Motivation
+=============
+
+The WFS protocol has a resultType=hits query to return only the number
+of features of the specified layer(s), taking into account an optional bounding
+box and/or filter.
+
+See "resultType parameter" chapter (`OGC WFS 2.0 specification`_, sect. 7.6.3.6)
+
+Currently MapServer implements such requests by retrieving
+all individual matching features and counting them, as in a full GetFeature
+response, which is suboptimal in term of speed and bandwidth with the server
+instance in case of RDBMS data provider.
+
+2. Proposed enhancement
+=======================
+
+A new virtual method is added to the vtable of MapServer layers
+
+.. code-block:: c
+
+    int (*LayerGetShapeCount)(layerObj *layer, rectObj rect, projectionObj *rectProjection);
+
+Its semantics is to return the number of shapes that match the potential filter and extent.
+rectProjection is the projection in which rect is expressed, or can be NULL if
+rect should be considered in the layer projection.
+This should be equivalent to calling msLayerWhichShapes() and counting the
+number of shapes returned by msLayerNextShape(), honouring layer->maxfeatures
+limitation if layer->maxfeatures>=0, and honouring layer->startindex if
+layer->startindex >= 1 and paging is enabled.
+It should returns -1 in case of failure.
+
+This method will be called by msQueryByRect() and msQueryByFilter() when only
+feature count is requested (i.e. map->query.only_cache_result_count == 1), and
+that a layer template is defined (the WFS code has traditionnaly set a fake
+layer template 'ttt.html' if none was defined, so as to disable any class template).
+Such query is only done by the WFS server code.
+
+A default implementation of LayerGetShapeCount() using msLayerWhichShapes()
+and msLayerNextShape() is provided, and a specialized implementation is done in
+the PostGIS driver. This implementation consists in calling
+SELECT COUNT(*) FROM (the_normal_sql_query).
+
+Why specifying the rectProjection in LayerGetShapeCount(), and not assuming that
+rect is in the layer projection instead ?
+The reason is to be completely conformant with the
+current semantics of msQueryByRect() that checks that the retrieved features
+intersect the bounding box in the map projection (the map projection being the
+one specified by SRSNAME in the case of a WFS query). In the case of the PostGIS
+provider, this can be translated in the following query to do a fast BBOX filtering,
+followed by a more precision intersection for candidate records :
+(the_geometry && the_bbox_in_layer_projection) AND
+( NOT ST_Disjoint(ST_Transform(the_geometry, rectProjectionSRID), rectProjection) )
+
+2.2 Backwards Compatibility
+===========================
+
+This change has no backwards compatibility effect, keeping the same semantics
+as the current implementation.
+
+2.3 Performance Implications
+============================
+
+Should result in performance increase for drivers that can implement efficiently
+LayerGetShapeCount()
+
+Currently, resultType=hits honours the server side limit defined by the wfs_maxfeatures
+WEB metadata item, i.e. that the maximum number of features returned is limited to
+wfs_maxfeatures when it is defined. The reason was to limit the number of
+features retrieved by MapServer. This behaviour can now be controlled with a new
+WEB metadata item : "wfs_maxfeatures_ignore_for_resulttype_hits" "true" (or "false"). When
+it is set to true, hits operations are no longer limited by wfs_maxfeatures. The
+default value of the item depends on the queried layers: if they have all an
+efficient LayerGetShapeCount() operation (i.e. are PostGIS layers currently),
+then the default is "true". Otherwise it is "false".
+
+Note: of course, any client specified MAXFEATURES / COUNT parameter overrides those server
+side settings, while the number of features asked by the client is no greater than
+the server side limit.
+
+2.4 Limitations
+===============
+
+A specialized implementation of LayerGetShapeCount() is only done in PostGIS
+driver for the scope of this work. Could be extended similarly to providers that
+have SQL semantics and implement LayerTranslateFilter(): Oracle, MSSQL Spatial
+
+3. Implementation Details
+=========================
+
+3.1 Affected files
+------------------
+
+- mapquery.c: to use msLayerGetFeatureCount() in msQueryByRect() and msQueryByFilter()
+- maplayer.c: defines msLayerGetFeatureCount() and LayerDefaultGetFeatureCount()
+- mapwfs.c: to take into account "wfs_maxfeatures_ignore_for_resulttype_hits"
+- mappostgis.c: implement LayerGetFeatureCount()
+- other providers: add comment that LayerGetFeatureCount uses the default implementation
+
+3.2 Tracking Issue
+------------------
+
+- code: https://github.com/rouault/mapserver/tree/wfs_fast_hits
+- tests: 4 new test cases have been added (https://github.com/MapServer/msautotest/commit/05e8264ce737a795d81f1a87614fa5c87399de91)
+  to test the behaviour of resultType=hits with filters, and already existing WFS tests pass.
+
+3.3 Documentation
+-----------------
+
+Documentation of the WFS server will be updated to document the
+"wfs_maxfeatures_ignore_for_resulttype_hits" metadata item.
+
+
+4. Voting History
+=================
+
++1 from TomK, JeffM, MichaelS, StephenW, ThomasB, DanielM, SteveL, JukkaR, StephanM, PerryN and TamasS.
+
+.. #### rST Link Section ####
+
+.. _`OGC WFS 2.0 specification`: https://portal.ogc.org/files/?artifact_id=39967

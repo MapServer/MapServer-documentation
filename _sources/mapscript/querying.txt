@@ -1,0 +1,153 @@
+.. index::
+   pair: MapScript; Querying
+
+.. _querying:
+
+.. currentmodule:: mapscript
+
+*****************************************************************************
+ Querying
+*****************************************************************************
+
+:Author: Sean Gillies
+:Author: Seth Girvin
+:Contact: sethg at geographika.co.uk
+:Last Updated: 2021-05-22
+
+.. contents::
+    :depth: 2
+    :backlinks: top
+
+
+Introduction
+============
+
+The MapScript HowTo docs are intended to complement the API reference with
+examples of usage for specific subjects.  All examples in this document refer
+to the mapfile and testing layers distributed with MapServer and found in source control
+under ``Mapserver/tests``.
+
+The examples below are written in Python. All MapScript languages use the
+same API, but will need to be rewritten using the relevant language's syntax.
+Querying Overview
+
+The Query Result Set
+--------------------
+
+Map layers can be queried to select features using spatial query methods
+or the attribute query method.  Ignoring for the moment whether we are 
+executing a spatial or attribute query, results are obtained like so:
+
+.. code-block:: python
+
+    # for any query to be successful it needs to have a template
+    # set - any value here will do
+    if not layer.template:
+        layer_obj.template = "ttt"
+
+    layer.query()                                 # not an actual method!
+    results = layer.getResults()
+
+In the case of a failed query or query with zero results, :func:`layerObj.getResults`
+returns NULL.
+
+Result Set Members
+------------------
+
+Individual members of the query results are obtained like:
+
+.. code-block:: python
+
+    if results:
+        for i in range(results.numresults):       # iterate over results
+            result = results.getResult(i)
+
+This :class:`mapscript.resultObj` is a handle, of sorts, for a feature of the layer,
+having :attr:`resultObj.shapeindex` and :attr:`resultObj.tileindex` attributes that can be used as
+arguments to :func:`layerObj.getShape`.
+
+Resulting Features
+-------------------
+
+The previous example code can now be extended to the case of obtaining all
+queried features:
+
+.. code-block:: python
+
+    layer.template = "FAKE"
+    layer.queryByAttributes(test_map, "FID", '"1"', mapscript.MS_MULTIPLE)
+    results = layer.getResults()
+
+    if results:
+        # open layer in preparation of reading shapes
+        layer.open()
+
+        for i in range(results.numresults):
+            result = results.getResult(i)
+            shape = layer.getShape(result)
+            
+            # get the value of the attribute at index 1
+            print(shape.getValue(1))
+
+        # close when done
+        layer.close()
+
+
+Attribute Queries
+=================
+
+By Attributes
+-------------
+
+Use :func:`layerObj.queryByAttributes` for querying by attribute. Note attributes
+are strings.
+
+.. code-block:: python
+
+    # select by feature Id
+    layer.queryByAttributes(test_map, "FID", "1", mapscript.MS_MULTIPLE)
+
+    # select by a string attribute, returning a single result
+    layer.queryByAttributes(test_map, "FNAME", "A Polygon", mapscript.MS_SINGLE)
+
+
+Spatial Queries
+===============
+
+By Rectangle
+------------
+
+Use :func:`layerObj.queryByRect` for querying using a bounding-box. :data:`MS_MULTIPLE` is set
+by default.
+
+.. code-block:: python
+
+    qrect = mapscript.rectObj(-10.0, 45.0, 10.0, 55.0)
+    layer.queryByRect(test_map, qrect)
+
+By Point
+--------
+
+Use :func:`layerObj.queryByPoint` for querying using a point. The point can also be
+buffered. 
+
+.. code-block:: python
+
+    qpoint = mapscript.pointObj(0.0, 51.5)
+    layer.queryByPoint(test_map, qpoint, mapscript.MS_MULTIPLE, 2.0)
+
+By Shape
+--------
+
+Use :func:`layerObj.queryByShape` for querying using a shape.
+
+.. code-block:: python
+
+    qrect = mapscript.rectObj(-10.0, 45.0, 10.0, 55.0)
+    qshape = qrect.toPolygon()
+    self.layer.queryByShape(self.map, qshape)
+
+By Selection
+------------
+
+Use :func:`layerObj.queryByFeatures` for querying using results from another layer.

@@ -1,0 +1,173 @@
+.. index::
+   single: CONFIG
+
+.. _config:
+
+*****************************************************************************
+ CONFIG
+*****************************************************************************
+
+As of MapServer 8.0, MapServer has a required global configuration file, implemented through 
+:ref:`RFC 135 <rfc135>`, which aims to make configuring MapServer both more secure 
+and straight forward. The configuration file path can be set using the environment variable 
+``MAPSERVER_CONFIG_FILE``. A default location can also be set at compile time, 
+for different distributions.
+
+.. TIP::
+   For example, compiling from source on Ubuntu, by default MapServer will install 
+   a sample config file at */usr/local/etc/mapserver-sample.conf*, and you must 
+   rename that file to *mapserver.conf*, and then add into your Apache *.conf* file:
+   *SetEnv MAPSERVER_CONFIG_FILE "/usr/local/etc/mapserver.conf"*.  You can also
+   set this in your *~/.bashrc* file, so that the MapServer commandline utilities 
+   can find it, by adding there: *export MAPSERVER_CONFIG_FILE "/usr/local/etc/mapserver.conf"*.
+
+.. TIP::  
+   For MS4W users (version >= 5), the config 
+   file can be found at */ms4w/ms4w.conf*
+   
+If MapServer cannot find the config file, an error is returned such as:
+
+::
+
+  msLoadConfig(): Unable to access file.
+  
+.. TIP::
+   The commandline utility :ref:`map2img` has a switch *-conf* to set the name of the
+   config file.
+
+The configuration file is loaded by the MapServer CGI at runtime and provides 
+site-level configuration for all mapfiles. The configuration file has 3 sections 
+detailed below.
+
+.. index::
+   pair: CONFIG; ENV
+   :name: mapfile-config-env
+
+ENV
+    This block allows for environment variables to be stored as name value pairs - see
+    the :ref:`Environment Variables<environment_variables>` page for all available options.
+    Prior to the introduction of the configuration file support of environment variables varied
+    between different platforms. 
+
+    .. code-block:: mapfile
+
+      ENV
+        MS_MAP_PATTERN "^/opt/mapserver" ## required when referencing mapfiles by path
+      END
+      
+    .. TIP::
+    
+       As of the MapServer 8.0 release, there are 2 scenarios where you won't have to 
+       specify *MS_MAP_PATTERN* :
+       
+         1. If using a map alias (set in the *MAPS* section of this config file).
+         2. If MS_MAP_PATTERN is set in the underlying environment - that is, by
+            the Web server. MapServer will fall back to the environment variables
+            if they exist for any of the :ref:`MS* variables<environment_variables>`.
+
+    MapServer 8.8 introduces the :ref:`ms_onlineresource` setting, which allows the external root URL
+    to be defined in the CONFIG file and applied to all Mapfiles in a deployment.
+
+.. index::
+   pair: CONFIG; MAPS
+   :name: mapfile-config-maps
+
+MAPS
+    This block allows for aliases to be mapped to mapfile paths. If the ``MS_MAP_NO_PATH`` environment
+    variable is set then **only** these aliases can be used in the ``map=`` CGI parameter.
+
+    Aliases are case-insensitive - "ITASCA" and "Itasca" are handled identically.
+
+    The use of aliases also helps to simplify :ref:`ogcapi` URLs, for example the alias 
+    ``itasca`` can be used in the place of a mapfile path in a URL for example: 
+    http://localhost/mapserver/itasca/ogcapi/collections. 
+
+    As of MapServer 8.2 *all* types of MapServer requests can use keys from the ``MAPS`` block in the config file
+    as part of a URL for example http://localhost/itasca/?request=WMS&...
+    
+    .. code-block:: mapfile
+
+      MAPS
+        ITASCA "/opt/mapserver/mapserver-demo/itasca.map"
+        TEST_MAPFILE "/opt/mapserver/test/test.map"
+      END
+
+.. index::
+   pair: CONFIG; PLUGINS
+   :name: mapfile-config-plugins
+
+PLUGINS
+    This block allows for keys to be mapped to plugin library paths. For example the :ref:`MS SQL Plugin<mssql-plugin>`.
+    This registry of plugins avoids possible unsafe libraries being loaded by a mapfile.
+
+    .. code-block:: mapfile
+
+      PLUGINS
+        "mssql" "C:\MapServer\bin\ms\plugins\mssql2008\msplugin_mssql2008.dll"
+      END
+
+A full sample config file is shown below:
+
+.. code-block:: mapfile
+
+  #
+  # Sample MapServer 8.0 Config File
+  #
+  CONFIG
+  
+    #
+    # Environment variables
+    #
+    ENV
+      #
+      # Limit Mapfile Access
+      #
+      # MS_MAP_NO_PATH "1"
+      MS_MAP_PATTERN "^/opt/mapserver" ## required when referencing mapfiles by path
+      # MS_MAP_BAD_PATTERN "[/\\\\]{2}|[/\\\\]?\\.+[/\\\\]|,"
+      
+      #
+      # Global Log/Debug Setup
+      #
+      # MS_DEBUGLEVEL "5"
+      # MS_ERRORFILE "/opt/mapserver/logs/mapserver.log"
+  
+      #
+      # Proj Library
+      #
+      # PROJ_DATA "/usr/local/share/proj"
+    
+      #
+      # Default Map
+      #
+      # MS_MAPFILE "/opt/mapserver/test/test.map"
+
+      # disable POST requests (allowed by default, any value will do)
+      # MS_NO_POST "1"
+         
+      #
+      # Other Options
+      #
+      # MS_ENCRYPTION_KEY "/opt/mapserver/mykey.txt"
+      # MS_USE_GLOBAL_FT_CACHE 1 # use a global font cache
+      # MS_PDF_CREATION_DATE "01/02/2022" # PDF create date metadata
+      # MS_MAPFILE_PATTERN "\.map$"
+      # MS_XMLMAPFILE_XSLT "/path/to/mapfile.xsl"
+      # MS_MODE "BROWSE" # default mode for CGI calls
+      # MS_ONLINERESOURCE "https://maps.example.com/" # used as a base URL for building OWS URLs when not specified in the Mapfile
+      # MS_OPENLAYERS_CSS_URL "//mapserver.org/lib/10.4.0/ol-mapserver.css" # default value
+      # MS_OPENLAYERS_JS_URL "//mapserver.org/lib/10.4.0/ol-mapserver.js" # default value
+      # MS_TEMPPATH "/tmp"
+      # MS_MAX_OPEN_FILES 200 # maximum number of open files allowed on Windows
+      # MS_WMS_ERROR_STATUS_CODE "ON"  # enable HTTP status code 4xx and 5xx in case of errors on WMS requests
+    END
+
+    #
+    # Map aliases
+    #
+    MAPS
+      TEST_MAPFILE "/opt/mapserver/test/test.map"
+    END
+
+  END
+

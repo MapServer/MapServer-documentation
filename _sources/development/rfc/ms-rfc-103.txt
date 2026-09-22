@@ -1,0 +1,114 @@
+.. _rfc103:
+
+=========================================================================
+MS RFC 103: Layer Level Character Encoding Handling
+=========================================================================
+
+:Date:  2013/08
+:Author: Thomas Bonfort
+:Contact: thomas.bonfort@gmail.com
+:Status: Adopted
+:Version: MapServer 7.0
+
+1. The Current Situation
+========================
+
+MapServer has no knowledge of the character encoding of a datasource, which has
+multiple implications:
+
+- FILTERs and EXPRESSIONs inside a mapfile must be written in the mapfile in 
+  the same encoding as the datasource. While this is no hassle for fully UTF8
+  datasources and mapfiles, this gets harder to maintain when using non UTF8
+  datasources (as the mapfile needs to be saved in another encoding), and becomes
+  unmanageable for datasources with mixed encodings (e.g. layer1 is UTF8 while
+  layer2 is latin1).
+- Handling of the encoding headers has to be manually specified so that correct
+  content-type headers and xml encoding tags get sent back to clients for OGC
+  documents (getcapabilities, getfeature, etc...)
+- For rendering, we ass-hatedly specify the encoding at the LABEL level to transform
+  label texts to UTF8, given that our renderers only supported that.
+
+1.1 Related Issues
+------------------
+
+- https://github.com/MapServer/MapServer/issues/4028
+- https://github.com/MapServer/MapServer/issues/3297
+- https://github.com/MapServer/MapServer/issues/2831
+- https://github.com/MapServer/MapServer/issues/4255
+- https://github.com/MapServer/MapServer/pull/4454
+
+2. Layer Level Encoding
+=======================
+
+This RFC proposes to add an ENCODING keyword at the LAYER level. Layer datasources
+that have an ENCODING set, and different than UTF8, will have its attributes converted
+to UTF8 in the GetShape and GetNextShape vtable wrappers.
+
+2.1 Implications
+================
+
+- The core of MapServer can forget about handling encodings, and will treat all strings
+  as UTF8.
+- All text documents ( e.g. capabilities, getfeature, query, etc.. ) will be emitted as
+  UTF8.
+- There will be no need to specify encoding metadata entries in the mapfile in order to
+  produce somewhat correct ogc documents.
+
+2.2 Backwards Compatibility
+===========================
+
+This RFC has some notable backwards incompatibility issues for users who were treating
+non UTF8 or ASCII datasets:
+
+- Mapfiles themselves will be expected to be UTF8-encoded. Non UTF8-encoded mapfiles
+  will need to be iconv'd to utf8.
+- All textual documents will be emitted as UTF8, with corresponding headers and/or
+  preambles. Emitting in other encodings is unsupported.
+- LABEL level ENCODING will be removed. As a means of helping backwards
+  compatibility, we might want to set the LAYER level encoding to that of the
+  LABEL one when loading a mapfile.
+
+It should be noted however that these incompatibilities can and should be seen
+as a way to fix MapServer's flawed handling of these encoded datasources.
+
+2.3 Performance Implications
+============================
+
+None or barely noticeable:
+
+- For UTF8 and ASCII datasources: none expected
+- For other datasources: the overhead of the iconv calls should be marginal.
+
+3. Implementation Details
+=========================
+
+3.1 Affected files
+------------------
+
+- mapfile.c : Layer level handling of the ENCODING keyword, possibly treating
+  LABEL level ENCODING for backwards compatibility
+- maplayer.c: iconv calls to convert the encoding of attributes in
+  msLayerGetShape() and msLayerGetNextShape()
+- TBD: removal of encoding workarounds and modification of header/preamble printing
+  to announce utf8.
+
+3.2 Tracking Issue
+------------------
+
+TBD
+
+4. Discussion
+=============
+
+While a more general treatment of this issue might also include handling the
+encoding of the actual mapfile (to avoid forcing UTF8 as a mandatory mapfile
+encoding), this solution is not proposed, as:
+
+- this adds substantial complexity throughout the codebase
+- UTF8 is the widely recommended encoding to use nowadays
+
+5. Voting History
+=================
+
++1 from ThomasB, MikeS, DanielM, SteveW, PericlesN, SteveL, TamasS and StephanM
+

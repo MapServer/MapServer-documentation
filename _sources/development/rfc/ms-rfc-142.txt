@@ -1,0 +1,129 @@
+.. _rfc142:
+
+====================================================
+MS RFC 142: Geodesic Scalebar Measurement
+====================================================
+
+:Author: Tamas Szekeres
+:Contact: szekerest at gmail.com
+:Last Updated: 2026-09-19
+:Version: MapServer 9.0.0
+:Status: Adopted
+
+Overview
+--------
+
+This RFC proposes that MapServer scalebars use local ellipsoidal geodesic
+distance when the map has a coordinate reference system (CRS). If the map has
+no CRS, MapServer continues to use the existing Cartesian calculation.
+
+The main motivating case is Web Mercator / EPSG:3857. Its coordinates are
+expressed in meters, but projected distances increasingly differ from ground
+distances away from the equator. Treating projected meters as ground meters can
+therefore produce a misleading scalebar.
+
+The change is automatic and introduces no new mapfile keyword or MapScript
+property.
+
+Proposed Change
+---------------
+
+When a map CRS is available, MapServer measures the ground distance represented
+by a horizontal pixel span as follows:
+
+1. Select the center of the map as the sample location.
+2. Convert the endpoints of the horizontal pixel span to map coordinates.
+3. Transform the endpoints to geographic coordinates when necessary.
+4. Calculate the inverse geodesic distance on the CRS ellipsoid.
+5. Convert the result from meters to the configured ``SCALEBAR UNITS``.
+
+The resulting distance is passed to the existing interval rounding, fitting,
+labeling, and rendering code. Existing scalebar styles and supported output
+units remain unchanged.
+
+The result represents horizontal local scale at the map center. In a
+non-conformal projection, horizontal and vertical scales can differ, so the
+scalebar must not be interpreted as a general scale valid in every direction
+or at every location in the map.
+
+Fallback and Error Handling
+---------------------------
+
+If the map has no declared CRS, MapServer uses the existing Cartesian
+calculation based on map cell size and unit conversion. Map units alone do not
+constitute a CRS.
+
+If a CRS is declared but MapServer cannot transform the endpoints or calculate
+a valid geodesic distance, scalebar rendering fails with a clear error. It must
+not silently return a Cartesian result for a map with a declared CRS.
+
+The implementation reuses MapServer's existing projection context, ellipsoid,
+thread-safety, and error-reporting mechanisms.
+
+Backwards Compatibility
+-----------------------
+
+Mapfiles require no syntax changes. However, scalebars for maps with a CRS may
+produce different interval widths and labels because they will represent local
+ground distance rather than projected-plane distance. The difference is most
+visible in distorted projections and at high latitudes.
+
+Maps without a CRS retain the existing Cartesian behavior.
+
+Testing
+-------
+
+Renderer regression coverage should remain focused:
+
+- an EPSG:3857 map at high latitude must produce a geodesically corrected
+  scalebar without additional scalebar configuration;
+- a map without a CRS must continue to render a Cartesian scalebar;
+- a stable failure test may verify that an unusable declared CRS does not
+  silently fall back to Cartesian measurement.
+
+No new tests are required in ``tests/unit/test.cpp``.
+
+Documentation
+-------------
+
+The mapfile and scalebar utility documentation must describe:
+
+- automatic geodesic measurement when a map CRS is present;
+- Cartesian fallback when no CRS is present;
+- sampling at the map center in the horizontal direction;
+- the local nature of the reported scale;
+- failure behavior for a declared but unusable CRS.
+
+The migration guide and release notes must call out the possible change in
+rendered scalebars for existing maps with a CRS.
+
+Implementation
+--------------
+
+The distance calculation in ``src/mapscale.c`` will be separated into internal
+Cartesian and geodesic paths. Selection between them is based on map CRS
+availability. The existing fitting and rendering algorithm remains unchanged.
+
+Affected Files
+--------------
+
+Expected implementation and test changes are limited primarily to:
+
+- ``src/mapscale.c``;
+- scalebar renderer tests and expected results in ``msautotest``;
+- mapfile, utility, migration, and release documentation.
+
+Ticket ID and References
+------------------------
+
+- EPSG:3857 scalebar report:
+  https://github.com/MapServer/MapServer/issues/7397
+
+Voting History
+--------------
+
++1 from PSC members JeffM, TomK, SethG, MikeS, SteveL and TamasS
+
+See https://lists.osgeo.org/pipermail/mapserver-dev/2026-May/017361.html for the discussion
+and https://lists.osgeo.org/pipermail/mapserver-dev/2026-September/017400.html for the voting.
+
