@@ -678,10 +678,51 @@ placed at the layer level in a MapServer Mapfile:
 GetStyles Requests
 ------------------
 
-As part of the WMS implementation, MapServer supports ``GetStyles`` requests, which return an SLD document describing the styles available for a given layer.
-An example of a GetStyles request is https://demo.mapserver.org/cgi-bin/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetStyles&LAYERS=country_bounds.
+As part of the WMS implementation, MapServer supports ``GetStyles`` requests,
+which return an SLD document describing the styles available for one or more
+layers. An example GetStyles request is
+https://demo.mapserver.org/cgi-bin/wms?SERVICE=WMS&VERSION=1.3.0&REQUEST=GetStyles&LAYERS=country_bounds
 
-This allows Mapfile styling to be used by other clients that support SLD, and can be used to style vector data to match the WMS server's style.
+This allows Mapfile styling to be used by other clients that support SLD, for
+example to style vector data to match the WMS server's rendering.
+
+The SLD 1.0.0 specification extends WMS 1.1.x with the GetStyles request, as
+documented in section 13.1 of https://docs.ogc.org/is/02-070/02-070.pdf.
+SLD 1.1.0, used with WMS 1.3.0, no longer defines GetStyles, but MapServer
+supports it for all WMS versions (advertised as ``ms:GetStyles`` in WMS 1.3.0
+capabilities).
+
+The following GetStyles parameters are supported:
+
+   **VERSION=version:** Request version (required)
+
+   **REQUEST=GetStyles:** Request name (required)
+
+   **LAYERS=layer_list:** Comma-separated list of named layers or groups for
+   which to retrieve style descriptions (required)
+
+   **STYLES=style_list:** Comma-separated list of one style per layer in
+   ``LAYERS``, matched by position, used to limit which styles are returned
+   (optional, vendor-specific, added in MapServer 8.8).
+
+   - Style names are Mapfile CLASS ``GROUP`` names, and are compared
+     case-insensitively.
+   - If ``STYLES`` is omitted or empty (``STYLES=``), or an entry is empty or
+     ``default``, all styles are returned for that layer. ``default`` is
+     reserved, so a CLASS ``GROUP`` named ``default`` cannot be selected.
+   - When a style is selected, classes without a ``GROUP`` are not included,
+     matching how GetMap renders the layer with that style.
+   - An unknown style, or a list whose length does not match ``LAYERS``,
+     returns a ``StyleNotDefined`` exception.
+
+.. note::
+
+   The **SLDVER** parameter from the SLD 1.0.0 specification is not supported.
+   The SLD version is determined by the WMS version: WMS 1.0.0 to 1.1.1 return
+   SLD 1.0.0, and WMS 1.3.0 returns SLD 1.1.0.
+
+   The response type is ``application/vnd.ogc.sld+xml`` for SLD 1.0.0 and
+   ``text/xml`` for SLD 1.1.0.
 
 The following MapServer style properties are supported when generating SLD:
 
