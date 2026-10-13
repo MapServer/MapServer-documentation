@@ -1,0 +1,218 @@
+.. _rfc81:
+
+=========================================================================
+MS RFC 81: Offset Labels with Leader Lines
+=========================================================================
+
+:Date:  2011/12/15
+:Author: Thomas Bonfort
+:Contact: tbonfort at terriscope.fr
+:Status: Adopted
+:Version: MapServer 6.2
+
+1. Overview 
+-----------
+
+Current labelling schemes place label text at the proximity of the point
+they are attached to. In the labelcache phase, depending on the label's
+POSITION, either one or nine label positions are tested, and the label is
+discarded if all of these positions cause a collision with the already
+rendered labels.
+
+This RFC proposes to extend the number of positions that are tested for
+a given label, and evetually render a leader line from the rendered text to
+the actual position the label is attached to.
+
+An example rendering of the proposed change can be:
+
+ .. image:: ../../images/label-leaders.jpg
+   
+
+2. Proposed Technical Change
+----------------------------
+
+The labelcache code will be extended to test for extended labelling positions
+if the label was configured with "leader" parameters. There will be two 
+configuration options that specify how the offsetted positions are determined:
+
+ - LEADERMAXDISTANCE will determine the maximum distance that the label text
+   can be placed from its original anchoring position
+ - LEADERGRIDSTEP will determine the step in pixels between each tested position.
+
+If a label cannot be placed due to a collision with an existing label or
+marker, alternate positions are sampled for by iterating further and further
+away from the original label point. In the figures below, "X" represents the
+original label point, "." represents an individual pixel, "0" represents an
+offset that has already been tested for in a previous iteration, and
+"1","2","3", represents the order in which the positions are tested for in the
+current iteration.
+
+1st iteration:
+
+::
+
+   2...1...2
+   .........
+   .........
+   .........
+   1...X...1
+   .........
+   .........
+   .........
+   2...1...2
+
+second iteration:
+
+::
+
+   3...2...1...2...3
+   .................
+   .................
+   .................
+   2...0...0...0...2
+   .................
+   .................
+   .................
+   1...0...X...0...1
+   .................
+   .................
+   .................
+   2...0...0...0...2
+   .................
+   .................
+   .................
+   3...2...1...2...3
+
+third iteration:
+
+::
+
+   3...2...2...1...2...2...3
+   .........................
+   .........................
+   .........................
+   2...0...0...0...0...0...2
+   .........................
+   .........................
+   .........................
+   2...0...0...0...0...0...2
+   .........................
+   .........................
+   .........................
+   1...0...0...X...0...0...1
+   .........................
+   .........................
+   .........................
+   2...0...0...0...0...0...2
+   .........................
+   .........................
+   .........................
+   2...0...0...0...0...0...2
+   .........................
+   .........................
+   .........................
+   3...2...2...1...2...2...3
+
+For each offsetted position, the actual position of the text is adapted
+depending on the general direction of the offset (e.g. with position "uc" for a
+label at the vertical of the original point, "ur" for the top right diagonal,
+etc...)
+
+The iterations stop once an offset position does not cause a collision with the
+existing labels, in which case the label text is sent down to the rendering
+backend, or once the first offseted position is further away than the
+configured LEADERMAXDISTANCE.
+
+The collision detection functions will be extended to account for these
+added constraints:
+
+ - A label cannot collide with an existing leader line, and a leader line
+   cannot collide with an existing label. Note that these collision detections
+   operate on the bounding box of the label itself, without taking the label
+   BUFFER into account (i.e. a leader line is allowed to cross the buffer area
+   around an existing label)
+ - A leader line cannot intersect another leader line.
+ - A label who's original position is inside the edge_buffer cannot be
+   offseted, as this would cause rendering artifacts for tiled output.
+
+If an offseted label has been placed, a line between the original and the
+offseted position is rendered with the label style(s) that has(ve) the
+"LABELLEADER" geomtransform.
+
+2.1 Expected issues
+-------------------
+
+ - With RFC77's multiple labels per feature, the offset should be applied
+   as a whole to all the labels of the feature. In this sense, the leader
+   parameters should be owned by the classObj and not the labelObj, which
+   is semantically awkward.
+ - For labels with LABELPNT geomtransform, should the marker be rendered at
+   the original label point, or at the position the label was offseted to? This
+   probably calls for an additional label style geomtransform.
+ - This functionality is computationally expensive as the label collision
+   functions are called much more frequently than beforehand. The gridstep and
+   maxdistance parameters allow to cut down the number of iterations and therefore
+   the number of times the collision detection is called, at the expense of
+   missing out some potential correct offseted positions. Note that with a gridstep
+   of 1 and a maxdistance of the size of the image, there is the potential that
+   every pixel in the image be tested for collisions. Reasonable values are a 
+   gridstep of 5 pixels, and a maxdistance of 30 pixels.
+
+3. Implementation Details
+-------------------------
+
+A function will be added in maplabel.c to test the configured offsetted
+positions for a labelcache member against the already rendered labels. A
+configuration option (TBD) will be added, and this function will be called:
+
+ - either immediately once a label hasn't been successfully rendered on its
+   original position
+ - either after a label priority loop has finished. In this
+   case, the function will be called for all unsuccessful labels of the current
+   priority phase.
+
+The labelcache member objects will have two members added, namely a lineObj
+containing the leader line, and a shapeObj representing the unbuffered label's
+bounding box.
+
+The functions that test for collision with existing labels will be extended to
+check for intersections between leader lines and unbuffered existing labels.
+
+
+3.1. Files Affected
+-------------------
+
+ - mapserver.h: additional members for labelcachememberobj and labelobj
+ - mapfile.c, maplexer.*, mapcopy.c : parsing and utility functions
+ - maplabel.c: additional collision tests in msTestLabelCacheCollisions
+ - mapdraw.c:
+   
+   - function for trying a label at offset positions
+   - calls to this function in msDrawLabelCache
+
+3.2 Bug ID
+----------
+
+* https://github.com/MapServer/MapServer/issues/XXX
+
+4. Backwards compatibility issues
+---------------------------------
+
+None expected, new functionality.
+
+
+5. Error reporting
+------------------
+
+No additional error reporting aside from parsing errors.
+
+
+6. Example Usage
+----------------
+
+TBD.
+
+7. Voting history
+-----------------
+
++1 from ThomasB, MikeS, SteveW, DanielM, SteveL, JeffM, PerryN and TamasS

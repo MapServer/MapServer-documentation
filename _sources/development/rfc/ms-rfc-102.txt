@@ -1,0 +1,127 @@
+.. _rfc102:
+
+==================================================
+MS RFC 102: Support of Styleitem JavaScript Plugin
+==================================================
+
+:Date:  2013/08
+:Author: Alan Boudreault
+:Contact: aboudreault@mapgears.com
+:Status: Adopted
+:Version: MapServer 7.0
+
+.. warning::
+    this feature is experimental and backwards compatibility may be broken in
+    the not-so-short term.
+
+.. warning::
+    Refer to :ref:`styleitemjs` for the up-to-date documentation.
+
+1. Overview
+-----------
+
+Currently, we can style our features by using classes and styles in the
+mapfile. We can do a lot of styling with the mapserver expressions. However, it
+might end up with a hundred of mapfile lines for a styling layer depending of
+the complexity of the data. It is also very hard to maintain. We can also
+specify the a STYLEITEM option (AUTO or [attribute]) where mapserver get the
+feature style, but this is very not flexible.
+
+2. Proposed solution
+--------------------
+
+This RFC proposes the addition of a STYLEITEM javascript plugin. The goal of
+this plugin support is to be able to style our features programmatically. This
+will be accomplished through javascript using the V8 Engine.
+
+3. Implementation Details
+-------------------------
+
+MapServer will have a new addition: the V8 javascript engine integration. There
+will be a generic implementation in mapserver with the necessary stuff for the v8
+engine: compiling and executing javascript code. It will also allow the use of
+javascript in some other parts of the mapserver code if needed.
+
+3.1 V8 Basic Implementation
+...........................
+
+* Compilation of javascript code and files.
+* Execution of javascript code.
+* MapServer internal Javascript execution context: thread-safe and performance. 
+* Exposing objects to V8 to be used in Javascript. (Only the shape object will be
+  available for now)
+* Integration of some handlers for MapServer: error, debugging and backtrace of
+  the javascript code.
+  
+3.2 Styleitem Javascript
+........................
+
+The STYLEITEM javascript plugin will be similar to current styleitem
+options. Rather than writing classes in the layer definition, we will specify
+the javascript file to be executed for the feature styles. The shape attributes
+will be exposed to javascript. The javascript plugin will have to return one of
+these two options:
+
+* a STYLE definition (Plain String)
+* a CLASS definition with one or multiple styles (Plain String)
+
+3.3 Mapfile and JavaScript Examples
+...................................
+
+mapfile:
+
+.. code-block:: mapfile
+
+    LAYER
+        NAME "my_vector_layer"
+        TYPE POINT
+        STATUS ON
+        STYLEITEM "javascript:///path/to/my/file.js"
+        CLASS
+        # empty class needed in current implementation of styleitem. 
+        END
+    END
+
+javascript:
+
+.. code-block:: javascript
+
+    require('./global_variables.js'); // for symbols array
+
+    // random symbol
+    var symbol = symbols[Math.floor(Math.random()*symbols.length)];
+    var style = style = "STYLE SIZE 12 SYMBOL '"+symbol+"'";
+
+    if (shape.attributes.COULEUR != '#000000') {
+        style += "COLOR '"+shape.attributes.COULEUR+"' END";  
+    } else {
+        // random color
+        red = Math.random()*255;
+        green = Math.random()*255;
+        blue = Math.random()*255;    
+        style += "COLOR "+red+" "+green+" "+blue+" END";
+    }
+
+    // return the style to MapServer
+    style;
+
+3.4 Files affected
+..................
+
+* mapv8.cpp: Generic implementation of the V8 support.
+* maplayer.c: STYLEITEM Support for JavaScript.
+
+3.5 Backwards Compatibility Issues
+...................................
+
+None expected, new functionality.
+
+3.6 MapScript changes
+.................................
+
+None
+
+4. Voting history
+-----------------
+
+Passed with +1 from Thomas, Daniel, Mike, Tamas, Stephen, Perry and Stephan

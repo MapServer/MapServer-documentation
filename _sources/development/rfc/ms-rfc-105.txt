@@ -1,0 +1,932 @@
+.. _rfc105:
+
+==================================================================
+MS RFC 105: Support for WFS 2.0 (server side)
+==================================================================
+
+:Date:  2013/11
+:Author: Even Rouault
+:Contact: even dot rouault at mines-paris dot org
+:Status: Draft
+:Version: MapServer 7.0
+
+1. Overview
+-----------
+
+MapServer currently supports the OGC WFS 1.0.0 and 1.1.0 protocols. The latest
+published version of `WFS 2.0`_, and it is desirable that MapServer implements
+it. Particularly in the context of the European Inspire directive that
+mandates WFS 2.0 as the base protocol for the INSPIRE Download Services.
+
+2. Changes
+----------
+
+Summary of changes in WFS 2.0
+-----------------------------
+
+There's apparently no official diff between WFS 1.1 and WFS 2.0, so here's
+a summary :
+
+- `GML 3.2.1`_
+
+- `Filter Encoding 2.0`_
+
+- Paging support
+
+- GetCapabilities changes
+
+- GetFeature changes
+
+- new operations that we will implement :
+
+ * GetPropertyValue
+ * ListStoredQueries
+ * DescribeStoredQueries
+ * GetFeature with stored queries
+
+- new operations not covered by this work :
+
+ * CreateStoredQuery
+ * DropStoredQuery
+
+GetCapabilities changes
+-----------------------
+
+There are a few changes and additions in the response document of a GetCapabilities
+request w.r.t WFS 1.1 :
+
+- the <ows:OperationsMetadata> element can have child elements that advertize
+  which conformance classes of the specification are supported by the implementation.
+  In the case of MapServer, we report as supported : ImplementsBasicWFS,
+  KVPEncoding, XMLEncoding, ImplementsResultPaging. We also publish the 
+  server side limit on feature count in "CountDefault".
+
+- the Filter_Capabilities respects the syntax of `Filter Encoding 2.0`_ capabilities.
+  It has a <fes:Conformance> element that advertizes which parts of FE 2.0
+  are supported by the implementation. In the case of MapServer, we report as
+  supported : ImplementsQuery, ImplementsAdHocQuery, ImplementsResourceId,
+  ImplementsMinStandardFilter, ImplementsStandardFilter, ImplementsMinSpatialFilter,
+  ImplementsMinTemporalFilter and ImplementsMinimumXPath
+
+We also now support the SECTIONS parameter of the GetCapabilities that enable
+the user to request only parts of the GetCapabilities document. The value of
+this parameter is a (comma separated) list of values among : All,ServiceIdentification,
+ServiceProvider,OperationsMetadata,FeatureTypeList,Filter_Capabilities
+
+Discovered during CITE testing, we now always add the namespace prefix in the
+<Name> element of a feature type (could/should also probably be done for WFS 1.1.0).
+If no user namespace is specified, the default "ms:" prefix is used.
+
+An example of a GetCapabilities response can be found at
+https://github.com/MapServer/msautotest/blob/wfs2/wxs/expected/wfs_200_caps.xml
+
+GML 3.2.1
+---------
+
+GML 3.2.1 defines a mandatory gml:id attribute on each geometry element :
+as Point, LineString, Polygon, MultiPoint, MultiLineString, MultiPolygon.
+The id will be generated as "feature_gml_id.serial_number" where
+feature_gml_id is the gml:id on the feature element of the geometry, and
+serial_number a number starting from 1 and incremented from each subgeometry
+(points in a multipoint, etc.)
+
+.. code-block:: xml
+
+      <ms:a_layer gml:id="a_layer.1">
+        <gml:boundedBy>
+            <gml:Envelope srsName="urn:ogc:def:crs:EPSG::4326">
+                <gml:lowerCorner>49.000000 2.000000</gml:lowerCorner>
+                <gml:upperCorner>50.000000 3.000000</gml:upperCorner>
+            </gml:Envelope>
+        </gml:boundedBy>
+        <ms:msGeometry>
+          <gml:MultiPoint gml:id="a_layer.1.1" srsName="urn:ogc:def:crs:EPSG::4326">
+            <gml:pointMembers>
+              <gml:Point gml:id="a_layer.1.2">
+                <gml:pos>49.000000 2.000000</gml:pos>
+              </gml:Point>
+              <gml:Point gml:id="a_layer.1.3">
+                <gml:pos>50.000000 3.000000</gml:pos>
+              </gml:Point>
+            </gml:pointMembers>
+          </gml:MultiPoint>
+        </ms:msGeometry>
+      </ms:a_layer>
+
+Regarding SRS, for WFS 2.0, it will always be reported with the "urn:ogc:def:crs:EPSG::"
+syntax. This should likely also be done for WFS 1.1.0. The "wfs_return_srs_as_urn" can
+be set to "true" or "false" to enable or disable this behaviour. It defaults to "true"
+for WFS 2.0 and to "false" for older versions.
+
+Contrary to the previous versions of WFS, WFS 2.0 in its XML Schema definition
+does not import any GML schema, so it is possible to generate valid GetFeature responses
+with other GML output formats. In particular, GML 2.1.1 and GML 3.1.1 that are
+already handled for WFS 1.0 and 1.1 can be used for output of DescribeFeatureType,
+GetFeature and GetPropertyValue.
+
+Filter Encoding 2.0
+-------------------
+
+The "PropertyName" element is replaced by a "ValueReference" element, with
+equivalent semantic. Likewise, the WFS 1.1 <ogc:GmlObjectId gml:id="XXXX"/>
+operator is replaced by <fes:ResourceId rid="XXXX"/>.
+
+For the sake of compliance testing, rather dummy implementations of
+PropertyIsNull and PropertyIsNil operators have been introduced, as MapServer
+cannot generate nullable or nillable fields.
+
+FE 2.0 MinTemporalFilter conformance class is supported with <fes:During> as
+operator and <gml:TimePeriod> as operand.
+
+.. code-block:: xml
+
+    <fes:During>
+        <fes:ValueReference>timeProperty</fes:ValueReference>
+        <gml:TimePeriod gml:id="TP1">
+            <gml:beginPosition>2005-05-17T00:00:00Z</gml:beginPosition>
+            <gml:endPosition>2005-05-23T00:00:00Z</gml:endPosition>
+        </gml:TimePeriod>
+    </fes:During>
+
+Related to temporal filter, in GML 3.2.1 output, fields of type Date will be
+output as the following in the GML :
+
+.. code-block:: xml
+
+    <ms:aFieldName gml:id="layerName.fid.aFieldName">
+        <gml:timePosition>2004-01-01</gml:timePosition>
+    </ms:aFieldName>
+
+And in the .xsd :
+
+.. code-block:: xml
+
+    <element name="aFieldName" minOccurs="0" type="gml:TimeInstantType"/>
+
+It is not really clear from the spec(s) if this is required, but it seems consistent
+with the operand of <fes:During> (a TimePeriod must match a TimeInstant).
+
+Response paging support
+-----------------------
+
+Response paging was already supported in MapServer for WFS 1.1.0 as an extension.
+This is now a standard (optional) feature of WFS 2.0.
+Paging is triggered by the use of STARTINDEX (beginning at 0 for first index)
+and COUNT (COUNT is the equivalent of WFS 1.1 MAXFEATURES) parameters.
+
+GetFeature operation
+--------------------
+
+TYPENAME is replaced by TYPENAMES. FEATUREID is replaced by RESOURCEID.
+
+The <gml:featureMember> element is replaced by <wfs:member>
+
+.. code-block:: xml
+
+    <wfs:FeatureCollection numberReturned="X" numberMatched="Y" timeStamp="Z">
+        <wfs:member>
+            <ms:myElement gml_id="myElement.1">
+                <ms:firstProperty>foo</ms:firstProperty>
+                ...
+            </ms:myElement>
+        </wfs:member>
+    </wfs:FeatureCollection>
+
+The FeatureCollection element has the "numberReturned" and "numberMatched" mandatory
+attributes.
+
+- numberReturned contains the number of features returned in the document (0 is
+  always returned when RESULTTYPE=hits is specified).
+
+- numberMatched contains the number of features that matches the criterion of the
+  request.
+  If a "wfs_maxfeatures" metadata item is defined in the mapfile (or COUNT is specified
+  in the request), "unknown" will be returned if the number of matching features
+  reaches at least the server-side or client-side limit. This is to avoid performance
+  issues on the server. By defining "wfs_compute_number_matched" "true", the
+  exact number of matching features will always be computed, but this can cause
+  performance issues.
+
+When relevant, MapServer will fill the "next" and "previous" optional attributes
+that contain URL to navigate among the response pages.
+
+The request SERVICE=WFS&VERSION=2.0.0&REQUEST=GetFeature&TYPENAMES=province&COUNT=1&STARTINDEX=2
+will generate the following response :
+
+::
+
+    <wfs:FeatureCollection
+    [...] numberMatched="unknown" numberReturned="1"
+    previous="http://localhost:8080/mapserv.cgi?SERVICE=WFS&amp;VERSION=2.0.0&amp;REQUEST=GetFeature&amp;TYPENAMES=province&amp;COUNT=1&amp;STARTINDEX=1"
+    next="http://localhost:8080/mapserv.cgi?SERVICE=WFS&amp;VERSION=2.0.0&amp;REQUEST=GetFeature&amp;TYPENAMES=province&amp;COUNT=1&amp;STARTINDEX=3">
+    [...]
+    </wfs:FeatureCollection>
+
+In the case of a GetFeature request operating on several typenames,
+the result for each query must be in its own FeatureCollection (§ 11.3.3.5).
+
+.. code-block:: xml
+
+    <wfs:FeatureCollection numberReturned="X" numberMatched="Y" timeStamp="Z">
+    <wfs:member>
+        <wfs:FeatureCollection numberReturned="X1" numberMatched="Y1" timeStamp="Z">
+        <wfs:member>
+            <ms:layer1 gml_id="layer1.1">
+                ...
+            </ms:myElement>
+            ...
+        <wfs:member>
+        </wfs:FeatureCollection>
+    </wfs:member>
+    <wfs:member>
+        <wfs:FeatureCollection numberReturned="X2" numberMatched="Y2" timeStamp="Z">
+        <wfs:member>
+            <ms:layer2 gml_id="layer2.1">
+                ...
+            </ms:myElement>
+            ...
+        <wfs:member>
+        </wfs:FeatureCollection>
+    </wfs:member>
+    </wfs:FeatureCollection>
+
+
+Stored queries
+--------------
+
+Stored queries are queries (<wfs:Query>) stored on the server, potentially with parameters
+whose value can be assigned by the client during a GetFeature request.
+
+At WEB.METADATA level, a "wfs_storedqueries" metadata item can be specified with a
+comma separated list of stored queries ids.
+
+Then for each stored query id, "wfs_{storedqueryid}_inlinedef" must be specified
+with a valid <StoredQueryDescription> as value. As it is not always convenient to
+specify a inline XML content, it is also possible to specify
+"wfs_{storedqueryid}_filedef" whose value is a filename that contains
+the <StoredQueryDescription> XML content.
+
+.. code-block:: mapfile
+
+    "wfs_storedqueries"           "bboxstoredquery"
+    "wfs_bboxstoredquery_filedef" "/data/bboxstoredquery.xml"
+
+with /data/bboxstoredquery.xml containing for example :
+
+.. code-block:: xml
+
+    <StoredQueryDescription xmlns:xs="http://www.w3.org/2001/XMLSchema"
+                            xmlns:gml="http://www.opengis.net/gml/3.2"
+                            id="bboxstoredquery">
+        <Title>query title</Title>
+        <Abstract>query abstract</Abstract>
+        <Parameter name="longmin" type="xs:double"/>
+        <Parameter name="latmin" type="xs:double"/>
+        <Parameter name="longmax" type="xs:double"/>
+        <Parameter name="latmax" type="xs:double"/>
+        <QueryExpressionText isPrivate="false" 
+                            language="urn:ogc:def:queryLanguage:OGC-WFS::WFS_QueryExpression"
+                            xmlns:ms="http://mapserver.gis.umn.edu/mapserver"
+                            returnFeatureTypes="ms:firstLayer ms:secondLayer">
+            <Query xmlns:fes="http://www.opengis.net/fes/2.0" typeNames="ms:firstLayer">
+                <fes:Filter>
+                    <fes:BBOX>
+                        <gml:Envelope srsName="urn:ogc:def:crs:EPSG::4326">
+                            <gml:lowerCorner>${latmin} ${longmin}</gml:lowerCorner>
+                            <gml:upperCorner>${latmax} ${longmax}</gml:upperCorner>
+                        </gml:Envelope>
+                    </fes:BBOX>
+                </fes:Filter>
+            </Query>
+            <Query xmlns:fes="http://www.opengis.net/fes/2.0" typeNames="ms:secondLayer">
+                <fes:Filter>
+                    <fes:BBOX>
+                        <gml:Envelope srsName="urn:ogc:def:crs:EPSG::4326">
+                            <gml:lowerCorner>${latmin} ${longmin}</gml:lowerCorner>
+                            <gml:upperCorner>${latmax} ${longmax}</gml:upperCorner>
+                        </gml:Envelope>
+                    </fes:BBOX>
+                </fes:Filter>
+            </Query>
+        </QueryExpressionText>
+    </StoredQueryDescription>
+
+A corresponding valid GetFeature request can be :
+
+REQUEST=GetFeature&STOREDQUERY_ID=bboxstoredquery&LONGMIN=2&LATMIN=49&LONGMAX=3&LATMAX=50
+
+
+Predefined urn:ogc:def:query:OGC-WFS::GetFeatureById stored query
+.................................................................
+
+WFS 2.0 defines a mandatory "urn:ogc:def:query:OGC-WFS::GetFeatureById" stored query.
+This query accept a ID parameter whose value must be a feature id.
+
+A valid request is :
+REQUEST=GetFeature&STOREDQUERY_ID=urn:ogc:def:query:OGC-WFS::GetFeatureById&ID=mylayer.3
+
+The definition hardcoded in MapServer is :
+
+.. code-block:: xml
+
+    <StoredQueryDescription id="urn:ogc:def:query:OGC-WFS::GetFeatureById">
+        <Title>Get feature by identifier</Title>
+        <Abstract>Returns the single feature whose value is equal to the specified value of the ID argument</Abstract>
+        <Parameter name="ID" xmlns:xs="http://www.w3.org/2001/XMLSchema" type="xs:string"/>
+        <QueryExpressionText isPrivate="true"
+                            language="urn:ogc:def:queryLanguage:OGC-WFS::WFS_QueryExpression"
+                            returnFeatureTypes="">
+            <Query xmlns:fes="http://www.opengis.net/fes/2.0" typeNames="?">
+                <fes:Filter>
+                    <fes:ResourceId rid="${ID}"/>
+                </fes:Filter>
+            </Query>
+        </QueryExpressionText>
+    </StoredQueryDescription>
+
+Comparing to a more standard stored query description, there are 2 oddities :
+The value of the "returnFeatureTypes" attribute is replaced at runtime by
+the name of the valid WFS layers of the mapfile (when issuing the response document to DescribeStoredQueries
+request). And the value of the typeNames attribute is deduced at runtime from the value
+of the passed ID parameter.
+
+It is possible to override this hardcoded definition by a custom one (for example
+to provide alternate values for other languages) by defining
+"wfs_urn:ogc:def:query:OGC-WFS::GetFeatureById_inlinedef" or "wfs_urn:ogc:def:query:OGC-WFS::GetFeatureById_filedef".
+The value of <QueryExpressionText> attributes and child elements must however be
+strictly identical to the hard-coded definition for correct execution.
+
+A GetFeature using urn:ogc:def:query:OGC-WFS::GetFeatureById seems to be identical
+to a GetFeature with a RESOURCEID parameter, but there is a difference. GetFeatureById
+returns the feature directly as the response :
+
+.. code-block:: xml
+
+    <?xml version='1.0' encoding="UTF-8" ?>
+    <ms:province gml:id="province.977" xmlns:ms="http://mapserver.gis.umn.edu/mapserver"
+                xmlns:gml="http://www.opengis.net/gml/3.2"
+                xmlns:wfs="http://www.opengis.net/wfs/2.0"
+                xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                xsi:schemaLocation="http://mapserver.gis.umn.edu/mapserver http://localhost/path/to/wfs_simple?myparam=something&amp;SERVICE=WFS&amp;VERSION=2.0.0&amp;REQUEST=DescribeFeatureType&amp;TYPENAME=province&amp;OUTPUTFORMAT=application%2Fgml%2Bxml%3B%20version%3D3.2 http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd http://www.opengis.net/gml/3.2 http://schemas.opengis.net/gml/3.2.1/gml.xsd">
+    <gml:boundedBy>
+        <gml:Envelope srsName="urn:ogc:def:crs:EPSG::4326">
+        <gml:lowerCorner>47.76789 -61.51051</gml:lowerCorner>
+        <gml:upperCorner>47.79644 -61.45764</gml:upperCorner>
+        </gml:Envelope>
+    </gml:boundedBy>
+    <ms:msGeometry>
+        <gml:Polygon gml:id="province.977.1" srsName="urn:ogc:def:crs:EPSG::4326">
+        <gml:exterior>
+            <gml:LinearRing>
+            <gml:posList srsDimension="2">47.77424 -61.51051 47.78860 -61.50894 47.79644 -61.49272 47.78743 -61.45764 47.76789 -61.45998 47.76961 -61.48350 47.77424 -61.51051 </gml:posList>
+            </gml:LinearRing>
+        </gml:exterior>
+        </gml:Polygon>
+    </ms:msGeometry>
+    </ms:province>
+
+ListStoredQueries
+.................
+
+The ListStoredQueries operation has no argument and returned a simplified
+description of all stored queries (title and return feature types).
+
+.. code-block:: xml
+
+    <?xml version="1.0" encoding="UTF-8"?>
+    <wfs:ListStoredQueriesResponse xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.opengis.net/wfs/2.0" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd">
+    <StoredQuery id="urn:ogc:def:query:OGC-WFS::GetFeatureById">
+        <Title>Get feature by identifier</Title>
+        <ReturnFeatureType xmlns:ms="http://mapserver.gis.umn.edu/mapserver">ms:province</ReturnFeatureType>
+        <ReturnFeatureType xmlns:ms="http://mapserver.gis.umn.edu/mapserver">ms:point</ReturnFeatureType>
+        <ReturnFeatureType xmlns:ms="http://mapserver.gis.umn.edu/mapserver">ms:multipoint</ReturnFeatureType>
+    </StoredQuery>
+    <StoredQuery id="myquery">
+        <Title>query title</Title>
+        <ReturnFeatureType xmlns:ms="http://mapserver.gis.umn.edu/mapserver">ms:point</ReturnFeatureType>
+    </StoredQuery>
+    </wfs:ListStoredQueriesResponse>
+
+DescribeStoredQueries
+.....................
+
+The DescribeStoredQueries operation accept an optional STOREDQUERY_ID parameter
+that list the ids of stored queries. If not specified, all stored queries will
+be returned with their full description.
+
+MapServer will honour the value of the isPrivate attribute of <QueryExpressionText>.
+If defined to "true", the <Query> nodes will not be returned in the response to
+a DescribeStoredQueries request.
+
+.. code-block:: xml
+
+    <wfs:DescribeStoredQueriesResponse xmlns:wfs="http://www.opengis.net/wfs/2.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns="http://www.opengis.net/wfs/2.0" xsi:schemaLocation="http://www.opengis.net/wfs/2.0 http://schemas.opengis.net/wfs/2.0/wfs.xsd">
+    <StoredQueryDescription id="urn:ogc:def:query:OGC-WFS::GetFeatureById">
+        <Title>Get feature by identifier</Title>
+        <Abstract>Returns the single feature whose value is equal to the specified value of the ID argument</Abstract>
+        <Parameter xmlns:xs="http://www.w3.org/2001/XMLSchema" name="ID" type="xs:string"/>
+        <QueryExpressionText xmlns:ms="http://mapserver.gis.umn.edu/mapserver" isPrivate="true" language="urn:ogc:def:queryLanguage:OGC-WFS::WFS_QueryExpression" returnFeatureTypes="ms:province ms:point"/>
+    </StoredQueryDescription>
+    <StoredQueryDescription xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:gml="http://www.opengis.net/gml/3.2" xmlns:fes="http://www.opengis.net/fes/2.0" id="myquery">
+        <Title>query title</Title>
+        <Abstract>query abstract</Abstract>
+        <Parameter name="longmin" type="xs:double"/>
+        <Parameter name="latmin" type="xs:double"/>
+        <Parameter name="longmax" type="xs:double"/>
+        <Parameter name="latmax" type="xs:double"/>
+        <QueryExpressionText xmlns:ms="http://mapserver.gis.umn.edu/mapserver" isPrivate="false" language="urn:ogc:def:queryLanguage:OGC-WFS::WFS_QueryExpression" returnFeatureTypes="ms:point">
+            <Query xmlns:fes="http://www.opengis.net/fes/2.0" typeNames="ms:point">
+                <fes:Filter>
+                    <fes:BBOX>
+                        <fes:ValueReference>msGeometry</fes:ValueReference>
+                        <gml:Envelope srsName="urn:ogc:def:crs:EPSG::4326">
+                        <gml:lowerCorner>${latmin} ${longmin}</gml:lowerCorner>
+                        <gml:upperCorner>${latmax} ${longmax}</gml:upperCorner>
+                        </gml:Envelope>
+                    </fes:BBOX>
+                </fes:Filter>
+            </Query>
+        </QueryExpressionText>
+    </StoredQueryDescription>
+    </wfs:DescribeStoredQueriesResponse>
+
+
+GetPropertyValue operation
+--------------------------
+
+REQUEST=GetPropertyValue&TYPENAMES=layername&VALUEREFERENCE=propertyname.
+
+The response document has a <ValueCollection> top element and includes only
+the asked VALUEREFRENCE element as a child of <wfs:member>
+
+.. code-block:: xml
+
+    <wfs:ValueCollection>
+        <wfs:member>
+            <ms:aProperty>foo</ms:aProperty>
+        </wfs:member>
+    </wfs:ValueCollection>
+
+Most parameters of GetFeature operation,
+such as FILTER, RESOURCEID, BBOX, STOREDQUERY_ID or paging,
+can also be used for a GetPropertyValue operation, so most of the logic of
+msWFSGetFeature() has been refactored so that it can be also reused by msWFSGetPropertyValue().
+
+Sorting
+-------
+
+Sorting was already a capability that should have been offered in WFS 1.1 but
+was not yet supported. We now support sorting with OGR and PostGIS connections.
+
+Other providers relying on RDBMS (Oracle, MSSpatial, ...) that support the
+"ORDER BY" SQL clause could be upgraded to support sorting, but this is not
+covered by this RFC.
+
+MapServer shapefile provider does not support sorting. If this needed, you must
+use the OGR Shapefile provider.
+
+The support for sorting relies on the following additions in mapserver.h and
+mapfile.c
+
+.. code-block:: c
+
+  typedef enum {
+      SORT_ASC,
+      SORT_DESC
+  } sortOrderEnum;
+
+  typedef struct {
+      char* item;
+      sortOrderEnum sortOrder;
+  } sortByProperties;
+
+  typedef struct {
+      int nProperties;
+      sortByProperties* properties;
+  } sortByClause;
+
+  struct layerObj {
+    [...]
+    sortByClause sortBy;
+  };
+
+  int msLayerSupportsSorting(layerObj *layer);
+  void msLayerSetSort(layerObj *layer, const sortByClause* sortBy);
+  char* msLayerBuildSQLOrderBy(layerObj *layer);
+
+msLayerSupportsSorting() must be updated if a new provider supports sorting.
+msLayerSetSort() is called by the WFS code. And msLayerBuildSQLOrderBy() can
+be called by providers that implement sorting as a "ORDER BY" SQL clause, which
+is the case for PostGIS and OGR.
+
+KVP and XML syntax
+------------------
+
+Both Key Value Pair (as GET, or POST) and XML syntax (as POST) are
+handled for all supported operations.
+
+Optional / mandatory GML items
+------------------------------
+
+Tickets https://github.com/MapServer/MapServer/issues/3563 and
+https://github.com/MapServer/MapServer/issues/3319 raise an issue about how
+mandatory/optional GML items are handled. Up to now, all advertized properties
+in the DescribeFeatureType response documents were mandatory (since minOccurs
+was not specified). But when issuing a GetFeature with PROPERTYNAME, only
+the specified properties were returned in the GetFeature response document, which
+results in a document not compliant with the GML application schema.
+
+The solution for this is to introduce a "gml_optional_items" element in the LAYER
+metadata. By default,
+now all items will be considered as optional (minOccurs="0" in the GML application
+schema). If "gml_optional_items" is specified, only the listed elements will be
+optional and other included items will be mandatory. This change is the most backward
+compatible solution for the current behaviour : only the output of DescribeFeatureType
+will be changed (minOccurs="0"), but GetFeature with PROPERTYNAME will still return
+only the mentioned properties.
+If there are more mandatory items, it might be more convenient to specify
+"gml_mandatory_items".
+
+Default behaviour with this implementation :
+
+.. code-block:: mapfile
+
+    "gml_optional_items" "all"
+
+All items optional except the ones mentioned :
+
+.. code-block:: mapfile
+
+    "gml_mandatory_items" "a_required_item,another_one"
+
+All items mandatory :
+
+.. code-block:: mapfile
+
+    "gml_mandatory_items" "all"
+
+All items mandatory except the ones mentioned :
+
+.. code-block:: mapfile
+
+    "gml_optional_items"  "an_optional_item,another_one"
+
+In addition to this, again for backward compatibility, when a GetFeature request
+without explicit PROPERTYNAME is processed, we will return all items,
+either optional or mandatory. This behaviour can now be amended by specifying
+"gml_default_items" to specify which items (among the optional ones) must be
+returned.
+
+An example combining all the related metadata items :
+
+.. code-block:: mapfile
+
+    "gml_include_items"   "all"
+    "gml_exclude_items"   "REG_CODE"
+    "gml_optional_items"  "all"
+    "gml_mandatory_items" "NAME"
+    "gml_default_items"   "NAME_E,NAME_F"
+
+
+Inspire Download Services
+-------------------------
+
+`INSPIRE Technical Guidance Download Services v3.1`_ can be implemented with
+Atom feeds (not supported by this RFC) and/or WFS 2.0. So we will implement
+Inspire D.S. conformance classes 2 (Pre-defined WFS) and 3 (Direct WFS).
+The mandatory conformance class "4: Quality of Service" must be addressed by other means than
+the WFS 2.0 implementation itself.
+
+Regarding mapfile configuration, the same metadata items as in "Provision of INSPIRE specific metadata"
+of :ref:`inspire_view_service` must be provided (in the WFS or OWS namespaces).
+In addition to them, for Download Services, the mandatory "wfs_inspire_dsid_code" metadata
+item must be set with a Spatial Data Set Identifier (or a list of identifiers
+separated by commas). The semantics attached to this parameter is described
+at paragraph 4.1.3 of the technical guidance. If needed, the namespace linked to
+the dataset identifier can be specified with "wfs_inspire_dsid_ns".
+
+Those metadata items are used to generate a <inspire_dls:ExtendedCapabilities> element
+in the <ows:ExtendedCapabilities> element of the GetCapabilities response document.
+
+INSPIRE Download Services also include support for several languages.
+The definition of which languages are supported is done with the "wfs_languages" metadata
+keyword similarly to View Services.
+A "LANGUAGE=xxx" extra parameter in WFS KVP requests will then have
+effect on the GetCapabilities response documents where the information under the
+<ows:ServiceProvider> element as well as <Title>, <Abstract> and  <ows:Keywords>
+in the <FeatureTypeList> section will be translated into the request language, provided
+that the translated version is provided in the mapfile. As an extension of
+the recommandations of the technical guidance, the values of the DATA and CONNECTION
+keywords can contain a "%language%" string that will be replaced by the requested
+language.
+
+Scenario 1 - INSPIRE related fields using referenced external service metadata
+..............................................................................
+
+.. code-block:: mapfile
+
+    "wfs_inspire_capabilities" "url"
+
+    "wfs_inspire_metadataurl_href" "http://inspire.service/metadata"
+    "wfs_inspire_metadataurl_format" "application/vnd.ogc.csw.capabilities.response_xml"
+    "wfs_inspire_dsid_code" "mycode"
+
+    "wfs_languages" "eng"                                                 #first default, values according ISO 639-2/B
+
+generates:
+
+.. code-block:: xml
+
+    <ows:ExtendedCapabilities>
+      <inspire_dls:ExtendedCapabilities>
+        <inspire_common:MetadataUrl xsi:type="inspire_common:resourceLocatorType">
+          <inspire_common:URL>http://inspire.service/metadata</inspire_common:URL>
+          <inspire_common:MediaType>application/vnd.ogc.csw.capabilities.response_xml</inspire_common:MediaType>
+        </inspire_common:MetadataUrl>
+        <inspire_common:SupportedLanguages>
+          <inspire_common:DefaultLanguage>
+            <inspire_common:Language>eng</inspire_common:Language>
+          </inspire_common:DefaultLanguage>
+        </inspire_common:SupportedLanguages>
+        <inspire_common:ResponseLanguage>
+          <inspire_common:Language>eng</inspire_common:Language>
+        </inspire_common:ResponseLanguage>
+        <inspire_dls:SpatialDataSetIdentifier>
+          <inspire_common:Code>mycode</inspire_common:Code>
+        </inspire_dls:SpatialDataSetIdentifier>
+      </inspire_dls:ExtendedCapabilities>
+    </ows:ExtendedCapabilities>
+
+
+Scenario 2 - INSPIRE related fields using embedded service metadata
+...................................................................
+
+.. code-block:: mapfile
+
+    "wfs_inspire_capabilities" "embed"
+
+    "wfs_languages" "eng,fre,ger"                                                 #first default, values according ISO 639-2/B
+    "wfs_inspire_temporal_reference" "2011-09-19"                                 #date of last revision, value according YYYY-MM-DD
+    "wfs_inspire_mpoc_name" "mympocname"                                          #point of contact
+    "wfs_inspire_mpoc_email" "mympoc@e.mail"                                      #point of contact
+    "wfs_inspire_metadatadate" "2011-09-19"
+    "wfs_inspire_resourcelocator" "http://myinspireresource"                      #URL for ResourceLocator
+    "wfs_inspire_keyword" "infoMapAccessService"                                  #value according "classification of spatial data services"
+    "wfs_inspire_dsid_code" "mycode,mycode2,mycode3"
+    "wfs_inspire_dsid_ns" "http://mycode,,http://mycode3"
+
+generates:
+
+.. code-block:: xml
+
+    <ows:ExtendedCapabilities>
+      <inspire_dls:ExtendedCapabilities>
+        <inspire_common:ResourceLocator>
+          <inspire_common:URL>http://myinspireresource</inspire_common:URL>
+        </inspire_common:ResourceLocator>
+        <inspire_common:ResourceType>service</inspire_common:ResourceType>
+        <inspire_common:TemporalReference>
+          <inspire_common:DateOfLastRevision>2011-09-19</inspire_common:DateOfLastRevision>
+        </inspire_common:TemporalReference>
+        <inspire_common:Conformity>
+          <inspire_common:Specification>
+            <inspire_common:Title>-</inspire_common:Title>
+            <inspire_common:DateOfLastRevision>2011-09-19</inspire_common:DateOfLastRevision>
+          </inspire_common:Specification>
+          <inspire_common:Degree>notEvaluated</inspire_common:Degree>
+        </inspire_common:Conformity>
+        <inspire_common:MetadataPointOfContact>
+          <inspire_common:OrganisationName>mympocname</inspire_common:OrganisationName>
+          <inspire_common:EmailAddress>mympoc@e.mail</inspire_common:EmailAddress>
+        </inspire_common:MetadataPointOfContact>
+        <inspire_common:MetadataDate>2011-09-19</inspire_common:MetadataDate>
+        <inspire_common:SpatialDataServiceType>download</inspire_common:SpatialDataServiceType>
+        <inspire_common:MandatoryKeyword xsi:type="inspire_common:classificationOfSpatialDataService">
+          <inspire_common:KeywordValue>infoMapAccessService</inspire_common:KeywordValue>
+        </inspire_common:MandatoryKeyword>
+        <inspire_common:SupportedLanguages>
+          <inspire_common:DefaultLanguage>
+            <inspire_common:Language>eng</inspire_common:Language>
+          </inspire_common:DefaultLanguage>
+          <inspire_common:SupportedLanguage>
+            <inspire_common:Language>fre</inspire_common:Language>
+          </inspire_common:SupportedLanguage>
+          <inspire_common:SupportedLanguage>
+            <inspire_common:Language>ger</inspire_common:Language>
+          </inspire_common:SupportedLanguage>
+        </inspire_common:SupportedLanguages>
+        <inspire_common:ResponseLanguage>
+          <inspire_common:Language>eng</inspire_common:Language>
+        </inspire_common:ResponseLanguage>
+        <inspire_dls:SpatialDataSetIdentifier>
+          <inspire_common:Code>mycode</inspire_common:Code>
+          <inspire_common:Namespace>http://mycode</inspire_common:Namespace>
+        </inspire_dls:SpatialDataSetIdentifier>
+        <inspire_dls:SpatialDataSetIdentifier>
+          <inspire_common:Code>mycode2</inspire_common:Code>
+        </inspire_dls:SpatialDataSetIdentifier>
+        <inspire_dls:SpatialDataSetIdentifier>
+          <inspire_common:Code>mycode3</inspire_common:Code>
+          <inspire_common:Namespace>http://mycode3</inspire_common:Namespace>
+        </inspire_dls:SpatialDataSetIdentifier>
+      </inspire_dls:ExtendedCapabilities>
+    </ows:ExtendedCapabilities>
+
+Mapfile impacts
+---------------
+
+A valid WFS 1.1 configuration can be used without modification for WFS 2.0.
+
+INSPIRE Download Services support requires to specify the metadata items
+specified in an above paragraph.
+
+3. Implementation Details
+-------------------------
+
+3.1 Files affected
+..................
+
+::
+
+    CMakeLists.txt : add mapwfs20.c, fix a few dependency issues
+    mapfile.c : refactoring of msLoadProjectionString(), initialization/free of
+                layer->sortBy
+    mapgml.c : GML 3.2.1 and WFS 2.0 GetFeature output specificities. Part of handling
+               of "gml_optional_items", "gml_mandatory_items" and "gml_default_items"
+    mapgml.h : move some #define into another include files
+    mapio.h/.c : add msIO_pushStdoutToBufferAndGetOldContext() and
+                 msIO_restoreOldStdoutContext(), so that we can reuse without any change
+                 the generation of Inspire View Services extended metadata in a libxml2 DOM document
+    maplayer.c : new sorting functions
+    mapogcfilter.h/.c : Filter Encoding 2.0 support, temporal filtering, simplification
+                     of existing code
+    mapogcfiltercommon.c : temporal filtering
+    mapogcsld.c: adaptation for a renaming of a function called
+    mapogcsos.c: adaptations for a renaming of a function called and change of prototypes
+    mapogr.cpp: support for a filter string that combine both a SQL where clause that
+                can be passed to OGR, and a time filtering part that is processed on
+                MapServer side; support for sorting
+    mapows.c : fixes for a few memory leaks; wfs_cite_wfs2 hack; other misc minor changes;
+               add msOWSGetInspireSchemasLocation()
+    mapows.h : extend wfsParamsObj and gmlItemObj structures; other misc changes
+    mapowscommon.c : support for translation of ServiceIdentification and
+                     ServiceProvider sections; support for validation of WFS 2.0
+                     XML post requests
+    mapowscommon.h : #define for namespaces, URIs
+    mappostgis.c : support for sorting
+    mapproject.h/.c : hack for reprojection worldwide long/lat BBOX to projected SRS;
+                   add msIsAxisInvertedProj() and msAxisSwapShape()
+    mapquery.c : use only_cache_result_count flag if "wfs_compute_number_matched" "true"
+                 is specified; fix a bug in msQueryByRect when reprojection is involved;
+    mapserver.h : prototype and structure changes for sorting support; other misc changes
+    maptime.h/.c : const sanitization
+    maputil.c : add msMapSetLanguageSpecificConnection()
+    mapwcs11.c : adaptations for change of prototypes
+    mapwcs20.c : adaptations for change of prototypes
+    mapwfs.c : lots of changes !
+    mapwfs11.c : a few changes to make msWFSDumpLayer11() usable by WFS 2.0 too
+    mapwfs20.c : new file with the code that only applies to WFS 2.0 : GetCapabilities,
+                 stored queries management.
+    mapwms.c : adaptations for change of prototypes 
+
+3.2 Backwards Compatibility Issues
+...................................
+
+The only potential compatibility issue foreseen is related to the GetCapabilities
+request. Without any explicit version mentioned in the request, the WFS
+implementation will serve a GetCapabilities response document that conforms
+to the latest version of WFS it implements (as recommended by OWS 1.1), that
+is to say 2.0 with this new development. Which could cause confusion to
+WFS clients not ready to deal with it (OWS 1.1 recommand that clients specify in
+the ACCEPTVERSIONS parameter the list of versions they can deal with.)
+The solution for this is to define the `wfs_getcapabilities_version` keyword in
+the WEB.METADATA to "1.0" or "1.1".
+
+3.3 MapScript changes
+.................................
+
+None
+
+3.4 Performance implications
+.................................
+
+The default configuration should exhibit the same performance as WFS 1.1.0.
+
+Sorting might be slow on big OGR datasources that are not RDBMS drivers, such as
+shapefile, since a full scan of the features of the layer is done.
+
+3.5 Related bug fixes
+......................
+
+- https://github.com/MapServer/MapServer/issues/1583 : [WFS-Server] enable temporal support on filters
+- https://github.com/MapServer/MapServer/issues/3563 : WFS property name should respect gml_include/exclude_items
+- https://github.com/MapServer/MapServer/issues/3319 : WFS 1.1 property names, mandatory, optional attributes
+
+3.6 Restrictions
+................
+
+The following features are not covered by this RFC :
+
+* Standard, spatial or temporal joins in GetFeature operation. All are optional
+  conformance classes of `Filter Encoding 2.0`
+* A very small subset of XPath 2.0 is supported (even if we shamelessly advertize
+  ImplementsMinimumXPath to make CITE tests happy). This is limited to property
+  names, "groupname/propertyname" syntax when using gml_group, as well as @gml:id for
+  the VALUEREFERENCE parameter of GetPropertyValue.
+* Locking WFS
+* Transactional WFS
+* Feature versions
+* Inheritance / schema-element() XPath function
+* SOAP
+* Namespaces: the NAMESPACE KVP parameter is ignored. namespace prefixes in
+  layer and property names are just removed.
+* the ALIAS parameter in a GetFeature request
+* the various RESOLVExxxx parameters
+* upgrade of the MapServer WFS client for WFS 2.0 protocol
+
+3.7 Documentation
+.................
+
+The :ref:`wfs_server` documentation page will be updated.
+
+A new page will be created for Inspire Download Services with references
+to :ref:`inspire_view_service`.
+
+3.8 Tests
+.........
+
+15 new mapfiles, with more than 200 test request, have been added to test the
+various aspects of the implementation.
+
+No regression has been observed on the existing WFS 1.0 or 1.1 tests.
+
+The XML output of the expected documents has been validated against the WFS or
+the generated GML application schemas with the new
+msautotest/pymod/xmlvalidate.py script described in
+https://lists.osgeo.org/pipermail/mapserver-dev/2013-October/013708.html
+
+4. Bug ID
+---------
+
+- Code pull request: `pull4815`_
+- msautotest pull request: `pull25`_
+
+5. OCG compliance tests
+-----------------------
+
+The OGC Compliance and Interoperability Testing Initiative (CITE) provides
+automatic tests to validate the implementation. As of today, the tests for WFS 2.0
+are in beta : https://cite.opengeospatial.org/teamengine/
+
+The implementation passes all the tests for the following conformance levels (on
+CITE WFS 2.0 r12 beta):
+- All GML application schemas (7/7)
+- GML application schemas defining features and feature collections (2/2)
+- Simple WFS (22/22)
+- Basic WFS  (44/44)
+
+The mapfiles used on the CITE engine are `wfs_200_cite.map`_ (Shapefile with OGR
+connection, require GDAL >= 1.10) and `wfs_200_cite_postgis.map`_.
+
+Note: one of the CITE test consists in sending a REQUEST=GetCapabilities GET request
+without any SERVICE. As MapServer implements different OGC services in different
+versions, it is impossible to serve a response that please all specifications
+together. By default, MapServer sends an HTML error that doesn't respect WFS 2.0.
+In order to get CITE compliance, consequently, one needs to define a "wfs_cite_wfs2"
+WEB metadata that will return the right exception.
+
+6. Implementation resources
+---------------------------
+
+The implementation will be done by Even Rouault with funding from `BRGM`_
+(Bureau de Recherches Géologiques et Minières).
+
+7. Reference documents
+----------------------
+
+The following documents apply for this development:
+
+- `INSPIRE Technical Guidance Download Services v3.1`_
+- `WFS 2.0`_: ISO 19142:2010 Geographic information -- Web Feature Service, ISO 19142
+- `Filter Encoding 2.0`_: ISO 19143:2010 Geographic information -- Filter encoding, ISO 19143
+- `GML 3.2.1`_: OGC 10-129r1.1 OpenGIS Geography Markup Language (GML) Encoding Standard
+- `OWS 1.1.0`_:OGC 06-121r3 OpenGIS Web Service Common Implementation Specification
+
+8. Voting history
+-----------------
+
+TBD
+
+
+.. #### rST Link Section ####
+
+.. _`pull4815`: https://github.com/MapServer/MapServer/pull/4815
+.. _`pull25`: https://github.com/MapServer/msautotest/pull/25
+.. _`BRGM`: http://www.brgm.eu/
+.. _`INSPIRE Technical Guidance Download Services v3.1`: http://inspire.jrc.ec.europa.eu/documents/Network_Services/Technical_Guidance_Download_Services_v3.1.pdf
+.. _`WFS 2.0`: https://portal.ogc.org/files/?artifact_id=39967
+.. _`Filter Encoding 2.0`: https://portal.ogc.org/files/?artifact_id=39968
+.. _`GML 3.2.1`: https://portal.ogc.org/files/?artifact_id=20509
+.. _`OWS 1.1.0`: https://portal.ogc.org/files/?artifact_id=20040
+.. _`wfs_200_cite.map`: https://github.com/rouault/msautotest/blob/wfs2/wxs/wfs_200_cite.map
+.. _`wfs_200_cite_postgis.map`: https://github.com/rouault/msautotest/blob/wfs2/wxs/wfs_200_cite_postgis.map

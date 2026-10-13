@@ -1,0 +1,189 @@
+.. _mapcache_seed:
+
+*****************************************************************************
+Seeder
+*****************************************************************************
+
+:Author: Thomas Bonfort
+:Contact: tbonfort at terriscope.fr
+:Author: Mathieu Coudert
+:Contact: mathieu.coudert at gmail.com
+
+Mod-mapcache ships with an advanced seeding tool, whose main features are:
+ * configurable number of seeding threads, to speed up the rendering
+ * ability to reseed tiles older than a certain timestamp
+ * ability to seed tiles given a shapefile/OGR datasource
+
+Usage
+-----------------------------------------------------------------------------
+
+The seeding utility is named mapcache_seed, and is located under your install
+directory (default is /usr/local/bin).
+
+
+Commandline Options
+================================================================================
+
+Options are available in short and long versions (e.g. -c or --config).
+
+**-b | --non-interactive**: *(added in MapCache 1.12.0)* print progress messages 
+on new lines.
+
+**-c | --config [file]**: path to the mapcache.xml configuration file that
+contains the tilesets that need to be seeded.
+
+**-C | --cache [override]**: Override cache used by selected tileset 
+(useful for selectively seeding fallback/multitier caches).
+
+**-D | --dimension "DIMENSION=VALUE"**: used to specify which dimension to use
+if the tileset supports dimensions. Can be used multiple times to set multiple
+dimensions, e.g. -D "DIM1=VAL1" -D "DIM2=VAL2".
+
+**-e | --extent minx,miny,maxx,maxy**: bounding box of the area to seed.
+
+**-f | --force**: force recreation of existing tiles.
+
+**-g | --grid [grid]**: name of the grid that must be seeded (the selected
+tileset must reference the given grid).
+
+**-h | --help**: show help.
+
+**-H | --header "HEADER=VALUE"**: *(added in MapCache 1.12.0)* used to specify a 
+key-value pair to set an HTTP header in a forwarding rule or HTTP request. Can be 
+used multiple times to set multiple headers, e.g. *-H "CUSTOM-HEADER1=VAL1" 
+-H "CUSTOM-HEADER2=VAL2".*
+
+**-i | --iteration-mode**: either "*drill-down*" or "*scanline*".
+Default is to use drill-down for g, WGS84 and GoogleMapsCompatible grids, and
+scanline for others. Use this flag to override. (scanline was formerly 
+referred to as "level-by-level")
+
+**-L | --log-failed [file]**: Log failed tiles to file.
+
+**-m | --mode**: the mode to use the seeder: "*seed*", "*delete*" or
+"*transfer*".
+Default is seed (*mode: seed*).
+
+**-M | --metasize**: override metatile size while seeding, e.g. 8,8.
+
+**-n | --nthreads**: number of parallel threads that should be used to request
+tiles from the WMS source. The default is 1, but can be set higher if the WMS
+server can withstand parallel requests. (As a rule of thumb, the value chosen
+here should never be much higher than the number of CPUs on the WMS server.)
+
+.. note:: This option is incompatible with the **-p | --nprocesses** option.
+
+**-o | --older [timestamp|now]**: only seed tiles that are older than the given
+value. The value can either be the string "*now*", or a date formatted like
+year/month/day hour:minute, e.g. "2011/01/31 20:45".
+
+.. note:: A full timestamp should be quoted.
+
+**-p | --nprocesses**: number of parallel processes that should be used to
+request tiles from the WMS source.
+
+.. note::
+
+   This option is incompatible with the **-n | --nthreads** option.
+
+.. warning::
+
+   When working with multiple processes (-p switch) and SQLite cache
+   backends, some errors may appear under high concurrency when writing to the
+   SQLite database (error: SQL logic error or missing database (1)).
+   Upgrading to SQLite >= 3.7.15 seems to resolve this issue.
+   
+**-P | --percent [number]**: Percent of failed requests allowed from the last 1000 
+before we abort (default: 1%, set to 0 to abort on first error).
+
+**-q | --quiet**: don't print progress messages to the standard output.
+
+**-R | --retry-failed [file]**: Retry failed requests logged to file by --log-failed.
+
+**-t | --tileset [tileset]**: name of the tileset that must be seeded.
+
+**-v | --verbose**: print verbose debugging info (if compiled in).
+
+**-x | --transfer**: the tileset to transfer when seeder is run in transfer
+mode.
+
+**-z | --zoom minzoom,maxzoom**: start and end zoom levels that must be seeded.
+
+
+Optional Commandline Options When Using OGR/GEOS
+================================================================================
+
+At compile time, if OGR and GEOS are found on the system, the seeder tool will
+support additional options to seed only the tiles that cover an arbitrary
+geographical area. *Important:* Note that, for the time being, the OGR
+datasource should be in the same projection as the grid you are seeding, as
+there is no automatic reprojection from the datasource projection to the grid
+projection.
+
+**-d | --ogr-datasource [ogr_datasource]**: OGR connection to the spatial source.
+Consult the OGR documentation for all that is supported. In the simplest case
+(e.g. a Shapefile), this is just the full filename of the shapefile.
+
+**-l | --ogr-layer [ogr_layer]**: for datasources that contain multiple layers
+(e.g. PostGIS, with multiple tables), determines which layer will be used.
+
+**-s | --ogr-sql [ogr_sql]**: OGR SQL expression that can be applied (see `OGR SQL`_).
+
+**-w | --ogr-where [ogr_where]**: SQL "where" expression to filter out returned values.
+This would typically be used to select only the geometry of a given country if the
+datasource contains all the world contours.
+
+Important Note
+================================================================================
+
+The seeding utility must be run under the same user account as the
+user running the webserver. This is required so the permissions on the tiles
+created by the seeder are accessible by the webserver, and conversely so the
+seeder has the rights to write files to directories created by the webserver.
+
+
+A sample seeding session goes like this:
+
+::
+
+  [user@host]$ sudo www-data
+  [www-data@host]$ /path/to/mapcache/src/mapcache_seed -c /path/to/www/conf/mapcache.xml [[options]]
+  [www-data@host]$ logout
+  [user@host]$
+
+
+Examples
+================================================================================
+
+Seed the "osm" tileset with the "g" (Google / Web Mercator) grid:
+::
+
+   ./src/mapcache_seed -c mapcache.xml -t osm -g g
+
+Seed levels 0 through 12:
+::
+
+   ./src/mapcache_seed -c mapcache.xml -t osm -g g -z 0,12
+
+Given a shapefile that contains the world country contours, seed only the
+areas that are covered by land (i.e. skip the oceans). Also, use 4 request
+threads in parallel:
+::
+
+   ./src/mapcache_seed -c mapcache.xml -t osm -g g -z 0,12 -n 4 -d /path/to/seed.shp
+
+Same as beforehand, but only seed the USA (notice the quote usage, required to
+create valid SQL with a single-quoted 'US':
+::
+
+   ./src/mapcache_seed -c mapcache.xml -t osm -g g -z 0,12 -n 4 -d /path/to/seed.shp -w "FIPS_A2='US'"
+
+Reseed levels 0 to 12 (this could also be done by deleting the cache for levels
+0 to 12 and doing a classic seed, but doing so this way does not slow down
+access from web clients):
+::
+
+   ./src/mapcache_seed -c mapcache.xml -t osm -g g -z 0,12 -o now
+
+
+.. _`OGR SQL`: https://gdal.org/user/ogr_sql_dialect.html

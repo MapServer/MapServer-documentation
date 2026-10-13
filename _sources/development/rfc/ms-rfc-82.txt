@@ -1,0 +1,197 @@
+.. _rfc82:
+
+=========================================================
+MS RFC 82: Support for Enhanced Layer Metadata Management
+=========================================================
+
+:Date: 2012-01-24
+:Authors: Tom Kralidis (tomkralidis at gmail.com)
+:Last Edited: 2017-04-03
+:Status:  Adopted
+:Version: MapServer 7.2
+
+Overview
+--------
+
+OGC Web Services (OWS) have the ability to advertise content metadata
+associated with a given resource (WMS Layer, WFS FeatureType, WCS Coverage,
+SOS ObservationOffering), both inline to the Capabilities document and as
+a reference to a given URL (i.e. ISO metadata XML document).
+
+MapServer supports both inline (e.g. `wms_title`, `wms_abstract`) and URL
+based (e.g. `wms_metadataurl_href`) metadata advertising for OWS Capabilities.
+
+In the case that a given dataset does not have associated formal XML
+metadata, Capabilities XML references to metadata (i.e. WMS `MetadataURL`)
+are not available, even though between the LAYER.METADATA/ows_* values and the
+layer's spatial properties, enough information can be processed to generate a
+useful XML metadata document.
+
+The existence of formal XML metadata in MapServer OGC services Capabilities
+XML provides value to Catalogue services which harvest metadata to support
+discovery.
+
+It is proposed that MapServer be enhanced to support the generation of XML
+metadata documents from a given layer's METADATA and spatial properties.
+
+This enhancement provides dynamic publishing of XML metadata for OWS
+services for cases where XML metadata does not exist / is not specified
+for a given resource.
+
+Technical Solution
+------------------
+
+MapServer will have the ability to generate an ISO 19139:2007 metadata XML
+document dynamically from LAYER.METADATA/ows_* directives and the given layer's
+spatial properties.
+
+MapServer will also provide support for output of a service metadata document
+formatted as ISO 19119:2005 based on WEB.METADATA ows_* directives.
+This is an additional service description that supports the INSPIRE initiative.
+
+This functionality will be made available through a MapServer specific HTTP
+operation called `GetMetadata` with the following parameters:
+
+* `layer`: layer NAME.  Optional parameter.  If `layer` is not specified,
+  then an ISO metadata document of the service metadata is returned.  If an
+  invalid `layer` parameter specified, an `ows:ExceptionReport` is
+  returned
+* `outputschema`: response schema of metadata.  Optional parameter.
+  Possible values:
+
+  * http://www.isotc211.org/2005/gmd (ISO 19139:2007 [default])
+  * http://www.opengis.net/cat/csw/2.0.2 (Dublin Core)
+  * http://www.opengis.net/cat/csw/csdgm (FGDC CSDGM)
+
+  If an invalid `outputschema` parameter specified, an
+  `ows:ExceptionReport` is returned
+
+Calling `GetMetadata` with no parameters will return an ISO metadata
+document of the service metadata.
+
+The initial implementation will cover the ISO metadata standards, and will
+allow for additional metadata formats to be implemented in the future.  In
+particular, this RFC provides a building block to support the INSPIRE metadata
+format requirements.
+
+Examples
+========
+
+Requesting service metadata:
+
+::
+
+  http://my.host.com/cgi-bin/mapserv?request=GetMetadata
+
+Requesting specific layer metadata:
+
+::
+
+  http://my.host.com/cgi-bin/mapserv?request=GetMetadata&layer=foo
+
+
+Implementation Details
+======================
+
+mapows.c (in `msOWSDispatch`)
+
+.. code-block:: c
+
+  ...
+  if (ows_request.service == NULL) {
+    if (EQUAL(ows_request.request, "GetMetadata")) {
+      status = msMetadataDispatch(map, request, &ows_request);
+    } else if(force_ows_mode) { /* exit if service is not set */
+  ...
+
+
+mapmetadata.c
+
+.. code-block:: c
+
+  int msMetadataDispatch(mapObj *map, cgiRequestObj *requestobj,
+      owsRequestObj *ows_request)
+    if layer parameter is not specified
+      return msMetadataGetServiceMetadata(map, paramsObj, ows_request);
+    else
+      return msMetadataGetLayerMetadata(map, paramsObj, ows_request);
+  ...
+
+  int msMetadataGetLayerMetadata(mapObj *map, metadataParamsObj *paramsObj,
+      owsRequestObj *ows_request)
+    if MAP.LAYER.METADATA/ows_metadataurl_href
+      return HTTP 301 redirect to MAP.LAYER.METADATA/ows_metadataurl_href
+    else
+      generate metadata XML based on LAYER metadata spatial properties
+  ...
+
+  int msMetadataGetServiceMetadata(mapObj *map, metadataParamsObj *paramsObj,
+      owsRequestObj *ows_request)
+    read map->web.metadata
+    return ISO 19119:2005 XML
+
+Downstream OGC web service code then implements:
+
+.. code-block:: c
+
+  if !LAYER.METADATA.ows_metadataurl_href
+    set ows_metadataurl_href to http://host/mapserv?request=GetMetadata&layer=foo
+    set ows_metadataurl_format to "text/xml"
+    set ows_metadataurl_type to "TC211"
+
+
+Testing
+-------
+
+The `msautotest/wxs` suite will be extended with test cases exemplifying
+the expected behaviour of `GetMetadata`.
+
+
+Documentation
+-------------
+
+Documentation will be updated by adding `ogc/mapmetadata.txt`
+to `ogc/index.txt`.  As well, `wms_server.txt`, `wfs_server.txt`,
+`wcs_server.txt`, `sos_server.txt` will be updated to explain default
+output if `ows_metadataurl_href` is not set.
+
+
+Backwards Compatibility Issues
+------------------------------
+
+There are no compatibility issues with existing mapfiles.
+
+This implementation will result in the ability for MapServer OWS Capabilities
+XML to always advertise XML metadata by reference of a metadata URL
+(i.e. WMS `MetadataURL`), but will not override existing behaviour.  That
+is, if a given layer has set `ows_metadataurl_href`, then this value will
+be used to advertise metadata XML references.  If `ows_metadataurl_href`
+is not set, then the code will advertise the metadata via a reference to
+the `GetMetadata` operation.
+
+
+Affected Files
+--------------
+
+* mapmetadata.c (new)
+* mapows.c
+* mapwms.c
+* mapwfs.c
+* mapwfs11.c
+* mapwcs.c
+* mapwcs11.c
+* mapwcs20.c
+* mapogcsos.c
+
+
+Ticket Id
+------------------------------------------------------------------------------
+
+* https://github.com/MapServer/MapServer/pull/5412
+
+Voting History
+------------------------------------------------------------------------------
+
+Adopted on 2012/10/08 with +1 from ThomasB, SteveL, StephanM, PerryN,
+SteveW, DanielM, and TomK.
+

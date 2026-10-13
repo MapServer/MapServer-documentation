@@ -1,0 +1,180 @@
+.. _rfc88:
+
+===============================================================
+  MS RFC 88: Saving MapServer Objects to Strings
+===============================================================
+
+:Date: 2013/01/15
+:Author: Tamas Szekeres
+:Contact: szekerest at gmail.com
+:Status: Accepted (2013/03/02), Implemented
+:Version: MapServer 6.3-dev
+
+1. Overview 
+-----------
+
+This RFC provides the option to save map objects to strings as mapfile string fragments.
+This functionality will mainly be utilized in MapScript and a new method (convertToString)
+will be added to the corresponding objects. This new method will provide the inverse option
+for updateFromString that has already been added within the scope of RFC 31.
+
+
+2. Proposed Solution
+--------------------
+
+The solution will utilize the existing msIO machinery when writing mapfiles. The key point
+of the implementation is to replace all occurrences of fprintf with msIO_fprintf in mapfile.c
+and mapsymbol.c. This replacement will establish the option to redirect mapfile writes to a buffer.
+
+
+3. Implementation Details
+-------------------------
+
+Assuming the replacement of fprintf is done, writing objects to strings could be implemented
+by adding a new function for each object type something like:
+
+::
+
+  char* msWriteLayerToString(layerObj *layer)
+  {
+    msIOContext  context;
+    msIOBuffer buffer;
+  
+    context.label = NULL;
+    context.write_channel = MS_TRUE;
+    context.readWriteFunc = msIO_bufferWrite;
+    context.cbData = &buffer;
+    buffer.data = NULL;
+    buffer.data_len = 0;
+    buffer.data_offset = 0;
+  
+    msIO_installHandlers( NULL, &context, NULL );
+  
+    writeLayer(stdout, 0, layer);
+    msIO_bufferWrite( &buffer, "", 1 );
+  
+    msIO_installHandlers( NULL, NULL, NULL );
+  
+    return buffer.data;
+  }
+
+The owneship of the returned buffer is passed to the caller, so we should hook this function
+in layer.i as follows:
+
+::
+
+  %newobject convertToString;
+  char* convertToString()
+  {
+    return msWriteLayerToString(self);
+  }
+
+In order to implement the writer for mapObj (msWriteMapToString) we will require to isolate
+the bulk of the writing code in a separate function writeMap from msSaveMap.
+In this regard msSaveMap will now look something like:
+
+::
+
+  int msSaveMap(mapObj *map, char *filename)
+  {
+    FILE *stream;
+    char szPath[MS_MAXPATHLEN];
+    
+    if(!map) {
+      msSetError(MS_MISCERR, "Map is undefined.", "msSaveMap()");
+      return(-1);
+    }
+  
+    if(!filename) {
+      msSetError(MS_MISCERR, "Filename is undefined.", "msSaveMap()");
+      return(-1);
+    }
+
+    stream = fopen(msBuildPath(szPath, map->mappath, filename), "w");
+    if(!stream) {
+      msSetError(MS_IOERR, "(%s)", "msSaveMap()", filename);
+      return(-1);
+    }
+  
+    writeMap(stream, 0, map);
+    fclose(stream);
+  
+    return(0);
+  }
+
+As the result of this implementation the following new functions will be exposed in mapserver.h
+
+::
+
+  MS_DLL_EXPORT char *msWriteLayerToString(layerObj *layer);
+  MS_DLL_EXPORT char *msWriteMapToString(layerObj *layer);
+  MS_DLL_EXPORT char *msWriteClassToString(classObj *_class);
+  MS_DLL_EXPORT char *msWriteStyleToString(styleObj *style);
+  MS_DLL_EXPORT char *msWriteLabelToString(labelObj *label)
+  MS_DLL_EXPORT char *msWriteWebToString(webObj *web)
+  MS_DLL_EXPORT char *msWriteScalebarToString(scalebarObj *scalebar)
+  MS_DLL_EXPORT char *msWriteQueryMapToString(queryMapObj *querymap)
+  MS_DLL_EXPORT char *msWriteReferenceMapToString(referenceMapObj *ref)
+  MS_DLL_EXPORT char *msWriteLegendToString(legendObj *legend)
+  MS_DLL_EXPORT char *msWriteClusterToString(clusterObj *cluster)
+
+4. Files Affected
+-----------------
+
+ - mapserver.h: Expose msWriteXXXToString methods
+ - mapfile.c: Implement msWriteXXXToString methods
+ - mapsymbol.c: Implement msWriteSymbolToString methods
+ - mapscript/swiginc/map.i: Add convertToString method
+ - mapscript/swiginc/layer.i: Add convertToString method
+ - mapscript/swiginc/class.i: Add convertToString method
+ - mapscript/swiginc/web.i: Add convertToString method
+ - mapscript/swiginc/legend.i: Add convertToString method
+ - mapscript/swiginc/scalebar.i: Add convertToString method
+ - mapscript/swiginc/querymap.i: Add convertToString method
+ - mapscript/swiginc/referencemap.i: Add convertToString method
+ - mapscript/swiginc/cluster.i: Add convertToString method
+ - mapscript/swiginc/label.i: Add convertToString method
+ - mapscript/swiginc/style.i: Add convertToString method
+ - mapscript/php/php_mapscript.h: Declare new functions
+ - mapscript/php/mapscript_i.c: Add proxyes for new functions
+ - mapscript/php/map.c: Add convertToString method
+ - mapscript/php/layer.c: Add convertToString method
+ - mapscript/php/class.c: Add convertToString method
+ - mapscript/php/web.c: Add convertToString method
+ - mapscript/php/legend.c: Add convertToString method
+ - mapscript/php/scalebar.c: Add convertToString method
+ - mapscript/php/querymap.c: Add convertToString method
+ - mapscript/php/referencemap.c: Add convertToString method
+ - mapscript/php/cluster.c: Add convertToString method
+ - mapscript/php/label.c: Add convertToString method
+ - mapscript/php/style.c: Add convertToString method
+
+
+5. Bug ID
+----------
+
+* https://github.com/MapServer/MapServer/issues/4563
+
+6. Backwards compatibility issues
+---------------------------------
+
+None expected, new functionality.
+
+
+7. MapScript changes
+--------------------
+
+New function convertToString will be added to the corresponding objects.
+
+
+8. Voting history
+-----------------
+
+Tom Kralidis +1
+Steve Lime +1
+Jeff McKenna +1
+Daniel Morissette +1
+Umberto Nicoletti +1
+Michael Smith +1
+Tamas Szekeres +1
+Stephen Woodbridge +1

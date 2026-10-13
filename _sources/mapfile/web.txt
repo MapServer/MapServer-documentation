@@ -1,0 +1,330 @@
+.. index::
+   single: WEB
+
+.. _web:
+
+*****************************************************************************
+ WEB
+*****************************************************************************
+
+.. index::
+   pair: WEB; BROWSEFORMAT
+   :name: mapfile-web-browseformat
+
+BROWSEFORMAT [mime-type]
+    Format of the interface output, using MapServer CGI. *(added to MapServer 4.8.0)* 
+    The default value is "text/html". Example:
+    
+    .. code-block:: mapfile
+    
+        BROWSEFORMAT "image/svg+xml"
+
+.. index::
+   pair: WEB; EMPTY
+   :name: mapfile-web-empty
+
+EMPTY [url]
+    URL to forward users to if a query fails. If not defined the value for 
+    ERROR is used.
+
+.. index::
+   pair: WEB; ERROR
+   :name: mapfile-web-error
+
+ERROR [url]
+    URL to forward users to if an error occurs. Ugly old MapServer error 
+    messages will appear if this is not defined
+
+.. index::
+   pair: WEB; FOOTER
+   :name: mapfile-web-footer
+
+FOOTER [filename]
+    Template to use AFTER anything else is sent. Multiresult query modes only.
+
+.. index::
+   pair: WEB; HEADER
+   :name: mapfile-web-header
+
+HEADER [filename]
+    Template to use BEFORE everything else has been sent. Multiresult query 
+    modes only.
+
+.. index::
+   pair: WEB; IMAGEPATH
+   :name: mapfile-web-imagepath
+
+IMAGEPATH [path]
+    Path to the temporary directory for writing temporary files and images. 
+    Must be writable by the user the web server is running as. Must end 
+    with a / or \ depending on your platform.
+
+.. index::
+   pair: WEB; IMAGEURL
+   :name: mapfile-web-imageurl
+
+IMAGEURL [path]
+    Base URL for IMAGEPATH. This is the URL that will take the web browser 
+    to IMAGEPATH to get the images.
+    
+.. index::
+   pair: WEB; LEGENDFORMAT
+   :name: mapfile-web-legendformat
+
+LEGENDFORMAT [mime-type]
+    Format of the legend output, using MapServer CGI. *(added to MapServer 4.8.0)*  
+    The default value is "text/html".  Example:
+    
+    .. code-block:: mapfile
+    
+        LEGENDFORMAT "image/svg+xml"     
+
+.. index::
+   pair: WEB; LOG
+   :name: mapfile-web-log
+
+LOG [filename]
+    .. versionremoved:: 8.0 
+
+    Since MapServer 5.0 the recommended parameters to use for debugging are the :ref:`MAP`
+    object's CONFIG and DEBUG parameters instead (see the :ref:`debugging` document). 
+    
+    File to log MapServer activity in. Must be writable by the user the web 
+    server is running as.
+    
+.. index::
+   pair: WEB; MAXSCALEDENOM
+   :name: mapfile-web-maxscaledenom
+
+MAXSCALEDENOM [double]
+    Minimum scale at which this interface is valid. When a user requests a map
+    at a smaller scale, MapServer automatically returns the map at this scale.
+    This effectively prevents user from zooming too far out.  Scale is given as
+    the denominator of the actual scale fraction, for example for a map at a
+    scale of 1:24,000 use 24000.  Implemented in MapServer 5.0, to replace the
+    deprecated MAXSCALE parameter. Must be greater or equal to 0.
+    
+    .. seealso::
+        
+        :term:`Map Scale`
+
+MAXSCALE [double]
+    .. versionremoved:: 8.0
+
+    Since MapServer 5.0 the proper parameter to use is MAXSCALEDENOM instead.
+    The deprecated MAXSCALE is the minimum scale at which this interface is
+    valid. When a user requests a map at a smaller scale, MapServer automatically
+    returns the map at this scale. This effectively prevents user from zooming
+    too far out.  Scale is given as the denominator of the actual scale
+    fraction, for example for a map at a scale of 1:24,000 use 24000.
+
+.. index::
+   pair: WEB; MAXTEMPLATE
+   :name: mapfile-web-maxtemplate
+
+MAXTEMPLATE [file|url]
+    Template to be used if below the minimum scale for the app (the
+    denominator of the requested scale is larger than MAXSCALEDENOM),
+    useful for nesting apps.
+
+.. index::
+   pair: WEB; METADATA
+   :name: mapfile-web-metadata
+
+METADATA
+    This keyword allows for arbitrary data to be stored as name value pairs.
+
+    .. note::
+        Runtime substitution can be used to replace metadata values, but not keys. See :ref:`RUNSUB`
+
+    - Used with OGC services (:ref:`wms_server`, :ref:`wfs_server`,
+      :ref:`wcs_server`, :ref:`sos_server`, ...) to define things such
+      as layer title.
+
+    - It can also allow more flexibility in creating templates, as
+      anything you put in here will be accessible via template tags.
+
+    - If you have XMP support enabled, you can also embed
+      :ref:`xmp_metadata` in your output images by specifying XMP tag
+      information here.  Example:
+    
+      .. code-block:: mapfile
+
+        METADATA
+            title "My layer title"
+            author "Me!"
+            xmp_dc_Title "My Map Title"
+        END
+
+    .. index::
+       triple: WEB; METADATA; labelcache_map_edge_buffer
+
+    - **labelcache_map_edge_buffer**
+
+      For tiling, the amount of gutter
+      around an image where no labels are to be placed is controlled
+      by the parameter `labelcache_map_edge_buffer`.  The unit is
+      pixels.  The value had to be a negative value for 6.0 and
+      earlier versions.  From 6.2 the absolute value is taken, so the
+      sign does not matter.
+
+      .. code-block:: mapfile
+
+        METADATA
+            "labelcache_map_edge_buffer" "10"
+        END
+
+    .. index::
+       triple: WEB; METADATA; ms_enable_modes
+
+    - **ms_enable_modes**
+
+      Enable / disable modes (see :ref:`rfc90`).
+
+      Use the asterisk "*" to specify all modes and a preceding
+      exclamation sign "!" to negate the given condition
+
+      To disable all CGI modes:
+
+      .. code-block:: mapfile
+
+        METADATA
+          "ms_enable_modes" "!*"
+        END
+
+      To disable everything but MAP and LEGEND:
+
+      .. code-block:: mapfile
+
+        METADATA
+          "ms_enable_modes" "!* MAP LEGEND"
+        END
+        
+    - **tile_map_edge_buffer**
+    
+      .. versionadded:: 6.0
+    
+      For *mode=tile*, renders the tile into a buffered rendering frame, then 
+      clips out the final tile. This will reduce edge effects when large symbols or 
+      wide lines are drawn. Recommended value: the size of the largest symbol or line 
+      width in your mapfile.
+        
+      .. seealso::
+        
+        :ref:`tile_mode`
+        
+    - **tile_metatile_level**
+    
+      .. versionadded:: 6.0    
+    
+      For *mode=tile*, renders the tiles into a fixed metatile, then clips out 
+      the final tile. This will reduce label repetition, at the expense of much higher 
+      rendering cost.  Recommended value: 1 if you are doing labelling of large features 
+      in your layer. 0 otherwise.
+        
+      .. seealso::
+        
+        :ref:`tile_mode`               
+
+.. index::
+   pair: WEB; MINSCALEDENOM
+   :name: mapfile-web-minscaledenom
+
+MINSCALEDENOM [double]
+    Maximum scale at which this interface is valid. When a user requests a 
+    map at a larger scale, MapServer automatically returns the map at this 
+    scale. This effectively prevents the user from zooming in too far. 
+    Scale is given as the denominator of the actual scale fraction, for example
+    for a map at a scale of 1:24,000 use 24000.  Implemented in MapServer 5.0, to
+    replace the deprecated MINSCALE parameter. Must be greater or equal to 0.
+
+    .. seealso::
+        
+        :term:`Map Scale`
+
+MINSCALE [double]
+    .. versionremoved:: 8.0
+    
+    Since MapServer 5.0 the proper parameter to use is MINSCALEDENOM
+    instead.  The deprecated MINSCALE is the maximum scale at which this
+    interface is valid. When a user requests a map at a larger scale, MapServer
+    automatically returns the map at this scale. This effectively prevents the
+    user from zooming in too far.  Scale is given as the denominator of the
+    actual scale fraction, for example for a map at a scale of 1:24,000 use
+    24000.
+
+.. index::
+   pair: WEB; MINTEMPLATE
+   :name: mapfile-web-mintemplate
+
+MINTEMPLATE [file|url]
+    Template to be used if above the maximum scale for the app (the
+    denominator of the requested scale is smaller than MINSCALEDENOM),
+    useful for nesting apps.
+    
+.. index::
+   pair: WEB; QUERYFORMAT
+   :name: mapfile-web-queryformat
+
+QUERYFORMAT [mime-type]
+    Format of the query output. *(added to MapServer 4.8.0)*  This works for 
+    mode=query (using query templates in CGI mode), but not for mode=browse.  
+    The default value is "text/html".  Example:
+    
+    .. code-block:: mapfile
+    
+        QUERYFORMAT "image/svg+xml"      
+
+.. index::
+   pair: WEB; TEMPLATE
+   :name: mapfile-web-template
+
+TEMPLATE [filename|url]
+
+    Template file or URL to use in presenting the results to the user
+    in an interactive mode (i.e. map generates map and so on ... ).
+
+    URL is not a remote file, rather a template.  For example:
+
+    .. code-block:: mapfile
+
+       TEMPLATE 'http://someurl/somescript.cgi?mapext=[mapext]'
+
+    .. note::
+        |RUNSUB|
+
+.. index::
+   single: Temporary files
+
+.. index::
+   single: Temporary directory
+
+.. index::
+   pair: WEB; TEMPPATH
+   :name: mapfile-web-temppath
+
+.. index::
+   pair: Environment variable; MS_TEMPPATH
+
+TEMPPATH [path]
+   .. versionadded:: 6.0
+
+   Path for storing temporary files.  If not set, the standard system
+   temporary file path will be used (e.g. \tmp for unix).  `TEMPPATH`
+   can also be set using the environment variable `MS_TEMPPATH`.
+
+   `TEMPPATH` is used in many contexts (see rfc66).
+
+   Make sure that that MapServer  has sufficient rights to read and
+   write files at the specified location.
+
+.. index::
+   pair: WEB; VALIDATION
+   :name: mapfile-web-validation
+
+:ref:`VALIDATION`
+    Signals the start of a :ref:`VALIDATION` block.
+
+    As of MapServer 5.4.0, `VALIDATION` blocks are the preferred
+    mechanism for specifying validation patterns for CGI param runtime
+    substitutions.  See :ref:`RUNSUB`.
