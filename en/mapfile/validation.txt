@@ -92,6 +92,37 @@ generalised blocks. i.e. `CLASS` overrides `LAYER` which overrides
 The same functionality is available using `METADATA` blocks instead of
 `VALIDATION` but this is deprecated as of MapServer 5.4.0.
 
+Disabling runtime substitutions
+-------------------------------
+
+A mapfile can opt out of runtime substitutions entirely by adding an
+``immutable`` key to its :ref:`WEB` validation block:
+
+.. code-block:: mapfile
+
+    WEB
+      VALIDATION
+        'immutable' 'true'
+      END
+    END
+
+When this key is present, all values supplied in the URL are ignored.
+This is useful for Mapfiles that are exposed publicly but must not be altered by users.
+
+The key is only checked for presence, so ``'immutable' 'false'`` also enables
+immutable mode.
+
+Default values are still applied, so a Mapfile using ``%variable%`` with a
+matching ``default_`` entry continues to work as expected. Only the values
+from the request are ignored.
+
+.. note::
+
+   ``immutable`` is only recognised in the :ref:`WEB` validation block, not
+   in :ref:`LAYER` or :ref:`CLASS` blocks, and it applies to the whole
+   Mapfile.
+
+
 Test with Commandline
 ---------------------
 
