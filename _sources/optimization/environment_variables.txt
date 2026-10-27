@@ -1,0 +1,444 @@
+.. index::
+   single: Environment variables
+
+.. _environment_variables:
+
+***************************************************
+ Environment Variables
+***************************************************
+
+.. contents:: Table of Contents
+    :depth: 2
+    :backlinks: top
+    
+Background
+==========
+
+A number of environment variables can be used to control MapServer's
+behavior or specify the location of some resources.
+
+.. TIP::
+   In terms of GDAL, for a good list of GDAL's possible variables to use 
+   (to help control data access in MapServer), see the 
+   the main `GDAL site <https://gdal.org/en/stable/user/configoptions.html#global-configuration-options>`__ 
+   (you can also see the `old GDAL wiki <https://web.archive.org/web/20220324035447/https://trac.osgeo.org/gdal/wiki/ConfigOptions>`__).
+
+List of all possible MapServer Environment Variables
+====================================================
+
+.. index::
+   pair: Environment variables; CURL_CA_BUNDLE
+
+CURL_CA_BUNDLE
+   .. versionadded:: 5.4.1
+
+   Used to specify the location of the Certificate
+   Authority (CA) bundle file to be used by Curl when using HTTPS
+   connections in WMS/WFS client layers. Curl comes bundled with its
+   own CA bundle by default, so this variable is not required unless
+   you have an unusual installation::
+
+     export CURL_CA_BUNDLE=/path/to/ca-bundle.crt
+
+.. index::
+   pair: Environment variables; MS_DEBUGLEVEL
+
+MS_DEBUGLEVEL
+   .. versionadded:: 5.0
+
+   A default `DEBUG` level value can be set using the `MS_DEBUGLEVEL`
+   environment variable in combination with the `MS_ERRORFILE`
+   variable.
+
+   When set, this value is used as the default debug level value for
+   all map and layer objects as they are loaded by the mapfile parser.
+   This option also sets the debug level for any msDebug() call
+   located outside of the context of a map or layer object, for
+   instance for debug statements relating to initialization before a
+   map is loaded.  If a `DEBUG` value is also specified in the mapfile
+   in some map or layer objects then the local value (in the mapfile)
+   takes precedence over the value of the environment variable.
+
+   This option is mostly useful when tuning applications by enabling
+   timing/debug output before the map is loaded, to capture the full
+   process initialization and map loading time, for instance.
+
+   .. seealso:: :ref:`debugging`
+
+.. index::
+   pair: Environment variables; MS_ENCRYPTION_KEY
+
+MS_ENCRYPTION_KEY
+   .. versionadded:: 4.10 
+
+   .. seealso:: :ref:`msencrypt <MSENCRYPT>`
+
+.. index::
+   pair: Environment variables; MS_ERRORFILE
+
+MS_ERRORFILE
+   The `MS_ERRORFILE` environment variable specifies the location of
+   the logging/debug output, with possible values being either a file
+   path on disk, or one of the following special values:
+
+   * "stderr" to send output to standard error. Under Apache stderr is
+     the Apache error_log file. Under IIS stderr goes to stdout so its
+     use is discouraged. With IIS it is recommended to do direct output
+     to a file on disk instead.
+
+   * "stdout" to send output to standard output, combined with the
+     rest of MapServer’s output.
+
+   * "windowsdebug" to send output to the Windows OutputDebugString
+     API, allowing the use of external programs like SysInternals
+     debugview to display the debug output.
+
+   It is possible to specify `MS_ERRORFILE` either as an environment
+   variable or via a `CONFIG` directive inside a mapfile::
+
+     CONFIG  "MS_ERRORFILE" "/tmp/mapserver.log"
+
+   or::
+
+     CONFIG  "MS_ERRORFILE" "stderr"
+
+   If both the `MS_ERRORFILE` environment variable is set and a
+   `CONFIG` `MS_ERRORFILE` is set, then the `CONFIG` directive takes
+   precedence.
+
+   If `MS_ERRORFILE` is not set, then error/debug logging is disabled.
+   During parsing of a mapfile, error/debug logging may become
+   available only after the `MS_ERRORFILE` directive has been parsed.
+
+   .. seealso:: :ref:`debugging`
+   
+.. index::
+   pair: Environment variables; MS_INDEX_TEMPLATE_DIRECTORY
+
+MS_INDEX_TEMPLATE_DIRECTORY
+   .. versionadded:: 8.6.0
+
+   The `MS_INDEX_TEMPLATE_DIRECTORY` environment variable can be set 
+   to activate an index page that lists all mapfiles and related services.
+   The value should point to the folder containing the HTML templates
+   to use.  This variable should be set in the MapServer :ref:`config` file.
+
+   If this variable is not set then the index page is not generated.
+
+   Example CONFIG file contents::
+    
+    ENV
+      #
+      # Index page
+      #
+      MS_INDEX_TEMPLATE_DIRECTORY "/ms4w/share/ogcapi/templates/html-index-bootstrap/"   
+    END
+    
+   and then calls the mapserv CGI should return the index page::
+
+     http://127.0.0.1/cgi-bin/mapserv.exe
+
+   .. seealso:: :ref:`index-page` & :ref:`rfc140`   
+
+.. index::
+   pair: Environment variables; MS_MAP_NO_PATH
+
+MS_MAP_NO_PATH
+   .. versionadded:: 5.4
+
+   The `MS_MAP_NO_PATH` environment variable can be set to any value
+   to forbid the use of explicit paths in the map=... URL parameter.
+   Setting `MS_MAP_NO_PATH` to **any value** forces the use of the
+   map=<env_variable_name> mechanism in mapserv CGI URLs.
+
+   If this variable is not set then nothing changes and the mapserv
+   CGI still accepts explicit file paths via the map=... URL
+   parameter.
+
+   Example, set set `MS_MAP_NOPATH` and some mapfile paths in Apache's
+   httpd.conf::
+
+     SetEnv MS_MAP_NO_PATH "foo"
+     SetEnv MY_MAPFILE "/opt/mapserver/map1/mymapfile.map"
+
+   and then calls the mapserv CGI must use environment variables for
+   the map=... parameter::
+
+     http://localhost/cgi-bin/mapserv?map=MY_MAPFILE&mode=...
+
+   .. seealso:: :ref:`limit_mapfile_access` & :ref:`rfc56`
+
+.. index::
+   pair: Environment variables; MS_MAPFILE
+
+MS_MAPFILE
+   The mapfile to use if the map=... URL parameter is not provided.
+
+   It is also possible to use an environment variable name as the
+   value of the map=... URL parameter.  The value of this environment
+   variable will be used as the mapfile path::
+   
+     map=ENV_VAR
+
+
+.. index::
+   pair: Environment variables; MS_MAPFILE_PATTERN
+
+MS_MAPFILE_PATTERN
+   `MS_MAPFILE_PATTERN` can be used to override the default regular
+   expression which is used to validate mapfile filename extensions.
+
+   The default value for this variable is::
+
+     MS_MAPFILE_PATTERN='\.map$'
+
+.. index::
+   pair: Environment variables; MS_MAP_BAD_PATTERN
+
+MS_MAP_BAD_PATTERN
+   .. versionadded:: 7.6.3
+   
+   The `MS_MAP_BAD_PATTERN` environment variable can be used to specify a
+   Regular Expression to catch & not allow problematic character sequences 
+   in any mapfile paths passed to the mapserv CGI in the map=... URL parameter.
+   If the value matches then an error is generated.  By default all 
+   MapServer installations (since 7.6.3) set a hardcoded value for 
+   *MS_MAP_BAD_PATTERN* of:
+   ::
+
+    [/\\\\]{2}|[/\\\\]?\\.+[/\\\\]|,
+  
+   which will therefore not allow "/../" or "//" in the map value.
+
+   For Windows users, MS4W uses the PCRE regex library (which requires a 
+   slightly different regex syntax), so all future MS4W releases will 
+   contain the following default *MS_MAP_BAD_PATTERN* enabled 
+   (to not allow "/../" or "//" in the map value) :
+   
+   ::
+   
+     [\/\\\\]{2}|[\/\\\\]?\.{2,}[\/\\\\]|,
+     
+   For more Windows information see `Securing your MS4W Installation <https://ms4w.com/README_INSTALL.html#securing-your-ms4w-installation>`_
+
+   .. seealso:: :ref:`limit_mapfile_access` & Associated `Pull Request <https://github.com/MapServer/MapServer/pull/6314>`_ for the 7.6.3 release
+
+.. index::
+   pair: Environment variables; MS_CONTEXT_BAD_PATTERN
+
+.. _ms_context_bad_pattern:
+
+MS_CONTEXT_BAD_PATTERN
+   .. versionadded:: 8.0.1
+   
+   The `MS_CONTEXT_BAD_PATTERN` environment variable can be used to specify a
+   Regular Expression to catch & not allow problematic character sequences 
+   in any map context paths passed to the mapserv CGI in the context=... URL parameter.
+   If the value matches then an error is generated.  By default all 
+   MapServer installations (since 8.0.1) set a hardcoded value for 
+   *MS_CONTEXT_BAD_PATTERN* of:
+   ::
+
+    [/\\]{2}|[/\\]?\\.+[/\\]|,
+  
+   which will therefore not allow "/../" or "//" in the map context value.
+
+   For Windows users, MS4W uses the PCRE regex library (which requires a 
+   slightly different regex syntax), so all future MS4W releases will 
+   contain the following default *MS_MAP_BAD_CONTEXT_PATTERN* enabled 
+   (to not allow "/../" or "//" in the map context value) :
+   
+   ::
+   
+     [\/\\\\]{2}|[\/\\\\]?\.{2,}[\/\\\\]|,
+     
+   For more Windows information see `Securing your MS4W Installation <https://ms4w.com/README_INSTALL.html#securing-your-ms4w-installation>`_
+
+   .. seealso:: :ref:`limit_mapfile_access`
+
+.. index::
+   pair: Environment variables; MS_CONTEXT_PATTERN
+
+.. _ms_context_pattern:
+
+MS_CONTEXT_PATTERN
+   .. versionadded:: 8.0.1
+
+   The `MS_CONTEXT_PATTERN` environment variable can be used to specify a
+   Regular Expression that must be matched by all file paths passed
+   to the mapserv CGI in the context=... URL parameter.
+
+   If `MS_CONTEXT_PATTERN` is not set then no map context can be loaded.
+
+   Apache's SetEnv directive can be used to restrict mapfiles to a
+   specific directory and subdirectories.
+   
+   * *Unix users* may set the following expression in Apache to restrict 
+     mapfiles to the */opt/mapserver* directory and subdirectories:
+
+     ::
+
+       SetEnv MS_CONTEXT_PATTERN "^\/opt\/mapserver\/([^\.][_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(xml))$" 
+     
+   * *Windows Apache/MS4W users* can set the following expression in the Apache
+     conf file, to limit the possible MAP= paths to the common 
+     *C:/ms4w/apps/* directory (where all MS4W mapfiles and applications live), 
+     allow encoded urls, allow "." or "_" or "-" in MAP= paths but disallow ".." 
+     directory traversing:
+
+     ::
+
+       SetEnv MS_CONTEXT_PATTERN "^(C:)?\/ms4w\/apps\/((?!\.{2})[_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(xml))$"
+  
+     .. NOTE::
+        MS4W users can see specific examples at: https://ms4w.com/README_INSTALL.html#securing-your-ms4w-installation    
+
+   .. seealso:: :ref:`limit_mapfile_access`
+
+.. index::
+   pair: Environment variables; MS_MAP_PATTERN
+
+MS_MAP_PATTERN
+   .. versionadded:: 5.4
+
+   The `MS_MAP_PATTERN` environment variable can be used to specify a
+   Regular Expression that must be matched by all mapfile paths passed
+   to the mapserv CGI in the map=... URL parameter.
+
+   If `MS_MAP_PATTERN` is not set then any .map file can be loaded.
+
+   Apache's SetEnv directive can be used to restrict mapfiles to a
+   specific directory and subdirectories.
+   
+   * *Unix users* may set the following expression in Apache to restrict 
+     mapfiles to the */opt/mapserver* directory and subdirectories:
+
+     ::
+
+       SetEnv MS_MAP_PATTERN "^\/opt\/mapserver\/([^\.][_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(map))$" 
+     
+   * *Windows Apache/MS4W users* can set the following expression in the Apache
+     conf file, to limit the possible MAP= paths to the common 
+     *C:/ms4w/apps/* directory (where all MS4W mapfiles and applications live), 
+     allow encoded urls, allow "." or "_" or "-" in MAP= paths but disallow ".." 
+     directory traversing:
+
+     ::
+
+       SetEnv MS_MAP_PATTERN "^(C:)?\/ms4w\/apps\/((?!\.{2})[_A-Za-z0-9\-\.]+\/{1})*([_A-Za-z0-9\-\.]+\.(map))$"
+  
+     .. NOTE::
+        MS4W users can see specific examples at: https://ms4w.com/README_INSTALL.html#securing-your-ms4w-installation    
+
+   .. seealso:: :ref:`limit_mapfile_access` & :ref:`rfc56`
+
+.. index::
+   pair: Environment variables; MS_MODE
+
+MS_MODE
+   Default value for the mode=... URL parameter. Setting mode=... in
+   the URL takes precedence over the environment variable.
+
+.. index::
+   pair: Environment variables; MS_OPENLAYERS_JS_URL
+
+.. _ms_onlineresource:
+
+MS_ONLINERESOURCE
+   .. versionadded:: 8.8
+
+   Defines the root URL used by MapServer to construct all external service URLs.
+   This can only be set in the MapServer :ref:`config` file and cannot
+   be used inside individual Mapfiles.
+
+   ``MS_ONLINERESOURCE`` can replace the need to set the
+   ``ows_onlineresource`` metadata in each Mapfile, providing a single
+   location to manage the base URL for all services in a deployment.
+
+   This is especially useful when working with many Mapfiles, or when
+   the base URL differs between environments (for example, development
+   and production).
+
+   For additional details, see :ref:`rfc141` and the
+   section on ``wms_onlineresource`` metadata in :ref:`wms_mapfile_setup`.
+
+.. index::
+   pair: Environment variables; MS_ONLINERESOURCE
+
+MS_OPENLAYERS_CSS_URL
+   The URL to the OpenLayers CSS file used for styling the :ref:`openlayers`.
+   for instance::
+
+     //mapserver.org/lib/10.4.0/ol-mapserver.css
+
+.. index::
+   pair: Environment variables; MS_OPENLAYERS_JS_URL
+
+MS_OPENLAYERS_JS_URL
+   The URL to the OpenLayers JavaScript library used by the :ref:`openlayers` (can be used when
+   testing WMS services using imagetype ``application/openlayers``),
+   for instance::
+
+     //mapserver.org/lib/10.4.0/ol-mapserver.js
+
+.. index::
+   pair: Environment variables; MS_TEMPPATH
+
+MS_TEMPPATH
+   .. versionadded:: 6.0
+   
+   Set the :ref:`WEB` `TEMPPATH`.
+
+.. index::
+   pair: Environment variables; MS_XMLMAPFILE_XSLT
+
+MS_XMLMAPFILE_XSLT
+   Used to enable XML Mapfile support.  Points to the location of the
+   XSLT to use for the XML->text mapfile conversion.
+
+   .. seealso:: :ref:`xml_mapfile`
+
+.. index::
+   pair: Environment variables; PROJ_DATA
+   
+.. index::
+   pair: Environment variables; OGCAPI_HTML_TEMPLATE_DIRECTORY
+
+OGCAPI_HTML_TEMPLATE_DIRECTORY
+   .. versionadded:: 8.0
+
+   The `OGCAPI_HTML_TEMPLATE_DIRECTORY` environment variable can be set 
+   to point to the template files to use for HTML output for the 
+   OGCAPI: Features service.
+
+   If this variable is not set, or the mapfile's WEB.METADATA parameter
+   `oga_html_template_directory` is not set, then no HTML output will be generated
+   (you may see a `"Template directory not set."` error message for `ogcapi?f=html`
+   requests).
+
+   Example CONFIG file contents::
+    
+    ENV
+      #
+      # OGC API
+      #
+      OGCAPI_HTML_TEMPLATE_DIRECTORY "/ms4w/share/ogcapi/templates/html-bootstrap/"  
+    END
+
+   .. seealso:: :ref:`ogcapi` & :ref:`rfc134`   
+
+PROJ_DATA
+   The `PROJ_DATA` environment variable or `CONFIG` directive can be
+   used to specify the directory where the PROJ data files are located
+   (including the "proj.db" file, or "epsg" file for older PROJ versions), 
+   if they are not in the default directory where PROJ expects them.
+   
+   .. TIP::
+      Since the PROJ 9.1 release, the former `PROJ_LIB` variable has 
+      been replaced with `PROJ_DATA`     
+   
+   .. NOTE::
+      For the full list of possible PROJ variables to use see the  
+      `official list <https://proj.org/usage/environmentvars.html>`__. 
+
+   .. seealso:: `Setting the location of PROJ files` in :ref:`projection`.

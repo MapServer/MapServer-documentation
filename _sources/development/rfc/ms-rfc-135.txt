@@ -1,0 +1,198 @@
+.. _rfc135:
+
+================================================
+MS RFC 135: MapServer 8.0 Config file
+================================================
+
+:Author:      Steve Lime
+:Contact:     steve.lime@state.mn.us
+:Author:      Jeff McKenna
+:Contact:     jmckenna@gatewaygeomatics.com
+:Status:      Adopted
+:Last update: 2021-10-19
+:Version:     MapServer 8.0
+
+.. NOTE::  
+   This document is outdated, please follow the official document: :ref:`config`
+
+Overview
+========
+
+Securing the MapServer CGI application requires setting environment variables 
+at the web server level. While not particularly difficult it does require access 
+to web server configuration files and the approach can vary greatly from platform 
+to platform. FastCGI implementations have uneven support for environment variables 
+and this approach would standardize things. In addition, there are opportunities 
+to improve overall MapServer security at the mapfile level by allowing a site 
+administrator to set restrictions at a site level. For example:
+
+- a registry of plugins can be defined centrally to limit what can be specified 
+  within a mapfile
+- all mapfiles could be defined as immutable, so no runtime changes would be 
+  allowed site-wide
+- validation patterns for common attributes, for consistency
+
+While much of this could be done via environment variables it becomes cumbersome 
+and error prone. This approach largely abandons environment variables with one 
+notable exception described below.
+
+Proposed Approach
+=================
+
+We propose introducing a MapServer config file (basically an *ini* file) that is 
+loaded by the MapServer CGI at runtime and provides site-level configuration 
+apart from what is done with a mapfile.
+
+Identifying the Config File
+---------------------------
+
+At present, a single environment variable (`MAPSERVER_CONFIG_FILE`) is referenced 
+to determine what config file to load. While it's somewhat ironic to propose using 
+an environment variable to specify a configuration file that avoids setting 
+environment variables, in this instance the approach allows different deployments 
+(vhosts) on the same server to operate under different configs.
+
+In addition, a default location/filename (e.g. `${install dir}/etc/mapserver.conf`) 
+is supported and set at compile time. This can be overridden by the user at compile 
+time using the `-DMAPSERVER_CONFIG_FILE` flag. Precedence is the environment 
+variable then the default. If neither are available (and valid, see below) then 
+MapServer will refuse to run.
+
+Processing the Config File
+--------------------------
+
+The config file would look similar to a mapfile with familiar `SECTION ... END` 
+constructs. In fact, we can use the existing lexer to process the file without 
+incurring the overhead of adding another parser or dependencies on other libraries. 
+The `configObj` structure is basically just a series of hashes (`hashObj`) used to 
+group similar configuration elements. Currently it consists of:
+
+- :ENV: references to the various environment variables currently supports 
+        (e.g. `MS_MAP_NO_PATH`)
+- :MAPS: a curated list of mapfiles available identified by a key. If `MS_MAP_NO_PATH`
+         is set then only those keys can be used with the CGI map parameter. This 
+         is currently supported via environment variables.
+- :PLUGINS: a curated list of plugins list of plugins identified by a key. This is 
+            new functionality.
+
+Other sections could include `METADATA` and `VALIDATION`, which are places general purpose 
+configuration information is held.
+
+Relationship to the Mapfile
+---------------------------
+
+The current proof of concept implementation requires the config file. Upon successful 
+loading of both the config and the map files the `configObj` is added to the `mapObj` 
+as a read-only member so that it can be referenced as necessary. Destroying the `mapObj` 
+does not destroy the `configObj`, that is done separately.
+
+One challenge is that not all bits of MapServer code that reference environment variables 
+(e.g. `msFontCacheSetup()` in fontcache.c) have access to the `mapObj`. Using `CPLSetConfigOption()/CPLGetConfigOption()` 
+might be one solution (thanks Even!).
+
+File Definition
+---------------
+
+.. code-block:: C
+
+   #
+   # Example Config File
+   #
+   CONFIG
+     ENV
+       # Available variables (https://mapserver.org/environment_variables.html):
+       #   MS_MAP_PATTERN - regex used to validate map variable values
+       #   MS_MAPFILE - default mapfile if no value is passed in the map variable
+       #   MS_MAP_NO_PATH - limits access to a curated set of maps (by key)
+       MS_MAP_NO_PATH "true"
+     END
+     MAPS
+       MAP1 "/opt/mapserver/myapp/map1.map"
+       MAP2 "/opt/mapserver/myapp/map2.map"
+     END
+   END
+
+MapScript Support
+-----------------
+
+This is primarily a resource to support the configuration of the MapServer CGI 
+application. However, there may be circumstances where it makes sense for MapScript 
+to leverage the configuration. For example, if we require plugins to be registered 
+in the configuration file then an application using plugins would have to reference 
+the resource. The configuration file can carry arbitrary `name:value` pairs and 
+could be useful for sharing information across scripts. As a result we propose 
+providing a simple MapScript wrapper class that can be instantiated as necessary. 
+Initially config file members are just hashes so MapScript `hashObj` methods apply. 
+So for example:
+
+.. code-block:: perl
+
+   # Perl Syntax
+   $config = new mapscript::configObj('path to config file'); # could also read from the environment
+   $mapfile = $config->{map}->get('mymapfile'); # grab value from configuration
+   $map = new mapscript::mapObj($mapfile, $config); # $config is optional
+
+New Source Files
+----------------
+
+* :mapserv-config.cpp/mapserv-config.h: core implementation, defines loading 
+                                        function and helper functions (e.g. 
+                                        msConfigGetEnv()).
+
+Source Files Changed
+--------------------
+
+* :mapserv.c: load config file, abort if not found.
+* :mapserver.h: add config member to mapObj struct.
+* :mapfile.c: initialize config member of mapObj struct to NULL.
+* :mapservutil.c: msCGILoadMap() uses msConfigGetEnv() instead of getenv(); adds configObj reference to mapObj.
+* :mapscript/swiginc/config.i: basic Swig wrapper for a configObj.
+* :mapscript/swiginc/map.i: extend mapObj constructors to take optional configObj.
+
+Build Files Changed
+-------------------
+
+* :CMakeLists.txt: typical integration of new source files.
+
+Limitations/Caveats
+===================
+
+* TBD
+
+Backwards Compatibility Issues
+==============================
+
+This proposal requires the use of a config file for all CGI/FastCGI execution. 
+This will change the installation and setup process a bit. However, functional 
+changes should be relatively limited.
+
+The regression test suite `msautotest` now also includes a config file:
+
+  /msautotest/etc/mapserv.conf
+
+Security Considerations
+=======================
+
+The intention is to improve overall security and ease of configuration. Config 
+files would need to stored in trusted locations with access limited to appropriate 
+individuals.
+
+Performance Implications
+========================
+
+The config file will have to be read and processed incurring a bit of overhead. 
+Although given the I/O associated with a typical MapServer request we would expect 
+the impact to be relatively small.
+
+Ticket ID and References
+========================
+
+* Pull request `#6303 <https://github.com/MapServer/MapServer/pull/6303>`__
+* Proof-of-concept `branch <https://github.com/sdlime/mapserver/tree/config>`__
+
+Voting history
+==============
+
+::
+
+  +1 from SteveL, JukkaR, MikeS, JeromeB, SethG, TomK, JeffM, DanielM, ThomasB, EvenR

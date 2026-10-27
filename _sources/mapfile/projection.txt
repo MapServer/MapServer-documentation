@@ -1,0 +1,272 @@
+.. index::
+   single: PROJECTION
+    
+.. _projection:
+
+*****************************************************************************
+ PROJECTION
+*****************************************************************************
+
+.. index::
+   single: Geographical reference systems
+
+.. index::
+   single: Map projections
+   
+.. contents::
+    :depth: 3
+    :backlinks: top
+   
+Background
+----------
+
+There are thousands of geographical reference systems.  In order to
+combine datasets with different geographical reference systems into a
+map, the datasets will have to be transformed (projected) to the
+chosen geographical reference system of the map.  If you want to know
+more about geographical reference systems and map projections in general, 
+please see the `More Information` links below, or look into Geomatics courses 
+(Geographical Information Systems, Cartography, Geodesy), as projections
+are an advanced topic for beginners.
+
+Projections with MapServer
+--------------------------
+
+To set up projections you must define one projection object for the
+output image (in the :ref:`MAP` object) and one projection object for
+each layer (in the :ref:`LAYER` objects) to be projected.  MapServer
+relies on the :term:`PROJ` library for projections.  Projection
+objects therefore consist of a series of PROJ keywords, which are
+either specified within the object directly or referred to in a
+PROJ data file, that contains :term:`EPSG` definitions.  A PROJ data file 
+(`proj.db` for PROJ >=6, or `epsg` file for PROJ <6) is a lookup file containing 
+projection parameters, and is part of the PROJ library.
+
+Starting with MapServer 8 and when the PROJ 6 library or above is used,
+the use of EPSG codes when available, rather than the inline projection
+parameters, is recommended to benefit from higher accuracy coordinate reprojection.
+
+The following two examples both define the same projection (UTM zone 15,
+NAD83), but use 2 different methods:
+
+**Example 1: Inline Projection Parameters**
+
+.. code-block:: mapfile
+
+    PROJECTION
+      "proj=utm"
+      "ellps=GRS80"
+      "datum=NAD83"
+      "zone=15"
+      "units=m"
+      "north"
+      "no_defs"
+    END
+    
+.. note::
+
+    For a list of all of the possible PROJ projection parameters, the official PROJ site is
+    best (https://proj.org), however the old wiki has a thorough list of `PROJ parameters <https://web.archive.org/web/20160201161640/https://trac.osgeo.org/proj/wiki/GenParms>`__.    
+    
+**Example 2: EPSG Projection Use**
+
+.. code-block:: mapfile
+
+    PROJECTION
+       "init=epsg:26915"
+    END
+
+.. note::
+
+    This refers to an EPSG lookup file that contains a '26915' code with the
+    full projection parameters.  "epsg" in this instance is case-sensitive
+    because it is referring to a file name.  If your file system is
+    case-sensitive, this must be lower case, or MapServer (PROJ actually)
+    will complain about not being able to find this file.
+
+.. note::
+
+    See `EPSG:26915 <https://spatialreference.org/ref/epsg/26915/>`__ 
+    for more information on this coordinate system.
+
+The next two examples both display how to possibly define unprojected 
+lat/long ("geographic"):
+
+**Example 3: Inline Projection Parameters**
+
+.. code-block:: mapfile
+
+    PROJECTION
+      "proj=latlong"
+      "ellps=WGS84"
+      "datum=WGS84"
+    END
+
+**Example 4: epsg Projection Use**
+
+.. code-block:: mapfile  
+
+    PROJECTION
+       "init=epsg:4326"
+    END
+    
+"Web Mercator" or "Google Mercator"
+-----------------------------------
+
+The EPSG code for the commonly used "Web" or "Google" mercator projection is
+'3857'.  See `EPSG:3857 <https://spatialreference.org/ref/epsg/3857/>`__ 
+for more information on this coordinate system.  This code was also 
+unofficially referred to as `EPSG:900913`; you are recommended to use the 
+official `EPSG:3857` code instead, such as:
+
+.. code-block:: mapfile
+
+    PROJECTION
+       "init=epsg:3857"
+    END
+
+PROJECTION AUTO
+---------------
+
+The following syntax may be used in LAYERs that are OGR connections,
+shapefile layers or raster layers :
+
+.. code-block:: mapfile  
+
+    PROJECTION
+       AUTO
+    END
+
+- In case of a OGR connection, the projection will be retrieved from the OGR
+  layer.
+
+- In case of a shapefile layer, the projection will be retrieved from the
+  associated .prj file.
+
+- In case of raster layers containing a single raster (DATA keyword),
+  the projection will be retrieved from the GDAL datasource.
+  
+- If the raster layer refers to a tile index (OGR layer or shapefile
+  tileindex), the projection will be retrieved according to the above
+  describe rules.
+
+- If the raster layer refers to a tile index with rasters in a variety
+  of projections, the *TILESRS* keyword should be specified to choose the
+  appropriate projection for the corresponding raster. See
+  :ref:`Tileindexes with tiles in different projections
+  <tileindex_mixed_srs>` for more details.
+
+
+.. note::
+
+    For other layer types, this syntax is invalid.
+
+Setting the location of PROJ files
+----------------------------------
+
+.. index::
+   triple: MAP; CONFIG; PROJ_DATA
+   
+.. TIP::
+   Since the PROJ 9.1 release, the former `PROJ_LIB` variable has 
+   been replaced with `PROJ_DATA`  
+
+There are several ways to point MapServer to the PROJ files (`proj.db` for PROJ >=6, 
+or `epsg` file for PROJ <6) :
+
+1. Use MapServer's global configuration file, available since the MapServer 8.0
+   release, to set the "PROJ_DATA" environment variable.  The default name of
+   the config file is `mapserver.conf` (for MS4W users, the file is `/ms4w/ms4w.conf`).
+   Your config file could contain an `ENV` section such as:
+   
+   ::
+   
+     CONFIG
+
+       ENV
+
+         PROJ_DATA "/ms4w/share/proj"
+	
+       END #env
+
+     END #config
+
+   .. seealso:: :ref:`config`    
+
+2. Set the :ref:`MAP` object's `CONFIG` parameter in your mapfile to specify 
+   the location of PROJ files:
+
+   .. code-block:: mapfile
+
+      MAP
+        CONFIG "PROJ_DATA" "/usr/share/proj/"
+        PROJECTION
+          "init=epsg:3857"
+        END # PROJECTION
+      ...
+
+   It is important that the `CONFIG "PROJ_DATA"` line comes before the
+   `PROJECTION` block.
+   
+3. Set a system variable ("environment variable" on windows) called
+   "PROJ_DATA" and point it to your proj directory.
+   
+4. Set an environment variable through your web server.  Apache has a 
+   `SetEnv` directive that can set environment variables.  Add something
+   like the following to your Apache *httpd.conf* file:
+   
+   ::
+
+      SetEnv PROJ_DATA "/ms4w/share/proj"
+
+Important Notes
+---------------
+
+- If all of your data in the mapfile is in the same projection, you DO NOT
+  have to specify any projection objects.  MapServer will assume that all of
+  the data is in the same projection.
+
+- Think of the :ref:`MAP`-level projection object as your output projection.
+  The `EXTENT` and `UNITS` values at the `MAP`-level must be in the output
+  projection units.  Also, if you have layers in other projections (other than
+  the `MAP`-level projection) then you must define `PROJECTION` objects for
+  those layers, to tell MapServer what projections they are in.
+
+- If you specify a `MAP`-level projection, and then only one other `LAYER`
+  projection object, MapServer will assume that all of the other layers are in
+  the specified `MAP`-level projection.
+
+- Always refer to the EPSG file in lowercase, because it is a lowercase
+  filename and on Linux/Unix systems this parameter is case sensitive.
+
+.. note::
+
+    If you receive an error such as "*msProjectRect(): Projection library error. 
+    All points failed to reproject*" definitely verify that you have set 
+    the (MAP-level) output projection and extent properly, as well as the 
+    projection block for each of your layers (their source projection).
+
+For More Information 
+--------------------
+
+- If you get projection errors, refer to the :ref:`errors` to check 
+  if your exact error has been discussed.
+
+- Search the MapServer-users `email list archives`_, odds are that someone has
+  faced your exact issue before.
+
+- See the `PROJ`_ user guides for complete descriptions of supported
+  projections and coordinate systems.
+
+- Read more about the history of the `Web Mercator projection`_.  
+  
+- A respected author on map projections is John P. Snyder, if you are wishing
+  for printed material to review.
+  
+- To lookup specific EPSG projection codes, the website https://spatialreference.org/ is 
+  recommended, and https://epsg.io/ may also be useful.  The main EPSG 
+  site now also contains a text or map search for EPSG codes : https://epsg.org/home.html
+
+.. _`PROJ`: https://proj.org
+.. _`Web Mercator projection`: https://en.wikipedia.org/wiki/Web_Mercator_projection
+.. _`email list archives`: https://www.mail-archive.com/mapserver-users@lists.osgeo.org/

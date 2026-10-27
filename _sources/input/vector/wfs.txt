@@ -1,0 +1,118 @@
+.. _wfs:
+
+*****************************************************************************
+ WFS
+*****************************************************************************
+
+WFS is an Open Geospatial Consortium (OGC) specification.
+For more information about the format itself, see:
+https://www.ogc.org/standards/wfs
+
+WFS allows a client to retrieve geospatial data encoded in Geography Markup
+Language (GML) from multiple Web Feature Services.  GML is built on the
+standard web language XML.
+
+WFS differs from the popular Web Map Service (WMS) specification in that 
+WFS returns a subset of the data in valid GML format, not just a graphic 
+image of data.
+
+Capabilities
+-------------------
+
+Requesting the capabilities using the GetCapabilities request to a WFS
+server returns an XML document showing what layers and  projections
+are available, etc.
+Example of a WFS GetCapabilities URL:
+
+	https://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=1.0.0&REQUEST=GetCapabilities
+
+Example of the Resulting XML from GetCapabilties:
+
+.. code-block:: xml
+
+	...
+	<FeatureTypeList>
+	  <Operations>
+	    <Query/>
+	  </Operations>
+	  <FeatureType>
+	    <Name>continents</Name>
+	    <Title>World continents</Title>
+	    <SRS>EPSG:4326</SRS>
+	    <LatLongBoundingBox minx="-180" miny="-90" maxx="180" maxy="83.6274"/>
+	  </FeatureType>
+	  <FeatureType>
+	    <Name>cities</Name>
+	    <Title>World cities</Title>
+	    <SRS>EPSG:4326</SRS>
+	    <LatLongBoundingBox minx="-178.167" miny="-54.8" maxx="179.383" maxy="78.9333"/>
+	  </FeatureType>
+	</FeatureTypeList>
+	...
+
+Data Access / Connection Method
+---------------------------------
+
+*  WFS access is a core MapServer feature. MapServer currently supports 
+   WFS version 1.0.0.
+   
+   .. seealso:: :ref:`wfs_client`
+
+*  WFS access is also supported through OGR's `WFS driver <https://gdal.org/drivers/vector/wfs.html#vector-wfs>`__.
+
+*  CONNECTIONTYPE WFS or CONNECTIONTYPE OGR must be used (see the
+   :ref:`ogr` documentation for details on how to use WFS through
+   OGR).
+
+*  WFS layers can be requested through a layer in a map file, or you can 
+   request the GML directly through the browser with a GetFeature 
+   request.  You can specify a specific layer with the TypeName 
+   request.  In a map file the name/value pairs should be put 
+   into a METADATA object.
+
+*  You can limit the number of features returned in the GML by using 
+   the MaxFeatures option (e.g. &MAXFEATURES=100).
+
+Example of a WFS Request Directly Through the Browser
+-----------------------------------------------------
+
+The following URL requests the GML for the layer continents.  (see the 
+GetCapabilities above for the possible layers available on this 
+test server) .  The URL is all one line, broken up here for readability (click `here <https://demo.mapserver.org/cgi-bin/wfs?SERVICE=WFS&VERSION=1.0.0&REQUEST=getfeature&TYPENAME=continents&MAXFEATURES=100>`__ for a working link).
+::
+	
+	https://demo.mapserver.org/cgi-bin/wfs?
+	SERVICE=WFS&
+	VERSION=1.0.0&
+	REQUEST=getfeature&
+	TYPENAME=continents&
+	MAXFEATURES=100
+
+Mapfile Example
+---------------
+
+.. code-block:: mapfile
+
+	LAYER
+	  NAME "continents"
+	  TYPE POLYGON
+	  STATUS ON
+	  CONNECTION "https://demo.mapserver.org/cgi-bin/wfs?"
+	  CONNECTIONTYPE WFS
+	  METADATA
+	    "wfs_typename"          "continents"
+	    "wfs_version"           "1.0.0"
+	    "wfs_connectiontimeout" "60"
+	    "wfs_maxfeatures"       "10"
+	  END
+	  PROJECTION
+	    "init=epsg:4326"
+	  END
+	  CLASS
+	    NAME "Continents"
+	    STYLE
+	      COLOR 255 128 128
+	      OUTLINECOLOR 96 96 96 
+	    END
+	  END
+	END # Layer

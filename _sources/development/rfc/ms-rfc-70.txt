@@ -1,0 +1,229 @@
+.. _rfc70:
+
+=========================================================================
+MS RFC 70: Integration of TinyOWS in MapServer project
+=========================================================================
+
+:Date:  2011/04/14
+:Author: Olivier Courtin
+:Contact: olivier dot courtin at oslandia.com
+:Status: Adopted
+:Version: MapServer 6.2
+
+Description: This RFC proposes a TinyOWS integration under MapServer Umbrella.
+
+1. Overview
+-----------
+TinyOWS is often used tiedly with MapServer to provide WFS-T functionnalities.
+
+The idea here is to bring to end user a more integrated solution 
+through a single MapFile configuration file for both apps.
+
+And also to put TinyOWS under MapServer project umbrella, to increase again
+its usage.
+
+2. The proposed solution
+------------------------
+
+2.1 Keeping the cycle release independent
+-----------------------------------------
+MapServer and TinyOWS cycles releases are kept independent.
+
+2.2 SVN
+-------
+On SVN, TinyOWS location should be:
+
+ svn.osgeo.org/mapserver/trunk/tinyows
+ svn.osgeo.org/mapserver/branches/tinyows-1.0
+ svn.osgeo.org/mapserver/tags/tinyows-1.0.0
+
+2.3 A common MapFile as config file 
+-----------------------------------
+Aim is to be able to have for end user a single config file, so a text MapFile.
+
+TinyOWS trunk already able to deal with MapFile to retrieve all it's config 
+stuff, through a dedicaded MapFile lexer.
+
+The idea, in a quite near future, is to bring an LibMapFile API 
+and so to allow others apps to use MapFile as a single config file way. 
+
+It will simplify the maintenace of such a parser, and avoid possibility to have
+distincts behaviours.
+
+This LibMapFile API, is out of the scope of this RFC.
+
+2.4 Perspective: Packaged build system 
+--------------------------------------
+We could imagine from this RFC (and also with related mod_geocache integration),
+to provide an meta package with a single configure/make/make install, managing
+the build of MapServer, TinyOWS and mod_geocache at once.
+
+These meta package build system is also out of the scope of this RFC.
+
+3. Solution Details
+-------------------
+
+3.0 Naming
+----------
+TinyOWS will be called: MapServer TinyOWS
+(To keep the previous quite known name, and to give it the MapServer prefix)
+
+3.1 Documentation
+-----------------
+Move TinyOWS trac Wiki documentation to RST syntax.
+
+Also need to enhance documentation to provide more examples 
+and a comprehensive user manual, or at least something like and FAQ.
+
+Native English writers, and guys who are not (yet) familiar with the project
+are really appreciated on helping on this.
+
+3.2 Licence
+-----------
+TinyOWS already use MIT licence, as MapServer does.
+Copyright holders (Barbara Philippot and Olivier Courtin) should be kept
+on existing TinyOWS files.
+
+3.3 Tickets
+-----------
+TinyOWS use a Trac, but as only few tickets are still open,
+an efficient way is just to create them back in MapServer one.
+
+Should imply a new component in MapServer Trac, called: TinyOWS.
+
+3.4 Developpers & PSC 
+---------------------
+Olivier Courtin should entered in MapServer PSC and have commit access to 
+MapServer trunk, and will keep (at least for a while) the lead in the TinyOWS
+development stuff.
+
+Others TinyOWS devs are already involved in MapServer project (Assefa, Alan).
+
+One aim is also to have more MapServer devs ready to look at the code,
+and committing patches.
+
+The MapServer PSC will become the ultimate decision autorithy for
+MapServer TinyOWS module.
+
+3.5 SVN Import
+--------------
+TinyOWS trunk and 1.0 (coming) branch should be imported in MapServer SVN.
+
+Previous commit history will be kept on the old TinyOWS SVN, for a while.
+
+3.6 Code Convention
+-------------------
+We have to call astyle on the whole code, to make it MapServer compliant:
+astyle --style=kr --unpad=paren --indent=spaces=2
+
+3.7 Redirections
+----------------
+tinyows.org domain could be redirected to the coming MapServer TinyOWS 
+documentation pages. (http://www.mapserver.org/tinyows/)
+
+Mailings lists: tinyows-dev and tinyows-users should be stopped and news
+discussions should occurs to relevant mapserver ones.
+
+3.8 Project Maturity
+--------------------
+If we compare to MapServer, TinyOWS is a far more younger project, with 
+a really small dev team.
+So it imply that decision, and administrative part of the project must 
+be kept lightweight, at least for a while.
+
+So RFC must be used only for big and majors changes, all the others common
+stuff, should be done 'only' with simple Trac tickets, like:
+
+ - Correct/improve OGC standard compliancy, and interoperability
+ - Bug and security fixes
+ - Minor feature enhancement
+ - Small code refactoring
+ - Unit tests policy
+ - ...
+
+
+4. TinyOWS Code Review
+----------------------
+
+4.1 Code Origin
+---------------
+All C code was written from scratch by TinyOWS devs, so should not be a
+real problem.
+
+For XSD Schema coming from OGC, and OGC CITE Unit tests:
+Official OGC LICENSE is descripted here: https://www.ogc.org/ogc/document
+it allows public diffusion, but not to modify it.
+
+4.2 Code Quality
+----------------
+All code compile without any warning on commons Unix like platforms,
+with flags: -ansi -pedantic -Wall
+
+All OGC CITE Units tests are valgrinded, (no error, no memory leak),
+but it's doesn't cover all the code branchs.
+
+Some units tests like Cunit could be helpful in a future.
+
+4.3 Security Audit 
+------------------
+No external security audit never been perform on the code.
+The main inherent risk is SQL Injection.
+
+Some checks already have been done with automated tools like sqlmap,
+but will need to be improved to adjust to some WFS-T and FE 
+peculiar uses cases.
+
+(No security hole 've been found on TinyOWS trunk with sqlmap)
+
+4.4 OGC WFS-T compliancy
+------------------------
+Implementation of WFS 1.0.0, WFS 1.1.0, FE 1.0.0 and FE 1.1.0.
+Basic and Transactional profile, SF-0.
+(No Xlink nor Lock profile implemented)
+
+TinyOWS trunk on OGC CITE unit test:
+ - WFS-T 1.1.0 (r4) : 559 'Passed' / 0 'Failed'
+ - WFS-T 1.0.0 (r3) : 398 'Passed' / 0 'Failed'
+
+4.5 External Dependencies
+-------------------------
+ - LibXML2 >= 2.6.20 (and libxml2 trunk to avoid GML XSD Schema)
+ - PostgreSQL >= 8.1.0
+ - PostGIS >= 1.5.0
+ - FastCGI is optional (but recommended)
+
+4.6 MapFile notions not yet addressed
+-------------------------------------
+Some Mapfile concepts are not yet present in TinyOWS:
+ - Only PostGIS CONNECTIONTYPE are handled
+ - TinyOWS don't pretend to support right now all the WFS parameters available in MapFile
+ - But on the other hand you should be able to configure every part of TinyOWS from MapFile
+ - Each CONNECTION string value in layers must be the same.
+ - MapFile PROJECTION content is not parsed, so use explicit wfs_srs
+ - MapFile LAYER/FILTER is not parsed.
+ - Defaults values are TinyOWS ones, even for common properties shared by both apps.
+ - TinyOWS don't use DATA element from MapFile, so you have to use tinyows_table (and tinyows_schema if needed) in each layer.
+ - If DUMP is not set to TRUE on a layer both Read and Write access are shutdown for these layer 
+
+
+4.7 Build system
+----------------
+TinyOWS use like MapServer autoconf and Makefile to build stuff.
+
+4.8 Roadmap and vision
+----------------------
+General aim is to keep the application the faster alternative available for WFS-T,
+as compliant as possible to next OGC and INSPIRE standards, and of course robust.
+
+Mains future works area are (they will imply futures RFC, just here to notice them):
+ - Add new export formats (Shapefile, KML...)
+ - Apache Module support
+ - More exhaustive unit tests policy (not only OGC ones)
+ - More consistent behaviour and configuration directives for both TinyOWS and MS.
+ - Oracle Spatial support
+ - Application Schema support
+ - WFS 2.0 and INSPIRE compliancy
+
+5. Voting history
+-----------------
+Passed with +1's from Steve L., Steve W., Tamas, Dan, Howard, Assefa, Thomas and Tom on 8/19/2011.
