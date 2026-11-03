@@ -1,0 +1,157 @@
+.. _rfc106:
+
+======================================================
+MS RFC 106: Support of Geomtransform JavaScript Plugin
+======================================================
+
+:Date:  2013/11
+:Author: Alan Boudreault
+:Contact: aboudreault@mapgears.com
+:Status: Adopted
+:Version: MapServer 7.0
+
+.. warning::
+    This feature is experimental and backwards compatibility may be broken in
+    the not-so-short term as the functionality evolves. It is the evolution of the :ref:`rfc102`.
+
+.. warning::
+    Refer to :ref:`geomtransformjs` for the up-to-date documentation.
+
+1. Overview
+-----------
+
+Being able to style our features programmatically through javascript is a nice
+feature. This was added in :ref:`rfc102`. It allows us to avoid writing many
+classes and styles in the mapfile. An additional use case of javascript could be
+the ability to modify the geometry of the feature based on the input geometry
+and/or its attributes.
+
+2. Proposed solution
+--------------------
+
+This RFC proposes the addition of a GEOMTRANSFORM javascript plugin. It will
+allow us to modify the geometry programmatically through javascript. This is
+similar to the built-in geomtransform (buffer, centroid, etc.), but allows you
+to implement your own logic using javascript. Additionally, you will be able to modify
+a geometry based on its attributes values.
+
+3. Implementation Details
+-------------------------
+
+MapServer will have a new GEOMTRANSFORM keyword: `javascript`. This will point
+to a javascript file, which needs to return a new geometry. The following objects
+will be exposed for the purpose:
+
+* shapeObj
+* lineObj
+* pointObj
+
+However, only a limited set of their properties will be available in JavaScript
+(for the moment). The geomtransform looks for a function named `geomtransform`
+and calls it.
+
+3.1 Internal Implementation Details
+....................................
+
+* New binding v8 file structure: will be in mapscript/v8.
+* Upgrade v8 binding to use v8 3.20. (Synched with NodeJS, future possibility?)
+* Expose shapeObj, lineObj and pointObj to v8:
+
+ * The objects will be exposed the same way we expose objects in nodejs. (future possibility?)
+ * The objects will have a constructor, so a "new pointObj()" will be
+   possible. This is also mandatory to create a new geometry.
+
+ * Modify the internal to use pre-determined function names for styleitem and
+   geomtransform rather than coding in the global scope.
+
+3.2 Mapfile and JavaScript Examples
+...................................
+
+Here is an example of GEOMTRANSFORM javascript.
+
+mapfile:
+
+.. code-block:: mapfile
+
+    LAYER
+        NAME "my_vector_layer"
+        TYPE POINT
+        STATUS ON
+        GEOMTRANSFORM "javascript:///path/to/my/file.js"
+        CLASS
+          STYLE
+          ...
+          END
+        END
+    END
+
+javascript:
+
+.. code-block:: javascript
+
+   function geomtransform(shape) {
+     new_shape = new shapeObj(); // constructor
+     new_shape.add(new lineObj());
+
+     new_point = new pointObj();
+     new_point.x = clone_shape.line(0).point(0).x;
+     new_point.y = clone_shape.line(0).point(0).y+30000; // vertical translation in meters
+     new_shape.line(0).add(new_point);
+
+     return new_shape;
+   }
+
+3.3 Modifying the geometry in Styleitem Javascript
+..................................................
+
+You can use styleitem javascript in combination with the geomtransform
+javascript. However, this adds some overhead since two javascript scripts are
+executed for each shape. For this reason, it will also be possible to modify the geometry in the
+styleitem javascript method without having to use geomtransform. The difference in the styleitem javascript case is that instead of returning a new geometry, we modify the existing one. There might be some limitations with using
+this method though. (ie. not sure if it is safe to return another type of geometry in this case).
+
+Here is an example:
+
+javascript:
+
+.. code-block:: javascript
+
+   function styleitem(shape) {
+     new_shape = new shapeObj(); // constructor
+     new_shape.add(new lineObj());
+
+     new_point = new pointObj();
+     new_point.x = shape.line(0).point(0).x;
+     new_point.y = shape.line(0).point(0).y+30000; // vertical translation in meters
+     new_shape.line(0).add(new_point);
+
+     shape.setGeometry(new_shape);
+     
+     return "STYLE SYMBOL 'star' COLOR 255 0 0  SIZE 10 END"; // or compute your style..
+   }
+
+3.4 Files affected
+..................
+
+* mapv8.cpp: Generic implementation of the V8 support.
+* mapscript/v8: New mapscript directory for the binding.
+
+3.5 Backwards Compatibility Issues
+..................................
+
+New functionality, but affects a little bit the :ref:`rfc102` (We don't return values in the global scope any more).
+
+3.6 MapScript changes
+.....................
+
+New mapscript bindings.
+
+4. Bug ID
+---------
+
+* Pull request: https://github.com/MapServer/MapServer/pull/4827
+
+5. Voting history
+-----------------
+
+Passed with +1 from Stephen, Daniel, Thomas, Stephan, Tamas, Jeff, Mike, Assefa, Steve and Perry

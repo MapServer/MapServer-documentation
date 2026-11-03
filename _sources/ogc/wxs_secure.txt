@@ -1,0 +1,214 @@
+.. index::
+   single: https connections
+
+.. _wxs_secure:
+
+*********************************
+Accessing OGC services over HTTPS
+*********************************
+
+:Author: Jeff McKenna
+:Contact: jmckenna at gatewaygeomatics.com
+:Original Author: Normand Savard
+:Last updated: 2022-08-15
+
+.. contents:: Table of Contents
+    :depth: 2
+    :backlinks: top
+
+Introduction
+============
+
+The following documentation explains how to set up MapServer as a
+client to access a WMS/WFS server through a secure SSL connection
+using the HTTPS protocol.  It describes the common problems a user
+could encounter and how to solve them.
+
+Requirements
+============
+
+MapServer 5.4.1 or more recent, compiled with `cURL <https://curl.haxx.se/>`__.  cURL must be built with
+SSL support.  You should also follow the full steps for configuring your related OGC client support, through:
+
+- :ref:`WMS Client Howto <wms_client>`
+- :ref:`WFS Client Howto <wfs_client>`
+
+Verify Installation
+===================
+
+cURL executable
+---------------
+
+First check that cURL is found locally, and was built with SSL support:
+
+:: 
+
+    curl --version
+    
+On Linux systems the response should be similar to (notice the *ssl* protocol):
+
+::
+
+    curl 7.68.0 (x86_64-pc-linux-gnu) libcurl/7.68.0 OpenSSL/1.1.1g zlib/1.2.8
+    Release-Date: 2020-01-08
+    Protocols: dict file ftp ftps gopher http https imap imaps pop3 pop3s rtsp smb smbs smtp smtps telnet tftp
+    Features: AsynchDNS HTTPS-proxy Largefile libz NTLM NTLM_WB SSL TLS-SRP UnixSockets
+
+On Windows the response should be similar to (notice the *ssl* protocol):
+
+::
+
+    curl 7.68.0 (i386-pc-win32) libcurl/7.68.0 OpenSSL/1.1.1d zlib/1.2.7 WinIDN
+    Release-Date: 2020-01-08
+    Protocols: dict file ftp ftps gopher http https imap imaps ldap ldaps pop3 pop3s rtsp smb smbs smtp smtps telnet tftp
+    Features: AsynchDNS HTTPS-proxy IDN IPv6 Kerberos Largefile NTLM SPNEGO SSL SSPI UnixSockets libz
+
+.. tip::
+   MS4W users can execute curl by first executing *setenv.bat*
+
+Next, verify your connection with the cURL commandline, to a remote HTTPS service such as:
+
+::
+
+   curl https://demo.mapserver.org/cgi-bin/wms?
+   
+You should receive a result such as:
+
+::
+
+   No query information to decode. QUERY_STRING is set, but empty.
+   
+If you receive an error message such as the following, you likely have not
+pointed to the local CA bundle properly:
+
+::
+
+   curl: (60) SSL certificate problem: unable to get local issuer certificate
+   More details here: https://curl.haxx.se/docs/sslcerts.html
+
+   curl failed to verify the legitimacy of the server and therefore could not
+   establish a secure connection to it. To learn more about this situation and
+   how to fix it, please visit the web page mentioned above.
+   
+CA Bundle
+=========
+
+The cURL CA (certificate authority) bundle file must be located on your local machine/server.
+
+Download the CA bundle file "cacert.pem" found at
+https://curl.se/docs/caextract.html or if you have the cURL source
+you could create the CA bundle by executing "make ca-bundle" or "make
+ca-firefox" (if you have Firefox and the certutil tool installed).  If
+you used the second choice, the bundle file will be named
+ca-bundle.crt and will be found in the lib directory under the cURL
+root directory.  See https://curl.se/docs/caextract.html for more
+details.  Store this file in the location pointed to by the
+*CURL_CA_BUNDLE* environment variable.
+
+Set the *CURL_CA_BUNDLE* environment variable to point to the bundle
+file (e.g. export CURL_CA_BUNDLE=/path/to/my-ca-bundle.ext where
+my-ca-bundle.ext could be cacert.pem or ca-bundle.crt).
+
+.. note::
+   MS4W comes with HTTPS already configured for Windows users, and the
+   configuration is explained at https://ms4w.com/README_INSTALL.html#certificates-for-https
+
+Mapfile Setup
+=============
+
+Edit your map file to add the WMS connection URL.  For example:
+
+.. code-block:: mapfile
+
+   CONNECTION     "https://demo.mapserver.org/cgi-bin/wms?"
+   CONNECTIONTYPE WMS
+   
+Test with the :ref:`map2img <map2img>` utility, to verify that MapServer can connect through HTTPS and generate
+a valid map image, such as the command:
+
+::
+
+  map2img -m test.map -o ttt.png -map_debug 3
+   
+If you receive an error from MapServer similar to the following, it means that you have not pointed to your 
+local CA bundle properly:
+
+::
+
+   msDrawMap(): WMS connection error. Failed to draw WMS layer named 'country_bounds'. This most likely happened because the remote WMS server returned an invalid image, and XML exception or another unexpected result in response to the GetMap request. Also check and make sure that the layer's connection URL is valid. <br>
+   msDrawWMSLayerLow(): WMS server error. WMS GetMap request failed for layer 'country_bounds' (Status -60: SSL certificate problem: unable to get local issuer certificate). <br>
+   msHTTPExecuteRequests(): HTTP request error. HTTP: request failed with curl error code 60 (SSL certificate problem: unable to get local issuer certificate) for https://demo.mapserver.org/cgi-bin/wms?LAYERS=country_bounds&REQUEST=GetMap&SERVICE=WMS&FORMAT=image/gif&STYLES=&HEIGHT=300&VERSION=1.1.1&SRS=EPSG:4326&WIDTH=400&BBOX=-180.451127819549,-135.338345864662,180.451127819549,135.338345864662&TRANSPARENT=TRUE <br>
+
+Remote Server with a Self-Signed SSL Certificate
+================================================
+
+If you get the following error, it means that your remote server
+probably use a self-signed SSL certificate and the server certificate
+is not included in your CA bundle file.
+
+::
+
+    curl: (60) SSL certificate problem, verify that the CA cert is OK. Details:
+    error:14090086:SSL routines:SSL3_GET_SERVER_CERTIFICATE:certificate verify failed
+    More details here: http://curl.haxx.se/docs/sslcerts.html
+
+    curl performs SSL certificate verification by default, using a "bundle"
+    of Certificate Authority (CA) public keys (CA certs). If the default
+    bundle file isn't adequate, you can specify an alternate file
+    using the --cacert option.
+    If this HTTPS server uses a certificate signed by a CA represented in
+    the bundle, the certificate verification probably failed due to a
+    problem with the certificate (it might be expired, or the name might
+    not match the domain name in the URL).
+    If you'd like to turn off curl's verification of the certificate, use
+    the -k (or --insecure) option.
+
+To get the remote server certificate you have to execute this command:
+
+::
+
+    openssl s_client -connect domainname:port
+
+Copy everything from the "-----BEGIN CERTIFICATE-----" tag to
+"-----END CERTIFICATE-----" tag.  Paste it at the end of the
+my-ca-bundle.ext file.
+
+If you get the error "Verification error: unable to get local issuer certificate"
+you may be missing an intermediate certificate. If you have saved locally the 
+certificate file you can supply this file as a parameter to *openssl* as follows:
+
+::
+
+    openssl s_client -CAfile C:\Certs\curl-ca-bundle.crt -connect domainname:port
+
+Verify your connection with the cURL command line:
+
+::
+
+   curl https://demo.mapserver.org/cgi-bin/wms?
+
+.. note::
+   If you get the following error, it means that the domain name in
+   the URL request is not corresponding to the one that was declared
+   when creating the remote server certificate.
+
+   ::
+
+      curl: (51) SSL: certificate subject name 'domainname' does not match target host name 'domainname'
+
+You have to use the exact same domain name as the one appearing in the
+"Common Name" prompt used when generating the remote server
+certificate. You cannot use the remote server ip for instance. It
+means that the following URL is not acceptable.
+
+.. code-block:: mapfile
+
+   CONNECTION "https://xxx.xxx.xxx.xxx:port/cgi-bin/mapserv?map=/path/to/wms.map"
+   CONNECTIONTYPE WMS
+
+.. NOTE::
+   It is strongly recommended to review the security steps for the *MAP=*
+   call to the MapServer executable, by setting *MS_MAP_PATTERN* or 
+   *MS_MAP_NO_PATH* or hiding the *MAP=* parameter on public servers, 
+   as recommended in the document :ref:`limit_mapfile_access`.  All possible
+   environment variables to secure your server are listed in :ref:`environment_variables`.

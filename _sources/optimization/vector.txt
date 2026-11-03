@@ -1,0 +1,589 @@
+.. index::
+   pair: Optimization; Vector
+
+.. _vector_optimization:
+
+*****************************************************************************
+ Vector Data Management & Optimization
+*****************************************************************************
+
+:Author: Jeff McKenna
+:Contact: jmckenna at gatewaygeomatics.com
+:Original Author: HostGIS
+:Last Updated: 2026-03-29
+
+.. contents:: Table of Contents
+    :depth: 3
+    :backlinks: top
+    
+Choose the right vector format for your needs
+---------------------------------------------
+
+- The best/optimal vector data source for MapServer in terms of speed-of-display
+  is :ref:`Shapefile <shapefiles>`.
+  
+  .. tip::
+    MapServer 8.0 includes a new :ref:`coshp` utility to create 
+    'Cloud Optimized Shapefiles'
+  
+- A recent format designed for vector performance, with similar map draw 
+  speed in MapServer as Shapefile, is :ref:`FlatGeobuf <flatgeobuf>`, and is 
+  recommended for cloud performance.
+
+- For databases, MapServer displays :ref:`PostGIS <input_postgis>` 
+  layers very fast, and some custom tricks are included in the MapServer source 
+  specifically for PostGIS + MapServer draw speed.  PostGIS is therefore recommended.
+  
+- :ref:`SpatiaLite <sqlite>` is recommended
+  for those who require a portable format, and works very well with MapServer.
+
+- :ref:`GeoPackage <geopackage>` ("GPKG") is also very popular for portability, 
+  and works very well with MapServer.
+
+Here are some rudimentary map draw speed results, with the 
+MapServer 8.0 release code (running on Windows with `MS4W <https://ms4w.com>`__):
+
+::
+
+  FlatGeobuf (native) 0.008s
+  Shapefile (native)  0.010s
+  FlatGeobuf (OGR)    0.013s
+  Shapefile (OGR)     0.023s
+  GeoPackage (OGR)    0.042s
+  SpatiaLite (OGR)    0.045s
+  PostGIS (native)    0.053s
+  GeoJSON (OGR)       0.089s
+
+Spend time to review GDAL's associated driver page for your chosen format
+-------------------------------------------------------------------------
+
+This is a critical step, as MapServer relies on GDAL (actually the OGR part of the 
+project, which handles vectors) for vector data access.  Each driver (OGR format) 
+has its own set of abilities and switches. Find your vector format and review 
+its options `here <https://gdal.org/drivers/vector/index.html>`__.
+
+Connect to your data through OGR/GDAL
+-------------------------------------
+
+For data management in MapServer, this should always be one of your first steps.
+Sometimes desktop GIS programs will display a format or its attributes in a certain 
+way (such as in uppercase) but your data might not display in MapServer; checking
+how OGR/GDAL reads your data file or database table, will help you manage 
+the data.  The :ref:`OGR` document has excellent examples 
+(for *ogrinfo* and other commands) to connect to your data. Here is an
+example connecting to a PostGIS database, and returning a list of spatial tables: ::
+
+  ogrinfo -ro PG:"host=127.0.0.1 user=postgres password=postgres port=5432 dbname=mydb"
+  
+        INFO: Open of `PG:host=127.0.0.1 user=postgres password=postgres port=5432 dbname=mydb'
+              using driver `PostgreSQL' successful.
+        1: popplace (Point)
+        2: province (Multi Polygon)
+        
+Then get a summary of the 'popplace' table through ogrinfo: ::
+
+    ogrinfo -ro PG:"host=127.0.0.1 user=postgres password=postgres port=5433 dbname=mydb" popplace -summary
+    
+    
+        INFO: Open of `PG:host=127.0.0.1 user=postgres password=postgres port=5433 dbname=mydb'
+              using driver `PostgreSQL' successful.
+
+            Layer name: popplace
+            Geometry: Point
+            Feature Count: 497
+            Extent: (-2303861.750000, -681502.875000) - (2961766.250000, 3798856.750000)
+            Layer SRS WKT:
+            PROJCS["NAD83 / Canada Atlas Lambert",
+                GEOGCS["NAD83",
+                    DATUM["North_American_Datum_1983",
+                        SPHEROID["GRS 1980",6378137,298.257222101,
+                            AUTHORITY["EPSG","7019"]],
+                        TOWGS84[0,0,0,0,0,0,0],
+                        AUTHORITY["EPSG","6269"]],
+                    PRIMEM["Greenwich",0,
+                        AUTHORITY["EPSG","8901"]],
+                    UNIT["degree",0.0174532925199433,
+                        AUTHORITY["EPSG","9122"]],
+                    AUTHORITY["EPSG","4269"]],
+                PROJECTION["Lambert_Conformal_Conic_2SP"],
+                PARAMETER["standard_parallel_1",49],
+                PARAMETER["standard_parallel_2",77],
+                PARAMETER["latitude_of_origin",49],
+                PARAMETER["central_meridian",-95],
+                PARAMETER["false_easting",0],
+                PARAMETER["false_northing",0],
+                UNIT["metre",1,
+                    AUTHORITY["EPSG","9001"]],
+                AXIS["Easting",EAST],
+                AXIS["Northing",NORTH],
+                AUTHORITY["EPSG","3978"]]
+            FID Column = gid
+            Geometry Column = geom
+            area: Real (0.0)
+            perimeter: Real (0.0)
+            popplace_: Real (0.0)
+            popplace_i: Real (0.0)
+            unique_key: String (5.0)
+            name: String (25.0)
+            name_e: String (20.0)
+            name_f: String (20.0)
+            reg_code: Real (0.0)
+            nts50: String (7.0)
+            lat: String (7.0)
+            long: String (7.0)
+            sgc_code: Real (0.0)
+            capital: Real (0.0)
+            pop_range: Real (0.0)
+            
+.. NOTE::
+    You can use the extent values returned from ogrinfo, to paste into your
+    mapfile's EXTENT parameter.  You can also notice in that summary
+    the *PROJCS/AUTHORITY* line, which states that this data is currently
+    in the `EPSG:3978 <https://spatialreference.org/ref/epsg/3978/>`__ projection. 
+
+Learn & Review the various OGR utilities to manage your vectors
+---------------------------------------------------------------
+
+OGR commandline utilities are very useful, making it easy to manipulate 
+your source vector file or database, before display in MapServer.  For example, 
+you might want to import a spatial file into your existing PostGIS database, 
+which you can do easily through 
+`ogr2ogr <https://gdal.org/programs/ogr2ogr.html>`__ as the following 
+(that takes a shapefile, imports it into an existing PostGIS database, and 
+renames the new table to 'roadways') : ::
+
+  ogr2ogr PG:"host=127.0.0.1 user=postgres password=postgres port=5432 dbname=mydb" road.shp -nln roadways
+
+.. NOTE::
+    where ogr2ogr syntax is actually: *ogr2ogr destination source*
+    
+You might also import a spatial file, and reproject it to another EPSG
+projection, as the following (that takes a shapefile, reprojects it into 
+the web mercator `EPSG:3857 <https://spatialreference.org/ref/epsg/3857/>`__, imports it into an 
+existing PostGIS database, and renames the new table to 'roadways3857') : 
+::
+
+  ogr2ogr -t_srs EPSG:3857 -s_srs EPSG:3978 PG:"host=127.0.0.1 user=postgres password=postgres port=5432 dbname=mydb" road.shp -nln roadways3857
+
+.. NOTE::
+    where ogr2ogr syntax is actually: *ogr2ogr -t_srs (ouput projection) -s_srs (source projection) destination source*
+
+Review all of the available OGR vector utilities 
+`here <https://gdal.org/programs/#vector-programs>`__.    
+
+Index your data
+---------------
+
+This of course is an important step for any vector layer, for fast display 
+in MapServer.  There are several types of indexes that you can enable to 
+speed up the display of your vector data with MapServer:
+
+Tileindexing
+^^^^^^^^^^^^
+
+See :ref:`tileindex` for more detailed information about 
+on-the-fly mosaicing with MapServer.
+
+Add a Spatial Index to your data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Make sure that your geometry has a spatial index.
+
+- Shapefile: see :ref:`shptree`
+- See below for databases (and GPKG)
+
+Add an Attribute Index to your data
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+If you will be querying or filtering by a specific column in your 
+data, you should setup an attribute index on your vector data.
+
+Shapefiles:
+
+::
+
+  ogrinfo -sql  "CREATE INDEX ON province USING NAME_E" province.shp
+  
+2 files should be created with extensions: *.ind & .idm*
+  
+GeoPackage:
+
+::
+
+  ogrinfo -sql "CREATE INDEX IDXnewindexname ON yourtable (yourcolumn)" file.gpkg
+
+Splitting your data
+-------------------
+
+If you find yourself making several layers, all of them using the same dataset
+but filtering to only use some of the records, you could probably do it
+better. If the criteria are static, one approach is to pre-split the data.
+
+The *ogr2ogr* utility can select on certain features from a datasource, and
+save them to a new data source. Thus, you can split your dataset into several
+smaller ones that are already effectively filtered, and remove the FILTER
+statement.
+
+If you are using shapefiles, the `shp2tile <https://github.com/woodbri/imaptools.com>`__
+utility is a wonderful commandline tool for this.
+  
+.. NOTE::
+    For Windows users, `MS4W <https://ms4w.com>`__ includes the shp2tile utility, and 
+    all utilities mentioned here.
+
+.. index::
+   pair: Optimization; Shapefiles
+   
+Handling your vector LAYERS in the mapfile
+------------------------------------------
+
+Please review the notes in the document :ref:`mapfile_tuning`.  You should also
+check for any specific MapServer notes for your format in the :ref:`vector`
+document.
+
+Shapefile Notes
+---------------
+Use :ref:`shptree` to generate a spatial index on your :ref:`shapefile <shapefiles>`. This is
+quick and easy ("shptree foo.shp") and generates a .qix file. MapServer will
+automagically detect an index and use it.
+
+.. note::
+
+    Tileindexes can also be indexed with :ref:`shptree`.
+
+MapServer also comes with the :ref:`sortshp` utility. This reorganizes a
+shapefile, sorting it according to the values in one of its columns. If you're
+commonly filtering by criteria and it's almost always by a specific column,
+this can make the process slightly more efficient.
+
+Although shapefiles are a very fast data format, :ref:`PostGIS
+<input_postgis>` is pretty speedy as well, especially if you use indexes well
+and have memory to throw at caching.
+
+.. index::
+   pair: Optimization; PostGIS
+
+PostGIS Notes
+-------------
+
+.. seealso:: :ref:`PostGIS Input in MapServer <input_postgis>`
+
+Indexing with PostGIS
+^^^^^^^^^^^^^^^^^^^^^
+
+The single biggest boost to performance is indexing. Make sure that there's a
+GIST index on the geometry column, and each record should also have an indexed
+primary key. If you used shp2pgsql, then these statements should create the
+necessary indexes:
+
+.. code-block:: sql
+
+    ALTER TABLE table ADD PRIMARY KEY (gid);
+    CREATE INDEX table_the_geom ON table (the_geom) USING GIST;
+
+PostgreSQL also supports reorganizing the data in a table, such that it's
+physically sorted by the index. This allows PostgreSQL to be much more
+efficient in reading the indexed data. Use the 
+`CLUSTER command <https://www.postgresql.org/docs/current/sql-cluster.html>`__, 
+e.g.
+
+.. code-block:: sql 
+
+    CLUSTER the_geom ON table;
+
+Then there are numerous optimizations one can perform on the database server
+itself, aside from the geospatial component. The easiest is to increase
+*shared_buffers* in the *postgresql.conf* file, which allows PostgreSQL to use
+more memory for caching. It is worth the time to investigate the various options
+in the `Resource Consumption <https://www.postgresql.org/docs/current/runtime-config-resource.html>`__
+section of the PostgreSQL documentation.
+
+.. _uniqueid_postgis:
+
+Specifying a Unique ID column
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+To handle queries, MapServer requires a unique ID column, as part of your
+PostgreSQL table.  MapServer will try to guess the unique ID column, but that 
+is costly as several more database queries have to be made; instead, you should
+always specify a unique ID column in your DATA statement of the layer, with the
+*using unique* syntax, such as:
+
+.. code-block:: mapfile 
+
+   DATA "geom FROM mydata USING UNIQUE myid USING SRID=3857"
+   
+If your table does not have a unique ID column, you can add one such as:
+
+::
+
+   ALTER TABLE mytable ADD COLUMN unique_id SERIAL PRIMARY KEY;
+   
+.. warning::
+
+   In older PostgreSQL versions, a (dirty) trick was to use the existing *OID* as 
+   the unique ID, however OIDs were removed from PostgreSQL as of the PostgreSQL 12.0 release.  
+   So always specify an actual unique ID column instead, in your layer's 
+   DATA statement, of your mapfile.
+
+.. _debugging_postgis:
+
+Debugging speed issues with PostGIS
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You may face a situation where your PostGIS table is drawing slowly in MapServer. 
+The following steps will help you examine the issue (using a WFS case) :
+
+.. seealso::
+        
+    :ref:`debugging`
+
+- Always start by getting the draw time for your layer, with a :ref:`map2img` 
+  command:
+
+    ::
+
+      map2img -m postgis-wfs.map -o ttt.png -map_debug 3
+
+        msDrawMap(): Layer 0 (provinces), 1.587s
+        msDrawMap(): Drawing Label Cache, 0.000s
+        msDrawMap() total time: 1.589s
+        msSaveImage(ttt.png) total time: 0.005s
+        freeLayer(): freeing layer at 010E0EC0.
+        msPostGISLayerIsOpen called.
+        msConnPoolClose(host=127.0.0.1 user=postgres password=postgres port=5432 dbname=gmap,01197840)
+
+- To diagnose if the problem is with your PostGIS table configuration, or with
+  MapServer, execute the exact request sent by MapServer, at the psql.exe 
+  commandline, by doing the following steps:
+  
+    - add into your MAP-level of your mapfile:
+
+       .. code-block:: mapfile 
+
+         CONFIG "CPL_DEBUG" "ON"
+         CONFIG "MS_ERRORFILE" "/ms4w/tmp/ms_error.txt"
+         DEBUG 5
+
+    - add into your PostGIS LAYER of your mapfile:
+
+       .. code-block:: mapfile 
+
+         DEBUG 5
+
+    - now use a WFS client such as QGIS and add your WFS PostGIS layer
+
+    - open  "/ms4w/tmp/ms_error.txt" in Notepad++
+
+    - search for "msPostGISLayerWhichShapes query:"
+
+    - that line should list the long exact query sent from MapServer to the 
+      PostreSQL instance, it may look like:
+
+        ::
+        
+           [Mon Apr 12 11:27:34 2021].207000 msPostGISLayerWhichShapes query: 
+            SELECT "gid"::text,"area"::text,"perimeter"::text,"province_"::text,"province_i"::text,"status"::text,"name"::text,"name_e"::text,"name_f"::text,"reg_code"::text,"poly_featu"::text,"island"::text,"island_e"::text,"island_f"::text,ST_AsBinary(("geom"),'NDR') 
+            as geom,"gid"::text FROM province WHERE "geom" && 
+            ST_GeomFromText('POLYGON((-5814679.36987815 
+            -1504714.04276694,-5814679.36987815 4439806.52253364,5943763.33635122 
+            4439806.52253364,5943763.33635122 -1504714.04276694,-5814679.36987815 
+            -1504714.04276694))',3978) LIMIT 2 OFFSET 0
+
+      .. NOTE::
+          For one QGIS action, there could be several queries sent to MapServer,
+          so also look for other "msPostGISLayerWhichShapes query:" instances in
+          that error log.          
+
+    - now connect to that database through psql.exe
+
+        ::
+        
+           psql -U postgres -p 5432 -d mydb
+
+    - using that error file line, grab everything from "SELECT", and inside 
+      your database prompt, start the command with "EXPLAIN ANALYZE" and then 
+      paste your full query, such as:
+
+        ::
+        
+            mydb=# EXPLAIN ANALYZE SELECT 
+            "gid"::text,"area"::text,"perimeter"::text,"province_"::text,"province_i"::text,"status"::text,"name"::text,"name_e"::text,"name_f"::text,"reg_code"::text,"poly_featu"::text,"island"::text,"island_e"::text,"island_f"::text,ST_AsBinary(("geom"),'NDR') 
+            as geom,"gid"::text FROM province WHERE "geom" && 
+            ST_GeomFromText('POLYGON((-5814679.36987815 
+            -1504714.04276694,-5814679.36987815 4439806.52253364,5943763.33635122 
+            4439806.52253364,5943763.33635122 -1504714.04276694,-5814679.36987815 
+            -1504714.04276694))',3978) LIMIT 2 OFFSET 0;
+
+    - the response will tell you how long that query took, such as:
+
+        ::
+
+         Execution time: 0.293 ms
+     
+    - if the query takes a long time to execute at the psql commandline, then you know
+      to focus your efforts on improving the indexing/settings of your PostGIS table.
+
+.. index::
+   pair: Optimization; Databases
+   
+.. _vector-database-optimization:
+
+Databases in General (PostGIS, Oracle, SpatiaLite, GeoPackage, Microsoft SQL Server, MySQL)
+-------------------------------------------------------------------------------------------
+
+Enable Connection Pooling
+^^^^^^^^^^^^^^^^^^^^^^^^^
+
+By default, MapServer opens and closes a new database connection for each
+database-driven layer in the mapfile. If you have several layers reading from
+the same database, this doesn't make a lot of sense. And with some databases
+(such as Oracle) establishing connections takes enough time that it can become
+significant.
+
+Try adding this line to your database layers:
+
+.. code-block:: mapfile 
+
+    PROCESSING "CLOSE_CONNECTION=DEFER"
+
+This causes MapServer to not close the database connection for each layer until
+after it has finished processing the mapfile and this may shave a few seconds
+off of map generation times.
+
+Set EXTENT at the LAYER level of mapfile
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Also for performance, each of your LAYERs with a database connection should 
+have :ref:`EXTENT <layer-extent>` set at the layer level (as well as *ows_extent* metadata if you
+are serving through OGC services), such as:
+
+   .. code-block:: mapfile
+
+          /* my database layer */
+          LAYER
+            NAME "provinces"
+            METADATA
+              "wms_title" "Land"
+              "wms_extent" "-2340603.75 -719746.0625 3009430.5 3836605.25" #this helps for performance
+            END #metadata
+            TYPE POLYGON
+            STATUS ON
+            CONNECTIONTYPE postgis
+            CONNECTION "host=127.0.0.1 user=postgres password=postgres port=5432 dbname=gmap"
+            DATA "geom FROM province USING unique gid using srid=3978"
+            EXTENT -2340603.75 -719746.0625 3009430.5 3836605.25 #this helps for performance
+            PROJECTION
+              "init=epsg:3978"
+            END # projection
+            ...
+          END # layer
+          
+.. tip::
+
+    PostGIS users can use the `ST_Extent() <https://postgis.net/docs/ST_Extent.html>`__ 
+    spatial function to get the bounding box of a table, such as ::
+     
+      SELECT ST_Extent(geom) as table_extent FROM province;
+      
+      
+                    table_extent
+      ----------------------------------------------------
+          BOX(-2340603.75 -719746.0625,3009430.5 3836605.25)
+      (1 row) 
+      
+Verify that your table has a Spatial Index
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+PostgreSQL/PostGIS example
+**************************
+
+Once connected through psql commandline, describe the table and 
+look for an "Indexes" section, mentioning geometry, such as:
+
+::
+
+  Indexes:
+      "province_pkey" PRIMARY KEY, btree (ogc_fid)
+      "province_wkb_geometry_geom_idx" gist (wkb_geometry)
+      
+GeoPackage example
+******************
+
+You can use *ogrinfo* to verify that your GPKG table's geometry 
+has a spatial index, which is very important for performance 
+(look for `HasSpatialIndex (Integer) = 1` to confirm that the spatial 
+index exists) :
+
+::
+
+  ogrinfo -sql "SELECT HasSpatialIndex('countries', 'GEOMETRY')" countries.gpkg
+
+    Layer name: SELECT
+    Geometry: Unknown (any)
+    Feature Count: 1
+    Layer SRS WKT:
+    (unknown)
+    HasSpatialIndex: Integer (0.0)
+    OGRFeature(SELECT):0
+      HasSpatialIndex (Integer) = 1
+      
+and then add a spatial index with ogrinfo :
+
+::
+
+  ogrinfo -sql "SELECT CreateSpatialIndex('parcelle_graphique', 'geom')" PARCELLES_GRAPHIQUES.gpkg
+
+For WFS services, prevent using default/full extent 
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+For your database connections, MapServer may (by default) use the full 
+extents of your data while performing a query (which can cause slow responses
+>30seconds).  You should likely set the following layer METADATA to 
+disable this:
+
+.. code-block:: mapfile
+
+    METADATA
+      "wfs_use_default_extent_for_getfeature" "false" 
+    END
+    
+Here is a fully enhanced layer example:
+
+.. code-block:: mapfile
+   
+  LAYER
+    NAME "CLUS"
+    METADATA
+      "ows_title"                   "CLUS"		
+      "ows_srs"                     "EPSG:3857 EPSG:4326 EPSG:2154"		
+      "wfs_getfeature_formatlist"   "geojson"
+      "wfs_geomtype"                "MultiPolygon"			
+      "gml_featureid"               "fid"
+      "gml_include_items"           "all"
+      "gml_types"                   "auto"
+      "wfs_extent"                  "115134 6049690 1242200 7108930" #set to improve performance for all DB layers     
+      "wfs_use_default_extent_for_getfeature" "false" #set to improve performance for all DB layers
+      "ows_enable_request"          "*"	
+    END #metadata
+    TYPE POLYGON		
+    CONNECTIONTYPE OGR
+    CONNECTION "C:/ms4w/apps/RPG_2-0_GPKG_LAMB93_FR-2019/PARCELLES_GRAPHIQUES.gpkg"
+    DATA "parcelle_graphique"
+    EXTENT 115134 6049690 1242200 7108930 #set to improve performance for all DB layers
+    PROCESSING "CLOSE_CONNECTION=DEFER" #set to improve performance for all DB layers
+    STATUS ON
+    PROJECTION
+      "init=epsg:2154"
+    END #proj
+    COMPOSITE
+      OPACITY 100
+    END #composite    
+    CLASS
+      NAME "CLUS"
+      STYLE
+        OUTLINECOLOR 255 0 255
+      END #style
+    END #class
+  END #layer
+     

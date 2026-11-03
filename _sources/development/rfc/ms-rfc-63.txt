@@ -1,0 +1,143 @@
+.. _rfc63:
+
+===============================================================
+  MS RFC 63: Built-in OpenLayers map viewer
+===============================================================
+
+:Date: 2010-09-25
+:Author: Daniel Morissette (dmorissette at mapgears.com)
+:Author: Alan Boudreault (aboudreault at mapgears.com)
+:Last Edited: 2010-10-26
+:Status: Adopted on 2010-10-29. Implementation complete.
+:Version: MapServer 6.0
+
+Overview
+------------------------------------------------------------------------------
+
+Users often request for a simple way to test mapfiles. This RFC proposes a
+**simple** way to preview, test and navigate a mapfile with MapServer using
+a built-in OpenLayers based map viewer that will be triggered via the
+cgi. This is for testing/development purposes only and not for production or
+deploying full-featured sites. This will use the a built-in **openlayers**
+template. It will return a simple html viewer based on OpenLayers.
+
+Note that GeoServer already provides a similar functionality and this is
+what this RFC was inspired from.
+
+
+Implementation Details
+------------------------------------------------------------------------------
+
+In order to implement this enhancement, the following changes should be
+made in the MapServer codebase:
+
+
+* Add a built-in **openlayers** template.
+
+* Some new template tags will be needed. These tags will be used to
+  construct the mapserver cgi url.
+
+  - [mapserv_onlineresource]
+
+    **or**
+
+  - [protocol]
+  - [host]
+  - [program]
+  
+  See `ticket 3552 <https://github.com/MapServer/MapServer/issues/3552>`_ for more detail.
+
+
+The template will be triggered using one of the following ways:
+
+* Using **mode=browse&template=openlayers**: The viewer will be initialized
+  based on the mapfile defaults, and some of the traditional mapserv CGI
+  params may also work (such as map size, layer selection, etc.)
+
+* Using **FORMAT=application/openlayers** in a WMS GetMap request: The rest of the GetMap
+  parameters would be used to configure the map to view (BBOX, WIDTH,
+  HEIGHT, LAYERS, etc.)
+
+Both cases would call the same functions internally to produce a simple
+OpenLayers viewer with one singletile layer for the whole map with the
+selected layers.
+
+Here's the simple viewer html code that could be used:
+
+::
+
+  <html>
+  <head>
+    <title>MapServer Simple Viewer</title>
+      <script src="http://www.mapserver.org/lib/OpenLayers-ms60.js"></script>
+      </head>
+      <body>
+        <div style="width:[mapwidth]; height:[mapheight]" id="map"></div>
+        <script defer="defer" type="text/javascript">
+          var map = new OpenLayers.Map('map', 
+                                       {maxExtent: new OpenLayers.Bounds([minx],[miny],[maxx],[maxy]), 
+                                        maxResolution: [cellsize]} );
+  
+          var mslayer = new OpenLayers.Layer.MapServer( "MapServer Layer",
+              "[mapserv_onlineresource]", 
+               {layers: '[layers]'},
+               {singleTile: "true", ratio:1} );
+          map.addLayer(mslayer);
+          map.zoomToMaxExtent();
+        </script>
+  </body>
+  </html>
+
+
+
+OpenLayers Dependency
+------------------------------------------------------------------------------
+
+Obviously, this functionality needs the OpenLayers javascript library. A
+minimal build will be used and hosted on the MapServer website at
+http://www.mapserver.org/lib/OpenLayers-ms60.js. The "ms60" suffix in the
+OpenLayers-ms60.js filename is so that we can increase the version number
+in the future if/when needed to match the requirements of future releases
+of MapServer.
+
+Users will also be able to use their own OpenLayers library in one of two ways:
+
+* Using a environment variable: by setting the environment variable
+  MS_OPENLAYERS_JS_URL, MapServer will use that url rather than the default
+  one.
+
+* Using a CONFIG setting in the mapfile: by adding the config variable
+  MS_OPENLAYERS_JS_URL in a mapfile, MapServer will use that url rather than
+  the default one.
+
+   
+Files affected
+------------------------------------------------------------------------------
+
+To determine...
+
+Further Considerations
+------------------------------------------------------------------------------
+
+In the future, we may provide a mechanism to support multiple frameworks
+and ship generic templates with MapServer. 
+
+Bug ID
+------------------------------------------------------------------------------
+
+The ticket for RFC-63 (containing the implementation) can be found here.
+
+Ticket 3549_
+ 
+.. _3549: https://github.com/MapServer/MapServer/issues/3549
+
+Ticket 3552_
+ 
+.. _3552: https://github.com/MapServer/MapServer/issues/3552
+
+Voting history
+------------------------------------------------------------------------------
+
+Adopted on 2010-10-29 with +1 from SteveL, DanielM, JeffK, AssefaY, TomK, TamasS, SteveW and PerryN.
+
+

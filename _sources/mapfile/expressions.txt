@@ -1,0 +1,994 @@
+.. index::
+   single: Expressions
+
+.. _expressions:
+
+*****************************************************************************
+ Expressions
+*****************************************************************************
+
+:Author:       Dirk Tilger
+:Contact:      dirk at MIRIUP.DE
+:Author:       Umberto Nicoletti
+:Contact:      umberto.nicoletti at gmail.com
+:Last Updated: 2018-08-24
+
+.. contents::
+    :depth: 3
+    :backlinks: top
+
+Introduction
+-------------------------------------------------------------------------------
+
+As of version 6.0, expressions are used in four places:
+
+* In :ref:`LAYER` `FILTER` to specify the features of the dataset that
+  are to be included in the layer.
+
+* In :ref:`CLASS` `EXPRESSION` to specify to which features of the
+  dataset the `CLASS` applies to.
+
+* In :ref:`CLASS` `TEXT` to specify text for labeling features.
+
+* In :ref:`STYLE` `GEOMTRANSFORM`.
+
+
+.. index::
+   single: String quotation
+
+String quotation
+...............................................................................
+
+Strings can be quoted using single or double quotes:
+
+::
+
+   'This is a string'
+   "And this is also a string"
+
+.. index::
+   single: Quotes escaping
+
+Quotes escaping in strings
+...............................................................................
+
+.. note::
+
+    Quotes escaping is not supported in MapServer versions lower than 5.0.
+
+Starting with MapServer 5.0, if your dataset contains double-quotes, you 
+can use a C-like escape sequence:
+
+::
+
+    "National \"hero\" statue"
+
+To escape a single quote use the following sequence instead:
+
+::
+
+    "National \'hero\' statue"
+
+Starting with MapServer  6.0 you don't need to escape single quotes
+within double quoted strings and you don't need to escape double
+quotes within single quoted strings.  In 6.0 you can also write
+the string as follows:
+
+::
+
+    'National "hero" statue'
+    ...
+
+To escape a single quote use the following sequence instead:
+
+::
+
+    "National 'hero' statue"
+
+
+.. index::
+   pair: Expressions; Attributes
+
+Using attributes
+...............................................................................
+
+Attribute values can be referenced in the Map file and used in
+expressions. Attribute references are case sensitive and can
+be used in the following types of expressions:
+
+* In :ref:`LAYER` `FILTER`
+
+* In :ref:`CLASS` `EXPRESSION`
+
+* In :ref:`CLASS` `TEXT`
+
+Referencing an attribute is done by enclosing the attribute name in
+square brackets, like this: [ATTRIBUTENAME].  Then, every occurrence
+of "[ATTRIBUTENAME]" will be replaced by the actual value of the
+attribute "ATTRIBUTENAME".
+
+Example: The data set of our layer has the attribute "BUILDING_NAME".
+We want the value of this attribute to appear inside a string.  This
+can be accomplished as follows (single or double quotes):
+
+::
+
+    'The [BUILDING_NAME] building'
+
+For the building which has its BUILDING_NAME attribute set to
+"Historical Museum", the resulting string is:
+
+::
+
+    'The Historical Museum building'
+
+For :ref:`RASTER` layers special attributes have been defined that can
+be used for classification, for example:
+
+* [PIXEL]
+  ... will become the pixel value as number
+* [RED], [GREEN], [BLUE]
+  ... will become the color value for the red, green and blue
+  component in the pixel value, respectively.
+
+
+.. index::
+   single: Expression types
+
+Expression Types
+-------------------------------------------------------------------------------
+
+Expression are used to match attribute values with certain logical
+checks.  There are three different types of expressions you can use
+with MapServer:
+
+* String comparisons: A single attribute is compared with a string
+  value.
+
+* Regular expressions: A single attribute is matched with a regular
+  expression.
+
+* List expressions: Compare a string attribute to a list of multiple
+  possible values
+
+* Logical "MapServer expressions": One or more attributes are compared
+  using logical expressions.
+
+.. index::
+   pair: Expressions; String comparison
+
+String comparison (equality)
+-------------------------------------------------------------------------------
+
+String comparison means, as the name suggests, that attribute values
+are checked if they are equal to some value. String comparisons are
+the simplest form of MapServer expressions and the fastest option.
+
+.. index::
+    pair: EXPRESSION; CLASSITEM
+    
+To use a string comparison for filtering a :ref:`LAYER`, both
+`FILTERITEM` and `FILTER` must be set.  `FILTERITEM` is set to the
+attribute name.  `FILTER` is set to the value for comparison. The same
+rule applies to :ref:`CLASSITEM <classitem>` in the :ref:`LAYER`
+object and `EXPRESSION` in the :ref:`CLASS` object.
+
+Example for a simple string comparison filter
+
+::
+
+    FILTER "2005"
+    FILTERITEM "year"
+
+would match all records that have the attribute "year" set to "2005".
+The rendered map would appear as if the dataset would only contain
+those items that have the "year" set to "2005".
+
+Similarly, a classification for the items matched above would be done
+by setting the `CLASSITEM` in the :ref:`LAYER` and the `EXPRESSION` in
+the :ref:`CLASS`:
+
+::
+
+    LAYER
+        NAME "example"
+        CLASSITEM "year"
+        ...
+        CLASS
+            NAME "year-2005"
+            EXPRESSION "2005"
+            ...
+        END
+    END
+
+For reasons explained later, the values for both `CLASSITEM` and
+`FILTERITEM` should start with neither a '/' nor a '(' character.
+
+.. index:: Regular expressions
+
+.. index::
+   pair: Expressions; Regular expression comparison
+
+Regular expression comparison
+-------------------------------------------------------------------------------
+
+Regular expressions are a standard text pattern matching mechanism
+from the Unix world.  The functionality of regular expression matching
+is provided by the operating system on UNIX systems and therefore
+slightly operating system dependent.  However, their minimum set of
+features are those defined by the POSIX standard.  The documentation
+of the particular regular expression library is usually in the "regex"
+manual page ("man regex") on Unix systems.
+
+Regular expression with MapServer work similarly to string comparison,
+but allow more complex operation.  They are slower than pure string
+comparisons, but might be still faster than logical expression.  As
+for string comparison, when using a regular expressions, `FILTERITEM`
+(:ref:`LAYER` `FILTER`) or `CLASSITEM` (:ref:`CLASS` `EXPRESSION`) has
+to be defined if the items are not included in the :ref:`LAYER`
+`FILTER` or :ref:`CLASS` `EXPRESSION`.
+
+A regular expression typically consists of characters with special
+meanings and characters that are interpreted as they are.
+Alphanumeric characters (A-Z, a-z and 0-9) are taken as they are.
+Characters with special meanings are:
+
+* **.** will match a single character.
+
+* **[** and **]** are used for grouping. For example *[A-Z]* would
+  match the characters A,B,C,...,X,Y,Z.
+
+* **{**, **}**, and **\*** are used to specify how often something
+  should match.
+
+* **^** matches the beginning, **$** matches the end of the value.
+
+* The backslash **\\** is used to take away the special meaning.  For
+  example *\\$* would match the dollar sign.
+
+MapServer  supports two regex operators:
+
+* **~** case sensitive regular expression
+
+* **~\*** case insensitive regular expression
+
+The following :ref:`LAYER` configuration would have all records
+rendered on the map that have "hotel" in the attribute named
+"placename"
+
+::
+
+    LAYER
+        NAME 'regexp-example'
+        FILTERITEM 'placename'
+        FILTER /hotel/
+        ...
+    END
+
+.. note:: 
+
+    For `FILTER`, the regular expression is case-sensitive, thus
+    records having "Hotel" in them would not have matched.
+
+Example: Match records that have a value from 2000 to 2010 in the
+attribute "year":
+
+::
+
+    FILTERITEM "year"
+    FILTER /^20[0-9][0-9]/
+
+Example: Match all the records that are either purely numerical or
+empty
+
+::
+
+    FILTER /^[0-9]*$/
+
+Example: Match all the features where the *name* attribute ends with
+"by", "BY", "By" or "bY" (case insensitive matching):
+
+::
+
+    EXPRESSION ('[name]' ~* 'by$')
+
+Example: Match all the features where the *rdname* attribute starts
+with "Main".
+
+::
+
+    LAYER
+    ...
+    CLASSITEM 'rdname'
+    CLASS
+
+      EXPRESSION /^Main.*$/
+
+.. note:: 
+    
+    If you experience frequently segmentation faults when working with
+    MapServer and regular expressions, it might be that your current
+    working environment is linked against more than one regular
+    expression library. This can happen when MapServer is linked with
+    components that bring their own copy, like the Apache httpd or
+    PHP. In these cases the author has made best experiences with
+    making all those components using the regular expression library
+    of the operating system (i.e. the one in libc). That involved
+    editing the build files of some of the components, however.
+
+
+.. index::
+   pair: Expressions; MapServer  expressions
+
+
+List expressions
+-------------------------------------------------------------------------------
+
+.. versionadded:: 6.4
+
+List expressions (see :ref:`rfc95`) are a performant way to compare a
+string attribute to a list of multiple possible values. Their behavior
+duplicates the existing regex or MapServer expressions, however they are
+significantly more performant. To activate them enclose a comma separated
+list of values between {}, **without** adding quotes or extra spaces.
+
+
+::
+
+    LAYER
+        NAME 'list-example'
+        CLASSITEM 'roadtype'
+        ...
+        CLASS
+          EXPRESSION {motorway,trunk}
+          #equivalent to regex EXPRESSION /motorway|trunk/
+          #equivalent to MapServer EXPRESSION ("[roadtype]" IN "motorway,trunk")
+          ...
+        END
+        CLASS
+          # spaces in attribute names are supported
+          EXPRESSION {primary road,secondary road}
+          ...
+        END
+    END
+
+.. warning::
+  
+  List expressions do not support quote escaping, or attribute values that
+  contain a comma in them.
+
+
+"MapServer expressions"
+-------------------------------------------------------------------------------
+
+MapServer expressions are the most complex and depending how they are
+written can become quite slow. They can match any of the attributes
+and thus allow filtering and classification depending on more than one
+attribute.  Besides pure logical operations there are also expressions
+that allow certain arithmetic, string and time operations.
+
+To be able to use a MapServer expression for a FILTER or EXPRESSION
+value, the expression has to finally become a logical value.
+
+.. index::
+   pair: Expressions; Logical expressions
+
+Typing
+...............................................................................
+
+The type of attributes and literals is determined as followed :
+
+* Strings: enclosed in quote or single quote characters
+
+::
+
+    "[string_attribute]" or '[string_attribute]'
+
+::
+
+    "string_literal" or 'string_literal'
+
+* Numbers: no quoting
+
+::
+
+    [numeric_attribute]
+
+::
+
+    numeric_value
+
+* Date-time: enclosed in backquote characters
+
+::
+
+    `[date_time_attribute]`
+
+::
+
+    `date_time_literal`
+
+
+Logical expressions
+...............................................................................
+
+Logical expressions take logical values as their input and return logical
+values. A logical expression is either 'true' or 'false'.
+The full expression needs to be surrounded by brackets, but individual
+logical expressions only require brackets to establish precedence or for clarity.
+
+.. index::
+   pair: Expressions; and
+
+* ( Expression1 AND Expression2 )
+
+  ( ( Expression1 ) AND ( Expression2 ) )
+
+  ( ( Expression1 ) && ( Expression2 ) )
+
+  returns true when both of the logical expressions (Expression1 and
+  Expression2) are true. 
+
+.. index::
+   pair: Expressions; or
+
+* ( ( Expression1 ) OR ( Expression2 ) )
+
+  ( ( Expression1 ) || ( Expression2 ) )
+
+  returns true when at least one of the logical expressions (Expression1
+  or Expression2) is true.
+
+.. index::
+   pair: Expressions; not
+
+* NOT ( Expression1 )
+
+  ! ( Expression1 )
+
+  returns true when Expression1 is false.
+   
+.. index::
+   pair: Expressions; String expressions
+
+String expressions that return a logical value
+...............................................................................
+
+Syntactically, a string is something encapsulated in single or double
+quotes.
+
+.. index::
+   pair: Expressions; eq
+
+*  ( "String1" eq "String2" )
+
+   ( "String1" == "String2" ) - deprecated since 6.0
+
+   ( "String1" = "String2" )
+
+   returns true when the strings are equal.  Case sensitive.
+
+*  ( "String1" =\* "String2" )
+
+   returns true when the strings are equal.  Case insensitive.
+
+.. index::
+   pair: Expressions; ne
+
+*  ( "String1" != "String2" )
+
+   ( "String1" ne "String2" )
+
+   returns true when the strings are not equal.
+
+.. index::
+   pair: Expressions; lt
+
+*  ( "String1" < "String2" )
+
+   ( "String1" lt "String2" )
+
+   returns true when "String1" is lexicographically smaller than "String2"
+
+.. index::
+   pair: Expressions; gt
+
+*  ( "String1" > "String2" )
+
+   ( "String1" gt "String2" )
+
+   returns true when "String1" is lexicographically larger than "String2".
+
+.. index::
+   pair: Expressions; le
+
+*  ( "String1" <= "String2" )
+
+   ( "String1" le "String2" )
+
+   returns true when "String1" is lexicographically smaller than or equal
+   to "String2"
+
+.. index::
+   pair: Expressions; ge
+
+*  ( "String1" >= "String2" )
+
+   ( "String1" ge "String2" )
+
+   returns true when "String1" is lexicographically larger than or equal
+   to "String2".
+
+.. index::
+   pair: Expressions; in
+
+*  ( "String1" IN "token1,token2,...,tokenN" )
+
+   returns true when "String1" is equal to one of the given tokens.
+
+   .. note:: 
+
+      The separator for the tokens is the comma. That means that there
+      can not be unnecessary white space in the list and that tokens
+      that have commas in them cannot be compared.
+
+*  ( "String1" ~ "regexp" )
+
+   returns true when "String1" matches the regular expression
+   "regexp". This operation is identical to the regular expression
+   matching described earlier.
+
+*  ( "String1" ~* "regexp" )
+
+   returns true when "String1" matches the regular expression "regexp"
+   (case insensitive). This operation is identical to the regular
+   expression matching described earlier.
+
+.. index::
+   pair: Expressions; Arithmetic expressions
+
+Arithmetic expressions that return a logical value
+...............................................................................
+
+The basic element for arithmetic operations is the number.  Arithmetic
+operations that return numbers will be covered in the next section.
+
+.. index::
+   pair: Expressions; eq
+
+*  ( n1 eq n2 )
+
+   ( n1 == n2 ) - deprecated since 6.0
+
+   ( n1 = n2 )
+
+   returns true when the numbers are equal.
+
+*  ( n1 != n2 )
+
+   ( n1 ne n2 )
+
+   returns true when the numbers are not equal.
+
+*  ( n1 < n2 )
+
+   ( n1 lt n2 )
+
+   returns true when n1 is smaller than n2.
+
+*  ( n1 > n2 )
+
+   ( n1 gt n2 )
+
+   returns true when n1 is larger than n2.
+
+*  ( n1 <= n2 )
+
+   ( n1 le n2 )
+
+   returns true when n1 is smaller than or equal to n2.
+
+*  ( n1 >= n2 )
+
+   ( n1 ge n2 )
+
+   returns true when n1 is larger than or equal to n2.
+
+*  ( n1 IN "number1,number2,...,numberN" )
+
+   returns true when n1 is equal to one of the given numbers.
+
+
+.. index::
+   pair: Expressions; Spatial expressions
+
+Spatial expressions that return a logical value (GEOS)
+...............................................................................
+
+.. index::
+   pair: Expressions; eq
+
+*  ( shape1 eq shape2 )
+
+   returns true if shape1 and shape2 are equal
+
+.. index::
+   pair: Expressions; intersects
+
+*  ( shape1 intersects shape2 )
+
+   .. versionadded:: 6.0
+
+   returns true if shape1 and shape2 intersect
+
+.. index::
+   pair: Expressions; disjoint
+
+*  ( shape1 disjoint shape2 )
+
+   .. versionadded:: 6.0
+
+   returns true if shape1 and shape2 are disjoint
+
+.. index::
+   pair: Expressions; touches
+
+*  ( shape1 touches shape2 )
+
+   .. versionadded:: 6.0
+
+   returns true if shape1 and shape2 touch
+
+.. index::
+   pair: Expressions; overlaps
+
+*  ( shape1 overlaps shape2 )
+
+   .. versionadded:: 6.0
+
+   returns true if shape1 and shape2 overlap
+
+.. index::
+   pair: Expressions; crosses
+
+*  ( shape1 crosses shape2 )
+
+   .. versionadded:: 6.0
+
+   returns true if shape1 and shape2 cross
+
+.. index::
+   pair: Expressions; within
+
+*  ( shape1 within shape2 )
+
+   .. versionadded:: 6.0
+
+   returns true if shape1 is within shape2
+
+.. index::
+   pair: Expressions; contains
+
+*  ( shape1 contains shape2 )
+
+   .. versionadded:: 6.0
+
+   returns true if shape1 contains shape2
+
+.. index::
+   pair: Expressions; dwithin
+
+*  ( shape1 dwithin shape2 )
+
+   .. versionadded:: 6.0
+
+   returns true if the distance between shape1 and shape2
+   is equal to 0
+
+.. index::
+   pair: Expressions; beyond
+
+*  ( shape1 beyond shape2 )
+
+   .. versionadded:: 6.0
+
+   returns true if the distance between shape1 and shape2
+   is greater than 0
+
+.. index::
+   pair: Expressions; String operations
+
+String operations that return a string
+...............................................................................
+
+*  "String1" + "String2'
+
+   returns "String1String2", that is, the two strings concatenated
+   to each other.
+
+
+Functions that return a string
+...............................................................................
+
+.. index::
+   pair: Expressions; tostring
+
+*  tostring ( n1, "Format1" )
+
+   .. versionadded:: 6.0
+
+   uses "Format1" to format the number n1 (C style formatting
+   - sprintf).
+
+.. index::
+   pair: Expressions; commify
+
+*  commify ( "String1" )
+
+   .. versionadded:: 6.0
+
+   adds thousands separators (commas) to a long number to make it
+   more readable
+   
+.. index::
+   pair: Expressions; upper
+
+*  upper ( "String1" )
+
+   .. versionadded:: 7.0
+
+   force all characters to uppercase
+
+.. index::
+   pair: Expressions; lower
+
+*  lower ( "String1" )
+
+   .. versionadded:: 7.0 
+
+   force all characters to lowercase  
+
+.. index::
+   pair: Expressions; initcap
+
+*  initcap ( "String1" )
+
+   .. versionadded:: 7.0
+
+   force the first character to uppercase and the rest of the 
+   characters to lower case for EACH word in the string.
+
+.. index::
+   pair: Expressions; firstcap
+
+*  firstcap ( "String1" )
+
+   .. versionadded:: 7.0
+
+   force the first character to uppercase and the rest of the 
+   characters to lower case in the first word in the string.
+      
+.. index::
+   pair: Expressions; String functions
+
+String functions that return a number
+...............................................................................
+
+.. index::
+   pair: Expressions; length
+
+*  length ( "String1" )
+
+   returns the number of characters of "String1"
+
+
+.. index::
+   pair: Expressions; Arithmetic operations
+
+Arithmetic operations and functions that return a number
+...............................................................................
+
+.. index::
+   pair: Expressions; round
+
+*  round ( n1 , n2 )
+
+   .. versionadded:: 6.0
+
+   returns n1 rounded to a multiple of n2: n2 * round(n1/n2)
+
+*  round ( n1 )
+
+   .. versionadded:: 8.0
+
+   returns n1 rounded to the closest integer (SLD interoperability addition)
+
+*  n1 + n2
+
+   returns the sum of n1 and n2
+
+*  n1 - n2
+
+   returns n2 subtracted from n1
+
+*  n1 \* n2
+
+   returns n1 multiplied with n2
+
+*  n1 / n2>
+
+   returns n1 divided by n2
+
+*  -n1
+
+   returns n1 negated
+
+*  n1 ^ n2
+
+   returns n1 to the power of n2
+
+*  n1 % n2
+
+   returns n1 %  n2 (the modulus operator). This returns the remainder after division of one number by another, 
+   for example 10 % 3 returns 1. 
+
+.. note::
+
+    When the numerical operations above are used like logical
+    operations, the following rule applies: values equal to zero will
+    be taken as 'false' and everything else will be 'true'.  That
+    means the expression
+
+    ::
+
+      ( 6 + 5 )
+
+    would return true, but 
+
+    ::
+
+      ( 5 - 5 )
+
+    would return false.
+
+
+.. index::
+   pair: Expressions; Spatial functions
+
+Spatial functions that return a number (GEOS)
+...............................................................................
+
+.. index::
+   pair: Expressions; area
+
+*  area ( shape1 )
+
+   .. versionadded:: 6.0
+
+   returns the area of shape1
+
+Spatial functions that return a shape (GEOS)
+...............................................................................
+
+.. index::
+   pair: Expressions; fromtext
+
+*  fromtext ( "String1" )
+
+   .. versionadded:: 6.0
+
+   returns the shape corresponding to String1 (WKT - well known text)
+
+   ::
+
+     fromText('POINT(500000 5000000)')
+
+.. index::
+   pair: Expressions; buffer
+
+*  buffer (shape1 , n1 )
+
+   .. versionadded:: 6.0
+
+   returns the shape that results when shape1 is buffered with
+   bufferdistance n1
+
+.. index::
+   pair: Expressions; difference
+
+*  difference ( shape1 , shape2 )
+
+   .. versionadded:: 6.0
+
+   returns the shape that results when the common area of
+   shape1 and shape2 is subtracted from shape1
+
+.. index::
+   pair: Expressions; Temporal expressions
+
+Temporal expressions
+...............................................................................
+
+MapServer uses an internal time type to do comparison. To convert a
+string into this time type it will check the list below from the top
+and down to check if the specified time matches, and if so, it will do
+the conversion.  The following are integer values: **YYYY** - year,
+**MM** - month, **DD** - date, **hh** - hours, **mm** - minutes,
+**ss** - seconds.  The following are character elements of the format:
+**-** (dash) - date separator, **:** (colon) - time separator, **T** -
+marks the start of the time component (ISO 8601), space - marks the
+end of the date and start of the time component, **Z** - zulu time (0
+UTC offset).
+
+* \`YYYY-MM-DDThh:mm:ssZ\`
+* \`YYYY-MM-DDThh:mm:ss\`
+* \`YYYY-MM-DD hh:mm:ss\`
+* \`YYYY-MM-DDThh:mm\`
+* \`YYYY-MM-DD hh:mm\`
+* \`YYYY-MM-DDThh\`
+* \`YYYY-MM-DD hh\`
+* \`YYYY-MM-DD\`
+* \`YYYY-MM\`
+* \`YYYY\`
+* \`Thh:mm:ssZ\`
+* \`Thh:mm:ss\`
+
+For temporal values obtained this way, the following operations are
+supported:
+
+.. index::
+   pair: Expressions; eq
+
+*  ( t1 eq t2 )
+
+   ( t1 == t2 ) - deprecated since 6.0
+
+   ( t1 = t2 )
+
+   returns true when the times are equal.
+
+.. index::
+   pair: Expressions; ne
+
+*  ( t1 != t2 )
+
+   ( t1 ne t2 )
+
+   returns true when the times are not equal.
+
+.. index::
+   pair: Expressions; lt
+
+*  ( t1 < t2 )
+
+   ( t1 lt t2 )
+
+   returns true when t1 is earlier than t2
+
+.. index::
+   pair: Expressions; gt
+
+*  ( t1 > t2 )
+
+   ( t1 gt t2 )
+
+   returns true when t1 is later than t2.
+
+.. index::
+   pair: Expressions; le
+
+*  ( t1 <= t2 )
+
+   ( t1 le t2 )
+
+   returns true when t1 is earlier than or equal to t2
+
+.. index::
+   pair: Expressions; ge
+
+*  ( t1 >= t2 )
+
+   ( t1 ge t2 )
+
+   returns true when t1 is later than or equal to t2.
+

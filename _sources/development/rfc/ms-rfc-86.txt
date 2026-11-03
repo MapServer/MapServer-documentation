@@ -1,0 +1,324 @@
+.. _rfc86:
+
+=========================================================================
+MS RFC 86: Scale-dependant String Substitutions
+=========================================================================
+
+:Date:  2012/10/08
+:Author: Thomas Bonfort
+:Contact: tbonfort@terriscope.fr
+:Status: Adopted
+:Version: MapServer 6.4
+
+1. Overview
+-----------
+
+MapServer has the ability to use multiple layers with MINSCALE/MAXSCALE filtering GROUP'd
+together when the need for scale-dependant datasources arises, e.g. like:
+
+.. code-block:: mapfile
+
+   LAYER
+     NAME "roads_far"
+     GROUP "roads"
+     TYPE LINE
+     MINSCALE 100000
+     DATA "the_geom from roads_far"
+     CLASS
+       ...
+     END
+     CLASS
+       ...
+     END
+   END
+   LAYER
+     NAME "roads_close"
+     GROUP "roads"
+     TYPE LINE
+     MAXSCALE 100000
+     DATA "the_geom from roads_close"
+     CLASS
+       ...
+     END
+     CLASS
+       ...
+     END
+   END
+
+While this solution works, it has the inconvenience of necessitating a duplication of the
+symbology throughout multiple layers, and may require some tweaking in order to hide the
+multiple layers in capabilities documents.
+
+The current RFC proposes to mimic our current runtime-substitution_ mechanism to replace tokens
+inside a layer's DATA statement. Instead of using an url parameter to accomplish the 
+replacements, the token is replaced by a value that is dependent on the current map scale.
+      
+
+2. Proposed solution
+------------------------
+
+Examples are worth a thousand words here...
+
+2.1. Example 1
+---------------------
+
+.. code-block:: mapfile
+
+   LAYER
+     ..
+     SCALETOKEN
+       NAME "%priority%"
+       VALUES
+         "0" "1"
+         "1000" "2"
+         "10000" "3"
+       END
+     END
+     DATA "the_geom from mytable_%priority%"  #data comes from a specific table
+     DATA "/path/to/roads_%priority%.shp"  #data comes from a specific shapefile
+     DATA "the_geom_%priority% from roads" #data comes from a specific column in the table
+     DATA "the_geom_%priority% from (select * from roads where priority > %priority%) as foo" #data is filtered
+     CLASS
+       ...
+     END
+   END
+
+In the previous example, %priority% would be replaced by:
+
+- "1" for scales under 1,000 , giving:
+
+  .. code-block:: mapfile
+
+     DATA "the_geom from mytable_1"
+     DATA "/path/to/roads_1.shp"
+     DATA "the_geom_1 from roads"
+     DATA "the_geom_1 from (select * from roads where priority > 1) as foo"
+
+- "2" for scales between 1,000 and 10,000
+
+  .. code-block:: mapfile
+
+     DATA "the_geom from mytable_2"
+     DATA "/path/to/roads_2.shp"
+     DATA "the_geom_2 from roads"
+     DATA "the_geom_2 from (select * from roads where priority > 2) as foo"
+
+- "3" for scales over 10,000
+
+  .. code-block:: mapfile
+
+     DATA "the_geom from mytable_3"
+     DATA "/path/to/roads_3.shp"
+     DATA "the_geom_3 from roads"
+     DATA "the_geom_3 from (select * from roads where priority > 3) as foo"
+
+
+2.2 Example 2
+--------------
+
+.. code-block:: mapfile
+
+   LAYER
+     ..
+     SCALETOKEN
+       NAME "%table%"
+       VALUES
+         "0" "roads"
+         "1000" "roads_gen_1"
+         "10000" "roads_gen_0"
+       END
+     END
+     DATA "the_geom from %table%"  #data comes from a specific table
+     DATA "/path/to/%table%.shp"  #data comes from a specific shapefile
+     CLASS
+       ...
+     END
+   END
+
+In the previous example, %table% would be replaced by:
+
+- "roads" for scales under 1,000 , giving:
+
+  .. code-block:: mapfile
+
+     DATA "the_geom from roads" 
+     DATA "/path/to/roads.shp"
+
+- "roads_gen_1" for scales between 1,000 and 10,000
+
+  .. code-block:: mapfile
+
+     DATA "the_geom from roads_gen_1"
+     DATA "/path/to/roads_gen_1.shp"
+
+- "roads_gen_0" for scales over 10,000
+
+  .. code-block:: mapfile
+
+     DATA "the_geom from roads_gen_0"
+     DATA "/path/to/roads_gen_0.shp"
+
+2.3 Example 3
+--------------
+
+.. code-block:: mapfile
+
+   LAYER
+     ..
+     SCALETOKEN
+       NAME "%filter%"
+       VALUES
+         "0" ""
+         "1000" "where type in ('motorway','trunk','primary')"
+         "10000" "where type='motorway'"
+       END
+     END
+     DATA "the_geom from (select * from roads %filter%) as foo"
+     CLASS
+       ...
+     END
+   END
+
+In the previous example, %filter% would be replaced by:
+
+- nothing for scales under 1,000 , giving:
+
+  .. code-block:: mapfile
+
+     DATA "the_geom from (select * from roads) as foo"
+
+- "where type in ('motorway','trunk','primary')" for scales between 1,000 and 10,000
+
+  .. code-block:: mapfile
+
+     DATA "the_geom from (select * from roads where type in ('motorway','trunk','primary')) as foo"
+
+- "where type='motorway'" for scales over 10,000
+
+  .. code-block:: mapfile
+
+     DATA "the_geom from (select * from roads where type='motorway') as foo"
+
+2.4 Discussion
+---------------
+
+- Multiple tokens can be used for a single layer, e.g for applying a filter
+  *and* hitting generalized tables.
+- Inside the VALUES block, the first scale entry **must** be "0", and entries
+  **must** be in ascending order.
+- The examples use the "%keyname%" notation in order to mimic MapServer's 
+  existing url runtime substitutions. The "%...%" notation is not enforced, the
+  code does a simple string replacement. (i.e. "priority" or "#table#" are
+  valid VALUES, provided the "priority" or "#table#" substrings appear in the
+  DATA statements.
+- Scale dependent substitutions would apply to the layer's DATA, TILEINDEX,
+  TILEITEM, FILTERITEM and FILTER. Applying it to other elements might make
+  sense, but is more involved in terms of impact to the code. Scale-dependant
+  substitutions on FILTER may be incompatible with filters set through
+  MapServer's WFS filter handling.
+- Bug 3150_ discusses the need for such a substitution, but is much more
+  limited in scope.
+- It might be desirable to provide SCALETOKEN entries at the MAP level (and 
+  not only LAYER level) in case the token has the vocation of being replaced
+  in multiple layers. MAP level SCALETOKEN will not be present in the initial
+  implementation.
+- Provide a default token to use when scale is irrelevant (queries...)
+
+3. Implementation Details
+-------------------------
+
+
+3.1 Overview
+------------
+
+- layerObj gets a new member containing the scale dependent tokens
+  applicable.
+- the actual struct to use to represent a given token:
+
+.. code-block:: c
+
+   typedef struct {
+     double minscale;
+     double maxscale;
+     char* value;
+   } scaleTokenEntryObj;
+   
+   typedef struct {
+     char* name;
+     char* default_value;
+     int n_entries;
+     scaleTokenEntryObj* tokens;
+   } scaleTokenObj;
+
+   struct layerObj {
+      ...
+      scaleTokenObj* tokens;
+      int numscaletokens;
+      ...
+
+      char* orig_data;
+      char* orig_tileindex;
+      char* orig_tileitem;
+      ... etc ...
+   }
+
+- in `msLayerOpen()`, replace tokens inside `layerObj->data`, `layerObj->tileindex`,
+  etc... The original `layerObj->data` is stored beforehand in `layerObj->orig_data`,
+  and is restored in `msLayerClose()`
+
+- For the special case of `layerObj->filter`, `msLoadExpressionString()` is called on
+  the substituted text in order to update the expressionObj. Likewise, it is 
+  called in `msLayerClose()` when the original filter is restored.
+
+3.2 Files affected
+------------------
+
+The following files will be modified/created by this RFC:
+
+- mapserver.h/mapfile.c: layerObj members, mapfile keywords
+- mapcopy.c/mapfile.c: copy functions, write-to-file functions
+- maplayer.c: call to token replacements inside msLayerOpen(), eventually
+  msLayerClose(). Add function to appply the substitutions depending on
+  current scale..
+- maplexer.l: parser keywords
+
+
+3.3 MapScript
+-------------
+
+add getters/setters on layer scaletokens
+
+
+3.4 Backwards Compatibility Issues
+----------------------------------
+
+This change provides a new functionality with no backwards compatibility issues
+being considered.
+
+4. Security implications
+------------------------
+
+The tokens are defined in the mapfile and are not overridable by url, thus
+implying no more risk of sql injection or file system traversal than a
+classical DATA statement.
+
+4. Performance implications
+---------------------------
+
+The token replacement is only done in msLayerOpen(), the performance impact
+should be negligeable as this happens only once per rendered layer.
+
+
+5. Bug ID
+---------
+https://github.com/MapServer/MapServer/pull/4538
+
+
+6. Voting history
+-----------------
+
++1 from ThomasB, MikeS, TomK, DanielM, JeffM, SteveL, SteveW and PerryN
+
+
+.. _3150: https://github.com/MapServer/MapServer/issues/3150
+.. _runtime-substitution: https://mapserver.org/cgi/runsub.html

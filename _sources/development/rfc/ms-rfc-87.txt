@@ -1,0 +1,113 @@
+.. _rfc87:
+
+=========================================================================
+MS RFC 87: Bitmap pattern support
+=========================================================================
+
+:Date:  2013/01/14
+:Author: Tamas Szekeres
+:Contact: szekerest at gmail.com
+:Status: Draft
+:Version: TBD
+
+1. Overview 
+-----------
+
+With this addition we could easily define brush patterns which are aware 
+of color and backgroundcolor settings and rendered equally well with the 
+various kind of renderers. Currently we have no such option to achieve the
+same result, by using vector symbols we can not provide the same look for 
+most of the renderers (agg, cairo), due to the possible antialiasing 
+behaviour of the line drawings.
+
+Bitmap patterns would be defined as symbols of type PATTERNMAP according to
+the example below:
+
+.. code-block:: mapfile
+
+   SYMBOL
+     NAME "mapinfo-brush-54"
+     TYPE PATTERNMAP
+     IMAGE "|10000010|01000100|00111001|01000100|10000010|00000001|00000001|00000001"
+   END
+
+   
+This symbol will provide the following brush fill:
+
+ .. image:: ../../images/mapinfo-brush-54-fill.png
+   
+Bitmap patterns can be defined with any size according to length of the rows
+specified in the IMAGE section.
+
+Bitmap patterns are non scalable, cannot be rotated, and the gap is always 
+set to zero. The patterns are aware of COLOR and BACKGROUNDCOLOR defined in
+the STYLE section.
+   
+   
+2. Proposed Solution
+--------------------
+
+We will define a new symbol type PATTERNMAP, maplexer.l will be modified to be aware
+of this new keyword. The new symbol type would be rendered in the same way a the
+PIXMAP symbols. The mos significant difference is that the tile image is created on
+the fly instead of loading the image from file.
+
+
+3. Implementation Details
+-------------------------
+
+In mapsymbol.c msPreloadImageSymbol will be modified to initialize the raster
+buffer with the proper size according to the bitmap specified in the IMAGE section.
+In maprendering.c getTile will be modified to render the image:
+
+::
+
+  case (MS_SYMBOL_PATTERNMAP):
+	if(msPreloadImageSymbol(renderer,symbol) != MS_SUCCESS) {
+	  return NULL; /* failed to load image, renderer should have set the error message */
+	}
+	msCreateBitmapSymbol(symbol, s);
+	renderer->renderPixmapSymbol(tileimg, p_x, p_y, symbol, s);
+	break;
+
+
+The new function msCreateBitmapSymbol will process the IMAGE section in the
+symbol definition and set the pixels according to the STYLE colors.
+
+computeSymbolStyle (in maprendering.c) will be modified to set up colors
+scale gap and rotation parameters before the rendering is taking place.
+	
+
+4. Files Affected
+-----------------
+
+ - maplexer.l, maplexer.l: Add PATTERNMAP keyword
+ - mapsymbol.h: Add MS_SYMBOL_PATTERNMAP enum value
+ - mapsymbol.c: Modify the parser, writer and msPreloadImageSymbol
+ - maprendering.c: Add msCreateBitmapSymbol, modify computeSymbolStyle, getTile etc.
+ - mapdraw.c: Modify msDrawVectorLayer, msDrawShape to be aware of MS_SYMBOL_PATTERNMAP
+
+
+5. Bug ID
+----------
+
+* https://github.com/MapServer/MapServer/issues/4561
+
+Contains link for the sample implementation.
+
+6. Backwards compatibility issues
+---------------------------------
+
+None expected, new functionality.
+
+
+7. MapScript changes
+--------------------
+
+MS_SYMBOL_PATTERNMAP will be exposed as a new symbol type.
+
+
+8. Voting history
+-----------------
+
+TBD.

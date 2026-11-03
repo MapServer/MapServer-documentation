@@ -1,0 +1,132 @@
+.. _rfc74:
+
+=========================================================================
+MS RFC 74: Includes from non-file connections (eg Databases)
+=========================================================================
+
+:Date:  2011/07/29
+:Author: Michael Smith, Daniel Morissette
+:Contact: michael.smith at usace.army.mil, dmorissette at mapgears.com
+:Last Edited: 09/17/2011
+:Status: Draft
+:Version: TBD
+
+1. Overview
+-----------
+
+MapServer 4.10 introduced the concept of INCLUDE files. When this directive is encountered parsing switches to the included file immediately. 
+As a result the included file can be comprised of any valid mapfile syntax. 
+For example, one could write:
+
+::
+
+  INCLUDE 'myLayer.map'
+
+This would include the contents in the mapfile at runtime.
+
+It would be useful to extend this to allow INCLUDEs from database connections. This provides another mechanism for dynamic mapfiles
+without requiring MapScript.
+
+
+2. The proposed solution
+------------------------
+
+This RFC proposes to add a new DBINCLUDE mapfile item. This item would have a number of associated mapfile items including:
+
+ CONNECTIONTYPE
+ CONNECTION
+ DATA
+ INCLUDEITEM
+ FILTER
+ METADATA
+ 
+And be closed with an END keyword.
+
+Example
+
+.. code-block:: mapfile
+
+   DBINCLUDE
+     CONNECTIONTYPE oraclespatial
+     CONNECTION "%uid%/%passwd%@tns_connection"
+     DATA "MAPLAYER_TABLE_NAME"
+     INCLUDEITEM "MAPLAYERS"
+     FILTER "condition=%layer_variable%"
+     METADATA
+        "layer_variable_validation_pattern"  "^condition1|condition2$"
+     END   
+   END
+
+The only new item, beside the DBINCLUDE keyword, is the INCLUDEITEM. It defines the attribute from which to to pull 
+the layers definitions. It functions similarly to TILEITEM.
+
+Allowed CONNECTIONTYPEs would include OGR, POSTGIS, ORACLESPATIAL. 
+
+An Example of the query would be 
+
+    select maplayers from maplayer_table_name where condition = condition1;
+
+The content of the MAPLAYERS content would be strings to include in the mapfile just and INCLUDE would do. One difference 
+is that the query could return a resultset of strings to add, and would be equivalent to N INCLUDE statements.
+
+2.5 Use Cases
+----------------------
+
+A common use case is providing a custom classed layer for an individual. Currently, this is very difficult to do without MapScript. 
+
+For example, in a table one column would be username and the second column would be the layer class level text string.
+
+..   csv-table:: Example Table
+
+     user,class
+     jeff,CLASS Name "Jeff Layer"   STYLE OUTLINECOLOR 255 0 0 SYMBOL 0 COLOR 0 0 255 END END		
+     daniel,CLASS Name "Daniel Layer" STYLE OUTLINECOLOR 122 180 200 SYMBOL 0 END END		
+     steve,CLASS Name "Steve Layer"  EXPRESSION "type=brewery" STYLE SYMBOL 0 COLOR 0 255 255 WIDTH 4 END END
+
+Another common case is dynamically classifying a layer as the data changes. With SQL, a text string can be calculated on 
+the fly from the data itself, by looking at the DISTINCT values of a dataset to generate the classes that will be 
+used to display that data.
+		
+
+3. Implementation Details
+-------------------------
+
+
+3.1 Files affected
+------------------
+
+The following files will be modified/created by this RFC:
+
+::
+
+  mapfile.c 
+  mapogr.c 
+  maplayer.c 
+  maplexer.l 
+  mapparser.y 
+
+3.2 MapScript Issues
+--------------------
+
+There should be no mapscript issues, this is really only useful for CGI
+
+
+3.3 Security Issues
+-------------------
+
+The security issues should be the same as any existing database connection layer 
+
+3.4 Backwards Compatibility Issues
+----------------------------------
+
+This change provides a new functionality with no backwards compatibility issues being considered.
+
+4. Bug ID
+---------
+
+None assigned.  
+
+5. Voting history
+-----------------
+
+None

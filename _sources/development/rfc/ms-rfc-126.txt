@@ -1,0 +1,289 @@
+.. _rfc126:
+
+=========================================================================
+MS RFC 126: Port to PROJ 6 API
+=========================================================================
+
+:Date: 2019-10-01
+:Author: Even Rouault
+:Contact: even.rouault@spatialys.com
+:Status: Adopted
+:Last update: 2019-10-10
+:Version: MapServer 8.0
+
+Overview
+--------
+
+Since March 1st 2019, `PROJ 6.0 <https://proj.org/news.html>`__ has been released. This version deprecates
+the "traditional" API available in proj_api.h, in favor or the new API
+available in proj.h. For now, traditional API is still usable by defining the
+ACCEPT_USE_OF_DEPRECATED_PROJ_API_H macro, but starting with PROJ 7.0, proj_api.h
+will no longer be available.
+
+This RFC thus is about the changes needed in MapServer to use proj.h new API.
+Support for traditional proj_api.h is still kept for now, when MapServer is
+built against PROJ 4.x or PROJ 5.x.
+
+Proposed solution
+-----------------
+
+Most of the interface with PROJ is contained in mapproject.c, so most of
+the changes are done there, and the projectionObj object is the abstraction used
+consistently in the code base to model a coordinate reference system. There were
+just a number of direct calls to pj_is_latlong() that have been abstracted by a
+new msProjIsGeographicCRS() function.
+
+However, during testing of the initial implementation, it
+appeared quickly that other changes were needed to preserve MapServer
+performance. PROJ 6 new mechanisms to compute coordinate operations are quite
+powerful, using a "late binding" approach trying to find the most direct
+transformations between the source and target coordinate reference systems,
+instead of going systematically through WGS84, with the well-known +towgs84=
+or +nadgrids= PROJ keyword. Going through that WGS84 pivot can lead to bad
+results, for example when transforming between 2 plate-fixed CRS such as GDA94
+and GDA2020 which differ by 1.8m, but where the transformation between each of
+those and WGS84 is a zero-shift transformation.
+
+That new capability has however a computation price.
+Whereas with PROJ 4.x, pj_transform() can be used without any problem to
+transform a single coordinate tuple, using naively the equivalent calls
+proj_create_crs_to_crs() + proj_trans() would be a major performance killer,
+since proj_create_crs_to_crs() can take a time in the order of 100 milliseconds
+in the most complex situations. There is consequently a need to cache the
+PJ object resulting from proj_create_crs_to_crs() and reuse it when transforming
+between the same (source_crs, target_crs).
+
+The solution is thus to have a global pool of projection contexts, through a
+projectionContext opaque structure, which in the case of PROJ 6 holds a
+PJ_CONTEXT as well as a cache of PJ* transformation objets between several
+(source_crs, target_crs) pairs. The mapObj structure is extended to store
+tha projectionContext, and acquires one from the global pool in loadMap().
+It assigns it to the mapObj.projection member, and all call sites where a
+projectionObj is created in MapServer are modified to inherit thie projection
+context. When the mapObj is disposed, its projection context is returned to
+the global pool, so it can be reused by another request (FastCGI or MapScript
+loop typically).
+
+To avoid researching for an existing PJ* object for a (source_crs, target_crs)
+in the cache of the current projection context, which has a price by itself,
+a variant API for a number of functions like msProjectPoint(), msProjectShape() or msProjectLine() have
+has been created to directly take a reprojectionObj* pointer instead of the
+(projectionObj *in, projectionObj *out) tuple. That reprojectionObj* is mostly
+a holder for the underlying PJ* coordinate transformation object. This can
+also help in the PROJ 4.x case, since msProjectPoint() had to do a number of
+checks on the nature of the CRS for each coordinate transformation, whereas
+reprojectionObj can cache them.
+
+So to sum up, the new functions are:
+
+.. code-block:: c
+
+  projectionContext* msProjectionContextGetFromPool(void);
+  void msProjectionContextReleaseToPool(projectionContext* ctx);
+  void msProjectionContextPoolCleanup(void);
+
+  reprojectionObj* msProjectCreateReprojector(projectionObj* in, projectionObj* out);
+  void msProjectDestroyReprojector(reprojectionObj* reprojector);
+
+  int msProjectPointEx(reprojectionObj* reprojector, pointObj *point);
+  int msProjectShapeEx(reprojectionObj* reprojector, shapeObj *shape);
+  int msProjectLineEx(reprojectionObj* reprojector, lineObj *line);
+
+  void msProjectionInheritContextFrom(projectionObj *pDst, projectionObj* pSrc);
+  void msProjectionSetContext(projectionObj *p, projectionContext* ctx);
+
+
+Continuous integration changes
+------------------------------
+
+The PHP 7.3 configurations is modified to use PROJ 6 API, whereas other targets still
+use the PROJ 4.x API.
+To make maintaince of the test suite easier, all the Travis configuration are modified
+to use PROJ 6.1.1. For the configurations which are not using the PROJ 6 API,
+the proj.h file is simply deleted, and thus MapServer will use proj_api.h.
+The reason to align all configurations on the same PROJ version is that, independantly
+of the API which is used, there have been changes in PROJ that make the result of
+coordinate reprojection slightly different, which affected a number of expected
+results (this is mostly due to PROJ 6 defaulting to the enhanced transverse mercator
+method, instead of the traditional algorithm used previously). That way, the
+expected results are the same when using proj_api.h or proj.h (except one single
+case where there is a difference at the micrometer level in a WCS GeoTIFF geokeys,
+since proj_api.h and proj.h use a slightly different algorithm for geographic to
+geocentric conversion)
+
+Vagrant is also modified to use PROJ 6.1.1, and it creates 2 builds:
+build_vagrant against the PROJ 4.x API, and build_vagrant_proj6 against the PROJ 6 API.
+
+Implementation Details
+----------------------
+
+The following files are modified:
+
+* .travis.yml: change name of the PHP 7.3 config
+* CMakeLists.txt: take into account removal of mapprojhack.c
+* kerneldensity.c: create a reprojectionObj object, and use it with msProjectShapeEx
+* mapchart.c: same as above
+* mapcluster.c: same as above
+* mapcopy.c: share context in msCopyProjectionExtended()
+* mapdraw.c: use a reprojectionObj object and msProjectShapeEx(). Use msProjIsGeographicCRS()
+* mapfile.c: move msInitProjection(), msFreeProjection() and _msProcessAutoProjection() to mapproject.c. Context sharing in initMap() and initLayer()
+* mapgml.c: use a reprojectionObj object and msProjectShapeEx()
+* mapgraticule.c: use a reprojectionObj object and msProjectShapeEx(). Use msProjIsGeographicCRS()
+* mapkmlrenderer.cpp: context sharing. Use msProjIsGeographicCRS()
+* maplayer.c: use a reprojectionObj object and msProjectShapeEx()
+* mapmvt.c: same as above
+* mapobject.c: release projection context to the projection pool in msFreeMap()
+* mapogcfilter.c: context sharing
+* mapogcfilter.h: modify prototype of FLTDoAxisSwappingIfNecessary() to accept a mapObj* for context sharing
+* mapogcfiltercommon.c: context sharing
+* mapogcsos.c: use a reprojectionObj object and msProjectShapeEx()
+* mapogr.cpp: context sharing, and avoid lossy step through PROJ string in msOGRSpatialRef2ProjectionObj() when the CRS is a EPSG code
+* mapogroutput.c: use a reprojectionObj object and msProjectShapeEx()
+* mapows.c: context sharing. Use msProjIsGeographicCRS()
+* mapproject.c: lots of changes !
+* mapproject.h: new functions and structures
+* mapquery.c: use a reprojectionObj object and msProjectShapeEx()
+* mapresample.c: some PROJ 6 specific code paths, as there are direct calls to PROJ API
+* mapserver.h: projContext member added to mapObj, and 2 reprojector objects stored in layerObj
+* mapservutil.c: use of msProjIsGeographicCRS()
+* mapshape.c: use a reprojectionObj object and msProjectShapeEx()
+* mapshape.h: store a reprojector object in msTiledSHPLayerInfo
+* maptemplate.c: use a reprojectionObj object and msProjectShapeEx()
+* mapunion.c: same as above
+* maputil.c: call msProjectionContextPoolCleanup() in msCleanup()
+* mapwcs.c: context sharing. Use msProjIsGeographicCRS()
+* mapwcs11.c: context sharing.
+* mapwcs20.c: context sharing. Use msProjIsGeographicCRS()
+* mapwfs.c: context sharing
+* mapwms.c: context sharing
+* Vagrantfile: call a proj6.sh script
+* ci/travis/before_install.sh: install curl
+* ci/travis/install.sh: download and build PROJ 6. modify PHP 7.3 target to use it
+* cmake/FindProj.cmake: detect PROJ 6 API
+* msautotest/pymod/testlib.py: logic to test for an alternative expected result
+* msautotest/wxs/expected/: a number of file changed due to PROJ 6 enhanced transverse mercator
+* scripts/vagrant/mapserver.sh: PROJ 6 related buid changes
+* scripts/vagrant/packages.sh: install curl and sqlite3
+
+The following files are added:
+
+* scripts/vagrant/proj6.sh: download and build PROJ 6
+
+The following files are deleted:
+
+* mapprojhack.c: merged into mapproject.c
+
+
+Backwards Compatibility Issues
+-------------------------------
+
+None on the Mapfile syntax. There might be slight changes in coordinate
+reprojections due to PROJ changes.
+
+Security implications
+---------------------
+
+None.
+
+Performance implications
+------------------------
+
+Using PROJ 6 API is slower, especially for single-time invocations of the
+MapServer CGI binary. This shows up in the runtime of msautotest, which consists
+in a lot of such single-time invokations. Typical runtimes showed on Travis-CI
+show about 9 min for a PROJ 4 API build vs 15 min 30s for a PROJ 6 API build. There
+isn't much that can be done about that.
+
+For use cases involving FastCGI or WSGI using MapScript where a process is long/longer
+lived, the projection context pooling strategy helps a lot to alleviate that cost.
+
+We have used the following simple MapScript python code and mapfile to bench
+the performance.
+
+.. code-block:: python
+
+    def test():
+        map = mapscript.mapObj('bench.map')
+        mapscript.msIO_installStdoutToBuffer()
+        request = mapscript.OWSRequest()
+        request.loadParamsFromURL('service=WMS&version=1.1.1&request=GetMap&layers=grey&srs=EPSG:4269&bbox=-180,-90,180,90&format=image/png&width=80&height=40')
+        status = map.OWSDispatch(request)
+        return mapscript.msIO_getStdoutBufferBytes()
+
+
+.. code-block:: mapfile
+
+    MAP
+        NAME TEST
+        STATUS ON
+        SIZE 80 40
+        EXTENT -180 -90 180 90
+
+        PROJECTION
+            "init=epsg:4326"
+        END
+
+        OUTPUTFORMAT
+            NAME png24_t
+            DRIVER "GDAL/PNG"
+            IMAGEMODE RGBA
+        END
+
+        WEB
+        METADATA
+            "ows_enable_request" "*"
+            "wms_srs" "EPSG:4326 EPSG:4269"
+            "ows_http_max_age" "86400"
+        END
+        END
+
+        LAYER
+            NAME grey
+            TYPE raster
+            STATUS default
+            DATA ../gdal/data/grey.tif
+        END
+    END
+
+This involves a reprojection from WGS84 to NAD83, which 
+With the same GDAL 2.4 and PROJ main branch (7.0dev) builds, looping 500 times
+over test() leads to a 0.9 ms runtime per iteration using PROJ 4 API, whereas
+1.1 ms using PROJ 6 API.
+
+If doing single iteration, on hot runs, with PROJ 4 API, the runtime is 19 ms,
+and with PROJ 6 API, 30 ms.
+
+This case is a bit extreme, in that the rendering is extremely fast, and thus
+coordinate operation setup is non neglectable. For use cases where the request
+takes longer, it is expected that the time difference is proportionnaly lower.
+
+MapScript implications
+----------------------
+
+None.
+
+Documentation needs
+-------------------
+
+None in theory since there is no syntax change. However some words will be
+added to https://mapserver.org/mapfile/projection.html to recommand the use
+of the init=epsg:XXXX syntax instead of PROJ 4 CRS strings to benefit from
+the more accurate late-binding coordinate transformations.
+
+Ticket ID and references
+------------------------
+
+* Ticket: https://github.com/MapServer/MapServer/issues/5766
+* Pull request available at: https://github.com/MapServer/MapServer/pull/5888
+
+Voting history
+--------------
+
++1 from PSC members Even Rouault, Mickael Smith,
+Seth Girvin, Daniel Morissette and Jukka Rahkonen.
+
+Credits
+-------
+
+Thanks to funding from the French Ministry of Defense.
+

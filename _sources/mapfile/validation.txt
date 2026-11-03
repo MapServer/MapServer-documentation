@@ -1,0 +1,240 @@
+.. index::
+   single: VALIDATION
+
+.. _validation:
+
+*****************************************************************************
+ VALIDATION
+*****************************************************************************
+
+.. contents::
+    :depth: 3
+    :backlinks: top
+
+Introduction
+-------------------------------------------------------------------------------
+
+Because :ref:`runsub` affects potentially sensitive areas of your
+mapfile such as database columns and filenames, it is mandatory that
+you use pattern validation (since version 6.0).
+
+.. note:: 
+
+  Similar validation pattern mechanisms have been available for
+  variable substitutions since version 4.10, but then it was optional.
+  The pattern for %myvar% was then provided in `METADATA` using
+  "myvar_validation_pattern".
+  
+.. note::
+   It is also strongly recommended to review the security steps for the *MAP=*
+   call to the MapServer executable, by setting *MS_MAP_PATTERN* or 
+   *MS_MAP_NO_PATH* or hiding the *MAP=* parameter on public servers, 
+   as recommended in the document :ref:`limit_mapfile_access`.  All possible
+   environment variables to secure your server are listed in :ref:`environment_variables`. 
+
+Pattern validation uses regular expressions, which are strings that
+describe how to compare strings to patterns.  The exact functionality
+of your systems' regular expressions may vary, but you can find a lot
+of general information by a Google search for "regular expression
+tutorial".
+
+As of MapServer 5.4.0 the preferred mechanism is a `VALIDATION` block
+in the `LAYER` definition.  This is only slightly different from the
+older `METADATA` mechanism.  `VALIDATION` blocks can be used with
+:ref:`CLASS`, :ref:`LAYER` and :ref:`WEB`.
+
+.. code-block:: mapfile
+
+    VALIDATION
+      # %firstname% substitutions can only have letters and hyphens
+      'firstname'     '^[a-zA-Z\-]+$'
+
+      # %parcelid% must be numeric and between 5 and 8 characters
+      'parcelid'      '^[0-9]{5,8)$'
+
+      # %taxid% must be two capital letters and six digits
+      'taxid'         '^[A-Z]{2}[0-9]{6}$'
+    END
+
+If identical keys appear in more than one validation block, then keys
+in more specialised blocks override those in more generalised blocks.
+So :ref:`CLASS` overrides :ref:`LAYER` which overrides :ref:`WEB`.
+
+
+Default values if not provided in the URL
+--------------------------------------------------------------------------------
+
+The runtime substitution mechanism will usually create syntactically
+incorrect, and almost always semantically incorrect mapfiles if the
+substitution parameter was not provided in the calling URL.
+
+Since version 5.6, you can provide a default value for any
+substitution parameter, that will be applied if the parameter was not
+found in the url. You do this by providing special entries inside
+:ref:`CLASS`, :ref:`LAYER` or :ref:`WEB` validation blocks:
+
+.. code-block:: mapfile
+
+    VALIDATION
+        'default_sound' 'yes'
+        'default_nseats' '5'
+        'default_multimedia' 'yes'
+    END
+
+In this example, the mapfile will be created as if the url contained 
+"&sound=yes&nseats=5&multimedia=yes"
+
+If identical default keys appear in more than one validation block
+then keys in more specialised blocks override those in more
+generalised blocks. i.e. `CLASS` overrides `LAYER` which overrides
+`WEB`.
+
+The same functionality is available using `METADATA` blocks instead of
+`VALIDATION` but this is deprecated as of MapServer 5.4.0.
+
+Test with Commandline
+---------------------
+
+You can test at the commandline, allowing you to test runtime substitution 
+mapfiles without using a webserver, with the mapserv utility such as:
+
+.. code-block::
+
+    mapserv -nh "QUERY_STRING=map=D:\ms4w\apps\filter-validation\filter-validation.map&mode=map&layers=all&nseats=10" > ttt.png
+
+
+Filter example
+---------------------------------------------------------------
+
+You can use runtime substitutions to change values within a FILTER as
+you go.  For example your FILTER could be written like this::
+
+    FILTER ("multimedia='%multimedia%' and seats >= %nseats% and Sound= '%sound%')
+
+Then (assuming you're using the CGI interface) you could pass in
+variables named multimedia, nseats and sound with values defined by
+the user in an HTML form.
+
+You must define validation expressions on these variables to guard
+against unintentional SQL being submitted to your server. Within the layer
+you'd do the following:
+
+.. code-block:: mapfile
+
+    VALIDATION
+        'multimedia' '^yes|no$'
+        'sound' '^yes|no$'
+        'nseats' '^[0-9]{1,2}$'
+    END
+
+The first two limit the value of multimedia and sound to yes or
+no. The third limits the value for nseats to a 2 digit integer.
+
+.. note:: 
+
+  Be careful not to use a variable specifically named *id* as this will cause an error such as:
+  
+    .. code-block::
+    
+        msCGILoadForm(): Web application error. Parameter 'id' value fails to validate
+        
+  Instead use another variable name such as *code* or *myid*.  For example:
+  
+  .. code-block:: mapfile
+
+    LAYER
+      ..
+      VALIDATION
+        "code" "[0-9]"
+      END    
+       ..
+      FILTER ("[reg_code]" IN "%code%")
+      ...
+    END # Layer
+    
+  ..and calling it as: \https://xxx.xx/cgi-bin/mapserv?map=xxx.map&mode=map&code=12,13
+
+Expression Example
+------------------
+
+You can also use runtime substitutions to change values within a CLASS 
+EXPRESSION, such as `EXPRESSION ([year] < %year%)`.
+
+Again you must define validation expressions on these variables to guard
+against unintentional requests being submitted to your server. Within the layer
+you'd do the following:
+
+.. code-block:: mapfile
+
+    VALIDATION
+      'year' '^[0-9]{4}$'
+      'default_year' '1976'
+    END
+    
+The first limits the possible values to 4 digits, with each a valid number.
+The second sets the default value.
+
+The entire layer may appear as:
+
+.. code-block:: mapfile
+
+    LAYER
+      NAME 'yearly-data'
+      TYPE POINT
+      CONNECTIONTYPE OGR
+      CONNECTION "data.vrt"
+      VALIDATION
+        'year' '^[0-9]{4}$'
+        'default_year' '1976'
+      END #validation
+      STATUS ON
+      CLASS
+        NAME "Passed"
+        EXPRESSION ([year] < %year%)
+        STYLE
+          SYMBOL "circlef"
+          COLOR 0 0 255
+          SIZE 4
+        END # STYLE
+      END # CLASS
+      CLASS
+        NAME "Current"
+        EXPRESSION ([year] = %year%)
+        STYLE
+          SYMBOL "circlef"
+          COLOR 255 0 0
+          SIZE 4
+        END # STYLE
+      END # CLASS
+    END # LAYER
+    
+.. tip:: 
+
+   For the expression syntax, be sure to check the `ogrinfo <https://gdal.org/programs/ogrinfo.html>`_ 
+   response on your data layer, to see if OGR/GDAL reads the data 
+   value as an integer or as a string, such as::
+   
+     ogrinfo data.vrt data -summary
+     
+           using driver `OGR_VRT' successful.
+
+                Layer name: data
+                Geometry: Point
+                Feature Count: 3590
+                Extent: (136.852100, -43.533900) - (153.550600, -17.253900)
+                Layer SRS WKT:
+                ...
+                year: Integer (0.0)
+                
+   From above we can see that `year` is read by OGR as a number, so therefore
+   our expression should check for a number on both sides, such as
+   `EXPRESSION ([year] = %year%)`.  Alternatively, if the field was treated
+   as a string the expression might be: `EXPRESSION ("[year]" = "%year%")`
+    
+You can test this at the commandline, allowing you to test runtime substitution 
+mapfiles without using a webserver, with the mapserv utility such as:
+
+.. code-block::
+
+    mapserv -nh "QUERY_STRING=map=D:\ms4w\apps\validation-expression\validation.map&mode=map&year=1976" > out.png
+

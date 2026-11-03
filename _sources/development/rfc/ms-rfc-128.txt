@@ -1,0 +1,106 @@
+.. _rfc128:
+
+=========================================================================
+MS RFC 128: Make C99 and C++11 build requirements
+=========================================================================
+
+:Date: 2019-12-02
+:Author: Even Rouault
+:Contact: even.rouault@spatialys.com
+:Status: Adopted
+:Last update: 2019-12-11
+:Version: MapServer 7.6
+
+Overview
+--------
+
+MapServer currently requires C89 for its .c files and C++98/C++03 for its
+.cpp files. We propose to bump the requirements to C99 and C++11.
+
+This RFC is *not* about converting at once the whole code base to C99 or C++11,
+but more about making it *possible* to do progressive porting where and
+when it makes sense. Potential future larger changes of base data structures for
+example will need to be addresed in dedicated RFCs.
+
+More than a purely technical move, this is also intended to be an indication to
+the community at large that MapServer can embrace "modern" technologies
+(as far as one can consider standards of 9 or 20 years ago modern :-))
+
+Rationale
+---------
+
+This has been discussed at length in projects that MapServer depends on, and
+which have already adopted the above requirements:
+
+- GDAL: https://gdal.org/development/rfc/rfc68_cplusplus11.html
+- PROJ: https://proj.org/community/rfc/rfc-3.html
+- GEOS: https://trac.osgeo.org/geos/wiki/RFC5
+
+Proposed solution
+-----------------
+
+- In CMakeLists.txt, enforce C99 and C++11 requirements
+- In CMakeLists.txt, bump minimum version of CMake to 3.0: this just reflects
+  the current state of MapServer main which uses a 3.0 feature for Python
+  mapscripts.
+- Demo partial conversion in mapogcfiltercommon.c -> mapogcfiltercommon.cpp
+
+Narrowing down C API
+--------------------
+
+mapserver.h exposes a (too) large amount of functions as exported, mostly
+in mapserver.h, but also in other headers.
+We believe that most of them are not intended for external consumption.
+Such a large amount of exported functions can be an obstacle to refactoring
+and C++'ification. Looking in the archive of all source code that Debian
+maintains for "mapserver.h" only points to MapCache as including mapserver.h
+( https://codesearch.debian.net/search?q=mapserver.h )
+
+We thus propose that removal of public symbols is permitted, provided that:
+
+- MapServer binaries (mapserv, map2img, etc...) and MapScript, which are the main
+  users of the C API, still compile. If changes are needed in them and that they
+  doesn't affect the user, they are permitted.
+
+- MapCache still compiles. If changes would be needed in MapCache to compile,
+  this must be discussed.
+
+Backwards Compatibility Issues
+-------------------------------
+
+Obsolete environments where MapServer used to build and that have not natively
+C99 support or C++11 will need to upgrade their toolchain.
+
+On Windows side, this means Visual Studio 2015 or above.
+For gcc, at least 4.8 is needed.
+
+Current versions of Linux or Windows binary distribution we are aware of
+have all the needed requirements. No change in the Travis and AppVeyor CI have
+been needed to make the below proposed implementation work.
+
+Security implications
+---------------------
+
+None.
+
+MapScript implications
+----------------------
+
+None
+
+Documentation needs
+-------------------
+
+https://mapserver.org/installation/unix.html and https://mapserver.org/installation/win32.html
+will need to mention the new build requirements
+
+Ticket ID and references
+------------------------
+
+Pull request available at: https://github.com/MapServer/MapServer/pull/5939
+
+Voting history
+--------------
+
+Adopted with +1 from PSC members SethG, EvenR, MichaelS, JeffM, SteveL, JukkaR,
+DanielM, StephanS, TomK

@@ -1,0 +1,119 @@
+.. _rfc66:
+
+===============================================================
+  MS RFC 66: Better handling of temporary files
+===============================================================
+
+:Date: 2011-01-12
+:Author: Alan Boudreault (aboudreault at mapgears.com)
+:Author: Daniel Morissette (dmorissette at mapgears.com)
+:Last Edited: 2011-01-12
+:Status: Adopted on 2011-01-17
+:Version: MapServer 6.0
+
+Overview
+------------------------------------------------------------------------------
+
+At the moment, we write some temporary files in the web-accessible
+IMAGEPATH directory, this was a poor practice but still okay for some uses
+in the past (such as writing CONNECTIONTYPE WMS and WFS responses while we
+process them), but as our need for temporary files increase, we need to
+ensure that temp files are handled in a proper and safer way.
+
+This is a proposal for a better handling of the temporary files. The goal
+is to add the ability to configure the temporary path.
+
+Proposed Solution
+------------------------------------------------------------------------------
+
+The files will still be written on the disk. The temporary path can be set
+by the two following ways:
+
+* The environment variable MS_TEMPPATH.
+* In the mapfile
+
+::
+
+ WEB
+   TEMPPATH "/tmp/"
+ END
+
+If the temporary path is not set, the function will try the standard path
+depending on the OS. "/tmp/" for Linux/MAC and "C:/temp" for Windows. Most
+of the work will be to modify the msTmpFile function.
+
+
+Purposes of temporary files
+------------------------------------------------------------------------------
+
+* mapcontext.c: Load an OGC Web Map Context format from an URL 
+* mapgdal.c: msSaveImageGDAL() temporary file... memory support implemented
+* mapkmlrenderer.cpp:
+
+  - Merging raster buffer
+  - Create icon images
+  - Create a zip file with the kml file in it. Using cpl zip api.
+
+* mapogcfilter.c: Save mapfiles after filter applied  (debug only)
+* mapogcsld.c: 
+
+  - Save sld files.
+  - Save mapfiles after SLD applied (debug only)
+  - Download the symbol referenced by the URL and create a pixmap
+
+* mapogroutput.c:
+
+  - Create zip file (write from query)
+  - Create temporary directory (write from query)
+
+* mapscript/php/image.c: Save web images
+* mapwfslayer.c: Save gml files
+* mapwmslayer.c: Save temporary request output files
+
+Files affected
+------------------------------------------------------------------------------
+
+* maputil.c: The msTmpFile function.
+* All files that call msTmpFile(). 
+
+Future enhancement
+------------------------------------------------------------------------------
+
+The default behavior could be changed to write the temporary files in
+memory. This will only be available if MapServer is built with gdal/cpl,
+which has a virtual io support. This is more efficient than writing files
+on disk. The virtual file system interface approach will be based on the
+RFC 62 `CPL Services
+<https://mapserver.org/development/rfc/ms-rfc-62.html#use-of-cpl-services>`_
+implementation, which already uses memory files.
+
+This will need the implementation of a few generic functions (or using
+msIO* functions) to open/read/write/close a file using the CPL functions
+when available. A memory file can only be handled by the CPL services.
+
+This enhamcement is not a part of the current RFC and will require another RFC.
+
+Bug ID
+------------------------------------------------------------------------------
+
+The ticket for RFC-66 (containing the implementation) can be found here.
+
+Ticket 3354_
+ 
+.. _3354: https://github.com/MapServer/MapServer/issues/3354
+
+References
+------------------------------------------------------------------------------
+
+RFC 62 `CPL Services <https://mapserver.org/development/rfc/ms-rfc-62.html#use-of-cpl-services>`_
+
+
+Ticket 3570_
+ 
+.. _3570: https://github.com/MapServer/MapServer/issues/3570
+
+
+Voting history
+------------------------------------------------------------------------------
+
+Adopted on 2011-01-17 with +1 from SteveW, DanielM, FrankW, AssefaY, PericlesN

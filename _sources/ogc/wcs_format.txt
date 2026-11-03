@@ -1,0 +1,441 @@
+.. index:: 
+   pair: WCS; Use cases
+
+.. _wcs_format:
+
+*****************************************************************************
+ WCS Use Cases
+*****************************************************************************
+
+:Author:       Norman Barker
+:Contact:      nbarker at ittvis.com
+:Author:       Gail Millin
+:Contact:      nbarker at ittvis.com
+:Author:       Jeff McKenna
+:Contact:      jmckenna at gatewaygeomatics.com
+:Last Updated: 2026-04-20
+
+
+.. contents::
+    :depth: 2
+    :backlinks: top
+
+This document explains how to use MapServer to deliver Landsat, SPOT, DEM, and
+NetCDF temporal/banded data through the MapServer WCS interface. Thanks go to
+Steve Lime and Frank Warmerdam for their assistance with these projects.
+
+It also shows how to configure MapServer for GRIB2 output format.
+
+.. seealso:: :ref:`WCS Server HowTo <wcs_server>`       
+
+Landsat
+=======
+
+To serve Landsat imagery through the MapServer Web Coverage Service we must configure
+the :ref:`OUTPUTFORMAT` object. First, you should verify that your local `GDAL <https://gdal.org>`__ 
+library supports that raster format: from the command prompt, use the `gdalinfo <https://gdal.org/programs/gdalinfo.html>`__ 
+command to see what formats are supported, by executing *gdalinfo --formats*. 
+A list of all supported formats will appear and will specify if the format is 
+read-only **<ro>** or read and write **<rw>**;
+for WCS the format needs to be supported for read and write (except for
+*GDAL's* own WCS format, however).
+
+For the example below the Landsat 7 15m resolution mosaic is in a Enhanced
+Compressed Wavelets format (ECW). By running the gdalinfo command we can
+verify that the ECW format has write permissions, therefore the format can be
+specified in the mapfile and requested using the GetCoverage request. 
+
+.. code-block:: mapfile
+
+    OUTPUTFORMAT
+        NAME "ECW"
+        DRIVER "GDAL/ECW"
+        MIMETYPE "image/ecw"
+        IMAGEMODE "BYTE"
+        EXTENSION "ecw"
+    END
+
+.. code-block:: mapfile
+
+    LAYER
+        NAME "Landsat7"
+        STATUS OFF
+        TYPE RASTER
+        PROCESSING "SCALE=AUTO"
+        UNITS Meters
+        TILEINDEX "MapServer/wcs/landsat7/l7mosaic15m.shp"
+        TILEITEM "Location"
+        METADATA
+          "wcs_description" "Landsat 7 15m resolution mosaic"
+          "wcs_name" "Landsat7"
+          "wcs_label" "Landsat 7 15m resolution mosaic"
+          "ows_srs" "EPSG:27700"
+          "ows_extent" "0 0 700005 1050000"
+          "wcs_resolution" "75 75"
+          "wcs_bandcount" "3"
+          "wcs_formats" "ECW"
+          "wcs_enable_request" "*"
+        END
+     END
+
+A GetCoverage request can then be requested (using the parameters set in the
+mapfile) by creating a URL with the elements: - Your Server, MapServer
+Program, Location of mapfile, Type of Service (WCS), Request (GetCoverage),
+Coverage (Landsat7), BBOX (0,0,700005,1050000), CRS (EPSG:27700), ResX (75)
+ResY (75), Format (ECW).
+
+SPOT
+====
+
+SPOT imagery can be delivered through MapServer Web Coverage Service similarly
+to the Landsat example above. The main difference is that as SPOT is a
+greyscale image the wcs_bandcount = 1 rather than a Landsat image which
+consists of 3 bands. For this example the well known GeoTiff format will be
+used to demonstrate what to specify in a mapfile for SPOT data. 
+
+.. code-block:: mapfile
+
+    OUTPUTFORMAT
+        NAME "GEOTIFF"
+        DRIVER "GDAL/GTiff"
+        MIMETYPE "image/tiff"
+        IMAGEMODE "BYTE"
+        EXTENSION "tif"
+    END
+    LAYER
+        NAME "SPOT"
+        STATUS OFF
+        TYPE RASTER
+        PROCESSING "SCALE=AUTO"
+        UNITS Meters
+        TILEINDEX "MapServer/wcs/orthospot/spot.shp"
+        TILEITEM "Location"
+        METADATA
+          "wcs_description" "Orthospot mosaic"
+          "wcs_name" "SPOT"
+          "wcs_label" "Orthospot mosaic"
+          "ows_srs" "EPSG:27700"
+          "ows_extent" "375960 64480 497410 200590"
+          "wcs_resolution" "100 100"
+          "wcs_bandcount" "1"
+          "wcs_formats" "GEOTIFF"
+          "wcs_nativeformat" "8-bit GeoTIF"
+          "wcs_enable_request" "*"
+        END
+    END
+
+The key parameters to specify in the WCS mapfile for any data layer and format
+are::
+
+    - Layer Name = Create a short name for the data
+    - Layer Type = Raster
+
+The following examples further demonstrate how WCS can be implemented and also
+how to create WCS containing layers with a temporal dimension (see NetCDF
+example).
+
+DEM
+===
+
+It is possible to deliver 16 bit DEM data through the MapServer Web Coverage
+Service.
+
+Firstly it is necessary to specify the output format in the mapfile:
+
+.. code-block:: mapfile
+
+    OUTPUTFORMAT
+      NAME "GEOTIFFINT16"
+      DRIVER "GDAL/GTiff"
+      MIMETYPE "image/tiff"
+      IMAGEMODE "INT16"
+      EXTENSION "tif"
+    END
+
+and the corresponding layer:
+
+.. code-block:: mapfile
+
+    LAYER
+      NAME "srtm"
+      STATUS OFF
+      TYPE RASTER
+      DATA "srtm.tif"
+      PROJECTION
+        "init=epsg:4326"
+      END
+      METADATA
+        "wcs_label" "SRTM WCS TIF Server"
+        "ows_extent" "-180 -90 180 90"
+        "wcs_resolution" "0.00083 -0.00083"
+        "ows_srs" "EPSG:4326"
+        "wcs_formats" "GEOTIFFINT16"
+        "wcs_nativeformat" "geotiff"
+        "wcs_enable_request" "*"
+      END
+    END
+
+.. TIP::
+   Performance gains can be made by using the `gdaladdo <https://gdal.org/programs/gdaladdo.html>`__ 
+   utility on your source rasters.
+
+NetCDF
+======
+
+Firstly GDAL doesn't support all versions of netCDF (there are a lot, it is a
+generic format), so for stability it may be necessary to convert the files
+into GeoTiff format first. This can be achieved using the netCDF libraries
+here https://www.unidata.ucar.edu/software/netcdf/. Denis
+Nadeau and Frank Warmerdam have added netCDF CF as a read only format within
+GDAL, so it now possible to read the CF convention netCDF files directly from
+disk.
+
+We placed the Z-levels in the bands of the GDAL data file (either GeoTiff or
+netCDF), and created a shape index for the time levels. GDAL data is a 2-D
+format (x,y) and bands. netCDF is an N-D file format, supporting time, x,y,z,
+and experiment parameters. By using a set of GDAL netCDF / geoTiff files it is
+possible to represent this, and to store the z-level (height) as bands within
+the data file. Although a hack, it is possible for a custom client to receive
+important metadata from the describeCoverage operation of a WCS about the
+which z-level a band of a geotiff represents by encoding this in the returned
+axes description tag.
+
+To create the shape file for the temporal dimension we had to do some hacking
+with Java code, but we also got it to work with Steve Lime' s perl script in
+the MODIS MapServer demo download (which doesn't seem to be available now).
+
+The perl script used in Modis demo by Steve Lime is as follows, and I have
+placed inline comments below. The script assumes that gdaltindex has already
+been run in this directory to create a tile index shape and dbf file. It
+assumes that the filenames of your data files have the date in the filename,
+for example myfileYYYYMMDDHH.tif 
+
+.. code-block:: perl
+    :linenos:
+
+      #!/usr/bin/perl
+      use XBase;
+      opendir(DIR, '.'); # open the current directory
+      foreach $file (readdir(DIR)) {
+        next if !($file =~ /\.dbf$/); # read the dbf file in this directory created by gdaltindex
+        print "Working on $file...\n";
+        $tfile = 'temporary.dbf';
+        system("mv $file $tfile");
+        $oldtable = new XBase $tfile or die XBase->errstr;
+        print join("\t", $oldtable->field_names) ."\n";
+        print join("\t", $oldtable->field_types) ."\n";
+        print join("\t", $oldtable->field_lengths) ."\n";
+        print join("\t", $oldtable->field_decimals) ."\n";
+        $newtable = XBase->create("name" => $file,
+                      "field_names" => [$oldtable->field_names, "IMGDATE"],  # this is the FILTERITEM in the corresponding tile index layer within your mapfile
+                      "field_types" => [$oldtable->field_types, "C"],  # character column type
+                      "field_lengths" => [$oldtable->field_lengths, 13], # length of the date string
+                      "field_decimals" => [$oldtable->field_decimals, undef]) or die "Error creating new table.";
+        foreach (0 .. $oldtable->last_record) {
+        ($deleted, @data) = $oldtable->get_record($_);
+        print "  ...record $data[0]\n";
+            # extract the date
+            $year = substr $data[0], 8, 4;  # year  is at position 8 in the filename string
+            $month = substr $data[0], 12, 2;  # month is at position 12 in the filename string
+            $day = substr $data[0], 14, 2; # day is at position 14 in the filename string
+            $hour = substr $data[0], 16, 2;  # hour is at position 16 in the filename string
+            $date =  "$year-$month-$day" . "T" . "$hour\n"; # format is YYYY-MM-DDTHH, or any ISO format
+         print "$date";
+            push @data, "$date";
+        $newtable->set_record($_, @data);
+        }
+        $newtable->close();
+        $oldtable->close();
+        unlink($tfile);
+      }
+
+If have used the perl script then skip to the layer definitions below, if you
+wish to code your own the description is here.
+
+The DBF file has to have the column 'location' that indicates the location of
+the data file (either absolute path or relative to the map file location, and
+the second column that can be called whatever you want but indexes time. In
+our case we called it 'time' :-)
+
+The corresponding shapefile then has to contain Polygons with the bounding
+boxes of the tif file for each time. So OGRInfo timeIndex.shp looks something
+like::
+
+  OGRFeature(timeIndex):116
+    location(String) = mytime.tif
+    time(String) = 2001-01-31T18:00:00
+    POLYGON ((xxx,xxxx,.......))
+
+
+Define your output format as:
+
+.. code-block:: mapfile
+
+    OUTPUTFORMAT
+      NAME "GEOTIFF_FLOAT"
+      DRIVER 'GDAL/GTiff'
+      MIMETYPE 'image/tiff'
+      IMAGEMODE FLOAT32
+      EXTENSION 'tif'
+    END
+
+Then you need to define your tile index within the mapfile:
+
+.. NOTE::
+   You must setup a :ref:`VALIDATION <validation>` block for MapServer to 
+   properly pass the *time* values in the WCS request.
+
+.. code-block:: mapfile
+
+    LAYER
+      NAME 'time_idx'
+      TYPE TILEINDEX
+      DATA 'timeIndex.shp'
+      FILTER ("[time]" = '%time%')
+      VALIDATION
+        #handle time values of format YYYY-MM-DDThh:mm:ss
+        'time'   '^[0-9]{4}-[0-9]{2}-[0-9]{2}T[0-9]{2}:[0-9]{2}:[0-9]{2}$'
+      END
+    END
+
+and the corresponding layer:
+
+.. code-block:: mapfile
+
+    LAYER
+      NAME 'TempData'
+      STATUS OFF
+      TYPE RASTER
+      TILEINDEX 'time_idx'
+      PROJECTION
+        "init=epsg:4326"
+      END
+      METADATA
+        "wcs_label" 'Temperature data'
+        "ows_extent" '-180 -90 180 90'
+        "wcs_resolution" '1.125 -1.125'
+        "ows_srs" 'EPSG:4326'
+        "wcs_formats" 'GEOTIFF_FLOAT'
+        "wcs_nativeformat" 'netCDF'
+        "wcs_bandcount" '27'
+        "wcs_rangeset_axes" 'bands'
+        "wcs_rangeset_label" 'Pressure (hPa units) Levels'
+        "wcs_rangeset_name" 'bands'
+        "wcs_rangeset_description" 'Z levels '  
+        "wcs_timeposition" '2001-01-01T06:00:00,2001-01-01T12:00:00,2001-01-01T18:00:00,2001-01-02T00:00:00'
+        "wcs_timeitem" 'time'
+        "wcs_enable_request" "*"
+      END
+    END
+
+The TempData coverage layer will now let you subset with the &bands=...
+&time=... subset parameters!
+
+To do a coordinate reprojection specify in the request &Response_CRS=EPSG:xxxx
+
+When you start doing temporal subsetting with WCS and MapServer you can see
+the need for an automatic way of generating map files such as using an XSL
+stylesheet!
+
+For a tile-index layer you need to provide the following extra metadata in
+order to use it for WCS:
+
+.. code-block:: mapfile
+
+    "OWS_EXTENT" "10050 299950 280050 619650" 
+    "WCS_RESOLUTION" "100 100" 
+    "WCS_SIZE" "2700 3197"
+    "WCS_BANDCOUNT" "3"
+
+If your image has a colortable and only one band, it will come out greyscale
+unless you set the IMAGEMODE to PC256 instead of BYTE.
+
+GRIB2 output format
+===================
+
+This requires MapServer 7.2.0 for format-specific and layer-specific
+creation options mechanism, as well as GDAL 2.3.0 for GRIB2 output support.
+
+
+Define your output format as:
+
+.. code-block:: mapfile
+
+    OUTPUTFORMAT
+        NAME GRIB
+        DRIVER "GDAL/GRIB"
+        MIMETYPE "application/x-grib2"
+        IMAGEMODE Float32
+        EXTENSION "grib2"
+        FORMATOPTION "DATA_ENCODING=SIMPLE_PACKING"
+    END
+
+(consult `GDAL GRIB driver documentation`_ for more options that can be 
+provided in FORMATOPTION)
+
+and the corresponding layer:
+
+.. code-block:: mapfile
+
+    LAYER
+        NAME temperatures
+        TYPE raster
+        STATUS ON
+        DUMP TRUE
+        DATA "temperatures.tif"
+
+        PROJECTION
+            "init=epsg:4326"
+        END
+
+        METADATA
+            "ows_extent" "-180 -90 180 90"
+            "wcs_label" "Test label"
+            "ows_srs"	"EPSG:4326"
+            "wcs_resolution" "2.4 2.4"
+            "wcs_bandcount" "1"
+            "wcs_imagemode" "Float32"
+            "wcs_formats" "GEOTIFF_FLOAT32 GRIB"
+            "wcs_description" "Test description"
+            "wcs_metadatalink_href" "http://www.gdal.org/metadata_test_link.html"
+            "wcs_keywordlist" "test,mapserver"
+            "wcs_abstract" "abstract"
+
+            # GDAL creation options for the GRIB output format
+            # In the case where the input DATAset would be a GRIB2 product,
+            # those wcs_outputformat_GRIB_creationoption_* keywords are not
+            # needed, as being directly taken from the input dataset
+            "wcs_outputformat_GRIB_creationoption_DISCIPLINE" "0(Meteorological)"
+            "wcs_outputformat_GRIB_creationoption_IDS" "Normally this will never be used given the BAND_1_IDS override"
+            "wcs_outputformat_GRIB_creationoption_BAND_1_IDS" "CENTER=54(Montreal) SUBCENTER=0 MASTER_TABLE=4 LOCAL_TABLE=0 SIGNF_REF_TIME=1(Start_of_Forecast) REF_TIME=2017-01-05T00:00:00Z PROD_STATUS=0(Operational) TYPE=2(Analysis_and_forecast)"
+            "wcs_outputformat_GRIB_creationoption_PDS_PDTN" "0"
+            "wcs_outputformat_GRIB_creationoption_PDS_TEMPLATE_ASSEMBLED_VALUES" "0 0 2 47 47 0 0 1 0 103 0 2 255 -127 -2147483647"
+
+            # WCS 2.0 metadata items
+            "wcs_native_format" "application/x-grib2"
+            "wcs_band_names" "Temperature_2m"
+            "Temperature_2m_band_interpretation" "interp"
+            "Temperature_2m_band_uom" "Celsius"
+            "Temperature_2m_band_definition"       "Temperature at 2m above ground"
+            "Temperature_2m_band_description"      "Temperature at 2m above ground"
+            "Temperature_2m_interval" "-100 100"
+            "Temperature_2m_significant_figures" "1"
+
+            # WCS 1.x metadata items
+            "wcs_nativeformat" "GRIB"
+            "wcs_rangeset_axes" "bands"
+            "wcs_rangeset_name" "Temperatures"
+            "wcs_rangeset_label" "Bands"
+            "wcs_rangeset_description" "Temperatures"
+        END
+    END
+
+(consult `GDAL GRIB driver documentation`_ for more options that can be 
+provided in 'wcs_outputformat_GRIB_creationoption_{OPTIONNAME}')
+
+Credit: Support for per-layer creation options has been funded by Meteorological
+Service of Canada.
+
+.. #### rST Link Section ####
+
+.. _`GDAL GRIB driver documentation`: https://gdal.org/en/stable/drivers/raster/grib.html

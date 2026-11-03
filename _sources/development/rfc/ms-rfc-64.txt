@@ -1,0 +1,259 @@
+.. _rfc64:
+
+===============================================================
+  MS RFC 64 - MapServer Expression Parser Overhaul
+===============================================================
+
+:Date: 2010/11/2
+:Author: Steve Lime
+:Contact: sdlime at comcast.net
+:Last Edited: 2010-11-2
+:Status: Adopted
+
+Overview 
+------------------------------------------------------------------------------
+
+This is a draft RFC addressing 1) how the Bison/Yacc parser for logical expressions is implemented and 2) where in the MapServer code
+the  parser can be used. This RFC could have broader impacts on query processing depending on additional changes at the driver level, 
+specifically the RDBMS ones. Those changes don't have to occur for this to be a useful addition.
+
+A principle motivation for this work is to support OGC filter expressions in a single pass in a driver-independent manner.
+
+All of the work detailed here is being prototyped in a sandbox, visit:
+
+  `http://svn.osgeo.org/mapserver/sandbox/sdlime/common-expressions/mapserver  <http://svn.osgeo.org/mapserver/sandbox/sdlime/common-expressions/mapserver>`
+
+Existing Expression Parsing
+------------------------------------------------------------------------------
+
+The existing logical expression handling in MapServer works like so:
+
+  1) duplicate expression string[[BR]]
+  2) substitute shape attributes into string (e.g. '[name]' => 'Anoka')[[BR]]
+  3) parse with yyparse()
+
+The parser internally calls yylex() for its tokens. Tokens are the smallest pieces of an expression.
+
+**Advantages**
+
+  * it's simple and it works
+
+**Disadvantages**
+
+  * limited by substitution to strings, no complex types can be handled
+  * have to perform the substitution and tokenize the resulting string for every feature
+
+Proposed Technical Changes
+------------------------------------------------------------------------------
+
+This RFC proposes a number of technical changes. The core change, however, involved updating the way logical expressions work. 
+Additional features capitalize on this core change to bring additional capabilities to MapServer.
+
+**Core Parser Update**
+
+I propose moving to a setup where a logical expression is tokenized once (via our Flex-generated lexer) and then Bison/Yacc parser 
+works through tokens (via a custom version of yylex() defined in mapparser.y) as necessary for each feature. This eliminates the
+substitution and tokenize steps currently necessary and opens up possibilities for supporting more complex objects in expressions. 
+Basically we'd hang a list of tokens off an expressionObj, populate it in msLayerWhichItems() and leverage the tokens as needed 
+in the parser. The following new structs and enums are added to mapserver.h:
+
+::
+
+	enum MS_TOKEN_LOGICAL_ENUM { MS_TOKEN_LOGICAL_AND=100, MS_TOKEN_LOGICAL_OR, MS_TOKEN_LOGICAL_NOT };
+	enum MS_TOKEN_LITERAL_ENUM { MS_TOKEN_LITERAL_NUMBER=110, MS_TOKEN_LITERAL_STRING, MS_TOKEN_LITERAL_TIME, MS_TOKEN_LITERAL_SHAPE };
+	enum MS_TOKEN_COMPARISON_ENUM {
+	  MS_TOKEN_COMPARISON_EQ=120, MS_TOKEN_COMPARISON_NE, MS_TOKEN_COMPARISON_GT, MS_TOKEN_COMPARISON_LT, MS_TOKEN_COMPARISON_LE, MS_TOKEN_COMPARISON_GE, MS_TOKEN_COMPARISON_IEQ,
+	  MS_TOKEN_COMPARISON_RE, MS_TOKEN_COMPARISON_IRE,
+	  MS_TOKEN_COMPARISON_IN, MS_TOKEN_COMPARISON_LIKE,
+	  MS_TOKEN_COMPARISON_INTERSECTS, MS_TOKEN_COMPARISON_DISJOINT, MS_TOKEN_COMPARISON_TOUCHES, MS_TOKEN_COMPARISON_OVERLAPS, MS_TOKEN_COMPARISON_CROSSES, MS_TOKEN_COMPARISON_WITHIN, MS_TOKEN_COMPARISON_CONTAINS,
+	  MS_TOKEN_COMPARISON_BEYOND, MS_TOKEN_COMPARISON_DWITHIN
+	};
+	enum MS_TOKEN_FUNCTION_ENUM { MS_TOKEN_FUNCTION_LENGTH=140, MS_TOKEN_FUNCTION_TOSTRING, MS_TOKEN_FUNCTION_COMMIFY, MS_TOKEN_FUNCTION_AREA, MS_TOKEN_FUNCTION_ROUND, MS_TOKEN_FUNCTION_FROMTEXT };
+	enum MS_TOKEN_BINDING_ENUM { MS_TOKEN_BINDING_DOUBLE=150, MS_TOKEN_BINDING_INTEGER, MS_TOKEN_BINDING_STRING, MS_TOKEN_BINDING_TIME, MS_TOKEN_BINDING_SHAPE };
+
+	typedef union {
+  	  double dblval;
+  	  int intval;
+  	  char *strval;
+  	  struct tm tmval;
+  	  shapeObj *shpval;
+  	  attributeBindingObj bindval;
+	} tokenValueObj;
+
+	typedef struct {
+  	  int token;
+  	  tokenValueObj tokenval;
+	} tokenObj;
+
+Some of these definitions hint at other features that will be detailed later. When we convert an expression string into a series of tokens 
+we also store away the value associated with that token (if necessary). In many cases the token value is a literal (string or number), in 
+other cases its a reference to a feature attribute. In the latter case we use the attributeBindingObj already in use by MapServer to encapsulate 
+the information necessary to quickly access the correct data (typically an item index value).
+
+We always have had to make expression data available to the parser (and lexer) via temporary global variables. That would continue to be 
+the case here, although different data are shared in this context. One thing to note is that once an expression is tokenized we no longer have 
+to rely on the flex-generated lexer so, in theory, it should be easier to implement a thread-safe parser should we choose to do so.
+
+**Extending the Yacc grammar to support spatial operators**
+
+The mapserver.h definitions above allow for using shapeObj's within the Yacc grammar (we also define a shapeObj as a new base token type 
+within mapparser.y). There are two types of shape-related tokens: 1) a shape binding, that is, a reference to the geometry being evaluated and 
+2) shape literals, shapes described as WKT within the expression string. For example:
+
+::
+
+	In the expression:
+  	  EXPRESSION (fromText('POINT(500000 5000000)') Intersects [shape])
+
+	  1) fromText('POINT(500000 5000000)') defines a shape literal (the WKT to shapeObj conversion is done only once)
+  	  2) [shape] is a shape binding
+
+We can use these tokens in the grammar to implement all of the MapServer supported (via GEOS) logical operators. Note that in the above 
+example fromText() appears as a function operating on a string. This is handled as a special case when tokenizing the string since we only 
+want to do this once. So we create a shape literal based on the enclosed WKT string at this time.
+
+**Extending the grammar to support spatial functions**
+
+By supporting the use of more complex objects we can support functions on those objects. We could write:
+
+::
+
+	EXPRESSION (area([shape]) < 100000)
+
+or rely on even more of the GEOS operators. (Note: only the area function is present in the sandbox.) To do this we need to somehow store 
+a shapeObj's scope so that working copies can be free'd as appropriate. I would propose adding a ''int scope'' to the shapeObj structure 
+definition. Shapes created in the course of expression evaluation would be tagged as having limited scope while literals or bindings would 
+be left alone and presumably destroyed later. This saves having to make copies of shapes which can be expensive.
+
+**Context Sensitive Parsing**
+
+We could have done this all along but this would be an opportune time to implement context sensitive parser use. Presently we expect the 
+parser to produce a true or false result, but certainly aren't limited to that. The idea is to use the parser to compute values in other situations. 
+Two places are working in the sandbox and are detailed below.
+
+Class **TEXT** Parameter
+
+Currently you can write:
+
+::
+
+	CLASS
+  	  ...
+  	  TEXT ([area] acres)
+	END
+
+It looks as if the TEXT value is an expression (and it is stored as such) but it's not evaluated as one. It would be very useful to treat this as 
+a true expression. This would open up a world of formatting options for drivers that don't support it otherwise (e.g. shapefiles). Ticket 
+`2950 <https://github.com/MapServer/MapServer/issues/2950>` is an example where this would come in handy. Within the sandbox I've added 
+toString, round and commify functions so that you can write:
+
+::
+
+	TEXT (commify(toString([area]*0.000247105381,"%.2f")) + ' ac')
+
+Which converts area from sq. meters to acres, truncates the result to two decimal places adds commas (213234.123455 => 213,234.12) for 
+crowd pleasing display. To add this support, in addition to grammar changes, we add these declarations to mapserver.h:
+
+::
+
+	enum MS_PARSE_RESULT_TYPE_ENUM { MS_PARSE_RESULT_BOOLEAN, MS_PARSE_RESULT_STRING, MS_PARSE_RESULT_SHAPE };
+
+	typedef union {
+	  int intval;
+  	  char *strval;
+  	  shapeObj *shpval;
+	} parseResultObj;
+
+Then in the grammar we set a parse result type and set the result accordingly. One side effect is that we have to define a standard way to convert 
+numbers to strings when in the string context and simply using "%g" as a format string for snprintf does wonders to output.
+
+Style **GEOMTRANSFORM**
+
+Within the sandbox I've implemented GEOMTRANSFORMs as expressions as opposed to the original implementation. The parser has also been 
+extended to support the GEOS buffer operator. So you can write:
+
+::
+
+	STYLE
+	  GEOMTRANSFORM (buffer([shape], -3))
+  	  ...
+	END
+
+This does executes a buffer on the geometry before rendering (see test.buffer.png attachment). Because the GEOMTRANSFORM processing occurs 
+this transformation happens **after** the feature is converted from map to image coordinates, but the effect is still valuable and the buffer value is 
+given in pixels. In the future we might consider implementing a GEOMTRANSFORM at the layer level so that the transformation is available to all 
+classes and/or styles (and consequently in query modes too). 
+
+Expression Use Elsewhere
+------------------------------------------------------------------------------
+
+Currently the logical expression syntax is also used with REQUIRES/LABELREQUIRES and with rasters. In the REQUIRES/LABELREQUIRES case the code 
+would remain mostly "as is" we'd still do the substitutions bases on layer status, then explicitly tokenize and parse. Since this done at most once per 
+layer there's really no need to do anything more.
+
+Rasters present more of a challenge. We'd need to handle them as a special case when tokenizing an expression by defining pixel bindings and then 
+pass a pixel to the parser when evaluating the expression. This should be **much, much** faster than the current method where each pixel value is 
+converted to a string representation (and then back to a number), especially given the number of pixels often evaluated. Some interesting drawing 
+effects are also possible if you could expose a pixel location to the GEOS operators. For example, one could create a mask showing only pixels within 
+a particular geometry.
+
+Query Impact
+------------------------------------------------------------------------------
+
+This is where things get interesting. I'm proposing adding a new query, msQueryByFilter() that would work off an expression string (this is working in 
+the sandbox). The expression string would still have to be accompanied by an extent parameter. Drivers like shapefiles still need to first apply a bounding 
+box before applying a secondary filter. Other drivers could choose to combine the extent and expression string (more likely the tokens) if they so choose. 
+msQueryByFilter() works much like msQueryByAttributes(). The layer API has been extended to include a prototype, msLayerSupportsCommonFilters(), that 
+allows the driver to say if it could process this common expression format natively somehow (e.g. via a FILTER and msLayerWhichShapes()/ msLayerNextShape()) or 
+if the expression would need to be applied after msLayerNextShape() is called repeatedly. The shapefile and tiled shapefile drivers would work natively, as would any 
+driver that uses msEvalExpression(). My hope is that the RDBMS drivers could somehow translate (via the tokens) an expression into their native SQL but if not, 
+we would still be able to use those sources. 
+
+Backwards Compatibility Issues
+------------------------------------------------------------------------------
+
+Surprisingly few. The parser changes would all be transparent to the user. Truly handling TEXT expressions as expressions is a regression, albeit a positive 
+one IMHO. I would also propose a few expression level changes especially around case-insensitive string and regex comparisons within logical expression. I
+think it makes more sense and is more user friendly to simply define case-insensitive operators (e.g. EQ and IEQ for straight string equality, and ~ and ~* for 
+regex (modeled after Postgres).
+
+The additional operators, functions and parsing contexts are new functionality.
+
+A great deal of code would be made obsolete if this were pursued. Much of the OWS filter evaluation would be handled by the msQueryByFilter() function and 
+numerous associated enums, defines, etc... could go away.
+
+Grammar summary (**bold means new**):
+
+   * Logical operators: AND, OR, NOT
+   * Comparison operators: =, **=***, !=, >, <, >=, <=, ~, **~***, in
+   * Spatial comparison operators: **intersects**, **disjoint**, **touches**, **overlaps**, **crosses**, **within**, **contains**, **beyond**, **dwithin**
+   * Functions: length, **commify**, **round**, **tostring**
+   * Spatial functions: **fromtext**, **area**, **distance**, **buffer**
+
+Security Issues
+------------------------------------------------------------------------------
+
+While the bulk of the work is in the bowels of MapServer any change of this magnitude could have unintended consequences. In this case I
+think the largest risks are buffer overflows associated with string operators in the parser and memory leaks. Care would need to be taken in 
+developing a comprehensive set of test cases.
+
+Todo's
+------------------------------------------------------------------------------
+
+  1) The ''IN'' operator is in dire need of optimization.
+  2) All OGC filter operations need to be supported. Bounding box filters in particular have not been looked at.
+  3) Need ''LIKE'' operator code. (e.g. Dr. Dobbs, 9/08, ''Matching Wildcards: An Algorithm'', pp. 37-39)
+  4) How to handle layer tolerances in msQueryByFilter()?
+  5) Best way to manage tokens: array, list, tree? Bison/Yacc needs array or list, but both Frank and Paul have referred to trees. (Update: the tokens are now managed as a linked list.)
+  6) Thread safety...
+  7) Parser error handling, any errors have basically always been silently ignored.
+
+Bug ID
+------------------------------------------------------------------------------
+
+ #3613
+
+Voting history
+------------------------------------------------------------------------------
+
+ Passed on 12/1/2010 with a +1 from Steve L, Steve W, Perry, Assefa, Tamas. 

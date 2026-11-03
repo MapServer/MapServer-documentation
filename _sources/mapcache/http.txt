@@ -1,0 +1,90 @@
+.. _mapcache_http:
+
+*****************************************************************************
+HTTP Requests
+*****************************************************************************
+
+
+HTTP configuration blocks are used in multiple places in the MapCache configuration.
+
+Specifying the URL
+------------------
+
+The simplest HTTP configuration block requires a single `<url>` child element:
+
+.. code-block:: xml
+
+  <http>
+    <url>http://server/path?key=value</url>
+  </http>
+
+Timeouts
+--------
+
+You may configure the timeouts after which an HTTP request is abandoned:
+
+.. code-block:: xml
+
+  <http>
+    <url>http://server/path?key=value</url>
+
+    <!-- timeout in seconds to wait while establishing a connection. This may be needed for
+    firewalled MapCache or HTTP instances -->
+    <connection_timeout>30</connection_timeout>
+
+    <!-- total maximum time allowed for the whole request. Includes the time needed to
+   transfer data down the wire -->
+    <timeout>60</timeout>
+  </http>
+
+Headers
+-------
+
+You can insert custom headers in the request, or forward headers received from the client
+request:
+
+.. code-block:: xml
+
+  <http>
+    <url>http://server/path?key=value</url>
+    <headers>
+      <User-Agent>My MapCache User-Agent</User-Agent>   <!-- hard coded header -->
+      <X-My-Forwarded-Header>{X-Received-Header}<X-My-Forwarded-Header> <!-- Forwarded from client, optionally changing the header name -->
+      <X-My-Forwarded-Header-2>foobar-{X-Received-Header}-baz<X-My-Forwarded-Header-2> <!-- Forwarded and modified from client, optionally changing the header name -->
+    </headers>
+  </http>
+
+Authorization
+-------------
+
+To access resources protected by a username and password, provide the `<auth>` element.
+Currently, only basic authentication is supported. Given that usernames and
+passwords are stored in unencrypted form, exercise caution when handling
+the configuration file (e.g., avoid committing it to a public repository and
+set restrictive file access permissions). The same precautions should be taken
+with the memory of the mapcache process (e.g., core files).
+
+.. code-block:: xml
+
+  <http>
+    <url>http://example.com/path?key=value</url>
+    <auth scheme="basic">
+      <user>alice</user>
+      <pass>attackatdawn</pass>
+    </auth>
+  </http>
+
+Both the username and password are processed verbatim. Ensure not to include
+any extra symbols (e.g., space, newline). If there is no username or no password,
+simply leave the respective element empty.
+
+.. code-block:: xml
+
+  <http>
+    <url>http://example.com/path?key=value</url>
+    <auth scheme="basic">
+      <user>bob</user>
+      <pass></pass> <!-- user "bob" has no password -->
+    </auth>
+  </http>
+

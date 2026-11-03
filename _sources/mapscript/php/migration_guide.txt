@@ -1,0 +1,196 @@
+.. _php_migration_guide:
+
+*****************************************************************************
+ PHP MapScript Migration Guide
+*****************************************************************************
+
+:Author: Alan Boudreault
+:Contact: aboudreault at mapgears.com
+:Author: Jeff McKenna
+:Contact: jmckenna at gatewaygeomatics.com
+:Last updated: 2019-05-25
+
+.. contents:: Table of Contents
+    :depth: 3
+    :backlinks: top
+    
+Introduction
+------------
+
+This document describes the changes that must be made to PHP MapScript
+applications when migrating from one MapServer version to another (i.e. backwards
+incompatibilities), as well as information on some of the new features.
+
+.. warning::
+
+   As of the MapServer 8.0.0 release PHP support is only available through
+   MapServer's :ref:`SWIG API <swig>`.  The unmaintained `native` PHP MapScript
+   support was removed.
+
+Migrating to 7.4's new SWIG API and PHP 7
+-----------------------------------------
+
+As of the MapServer 7.4.0 release, users are recommended to switch to 
+MapServer's new :ref:`SWIG <swig>` API support of PHP 7+ (reason for 
+recommendation: as we saw with the breaking PHP 7 changes,
+managing PHP through SWIG will be easier on the MapServer maintainers in 
+the long run).  Some important SWIG notes:
+  
+- you will require at least `SWIG-3.0.11 <https://www.swig.org/download.html>`_  
+  (but 4.0.0 is recommended).
+  
+- if you notice any missing functions that were available in the old native PHP MapScript API,
+  first please check the :ref:`SWIG API <swig>` reference document for an alternative function to use,
+  and if there is nothing similar available then `file a ticket <https://github.com/MapServer/MapServer/issues>`_ 
+  for each function that you require.
+  
+- all of your PHP scripts (that leverage MapServer objects and functions) must now always 
+  first include the generated `mapscript.php` file containing MapServer constants:
+
+  ::
+  
+   // required SWIG include (contains MapServer constants for PHP7)
+   include("C:/ms4w/apps/phpmapscriptng-swig/include/mapscript.php");    
+  
+- take note of the change in how to declare your new objects:
+
+  ::
+  
+    // open map
+    $oMap = new mapObj("C:/ms4w/apps/phpmapscriptng-swig/sample.map");
+    
+  instead of the former way:
+  
+  ::
+  
+    // open map
+    $oMap = ms_newMapObj("C:/ms4w/apps/phpmapscript/sample.map");
+
+Migrating 5.6 to 6.0
+--------------------
+
+PHP Version Required
+====================
+
+PHP 5.2.0 or more recent is required. The support for earlier versions
+has been dropped.
+  
+Error Reporting
+===============
+
+PHP MapScript now uses exceptions for error reports. All errors are
+catchable. There are no more fatal errors reported via the standard
+uncatchable PHP system (Only Warnings).
+  
+Manipulating Objects
+====================
+
+* Object properties can be set like all other PHP objects.
+
+.. code-block:: php 
+
+    $map->scaledenom = 25000;
+  
+.. note::
+    The set/setProperty methods are still available. 
+
+* Objects can be created with the PHP "new" operator.
+
+.. code-block:: php
+
+  $myShape = ms_newShapeObj(MS_SHAPE_LINE); // or
+  $myShape = new shapeObj(MS_SHAPE_LINE);
+
+.. note::
+   All object constructors throw an exception on failure.
+  
+.. note::
+     
+    *ms_newSymbolObj()* and *new symbolObj()* are different
+
+    * ms_newSymbolObj() returns the id of the new/existing symbol.
+    * new symbolObj() returns the symbolObj. You don't need to get it with getSymbolObjectById().
+
+* Cloneable objects should be cloned with the PHP clone keyword. There is no more clone methods.
+
+Class Properties
+================
+
+Class properties that have been removed:
+
+  * classObj: maxscale, minscale
+  * layerObj: labelsizeitem, labelangleitem, labelmaxscale, labelminscale, maxscale, minscale, symbolscale, transparency
+  * legendObj: interlace, transparent
+  * mapObj: imagetype, imagequality, interlace, scale, transparent  
+  * scalebarObj: interlace, transparent
+  * symbolObj: gap, stylelength
+  * webObj: minscale, maxscale
+  
+Class Methods
+=============
+  
+Class methods that have been removed:
+
+  * imageObj: free
+  * layerObj: getFilter, getShape  
+  * lineObj: free
+  * pointObj: free
+  * projectionObj: free  
+  * rectObj: free
+  * shapeObj: union_geos
+  * symbolObj: getstylearray
+  * classObj: clone
+  * styleObj: clone
+  * mapObj: clone
+  * outputFormatObj: getformatoption, setformatoption
+
+layerObj
+========
+
+layerObj->clearProcessing() method now returns void.
+
+mapObj
+======
+
+mapObj->queryByIndex(): default behavior for the addToQuery parameter was not ok, now it is.
+
+referenceMapObj
+===============
+
+referenceMapObj has new properties: marker, markername, markersize, maxboxsize, minboxsize.
+
+shapeFileObj
+============
+
+shapeFileObj is automatically closed/writed on destroy. (At the end of the script or with an explicit free(), unset())
+
+labelCacheObj
+=============
+
+To free the cache, you'll have to call the method freeCache() rather than
+free().
+
+Methods that now return MS_SUCCESS/MS_FAILURE
+=============================================
+  
+  * layerObj: setProcessing, addFeature, draw  
+  * mapObj: moveLayerUp, moveLayerDown, zoomRectangle, zoomScale, setProjection, setWKTProjection, setLayersDrawingOrder
+  * outputFormatObj: validate
+  * scalebarObj: setImageColor
+  * symbolObj: setPoints, setPattern  
+
+Methods that now return NULL on failure
+=======================================
+
+  * classObj: clone
+  * mapObj: clone, draw, drawQuery getLayerByName, getProjection  
+  * layerObj: nextShape, getExtent
+  * styleObj: clone  
+
+Methods that now return an empty array 
+======================================
+  
+  * layerObj: getItems, getProcessing, getGridIntersectionCoordinates
+  * mapObj: getLayersIndexByGroup, getAllGroupNames, getLayersDrawingOrder, getAllLayerNames
+  * symbolObj: getPatternArray
+  
