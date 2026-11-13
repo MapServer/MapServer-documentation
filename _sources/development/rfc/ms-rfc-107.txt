@@ -1,0 +1,303 @@
+.. _rfc107:
+
+=========================================================================
+MS RFC 107: Support for the edge of pixel (OGC) extent model in MapServer
+=========================================================================
+
+:Date:  2014/01
+:Author: Tamas Szekeres
+:Contact: szekerest@gmail.com
+:Status: Draft
+:Version: MapServer 7.0
+
+This RFC is related to :ref:`MS RFC 25 <rfc25>` which addresses the same issue,
+but we now intend to keep the current edge-of-pixel extent model as well by using
+a different implementation proposal.
+
+1. Overview
+-----------
+
+According to :ref:`MS RFC 25 <rfc25>` 
+"MapServer uses different pixel and extent model than defined by OGC 
+services such as WCS and WMS. MapServer uses the center of a pixel to represent 
+its unique coordinate value. An extent is interpreted as the bounding box that 
+runs from the center of the UL pixel in an image to the center of the LR pixel 
+in an image. Why? Well, it goes back to companion software that existed along 
+side MapServer to display satellite data stored in ERDAS that used the center 
+to center extent model. The math is simple and there is a certain logic in 
+having the extent actually represent pixel values - that is, if you render the 
+extent as a polygon you get the exact edge of the image as one might expect..
+
+On the other hand, OGC service specifications define an extent (BBOX) to refer 
+to the dimensions of the outside edges of the image being requested. This 
+appears to be a far more common means of expressing an area of interest."
+
+As an attempt for handling the difference between the MapServer and OGC extent models 
+an adjustment code has been applied in MapServer (ie. in mapwms.c, mapwmslayer.c):
+
+.. code-block:: c
+
+    dx = (map->extent.maxx - map->extent.minx) / map->width;
+    map->extent.minx += dx*0.5;
+    map->extent.maxx -= dx*0.5;
+
+    dy = (map->extent.maxy - map->extent.miny) / map->height;
+    map->extent.miny += dy*0.5;
+    map->extent.maxy -= dy*0.5;
+
+
+But this fix still doesn't resolve a couple of issues, like:
+
+- The search rectangle is decreased by half pixels at each sides, therefore we get 
+  less amount of information we expect from the MapServer based OGC server
+- msAdjustExtent still causes extent distortion (especially for small images), 
+  since (width-1)/(height-1) is not equal to width/height.     
+
+Furthermore, mapscript users may incorrectly assume we use the OGC extent model 
+(the documentation of setExtent/getExtent doesn't seem to provide guidance)
+which results in different scales and incorrect width/height adjustments 
+they would normally expect. 
+
+In this RFC I'm about to provide support for both the OGC extent model and to 
+the current model which can be selected by a new parameter added to the mapfile.
+
+2. Proposed solution
+--------------------
+
+The key point of the implementation is to replace the '1' constant values in the 
+extent/scale calculations with a new pixeladjustment parameter. This parameter can be
+defined in the mapfile as:
+
+.. code-block:: mapfile
+
+    MAP
+        # 0 for using the OGC extent model 2 for the current edge-of-pixel model
+        PIXELADJUSTMENT 0 
+    ...
+    END
+
+
+The value 1 will represent the current (edge of pixel) behaviour
+(which will be the default setting), while setting this parameter to 0 will switch 
+MapServer to use the OGC extent model. The introduction of this new parameter makes 
+the implementation fairly straightforward not requiring to add quite some 
+'if' conditions in the codebase.
+
+Regarding to the performance, calculating with the new pixeladjustment parameter
+in the formula instead of the constant 1 should not result in perceptible degradation.
+
+3. Implementation Details
+-------------------------
+
+The core of this implementation will change the cellsize calculation macro by adding
+the new parameter (in mapfile.h) as follows:
+
+.. code-block:: c
+
+    #define MS_CELLSIZE(min,max,d,a) ((max - min)/(d-a))
+
+and we modify msAdjustExtent (maputil.c):
+
+.. code-block:: c
+
+    double msAdjustExtent(rectObj *rect, int width, int height, int pixeladjustment)
+    {
+      double cellsize, ox, oy;
+
+      if(width == 1 || height == 1)
+        return 0;
+
+      cellsize = MS_MAX(MS_CELLSIZE(rect->minx, rect->maxx, width, pixeladjustment), MS_CELLSIZE(rect->miny, rect->maxy, height, pixeladjustment));
+
+      if(cellsize <= 0) /* avoid division by zero errors */
+        return(0);
+
+      ox = MS_MAX(((width - pixeladjustment) - (rect->maxx - rect->minx)/cellsize)/2,0); /* these were width-1 and height-1 */
+      oy = MS_MAX(((height - pixeladjustment) - (rect->maxy - rect->miny)/cellsize)/2,0);
+
+      rect->minx = rect->minx - ox*cellsize;
+      rect->miny = rect->miny - oy*cellsize;
+      rect->maxx = rect->maxx + ox*cellsize;
+      rect->maxy = rect->maxy + oy*cellsize;
+
+      return(cellsize);
+    }   
+
+and msCalculateScale (mapscale.c):
+
+.. code-block:: c
+
+    int msCalculateScale(rectObj extent, int units, int width, int height, int pixeladjustment,  double resolution, double *scale)
+    {
+      double md, gd, center_y;
+
+      /* if((extent.maxx == extent.minx) || (extent.maxy == extent.miny))   */
+      if(!MS_VALID_EXTENT(extent)) {
+        msSetError(MS_MISCERR, "Invalid image extent, minx=%lf, miny=%lf, maxx=%lf, maxy=%lf.", "msCalculateScale()", extent.minx, extent.miny, extent.maxx, extent.maxy);
+        return(MS_FAILURE);
+      }
+
+      if((width <= 0) || (height <= 0)) {
+        msSetError(MS_MISCERR, "Invalid image width or height.", "msCalculateScale()");
+        return(MS_FAILURE);
+      }
+
+      switch (units) {
+        case(MS_DD):
+        case(MS_METERS):
+        case(MS_KILOMETERS):
+        case(MS_MILES):
+        case(MS_NAUTICALMILES):
+        case(MS_INCHES):
+        case(MS_FEET):
+          center_y = (extent.miny+extent.maxy)/2.0;
+          md = (width - pixeladjustment)/(resolution*msInchesPerUnit(units, center_y));
+          gd = extent.maxx - extent.minx;
+          *scale = gd/md;
+          break;
+        default:
+          *scale = -1; /* this is not an error */
+          break;
+      }
+
+      return(MS_SUCCESS);
+    }
+
+Most of the further implementation will imply to change of all occurrences of 
+msAdjustExtent, msCalculateScale and MS_CELLSIZE to provide this new parameter from 
+the map object. See the following subchapters for the details.
+
+3.1 Adding PIXELADJUSTMENT
+..........................
+
+A new integer parameter will be added to mapObj (in mapserver.h) and we
+will also modify the lexer (maplexer.l, maplexer.c) to recognize this new setting.
+The mapfile reader and writer (in mapfile.c, mapfile.h) will be modified to read/write this 
+new value and initialize the default value of PIXELADJUSTMENT to 1.
+
+3.2 Modify the WMS half of pixel adjustment code
+................................................
+
+The OGC adjustment code (mentioned above) should now be changed to:
+
+.. code-block:: c
+
+    dx = (map->extent.maxx - map->extent.minx) / map->width;
+    map->extent.minx += dx*0.5*map->pixeladjustment;
+    map->extent.maxx -= dx*0.5*map->pixeladjustment;
+
+    dy = (map->extent.maxy - map->extent.miny) / map->height;
+    map->extent.miny += dy*0.5*map->pixeladjustment;
+    map->extent.maxy -= dy*0.5*map->pixeladjustment;
+
+
+3.3 Provide pixeladjustment parameter for msAdjustExtent and msCalculateScale and MS_CELLSIZE
+.............................................................................................
+
+We enumerate all occurrences of these functions and provide the new parameter
+from mapObj->pixeladjustment or mapServObj->map->pixeladjustment.
+For the list of all files affected in this change please refer to chapter 4.
+
+3.4 Modify the calculation of the search rectangle
+..................................................
+
+We should modify the code in some places when searching for the shapes
+to utilize the pixeladjustment parameters like:
+
+.. code-block:: c
+
+    /* identify target shapes */
+    if(layer->transform == MS_TRUE)
+      searchrect = map->extent;
+    else {
+      searchrect.minx = searchrect.miny = 0;
+      searchrect.maxx = map->width - map->pixeladjustment;
+      searchrect.maxy = map->height - map->pixeladjustment;
+    }
+
+3.5 Modify msMapComputeGeotransform
+...................................
+
+The calclulation should be modified as (in mapobject.c):
+
+.. code-block:: c
+
+  map->gt.geotransform[1] =
+    cos(rot_angle) * geo_width / (map->width - map->pixeladjustment);
+  map->gt.geotransform[2] =
+    sin(rot_angle) * geo_height / (map->height - map->pixeladjustment);
+  map->gt.geotransform[0] = center_x
+                            - (map->width * 0.5) * map->gt.geotransform[1]
+                            - (map->height * 0.5) * map->gt.geotransform[2];
+  map->gt.geotransform[4] =
+    sin(rot_angle) * geo_width / (map->width - map->pixeladjustment);
+  map->gt.geotransform[5] =
+    - cos(rot_angle) * geo_height / (map->height - map->pixeladjustment);
+  map->gt.geotransform[3] = center_y
+                            - (map->width * 0.5) * map->gt.geotransform[4]
+                            - (map->height * 0.5) * map->gt.geotransform[5];
+
+
+3.6 Mapscript related changes
+.............................
+
+We also have a couple of places in the mapscript code where the calls of 
+msAdjustExtent and msCalculateScale should be updated (see chapter 4 for the details).
+We also have to modify the signature of the 'fit' function for the rect object as follows:
+
+.. code-block:: c
+
+    double fit(int width, int height, int pixeladjustment) {
+        return  msAdjustExtent(self, width, height, pixeladjustment);
+    }  
+
+
+4. Files affected
+------------------
+
+* mapchart.c: Modify the calculation of the search rectangle (see 3.4)
+* mapcluster.c: Modify the calculation of the search rectangle (see 3.4)
+* mapdraw.c: Modify the calls of msAdjustExtent and msCalculateScale (see 3.3)
+* mapfile.c: Mofify the reader/writer (see 3.1)
+* mapfile.h: Define PIXELAJUSTMENT
+* mapgraticule.c: Modify the call of msAdjustExtent (3.3) and the search rectangle (3.4)
+* maplegend.c: Modify the calls of msAdjustExtent and msCalculateScale (see 3.3)
+* maplexer.c: Add support for reading PIXELADJUSTTMENT (see 3.1)
+* maplexer.l: Add support for reading PIXELADJUSTTMENT (see 3.1)
+* mapobject.c: Modify the calls of msAdjustExtent and msCalculateScale (3.3), modify msMapComputeGeotransform (3.5)
+* mapquery.c: Modify the calls of msAdjustExtent and MS_CELLSIZE (see 3.3)
+* mapraster.c: Modify the call of msAdjustExtent (see 3.3)
+* maprasterquery.c: Modify the call of msAdjustExtent (see 3.3)
+* mapscale.c: Implement changes in msCalculateScale (see chapter 3) and modify calls (3.3)
+* mapserver.h: Implement changes in MS_CELLSIZE, add pixeladjustment to mapObj, modify the calls of msAdjustExtent and msCalculateScale
+* mapservutil.c: Modify the calls of msAdjustExtent, MS_CELLSOZE and msCalculateScale (see 3.3)
+* maptemplate.c: Modify the calculations in setExtent (FROMIMGBOX, FROMIMGPNT, FROMREFPNT, FROMSCALE), change the call of msAdjustExtent in checkWebScale
+* maptile.c: Modify the adjustment code in msTileSetExtent (see 3.2)
+* maputil.c: Implement changes in msAdjustExtent (see chapter 3)
+* mapuvraster.c: Modify the cellsize and the extent calculation in msUVRASTERLayerWhichShapes
+* mapwcs.c: Modify msWCSGetCoverage to include pixeladjustment in the formula when recomputing the BBOX. 
+* mapwms.c: Modify the adjustment code (3.2) and msAdjustExtent and MS_CELLSIZE calls (3.3)
+* mapwmslayer.c: Modify the adjustment code (3.2) and msCalculateScale and MS_CELLSIZE calls (3.3)
+* mapscript/swiginc/map.i: Modify the call of msCalculateScale (see 3.3)
+* mapscript/swiginc/mapzoom.i: Modify the calls of msAdjustExtent and msCalculateScale (see 3.6)
+* mapscript/swiginc/rect.i: Modify the signature of 'fit' (see 3.6)
+* mapscript/php/map.c: Modify the calls of msAdjustExtent and msCalculateScale (see 3.6)
+* mapscript/php/mapscript_i.c: Modify the calls of msCalculateScale, modify the signature of 'fit' (see 3.6)
+
+
+5. Backwards Compatibility Issues
+----------------------------------
+
+The default value of PIXELADJUSTMENT will keep the current behaviour with regards
+the the calculation, but we need to modify the signature of the mapscript
+function: 'fit'. 
+
+6. Bug ID
+---------
+
+TBD
+
+7. Voting history
+-----------------
+
+TBD

@@ -1,0 +1,278 @@
+.. _rfc93:
+
+=========================================================================
+MS RFC 93: UTF Grid Support
+=========================================================================
+
+:Date:  2013/3/26
+:Author: Steve Lime
+:Contact: sdlime@comcast.net
+:Author: Thomas Bonfort
+:Contact: thomas.bonfort@gmail.com
+:Author: Daniel Morissette
+:Contact: dmorissette@mapgears.com
+:Author: Mike Smith
+:Contact: 
+:Author: Francois Desjarlais
+:Contact: fdesjarlais1@gmail.com
+:Status: Adopted
+:Version: MapServer 7.0
+
+1. Overview
+-------------
+
+UTFGrid is a open solution for specifying raster interaction data. The goal being to provide highly scalable user
+interaction with raster maps. The objective of this RFC is to enable MapServer to produce UTFGrid output. 
+
+The UTFGrid encoding scheme encodes interactivity data for a raster tile in a space efficient manner. It is designed to be used in browsers, e.g. for displaying tooltips when hovering over certain features of a map tile.
+
+Since slower browsers and machines can't cope with rendering the actual polygons used to draw vectors on the map tile, we use a grid-based approach where we store the associated information for each pixel. UTFGrid uses JSON as a container format.
+
+The full spec and interactive demos are available at https://github.com/mapbox/utfgrid-spec.
+
+2. Proposed solution
+--------------------
+
+This work would add the ability to write UTFGrids (JSON) as output from a normal map draw operation, that is, via 
+CGI mode=map or WMS GetMap requests.
+
+2.1 Rendering the UTFGrid
+-------------------------
+
+New UTFGrid renderer that would utilize the AGG library using an unsigned int32 canvas to encode feature IDs as their
+literal UTF-8 respresentation. Feature IDs (starting at 1) would be assigned sequentially as features are rendered  
+and a reference to the feature's key would be maintained as part of the rendering process. The list of feature keys 
+will be searched first to avoid duplication. It is certainly reasonable to define a key for feature that respresents a
+thematic property, for example population age class, which would result far smaller output than keys that are unique 
+to each feature. A layers key item is defined by the new UTFITEM attribute.
+
+The UTFRenderer will draw points, lines and polygons based loosely on the underlying style definition.
+
+::
+
+  Polygons: solid fill.
+  Lines: solid line with width. Patterns are not applied.
+  Points: rectangle based on the bounding box of the symbol will be used.
+
+Labels can be rendered using their parent feature id (derived via features UTFITEM) where the labels bounding box is
+drawn to the map. It is also possible to choose the resolution of the grid. A larger resolution will make the grid 
+smaller and therefore reduce its weight but also its precision. These are optionals capabilities which can be enabled 
+through the output format:
+
+::
+
+  OUTPUTFORMAT
+    NAME "myUTFGrid"
+    DRIVER UTFGRID
+    FORMATOPTION "LABELS=true"
+    FORMATOPTION "UTFRESOLUTION=4"
+    FORMATOPTION "DUPLICATES=false"
+  END
+
+It may be desirable NOT to remove duplicate feature id/key pairs since that process could be expensive depending
+on the number of features in the map. The format option duplicates=false can be used to skip this step. The resulting
+JSON file will be a bit larger.
+
+Note: due to upcoming changes to text rendering, Truetype symbols and labels rendering aren't implemented yet and should
+be added in the future.
+
+2.2 Exposing Feature Properties
+-------------------------------
+
+A new layer element (UTFDATA) is added to allow the creation of simple JSON templates using MapServer
+expression syntax identical to what is used with classObj->text class text syntax. UTFDATA is of type
+expressionObj. If UTFITEMs is set the UTFDATA expose those so that keys and data can be connected.
+
+If a UTFITEM is not set the sequential id (based on rendering order) is being used.
+
+Examples:
+
+::
+
+  UTFITEM "fid"
+  UTFDATA "{\"id\":\"[fid]\", \"name\":\"[name]\", \"country\":\"[country_code]\", \"area\":\"[area]\"}"
+
+::
+    
+  # no UTFITEM    
+  UTFDATA "{\"name\":\"[name]\", \"country\":\"[country_code]\", \"area\":\"[area]\"}"
+
+If no UTFDATA is provided no data beyond the UTFITEM values will be exposed and sometimes this is all that
+is required. 
+
+UTFGrids can be set on multiple layers but only one UTFGrid can be rendered at a time. If you wish to 
+add multiples UTFGrid, with for example OpenLayers, you need to add new layer in the map for each of them.
+
+2.3 Examples
+------------
+
+This is how the output format should look like.
+
+::
+
+  OUTPUTFORMAT
+    NAME "utfgrid"
+    DRIVER UTFGRID
+    MIMETYPE "application/json"
+    EXTENSION "json"
+    FORMATOPTION "UTFRESOLUTION=4"
+    FORMATOPTION "DUPLICATES=false"
+  END
+
+And this is how the new UTFITEM and UTFDATA word should be added in the layer.  
+  
+::
+
+  LAYER
+    NAME         basic
+    DATA         ne_50m_admin_0_countries
+    TYPE         POLYGON
+    PROJECTION
+      "init=epsg:4326"
+    END
+    UTFITEM   "postal"
+    UTFDATA   "{\"admin\":\"[admin]\"}"
+  END
+
+Here is an image rendered as a JSON with UTFGrid renderer:
+
+::
+
+  [
+    "                            &&&&",
+    "                       && &&&&&&",
+    "                     &&&&&&&&&&&",
+    "                   &&&&&&&&)))))",
+    "                  &&& &&&)))))))",
+    "                    &&&&))))))))",
+    "                   &&&&)))))))))",
+    "                 &&&&)))))))))))",
+    "                &&&&&)))))))))))",
+    "               &&&&&))))))))))))",
+    "              &&&&&&))))))))))))",
+    "            &&&&&&))))))))))))))",
+    "         &&&&&&&&)))))))))))))))",
+    "       &&&&&&&&&&)))))))))))))) ",
+    "    &&&&&&&&&&&&&))))))))))))   ",
+    "   &&&&&&&&&&&&&&)))))))))))    ",
+    "   &&&&&&&&&&&&&&)))))))))))    ",
+    "   &&&&&&&&&&&&&&)))))))))))    ",
+    "   &&&&&&&&&&&&&&))))))))))))) !",
+    "   &&&&&&&&&&&&&)))))))))))))))!",
+    "    &&&&&&&&&&&&))))))))))))))  ",
+    "    &&&&&&&&&& )))))))))))))))  ",
+    "    &&&&&&&&   ))))))))))))     ",
+    "       &&    $$ ))))))))))  ))) ",
+    "          $$$$$$))))))))))) ))) ",
+    "         $$$$$$  )))))))))) )   ",
+    "         $$$$$$ $)))))))))      ",
+    "         $$$$$$$$$))))          ",
+    "         #$$$$$$$$))))$         ",
+    "         ##$$$$$$$###    ''''''(",
+    "          ###########'''''''''''",
+    "    %%%%#############'''''''''''"
+   ]
+
+And now we get the following keys and datas if we use the UTFITEM with the postal code as the key :
+
+::
+
+  "keys":["","AI","D","DK","NL","N","PL","RUS","S"],"data":{"AI":{"admin":"Aland"},"D":{"admin":"Germany"},
+  "DK":{"admin":"Denmark"},"NL":{"admin":"Netherlands"},"N":{"admin":"Norway"},"PL":{"admin":"Poland"},
+  "RUS":{"admin":"Russia"},"S":{"admin":"Sweden"}}
+
+And if we turn off the UTFITEM we obtain the following keys and datas:
+
+::
+
+  "keys":["","1","2","3","4","5","6","7","8","9"],"data":{"1":{"admin":"Aland"},"2":{"admin":"Germany"},
+  "3":{"admin":"Denmark"},"4":{"admin":"Netherlands"},"5":{"admin":"Norway"},"6":{"admin":"Poland"},
+  "7":{"admin":"Russia"},"8":{"admin":"Sweden"}} 
+  
+It is also possible to only keeps the UTFITEM which returns : 
+
+::
+
+  "keys":["","AI","D","DK","NL","N","PL","RUS","S"],"data":{}
+
+3. Implementation Details
+-------------------------
+
+Additions:
+
+- there are two new keywords (UTFDATA and UTFITEM) that exists at the layer-level
+- one new renderer (UTFGRID) will be made available
+
+Known limitations of the initial implementation produced during GSoC:
+
+- Attribute values are not JSON-escaped, so the JSON output could be broken if the attribute values contain invalid characters. A JSON escaping function should be added for UTFGrid and would also be useful for general template support of JSON output.
+
+- Due to the upcoming changes to TrueType rendering, the renderTrueTypeSymbols method has not been implemented yet. All other types of symbols and labels are implemented.
+
+4. Files affected
+------------------
+
+The following files will be modified/added by this RFC:
+
+::
+
+  mapserver.h: Add new output format defines, extend layerObj, etc... 
+  mapfile.c/mapfile.h: Add new keywords: UTFITEM and UTFDATA.
+  mapoutput.c: Add appropriate entries for new UTFGRID driver.
+  maputfgrid.cpp/maputfgrid.h: Implementation of the new UTFGrid renderer.
+  mapaggcommon.h: Common resources for AGG and UTFGrid drivers.
+
+5. OpenLayers
+-------------
+
+There is a patch submitted to the OpenLayers development team allowing use of UTFGrid on a WMS service. It is required in order to use the MapServer implementation of UTFGrid with OpenLayers
+
+You can find it at https://github.com/fdesj/openlayers in the utfgridwms branch. See also pull request at https://github.com/openlayers/openlayers/pull/1076
+
+There is a working example in the OpenLayers library (exemples/utfgridwms.html).
+
+6. MapScript
+-------------
+
+PHP MapScript will need get/set methods added to the layer class. Swig-based MapScript should need no changes.
+
+7. Backwards Compatibility Issues
+---------------------------------
+
+None anticipated.
+
+8. Security implications
+-------------------------
+
+None anticipated.
+
+9. Performance implications
+---------------------------
+
+No impacts on core performance are anticipated.
+
+10. Documentation needs
+------------------------
+
+The layer object documentation will need to be updated to reflect the new parameters. The output section will need a new UTFGrid HowTo page to talk about configuration options associated with the new output format.
+
+11. Bug ID and references
+-------------------------
+
+* Tracking issue: https://github.com/MapServer/MapServer/pull/4765 (contains code diff)
+* You can find the original code developed during GSoC 2013 at https://github.com/fdesj/mapserver/tree/utfgridgsoc in the utfgridgsoc branch (obsolete)
+* Doc updates created during GSoC are available in https://github.com/fdesj/docs/tree/rfc-93
+* Pull request for msautotests at https://github.com/MapServer/msautotest/pull/24 (obsolete)
+* Pull request for OpenLayers UTFGridWMS support at https://github.com/openlayers/openlayers/pull/1076
+* See also the GSoC project reports at https://github.com/MapServer/MapServer/wiki/GSoC-UTF-Grid-implementation
+
+12. Voting history
+------------------
+
++1 from DanielM, ThomasB, PerryN, SteveW, MikeS, SteveL, YewondwossenA, TamasS and StephanM
+
+
+.. _4564: https://github.com/MapServer/MapServer/issues/4564
+.. _UTFGrid Spec: https://github.com/mapbox/utfgrid-spec
+.. _MapBox Description: http://mapbox.com/developers/utfgrid/
+.. _OpenLayers Example: http://openlayers.org/dev/examples/utfgrid.html

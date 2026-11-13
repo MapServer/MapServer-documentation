@@ -1,0 +1,96 @@
+.. _rfc136:
+
+================================================
+MS RFC 136: Rename shp2img to map2img
+================================================
+
+:Author:      Jeff McKenna
+:Contact:     jmckenna@gatewaygeomatics.com
+:Status:      Adopted
+:Last update: 2021-10-07
+:Version:     MapServer 8.0
+
+Overview
+========
+
+The *shp2img* commandline utility has existed in the MapServer codebase 
+since the first Open Source release, and although it was designed to do 
+simple testing of mapfiles, today it has become a critical part of managing 
+data in MapServer.  Through the years however many users have reported not 
+understanding what `shp2img` means, as the name implies using legacy shapefiles & 
+shapes.  
+
+Proposed Approach
+=================
+
+Rename the *shp2img* utility to a more meaningful name of *map2img* (to imply 
+that this utility can take a mapfile and output map images). The change has 
+minimal impact to the source code, but has a large impact on the msautotest suite 
+and the MapServer documentation.
+
+The approach was initially discussed at the `2020-07-07 <https://github.com/MapServer/MapServer/wiki/PSC-Meeting-2020-07-07>`__
+PSC meeting.
+
+Source Files Changed
+--------------------
+
+* :shp2img.c: rename to *map2img.c*
+
+  .. NOTE::
+       After renaming, commit history is retained using the *--follow* switch through 
+       git, such as the command: *git log --follow map2img.c*
+
+Build Files Changed
+-------------------
+
+* :CMakeLists.txt: change build target name for the map2img utility.
+* :mapserver-config.cmake.in: change executable name for the map2img utility.
+
+msautotest Files Changed
+------------------------
+
+* :pymod/mstestlib.py: set [MAP2IMG] parameter
+* :\*.map: point to map2img utility for all tests.
+
+Limitations/Caveats
+-------------------
+
+There is an open `issue <https://github.com/isaacs/github/issues/900>`__ 
+of GitHub unable to show history of renamed files.
+
+Backwards Compatibility Issues
+------------------------------
+
+This is a breaking change, in that the old utility *shp2img* will be changed 
+to the name *map2img* and could cause some minor grief to users & packagers, 
+therefore this is why this will be part of a major MapServer release.
+
+Security Considerations
+-----------------------
+
+None anticipated.
+
+MapScript implications
+----------------------
+
+None anticipated.
+
+Documentation needs
+-------------------
+
+The *MapServer-documentation* repository will be updated for the name 
+change.
+
+Ticket ID and References
+------------------------
+
+* `Pull request <https://github.com/MapServer/MapServer/pull/6409>`__
+
+Voting history
+--------------
+
+::
+
+  +1 from TomK, MikeS, EvenR, JeromeB, SethG, JukkaR, JeffM 
+  +0 from SteveL, DanielM
+  -0 from ThomasB, HowardB

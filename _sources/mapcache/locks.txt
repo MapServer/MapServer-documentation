@@ -1,0 +1,99 @@
+.. _mapcache_locks:
+
+*****************************************************************************
+Locking Mechanisms
+*****************************************************************************
+
+:Author: Thomas Bonfort
+:Contact: tbonfort at terriscope.fr
+
+MapCache sometimes needs exclusive access to a given resource, and provides
+some mechanisms to ensure that no more than one MapCache instance can
+operate on that resource. This may happen when:
+
+* Sending a request to a source WMS server for a given metatile. Only a single
+  MapCache instance should be sending that request; other MapCache instances
+  processing a tile from that same metatile should wait for that request to
+  finish rather than sending the same exact request again (in order not to
+  overload the WMS server).
+
+* Writing a tile inside a TIFF cache. The TIFF library does not handle concurrent
+  writes, so MapCache must ensure that only a single instance is accessing a
+  given TIFF file for writing.
+
+A locker is configured with:
+
+.. code-block:: xml
+
+  <locker type="...">
+    <timeout>60</timeout>
+    <retry>0.1</retry>
+    ...
+  </locker>
+
+When a MapCache instance cannot acquire a lock because it has already been acquired
+by another instance, it will:
+
+* Check back every `<retry>` seconds to see if the lock has been released by the
+  other instance.
+* Consider that after `<timeout>` seconds the other instance has failed, and delete
+  the lock before acquiring it itself.
+
+Disk Locks
+==========
+
+This locking mechanism places a file somewhere in the filesystem. The filesystem
+can be a network share in order to synchronize multiple MapCache instances.
+
+.. code-block:: xml
+
+  <locker type="disk">
+    <directory>/path/to/lockdir</directory>
+  </locker>
+
+The configured directory should be read/write accessible by the MapCache instance.
+
+
+Memcache Locks
+==============
+
+This locking mechanism uses a third-party memcache instance to keep track of the locks.
+
+
+.. code-block:: xml
+
+  <locker type="memcache">
+     <server>
+       <host>localhost</host>
+       <port>11211</port>
+     </server>
+     <server>
+       <host>memcache-host</host>
+       <port>11212</port>
+     </server>
+  </locker>
+
+Fallback Locks
+==============
+
+This "meta" locker will fall back to its second configured locker if the first
+one fails (typically used with a memcache instance if the memcache instance
+goes down).
+
+::
+
+  <locker type="fallback"
+    <locker type="memcache">
+       <server>
+         <host>localhost</host>
+         <port>11211</port>
+       </server>
+       <server>
+         <host>memcache-host</host>
+         <port>11212</port>
+       </server>
+    </locker>
+    <locker type="disk">
+      <directory>/path/to/lockdir</directory>
+    </locker>
+  </locker>

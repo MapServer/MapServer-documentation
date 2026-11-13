@@ -1,0 +1,336 @@
+.. index::
+   single: CLASS
+    
+.. _class:
+
+*****************************************************************************
+ CLASS
+*****************************************************************************
+
+.. index:: 
+   pair: CLASS; BACKGROUNDCOLOR
+   :name: mapfile-class-backgroundcolor
+    
+BACKGROUNDCOLOR [r] [g] [b] | [hexadecimal string]
+
+    .. versionremoved:: 8.0 
+       Use `CLASS` :ref:`style`\s instead.
+ 
+.. index::
+   pair: CLASS; COLOR
+   :name: mapfile-class-color
+    
+COLOR [r] [g] [b] | [hexadecimal string]
+
+    .. versionremoved:: 8.0 
+       Use `CLASS` :ref:`style`\s instead.
+
+.. index::
+   pair: CLASS; DEBUG
+   :name: mapfile-class-debug
+    
+DEBUG [on|off]
+    Enables debugging of the class object. Verbose output is generated
+    and sent to the standard error output (STDERR) or the MapServer
+    logfile if one is set using the `LOG` parameter in the :ref:`WEB`
+    object. Must be an integer in the range 0 to 5.
+    
+    .. seealso::
+        
+        :ref:`debugging`
+
+.. index::
+   pair: CLASS; EXPRESSION
+   :name: mapfile-class-expression
+    
+EXPRESSION [string]
+    Four types of expressions are now supported to define which class
+    a feature belongs to: String comparisons, regular expressions,
+    logical expressions, and string functions (see
+    :ref:`EXPRESSIONS`).  If no expression is given, then all features
+    are said to belong to this class.
+
+    - String comparisons are case sensitive and are the fastest to
+      evaluate.  No special delimiters are necessary although strings
+      must be quoted if they contain special characters. (As a matter
+      of good habit, it is recommended that you quote all strings).
+      The attribute to use for comparison is defined in the
+      :ref:`LAYER` `CLASSITEM` parameter.
+      
+    - Regular expression are limited using slashes (/regex/). The
+      attribute to use for comparison is defined in the :ref:`LAYER`
+      `CLASSITEM` parameter.
+
+    - Logical expressions allow the building of fairly complex tests
+      based on one or more attributes.  Logical expressions are delimited by
+      parentheses "(expression)".  Attribute names are delimited by
+      square brackets "[ATTRIBUTE]".  Attribute names are case
+      sensitive and must match the items in the shapefile.  For
+      example:
+
+      .. code-block:: mapfile
+
+         EXPRESSION ([POPULATION] > 50000 AND '[LANGUAGE]' eq 'FRENCH')
+
+      The following logical operators are supported: =, >, <, <=, >=,
+      =, or, and, lt, gt, ge, le, eq, ne, in, ~, ~\*.  As one might
+      expect, this level of complexity is slower to process.
+
+    - One string function exists: length(). It computes the length
+      of a string:
+
+      .. code-block:: mapfile
+        
+         EXPRESSION (length('[NAME_E]') < 8)                      
+                                
+    String comparisons and regular expressions work from the classitem
+    defined at the layer level. You may mix expression types within
+    the different classes of a layer.
+
+    .. note::
+        |RUNSUB|
+
+.. index::
+   pair: CLASS; FALLBACK
+   :name: mapfile-class-fallback
+
+FALLBACK [true|false]
+    .. versionadded:: 8.6.0
+
+    Specifies whether the class should act as a fallback class. Default is false.
+    A fallback class is applied if and only if none of the previously
+    defined classes has been applied. This is similar in concept to
+    the :ref:`sld` ElseFilter.
+
+.. index::
+   pair: CLASS; GROUP
+   :name: mapfile-class-group
+
+GROUP [string]
+    Allows for grouping of classes.  It is only used when a
+    `CLASSGROUP` at the :ref:`LAYER` level is set. If the `CLASSGROUP`
+    parameter is set, only classes that have the same group name would
+    be considered at rendering time.  An example of a layer with
+    grouped classes might contain:
+
+    .. code-block:: mapfile
+
+      LAYER
+        ...
+        CLASSGROUP "group1"
+        ...
+        CLASS
+          NAME "name1"
+          GROUP "group1"
+          ...
+        END
+        CLASS
+          NAME "name2"
+          GROUP "group2"
+          ...
+        END
+        CLASS
+          NAME "name3"
+          GROUP "group1"
+          ...
+        END
+        ...
+      END # layer
+
+.. index::
+   pair: CLASS; KEYIMAGE
+   :name: mapfile-class-keyimage
+
+.. _KEYIMAGE:
+
+KEYIMAGE [filename]
+    Full filename of the legend image for the :ref:`CLASS`. This image
+    is used when building a legend (or requesting a legend icon via
+    MapScript or the :ref:`CGI application <cgi>`).
+
+    .. note::
+        |RUNSUB|
+
+.. index::
+   pair: CLASS; LABEL
+   :name: mapfile-class-label
+
+:ref:`LABEL`
+    Signals the start of a :ref:`LABEL` object.  A class can contain
+    multiple labels (since MapServer 6.2).
+
+.. index::
+   pair: CLASS; LEADER
+   :name: mapfile-class-leader
+
+:ref:`LEADER`
+    .. versionadded:: 6.2
+    
+    Signals the start of a :ref:`LEADER` object.  Use this along with
+    a :ref:`LABEL` object to create label leader lines.
+
+.. index::
+   pair: CLASS; MAXSCALEDENOM
+   :name: mapfile-class-maxscaledenom
+
+MAXSCALEDENOM [double]
+    Minimum scale at which this :ref:`CLASS` is drawn. Scale is given
+    as the denominator of the actual scale fraction, for example for a
+    map at a scale of 1:24,000 use 24000. Implemented in MapServer
+    5.0, to replace the deprecated `MAXSCALE` parameter. Must be greater or equal to 0.
+
+    .. seealso::
+        
+        :term:`Map Scale`
+
+.. index::
+   pair: CLASS; MAXSIZE
+   :name: mapfile-class-maxsize
+    
+MAXSIZE [integer]
+
+    .. versionremoved:: 8.0 
+       Use `CLASS` :ref:`style`\s instead.
+
+.. index::
+   pair: CLASS; METADATA
+   :name: mapfile-class-metadata
+
+METADATA
+    This keyword allows for arbitrary data to be stored as name value pairs.
+
+.. index::
+   pair: CLASS; MINFEATURESIZE
+   :name: mapfile-class-minfeaturesize
+
+MINFEATURESIZE [integer]
+    Minimum feature size (in pixels) at which a feature should be rendered.
+    Must be greater than 0.
+    
+.. index::
+   pair: CLASS; MINSCALEDENOM
+   :name: mapfile-class-minscaledenom
+
+MINSCALEDENOM [double]
+    Maximum scale at which this :ref:`CLASS` is drawn.  Scale is given
+    as the denominator of the actual scale fraction, for example for a
+    map at a scale of 1:24,000 use 24000.  Implemented in MapServer
+    5.0, to replace the deprecated `MINSCALE` parameter. Must be greater or equal to 0.
+    
+    .. seealso::
+        
+        :term:`Map Scale`    
+
+.. index::
+   pair: CLASS; MINSIZE
+   :name: mapfile-class-minsize
+    
+MINSIZE [integer]
+
+    .. versionremoved:: 
+       8.0 Use `CLASS` :ref:`style`\s instead.
+    
+.. index::
+   pair: CLASS; NAME
+   :name: mapfile-class-name
+    
+NAME [string]
+    Name to use in legends for this class. If not set class won't show
+    up in legend.
+    
+.. index::
+   pair: CLASS; OUTLINECOLOR
+   :name: mapfile-class-outlinecolor
+    
+OUTLINECOLOR [r] [g] [b] | [hexadecimal string]
+
+    .. versionremoved:: 8.0 
+       Use `CLASS` :ref:`style`\s instead.
+    
+.. index::
+   pair: CLASS; SIZE
+   :name: mapfile-class-size
+    
+SIZE [integer]
+
+    .. versionremoved:: 8.0 
+       Use `CLASS` :ref:`style`\s instead.
+    
+.. index::
+   pair: CLASS; STATUS
+   :name: mapfile-class-status
+    
+STATUS [on|off]
+    Sets the current display status of the class.  Default turns the
+    class on.
+
+.. index::
+   pair: CLASS; STYLE
+   :name: mapfile-class-style
+    
+:ref:`STYLE`
+    Signals the start of a :ref:`STYLE` object.  A class can contain
+    multiple styles.  Multiple styles can be used create complex
+    symbols (by overlay/stacking).  See :ref:`sym_construction` for
+    more information on advanced symbol construction.
+
+.. index::
+   pair: CLASS; SYMBOL
+   :name: mapfile-class-symbol
+    
+:ref:`SYMBOL` [integer|string|filename]
+
+    .. versionremoved:: 8.0 
+       Use `CLASS` :ref:`style`\s instead.
+
+.. index::
+   pair: CLASS; TEMPLATE
+   :name: mapfile-class-template
+    
+:ref:`TEMPLATE <template>` [filename]
+    Template file or URL to use in presenting query results to the
+    user.  See :ref:`template` for more info.
+
+.. index::
+   pair: CLASS; TEXT
+   :name: mapfile-class-text
+    
+TEXT [string|expression]
+    Text to label features in this class with. This overrides values
+    obtained from the :ref:`layer` `LABELITEM`.  The string can
+    contain references to feature attributes.  This allows you to
+    concatenate multiple attributes into a single label.  You can for
+    example concatenate the attributes FIRSTNAME and LASTNAME like
+    this::
+
+       TEXT '[FIRSTNAME] [LASTNAME]'
+
+    More advanced :ref:`EXPRESSIONS` can be used to specify the
+    labels.  Since version 6.0, there are functions available for
+    formatting numbers::
+
+      TEXT ("Area is: " + tostring([area],"%.2f"))
+
+    .. note::
+        |RUNSUB|
+
+.. index::
+   pair: CLASS; TITLE
+   :name: mapfile-class-title
+    
+TITLE [string]
+    Text used for legend labelling. 
+
+    .. note::
+        |RUNSUB|
+
+.. index::
+   pair: CLASS; VALIDATION
+   :name: mapfile-class-validation
+
+:ref:`VALIDATION`
+    Signals the start of a :ref:`VALIDATION` block.
+
+    As of MapServer 5.4.0, `VALIDATION` blocks are the preferred
+    mechanism for specifying validation patterns for CGI param runtime
+    substitutions.  See :ref:`RUNSUB`.

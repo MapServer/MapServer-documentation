@@ -1,0 +1,623 @@
+.. _documentation_development:
+
+*****************************************************************************
+ Documentation Development Guide
+*****************************************************************************
+
+:Author:  Howard Butler
+:Contact: hobu.inc at gmail.com
+:Author:  Jeff McKenna
+:Contact: jmckenna at gatewaygeomatics.com
+:Last Updated: 2026-06-02
+
+.. contents:: Table of Contents
+    :depth: 4
+    :backlinks: top
+
+Background
+----------
+
+The current structure of the MapServer documentation process is for
+developers to maintain their documents in reStructuredText format, and 
+submit their changes through :ref:`git` pull requests; 
+you will first need to create a `free personal account <https://github.com/pricing/>`__ at GitHub.
+The `Sphinx <https://www.sphinx-doc.org/>`__ documentation generator is
+used to convert the reStructuredText files to html, and the live
+website is then automatically updated on each merged pull request.
+
+.. note::
+   
+    The live website is actually built automatically through a `GitHub workflow <https://github.com/MapServer/MapServer-documentation/blob/main/.github/workflows/build.yml>`__, 
+    triggered by each push to the live branch.  See the `build history <https://github.com/MapServer/MapServer-documentation/actions/workflows/build.yml>`__.
+    The different language documentation sites are rebuilt when a commit message includes ``[build_translations]``.
+
+GitHub Notes
+------------
+
+* Documentation files are stored in the `/MapServer-documentation` sub-project on GitHub at: https://github.com/MapServer/MapServer-documentation
+* Always submit pull requests to *main*, and if applicable your changes will be 
+  backported to a specific branch
+* All files should have only *LF* as line feed.  Line feed (or 'linefeed') differences can 
+  cause problems when comparing files through Git (Windows uses both a carriage-return 
+  character and a line feed character for newlines in its files, whereas macOS and 
+  Linux systems use only the line feed character).  One option is to have Git convert 
+  CRLF to LF on commit, by setting this at the commandline:
+  
+  ::
+  
+    git config --global core.autocrlf input
+    
+* See GitHub's `help guidelines <https://docs.github.com/en/github/getting-started-with-github/set-up-git/>`__ 
+  to install Git locally
+* Useful git commands:
+
+  * clone 'main' locally:
+   
+    ::
+   
+      git clone https://github.com/MapServer/MapServer-documentation.git MapServer-documentation-git-main
+      
+  * update local files:
+  
+    ::
+    
+      git pull
+      
+  * add file to repository (need to commit after this):
+  
+    ::
+    
+      git add <file>
+      
+  * commit file to repository:
+  
+    ::
+    
+      git commit -m "my message" <files>  
+
+Workflow for simple edits
+-------------------------
+
+For simple edits (typos, etc.) not necessarily requiring compilation of the documentation,
+a simpler workflow to create a Pull Request, can be adopted that does not require any local tool:
+
+* Create a GitHub account if not already done
+* Go to https://github.com/MapServer/MapServer-documentation
+* Click on the "Fork" button
+* You are now on https://github.com/{your_account}/MapServer-documentation
+* Click on the "Branch: ..." list (to the left of the green "New pull request" button)
+* In the text box, entry a name describing your changes to create a new branch (ex "typo_fix")
+* You are now on https://github.com/{your_account}/tree/{branch_name}
+* Browse through the tree and click on the file you want to edit. To find the file
+  you want to edit, you may type text in the Search entry box
+  at the top of the page (for example "Workflow for simple edits" to find this page)
+* Click on the "Edit this file" button (with a pen icon)
+* When done, fill the "Commit changes" section at the bottom of the page
+  (a title is enough for most changes)
+* Click on the "Commit changes" button at the bottom of the page
+* Repeat the process with other files if needed.
+* When done, go back to https://github.com/{your_account}/tree/{branch_name}
+  and click on the "New pull request" button
+* You can see your changes and edit the pull request summary message if needed
+* Click on the "Create pull request" button to confirm
+* You're done ! (Someone with push rights will have to review and merge your changes)
+
+Branch cleanup :
+
+* Once merged, you can delete branches when going to the Branch page : https://github.com/{your_account}/MapServer-documentation/branches
+* Click on the trash bin icon at the right of the branch you want to delete.
+
+General Writing Guidelines
+--------------------------
+
+* MapServer instead of mapserver, map server, Map Server, mapServer or
+  map Server
+* MapScript instead of mapscript, Mapscript, or map script
+* mapfile instead of Mapfile, MapFile, or map file
+* PostGIS instead of postgis
+* GitHub instead of Github or github
+* HowTo instead of howto or HOWTO
+* Email addresses should be manually spam protected:
+
+  ::
+
+      myname at gmail.com instead of myname@gmail.com
+
+reStructuredText Reference Guides
+---------------------------------
+
+* `Quick reStructuredText <https://docutils.sourceforge.io/docs/user/rst/quickref.html>`__
+
+reStructuredText Formatting
+---------------------------
+
+* All text should be hard breaks at or around the 80 column mark, just as
+  the source code.
+* No `.. sectnum::` in the contents directives
+* Always include the :Last Updated: line at the top of your
+  document, such as:
+
+  ::
+
+      :Last Updated: 2021-02-16
+      
+* Directives `versionadded`, `deprecated`, `versionremoved` should be placed 
+  directly below the parameter name, such as:
+  
+  ::
+  
+    PARAMETER1
+      .. deprecated:: 8.0
+         Use a :ref:`xxx` block instead.
+         
+    PARAMETER2
+      .. versionadded:: 8.2.0
+         Some description.
+         
+  .. note::
+    
+     Please specify version as `x.y.z` (Major.Minor.Point) whenever possible
+
+Installing and Using Sphinx for rst-html Generation
+---------------------------------------------------
+
+.. note::
+   
+    As of 2024-05-06 the MapServer site requires at least Sphinx 7.3.0, 
+    alabaster 0.7.16, and the `sphinxcontrib-jquery` extension - You can check 
+    the exact versions that the live website uses in the file 
+    `requirements.txt <https://github.com/MapServer/MapServer-documentation/blob/main/requirements.txt/>`__, 
+    (or you can instead browse the latest versions of the Sphinx packages `here <https://pypi.org/>`__)
+    and then install locally such as:
+    ::
+        
+        pip install -r requirements.txt
+
+
+**On Windows:**
+
+1. install `Python 3.X <https://www.python.org/>`__
+2. make sure that the 'C:/Python3X/Scripts' directory is your path
+3. install *pip*
+
+  a) execute the following at the commandline:
+
+    ::
+     
+       pip help
+       
+  b) if the command is not found, then download the file `get-pip.py <https://bootstrap.pypa.io/get-pip.py>`__
+     locally.
+     
+  c) execute the following at the commandline:
+  
+    ::
+     
+       python get-pip.py 
+      
+    
+4. inside the /MapServer-documentation directory, execute:
+
+   ::
+
+       python -m pip install -r requirements.txt
+
+   ...you should see message: "Finished processing dependencies for Sphinx"
+      
+5. inside the /MapServer-documentation directory, execute:
+
+   ::
+
+       make html
+
+   or
+
+   ::
+
+       make latex
+
+   the HTML output will be written to the _build/html sub-directory.
+#. install MiKTeX from https://miktex.org/download if you want to build pdfs   
+
+**On Linux:**
+
+#. Most flavors come with python installed (check with *python --version*), for
+   specific steps check with your distribution.  An example command might be:
+
+   ::
+
+       sudo apt-get install python3.9
+
+#. install pip
+
+   ::
+
+       curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py
+       python get-pip.py 
+
+#. install Sphinx.  Inside the /MapServer-documentation directory, 
+   execute:
+
+   ::
+
+       python -m pip install -r requirements.txt       
+
+#. to process the documentation, from the /MapServer-documentation directory, run:
+
+   ::
+
+       make html
+       make html BUILD_LANGUAGES=
+
+   or
+
+   ::
+
+       make latex
+
+   the HTML output will be written to the build/html sub-directory.
+
+.. note::
+
+    If there are more than one translation, the above commands will automatically
+    build all translations, unless you add a "BUILD_LANGUAGES=" to the make arguments
+
+
+**On OS X:**
+
+#. install sphinx using pip.  Inside the /MapServer-documentation directory, 
+   execute:
+
+   ::
+
+       python -m pip install -r requirements.txt      
+
+#. install MacTex from https://www.tug.org/mactex/ if you want to build pdfs
+
+#. to process the documentation, from the MapServer /MapServer-documentation directory, run:
+
+   ::
+
+       make compile_messages
+
+       make html
+
+   or
+
+   ::
+
+       make compile_messages
+
+       make latex
+
+   the HTML output will be written to the build/html sub-directory.
+
+.. note::
+
+    If there are more than one translation, the above commands will automatically
+    build all translations.
+
+Spelling tools
+--------------
+
+There are several methods to check and/or correct spelling issues in the 
+documentation files:
+
+(English) typo fixing script
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+(Tested on Linux. Should also likely run on MacOSX. Windows users might need
+to install Cygwin, Python 3, git, curl, sed, grep, awk)
+
+The script in scripts/fix_typos.sh is an interactive script to detect and correct
+common spelling issues in the English documentation (en/ directory).
+
+It requires Python 3 (python3 executable) to run. The first time it is run,
+it also uses 'git' and 'curl' binaries to download the codespell engine,
+its own dictionary, as well as the Debian Lintian and QGIS dictionaries.
+They are downloaded in the fix_typos/ subdirectories. This directory can be
+safely removed at any time (to enable getting new versions of the dictionaries
+or the codespell engine).
+
+The script is launched with :
+
+::
+
+    ./scripts/fix_typos.sh
+
+Whenever a typo is detected, it asks if it must be fixed with the proposed
+replacement (Y/N), or in case if there are several options, to select the option
+(0, 1, etc..).
+
+It contains a white list of words that are marked as not being typo errors (in
+the WORDS_WHITE_LIST variable). The EXCLUDED_FILES variable can also be edited
+to add files fully ignored. The scripts/typos_whitelist.txt file can be edited
+to add full lines that should be ignored (sensitive to starting and trailing
+whitespace/tabulations, and only work on LF terminated files, hence prior conversion
+from CRLF to LF might be needed). scripts/typos_whitelist.txt should be used rather
+than WORDS_WHITE_LIST, only when a word is not a typo in a given context, but
+might be a typo in another context.
+
+sphinxcontrib.spelling extension
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+Here some important steps for using Sphinx's spelling extension:
+
+- install the `extension <https://pypi.org/project/sphinxcontrib-spelling/>`__, such as:
+
+  ::
+  
+    python -m pip install sphinxcontrib-spelling==8.0.2
+
+- the wordlist for MapServer is located in `/en/spelling_wordlist.dict <https://github.com/MapServer/MapServer-documentation/blob/main/en/spelling_wordlist.dict>`__
+
+- edit the `options <https://sphinxcontrib-spelling.readthedocs.io/en/latest/customize.html>`__ 
+  for the extension in your local `conf.py` (see the "spelling extension options" section), 
+  and make sure that the extension is enabled (see the "General configuration" section)
+  
+- run the spellcheck with:
+
+  ::
+  
+    make spelling
+
+How translations are handled
+----------------------------
+
+Nowadays, MapServer have two coexisting systems to manage translations process.
+Both rely on Sphinx software.
+
+The first one was the answer to the absence of internationalization support in 
+first days of the Sphinx software. The second use the new system of  
+`internationalization <https://www.sphinx-doc.org/en/master/usage/advanced/intl.html>`__ and is currently only used for the French translation.
+
+The "old" way for translations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Although we think that nowadays the new system is better, we do not wanted to enforce 
+every language community to change their habits.
+
+
+* All translations are organized in subdirectories in MapServer's /MapServer-documentation directory
+* The directories are named using `ISO3166-1 alpha-2 country codes <https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2>`__, which
+  will also reference to the corresponding flag icon
+* Translations are based on the English documentation
+* The directory structure and filenames must be kept, they are used to
+  generate links between the different translations
+
+.. note::
+
+    To start a new translation, copy the directories images and include
+    from MapServer-documentation/en to MapServer-documentation/<lang>, where <lang> is one of the country codes.  You also 
+    should copy the MapServer-documentation/en/documentation.txt and MapServer-documentation/en/index.txt files into
+    your <lang> directory (the build process requires these files...you
+    are free to edit them as you wish for your own language).
+
+* Only translated files are kept in the <lang> directories and the repository.
+* The build script (Makefile and make.bat) have an option (init) to preprocess
+  the <lang> directories. That means that each not translated English file is
+  copied to the target <lang> directory. You don't have to do this to build
+  html files locally. If you do this, you have to clean up you directories
+  afterwards.
+* To keep the translations in sync with the English documentation, the translators
+  can monitor commits to the repository.
+
+.. note::
+
+    One way to monitor changes is to subscribe the RSS feed through GitHub: 
+    in the MapServer-documentation repository, click on the "Commits" tab and look for a 
+    subscription link for these commit changes, for example:
+    see "Commit History" at https://github.com/MapServer/MapServer-documentation/commits/main
+
+* You have to define which languages are available by setting TRANSLATIONS in the
+  Makefile or make.bat:
+
+   ::
+
+      TRANSLATIONS     = en de
+
+The build script will then process the subdirectories *en* and *de*. If they
+are not accessible, an error message will be returned.
+
+The standard internationalization system (i18n) for translations
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+
+Initial translation process for a new language
+..............................................
+
+It follows steps below:
+
+
+* Generate pot file from original English documentation using Sphinx (except 
+  if already here)
+
+   ::
+
+      make gettext
+
+* copy new version of \*.pot files from _build/gettext/en to translated/pot
+
+   ::
+
+      make gettext_copy
+
+
+* Copy \*.pot file => \*.po file (a \*.po file is the same as \*.pot, only 
+  extension change and if you translate three languages, you will get 
+  three \*.po file and each of them will be into a language dir)
+
+   ::
+
+      make generate_po_from_tmpl -e TRANSLATIONI18N=fr
+
+* translate your \*.po file(s)
+
+  You can do it with software like PoEdit but we may switch to Transifex, 
+  an hosted translation service to make contribution more easy, follow 
+  translation advance and have a review process for translation.
+
+* compile \*.po to \*.mo (sphinx need \*.mo file to make substitution from 
+  original version to the language translated)
+
+   ::
+
+      make compile_messages -e TRANSLATIONI18N=fr
+
+* Generate doc for the language
+
+
+You just need to set in the file `Makefile` or make.bat depending on your OS
+the following parameter before building the documentation:
+
+   ::
+
+      TRANSLATIONI18N=fr
+
+You need to change as well the scripts/build_docs.sh script to add your language at 
+the top of the file:
+
+   ::
+
+      LANGUAGES= fr
+
+Please for both parameter, keep the alphabetical order to kept them readable.
+
+**Structure of the i18n files in the MapServer-documentation root directory**
+
+The structure you need to make all the translation process is like below (an 
+excerpt to give you the main required structure)
+
+   ::
+
+      
+      translated/
+      ├── fr
+      │   ├── about.po
+      │   ├── announcements_all.po
+      │   ├── cgi.po
+      │   ├── community.po
+      │   ├── copyright.po
+      │   ├── development.po
+      │   ├── documentation.po
+      │   └── LC_MESSAGES
+      │       ├── about.mo
+      │       ├── announcements_all.mo
+      │       ├── cgi.mo
+      │       ├── community.mo
+      │       ├── copyright.mo
+      │       ├── development.mo
+      │       └── documentation.mo
+      └── pot
+          ├── about.pot
+          ├── announcements_all.pot
+          ├── cgi.pot
+          ├── community.pot
+          ├── copyright.pot
+          ├── development.pot
+          └── documentation.pot
+
+Moreover, you only need to commit the \*.pot and \*.po files.
+Be cautious, you must have an LC_MESSAGES directory to receive \*.mo files.
+To keep this directory in Git, it's recommended to create and empty file into 
+it.
+
+.. note:: When adding a new language, take care of the ISO code used. Famfamfam 
+  flag icons is using ISO Country code, and transifex is using ISO Language code 
+  which can be different. See `ISO country code page <https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2>`_ 
+  for more information.
+
+The usual workflow for already existing translation
+....................................................
+
+The previous process we explained is only for the language creation. After, the 
+workflow consists of:
+
+* translating po files for your language via `transifex <https://www.transifex.com/organization/mapserver/dashboard>`_,
+* pull po files from transifex and commit them
+* generating the .mo files
+* building again
+
+Here are the command line:
+
+* Getting po files from transifex (you can use -l flags to filter the language)::
+
+    tx pull -a 
+  
+* Build mo files from po files::
+
+    make compile_messages  -e TRANSLATIONI18N=fr
+
+* Build html page::
+  
+    make clean html
+    
+See below how to setup your transifex account to use transifex client to push, 
+pull translated files and build html files.
+
+Sometimes, when a change occurs in the main english documentation, you will 
+need to generate again the pot files. Then, you will have to merge your 
+translated files with the new pot files using for example the command line 
+utility (from gettext) below::
+
+      make gettext
+      make gettext_copy 	
+
+.. we don't merge string anymore: msgmerge translated/fr/index.po build/gettext/en/index.pot -U -N
+
+-U mean update po file with pot file and -N mean don't use fuzzy but exact match. 
+Then push po files to transifex (you can use -l flags to filter the language)::
+
+    tx push -s
+
+When committing your update, add [build_pdf] or [build_translations] in order to 
+build pdf and/or translation to the webserver.
+
+**Known issues:**
+ 
+* when downloading po files to local dir, if the file exists it won't be 
+  updated. At this moment we should remove all po files before downloading.
+* when building html doc cache system doesn't allow to update a page with up to 
+  date translation. We should use the clean target with make.
+* This command line throw an error::
+  
+    tx push -s -t
+
+How to use Transifex client to manage translation process
+...........................................................
+
+.. NOTE::
+   Transifex is described more in depth in the document: :ref:`documentation_translation`
+
+* Install transifex client::
+
+    sudo apt-get install transifex-client
+
+* Edit ~/.transifexrc and add the appropriate info in there::
+
+    vim ~/.transifexrc
+
+  * With the following content::
+
+     [https://www.transifex.com/]                                                                                                                                                                                                 
+     username = yjacolin
+     token =
+     password = passw0rd!
+     hostname = https://www.transifex.com/
+
+Reference Labels
+----------------
+
+.. include:: ../include/labels.inc
+
+
+Regenerating the reference labels
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+You can regenerate the reference labels by issuing:
+
+::
+
+    make labels
+
+from the MapServer-documentation directory similar to when you are building the html or latex versions
+

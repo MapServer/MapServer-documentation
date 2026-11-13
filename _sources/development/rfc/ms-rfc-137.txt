@@ -1,0 +1,165 @@
+.. _rfc137:
+
+================================================
+MS RFC 137: Native FlatGeobuf support
+================================================
+
+:Author: 	Björn Harrtell
+:Contact: 	bjorn.harrtell@gmail.com
+:Author: 	Jeff McKenna
+:Contact: 	jmckenna@gatewaygeomatics.com
+:Last Updated:  2022-06-24
+:Version: 	MapServer 8.0
+:Status: 	Adopted
+
+.. NOTE::  
+   This document is outdated, please follow the official document: :ref:`FlatGeobuf <flatgeobuf>`
+
+1. Background
+=============
+
+.. image:: ../../images/flatgeobuf.jpg
+ :width: 200   
+ :height: 150
+ :align: right
+ :class: no-scaled-link
+
+FlatGeobuf is an optimized binary encoding for vectors based on 
+`Flatbuffers <https://google.github.io/flatbuffers/>`__, 
+that focuses on read/query performance by leveraging a 
+`Packed Hilbert R-Tree <https://en.wikipedia.org/wiki/Hilbert_R-tree#Packed_Hilbert_R-trees>`__
+spatial index, that enables fast bounding box spatial filtering.  
+FlatGeobuf performance has helped make it become one of the
+chosen formats for streaming spatial data through HTTP / "the cloud". 
+ 
+2. Current Status through OGR
+=============================
+
+.. seealso:: :ref:`FlatGeobuf in MapServer <flatgeobuf>`
+
+- Since GDAL 3.1.0, FlatGeobuf access is available in MapServer through `OGR <https://gdal.org/drivers/vector/flatgeobuf.html>`__
+
+  .. code-block:: mapfile
+
+    CONNECTIONTYPE OGR
+    CONNECTION "name.fgb"
+    DATA "layername"
+    CONNECTIONOPTIONS
+      "VERIFY_BUFFERS" "NO" # for maximum performance
+    END
+    
+- There is some performance overhead connecting through OGR.  The following
+  rudimentary benchmark shows some overhead for shapefile through OGR ::
+  
+     Shapefile (native) 0.010s
+     FlatGeobuf (OGR)   0.013s
+     Shapefile (OGR)    0.023s
+     GeoPackage (OGR)   0.042s
+     SpatiaLite (OGR)   0.045s
+     PostGIS (native)   0.053s
+     GeoJSON (OGR)      0.089s
+     
+     environment: MapServer-main + GDAL 3.4.3 (MS4W/Windows)
+
+3. Proposed enhancement
+=======================
+
+- add FlatGeobuf as a native format for MapServer
+
+  .. code-block:: mapfile
+
+    CONNECTIONTYPE flatgeobuf
+    DATA "name.fgb"
+
+- FlatGeobuf C++ implementation is small and doesn't require any
+  dependencies
+- Flatbuffers source will be included
+- initial implementation will be read access only
+
+3.1 Backwards Compatibility
+===========================
+
+Not applicable
+
+3.2 Performance Implications
+============================
+
+As mentioned above, this should give a performance boost by reading 
+direct from the FlatGeobuf file.  More benchmarks will be included here 
+during the testing of this Pull Request.  For example, here is an 
+updated benchmark run on 2022-05-16 (note that this is for world extents, 
+with country labels) :
+
+::
+  
+     FlatGeobuf (native) 0.008s
+     Shapefile (native)  0.010s
+     FlatGeobuf (OGR)    0.013s
+     Shapefile (OGR)     0.023s
+     GeoPackage (OGR)    0.042s
+     SpatiaLite (OGR)    0.045s
+     PostGIS (native)    0.053s
+     GeoJSON (OGR)       0.089s
+     
+     environment: MapServer-main + GDAL 3.4.3 (MS4W/Windows)
+
+3.3 Limitations
+===============
+
+1. This will be read access only, initially.  This means that tricks such as
+   setting an OUTPUTFORMAT for direct FlatGeobuf output from MapServer, will
+   only work through OGR, for now.
+   
+2. The *VERIFY_BUFFERS* driver option of FlatGeobuf is not implemented 
+   through this native driver (it is exposed through the OGR connection 
+   in MapServer, if need be).  Specifically this means that currently 
+   the value of *VERIFY_BUFFERS* is equivalent to *NO* for this native 
+   driver, at the moment.
+
+3.4 Security Concerns
+=====================
+
+There are no known security concerns at the moment.
+
+3.5 MapScript 
+=============
+
+The new format has been exposed through *layerObj->setConnectionType()*.
+   
+4. Implementation Details
+=========================
+
+4.1 Affected files
+------------------
+
+- new files will be stored in: */flatgeobuf/*
+
+- included files will be stored in: */flatgeobuf/include/*
+
+- *mapflatgeobuf.c*: main logic
+
+- *mapfile.c*: add new CONNECTIONTYPE
+
+- test has added in */msautotest/misc/flatgeobuf.map*
+
+- MapScript test has been added in */msautotest/php/layerObjTest.php*
+
+4.2 Ticket Reference
+--------------------
+    
+- pull request: https://github.com/MapServer/MapServer/pull/6520
+
+4.3 Documentation
+-----------------
+
+- ticket: https://github.com/MapServer/MapServer-documentation/issues/701
+
+
+5. Voting History
+=================
+
+::
+
+  +1 from JeromeB, TomK, SethG, MikeS, LarsS (community vote), JeffM 
+  0 from EvenR
+

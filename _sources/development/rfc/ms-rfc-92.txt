@@ -1,0 +1,127 @@
+.. _rfc92:
+
+=========================================================================
+MS RFC 92: Migrating from Autotools to CMake
+=========================================================================
+
+:Date:  2013/03/26
+:Author: Thomas Bonfort
+:Contact: thomas.bonfort@gmail.com
+:Status: Adopted
+:Version: MapServer 6.4
+
+1. Overview
+-----------
+
+Our current autoconf + Makefile setup has several limitations:
+
+- searching for external dependencies is inconsistent between searched libraries
+- some external dependencies are not found in their default locations, forcing
+  the inclusion of default locations in the compiler/linker flags, and thus
+  preventing the usage of other dependencies installed in non-standard locations
+  (e.g. if -L/usr/lib is added to the linker flags, then /usr/lib/libgdal.so will
+  be used even if the user asked to use gdal from /opt/local/)
+- the number of iterations that happened in configure.in are starting to show...
+  maintaining this file is now a fairly evolved task
+- Build files for platforms that do not support autotools are hand maintained
+  alongside the standard Makefiles
+- Mapscript builds are not streamlined with the principal build, and require 
+  custom instructions for each language
+- Supported features and available system functions are declared as defines on
+  the compiler command line, preventing the safe usage of our headers without the
+  need to know exactly what defines should be added (thus the need for the
+  mapserver-config and mapservervars hacks to be able to build mapscripts)
+
+
+
+2. Proposed solution
+--------------------
+
+Switch to cmake (http://www.cmake.org) to replace our autoconf + Makefile.in
+setup. Cmake is aimed at building and installing c/c++ projects in a
+cross-platform way.
+
+
+3. Implementation Details
+-------------------------
+
+- remove the current autotools/Makefile related files
+- implement CMakefiles replicating our search for dependencies and build
+- use a generated mapserver-config.h included by mapserver.h that contains
+  the defines that we are now passing on the command line (-DUSE_OGR or -DNEED_STRSTR)
+- store MapServer release information in the CMakefiles, and include that information
+  in a generated mapserver-version.h
+
+3.2 Files affected
+------------------
+
+Files removed:
+ - \*/Makefile \*/Makefile.in
+ - configure.in configure  
+ - aclocal.m4 
+ - README.Configure
+
+Files added:
+ - \*/CMakeLists.txt
+ - mapserver-config.h.in
+ - mapserver-version.h.in
+
+
+3.3 MapScript
+-------------
+
+Mapscript building will be streamlined with the main build process, and usually
+requires the presence of SWIG. 
+
+3.4 Backwards Compatibility Issues
+----------------------------------
+
+- Current ./configure handling will not be supported.
+- Linking against dependencies available as a static library only is not supported
+  directly. Workarounds should be possible and will be documented if that need
+  arises
+- Installed binaries will not have their rpath to libmapserver set. If libmapserver
+  is installed to a non-standard location, then LD_LIBRARY_PATH will have to be set
+  pointing to that location.
+- Current win32 buildfiles would need to be updated as the NEED_STRXXX defines have
+  been renamed in mapserver.h to HAVE_STRXXX
+
+
+4. Tips when migrating from autotools habits
+--------------------------------------------
+
+- Cmake builds should preferably be run "out-of-source", i.e. in a separate
+  directory from the source files::
+
+    $ cd mapserver
+    $ mkdir build
+    $ cd build
+    $ cmake ..
+    # fix dependency problems
+    $ make
+
+- Many new features are enabled/looked for by default instead of being silently
+  ignored.
+- Missing dependencies are reported with an error message indicating the resolution.
+  An unwanted dependency can be disabled by adding -DWITH_XXX=0 to the cmake
+  invocation (e.g. -DWITH_FRIBIDI=0 -DWITH_WFS=0)
+- Mapscripts are not built by default and are enabled by adding -DWITH_PHP=1
+  -DWITH_PYTHON=1, etc...
+- Dependencies that are installed outside of default locations can be referenced by
+  adding -DCMAKE_PREFIX_PATH=/path/to/gdal-prefix;/path/to/libxml2-prefix
+
+5. Performance implications
+---------------------------
+None
+
+6. Bug ID
+---------
+
+https://github.com/MapServer/MapServer/issues/4617
+
+
+7. Voting history
+-----------------
+
++1 from ThomasB, MikeS, TomK, JeffM, DanielM, OlivierC,
+SteveL, SteveW and PerryN

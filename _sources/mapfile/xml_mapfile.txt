@@ -1,0 +1,61 @@
+.. index::
+   single: XML Mapfile support
+
+.. _xml_mapfile:
+
+*******************
+XML Mapfile support
+*******************
+
+MapServer is able to load XML mapfiles automatically, without user
+XSLT transformations. Basically, MapServer will simply do an XSLT
+transformation when the mapfile passed to it is an XML one, convert it
+to a text mapfile in a temporary file on disk, then process the
+mapfile normally.
+
+.. index::
+   single: libxslt
+
+.. index::
+   single: libexslt
+
+New Dependencies
+
+* libxslt
+* libexslt 
+
+Enabling the support
+====================
+
+You can enable the XML mapfile support by adding the following option:
+--with-xml-mapfile. This configure option will enable the libxslt and
+libexslt check up. If your libxslt/libexslt are not installed in /usr,
+you'll have to add the following options:
+
+::
+
+    --with-xslt=/path/to/xslt/installation
+    --with-exslt=/path/to/exslt/installation
+
+Usage:
+======
+
+.. index::
+   single: MS_XMLMAPFILE_XSLT
+
+In order to enable this feature, set the MS_XMLMAPFILE_XSLT
+environment variable to point to the location of the XSLT to use for
+the XML->text mapfile conversion. e.g. in Apache:
+
+::
+
+    SetEnv MS_XMLMAPFILE_XSLT /path/to/mapfile.xsl
+    PassEnv MS_XMLMAPFILE_XSLT
+
+With this enabled, passing an .xml filename to the CGI `map` parameter
+will automatically trigger the conversion.
+
+.. note::
+   This is a first step to XML mapfile loading support. Obviously,
+   there is a cost to parse and translate the XML mapfile, but this
+   allows easier use of XML mapfiles.

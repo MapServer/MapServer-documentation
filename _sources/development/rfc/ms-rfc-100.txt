@@ -1,0 +1,264 @@
+.. _rfc100:
+
+==================================================================
+MS RFC 100: Support for tile index with mixed SRS in raster layers
+==================================================================
+
+:Date:  2013/07
+:Author: Even Rouault
+:Contact: even dot rouault at mines-paris dot org
+:Status: Implemented
+:Version: MapServer 6.4
+
+1. Overview
+-----------
+
+Raster layers can directly connect to a GDAL dataset or through a tile index.
+But until now, the rasters in the same tile index should have identical SRS.
+
+For the sake of simplicity of the administration of MapServer mapfiles,
+and/or to avoid unnecessary reprojections of rasters into a common SRS
+(which might be different from the requested SRS of a WMS or WCS request),
+it is desirable to have support for tile index with rasters of heterogeneous SRS.
+
+2. Proposed solution
+--------------------
+
+In the case where a tile index has tiles with mixed SRS, a new keyword, TILESRS
+"field_name", must be added in a LAYER block to specify that the field
+"field_name" contains the SRS of each tile. The value of that field must be a
+SRS expressed as WKT, PROJ.4 string, or EPSG:xxxx code (actually any string that
+is parsed by OSRSetFromUserInput()). If, for a tile, the field is empty, an
+attempt will be made to fetch the SRS from the tile raster directly with
+GDALGetProjectionRef().
+
+.. code-block:: mapfile
+
+    LAYER
+        NAME "tile_index_mixed_srs_26711"
+        TYPE RASTER
+        STATUS ON
+        TILEINDEX "tile_index_mixed_srs_26711.shp"
+        TILEITEM "location"
+        TILESRS "src_srs"
+        PROJECTION
+            "+init=epsg:26711" 
+        END
+    END
+
+Note that it is absolutely necesserary that the geometry (extent) of each tile
+is expressed in a common SRS (the one declared in the PROJECTION block of the
+LAYER block), so that spatial queries in the tileindex can work.
+
+Such tileindex files that have tiles with mixed SRS can be generated with an
+updated version of the GDAL gdaltindex utility, by using the -t_srs and
+-src_srs_name options.
+
+::
+
+    gdaltindex -t_srs EPSG:4326 -src_srs_name src_srs mytileindex.shp *.tif
+
+Those tile index can be used for example in WMS or WCS layers. For WCS layers,
+a few metadata fields must be specified in the LAYER definition, so as to
+define a "virtual dataset" coverage (see :ref:`wcs_server`).
+A new GDAL python sample script, wcs_virtds_params.py, will be added to ease the
+writing of such layers.
+
+3. Implementation Details
+-------------------------
+
+3.1 Files affected
+..................
+
+The main changes are in mapraster.c. Note that a code refactoring has been done
+to factor identical code found in msDrawRasterLayerLow() from mapraster.c and
+msRasterQueryByRect() from maprasterquery.c.
+
+* mapcopy.c : deal with layerObj.tilesrs
+* mapfile.c : deal with layerObj.tilesrs and TILESRS
+* mapfile.dtd : deal with TILESRS
+* mapfile.h : add TILESRS constant
+* maplexer.c : regenerated from maplexer.l
+* maplexer.l : deal with TILESRS
+* mapogr.cpp : generates error if TILESRS is used in a vector layer (unsupported)
+* mapraster.c : core of changes to deal with layerObj.tilesrs; code rafactoring
+* mapraster.h : new file to declare common functions between mapraster.c and maprasterquery.c
+* maprasterquery.c : refactored to share common code with mapraster.c
+* mapserver.h :  add tilesrs member in layerObj struct
+* mapshape.c : generates error if TILESRS is used in a vector layer (unsupported).
+  add capability to get projection info from .prj file when PROJECTION = AUTO
+
+
+3.2 Backwards Compatibility Issues
+..................................
+
+None expected, new functionality.
+
+3.3 MapScript changes
+.................................
+
+None
+
+3.4 Performance implications
+.................................
+
+Finding tiles that match the request window will be as fast as for tile index
+with same SRS. On-the-fly reprojection will only occur for tiles that intersect
+the request window. So the performance should be similar to current situations
+where a tile index with tiles in SRS=srs1 is requested with SRS=srs2.
+
+3.5 Related bug fixes
+......................
+
+The following syntax did not work properly in layers that referred to a TILEINDEX.
+
+.. code-block:: mapfile
+
+    PROJECTION
+        AUTO
+    END
+
+It couldn't fetch the projection from the tile index layer, even when it was
+available.
+
+Another related fix/enhancement is to be able to guess the SRS of a shapefile,
+from its associated .prj file, when PROJECTION AUTO is specified in its LAYER
+definition.
+
+Note: This brings a similar functionality for (raster) tile index layer and
+shapefile layers, to what was proposed in :ref:`rfc37`, but with a different
+implementation. The implementation for that PROJECTION AUTO mechanism follows
+what already works for raster layers with a single raster, and just tries to
+resolve layer->projection to an actual projection when
+layer->projection.args[0] == "auto", before doing any reprojection.
+
+3.6 Restrictions
+................
+
+This RFC only implements TILESRS support for raster layers. Support in vector
+layers is out of scope.
+
+3.7 Documentation
+.................
+
+The following pages will be updated to document the TILESRS keyword :
+  * :ref:`tileindex`
+  * :ref:`layer`
+  * :ref:`raster`
+
+4. Bug ID
+---------
+
+* Pull request: `pull4681`_
+* msautotest additions :
+    - https://github.com/rouault/msautotest/commit/8f791427817600ac69a45c7c14da18aa7fe0032b
+    - https://github.com/rouault/msautotest/commit/8655ee5f1be2a333d8b25f3395465275c052d12d
+
+.. _`pull4681`: https://github.com/MapServer/MapServer/pull/4681
+
+5 GDAL related enhancements
+---------------------------
+
+5.1 gdaltindex
+..............
+
+The gdaltindex utility will be upgraded to add a -src_srs_name option that
+match with the value of the TILESRS keyword. It will also support created
+tileindex in all supported OGR formats with the -f option (up to now only
+shapefile were supported).
+
+Example for a shapefile tileindex :
+::
+
+    gdaltindex -t_srs EPSG:26711 -src_srs_name src_srs tile_index_mixed_srs_26711.shp *.tif
+
+
+Example for a PostGIS layer tileindex :
+
+::
+
+    gdaltindex -f "PostgreSQL" -t_srs EPSG:26711 -src_srs_name src_srs -lyr_name index_26711 pg:dbname=autotest *.tif
+
+5.2 wcs_virtds_params.py
+........................
+
+A sample script, wcs_virtds_params.py, will be added to generate the WCS
+layer definition from a tileindex with mixed SRS.
+
+Example for a shapefile tileindex :
+
+::
+
+    $ python swig/python/samples/wcs_virtds_params.py tile_index_mixed_srs_26711.shp -src_srs_name src_srs
+
+.. code-block:: mapfile
+
+    LAYER
+        NAME "tile_index_mixed_srs_26711"
+        TYPE RASTER
+        STATUS ON
+        TILEINDEX "tile_index_mixed_srs_26711.shp"
+        TILEITEM "location"
+        TILESRS "src_srs"
+        PROJECTION
+            "+init=epsg:26711" 
+        END
+        METADATA   
+            "wcs_label"       "tile_index_mixed_srs_26711"
+            "wcs_rangeset_name"   "Range 1"  ### required to support DescribeCoverage request
+            "wcs_rangeset_label"  "My Label" ### required to support DescribeCoverage request
+            "wcs_extent"      "440701.103108 3745270.030930 446726.551080 3751320.000893"
+            "wcs_size"        "100 101"
+            "wcs_resolution"  "60.019424 60.019424"
+        END
+    END
+
+
+Example for a PostGIS layer tileindex :
+
+::
+
+    $ python swig/python/samples/wcs_virtds_params.py pg:dbname=autotest -lyr_name index_26711 -src_srs_name src_srs
+
+.. code-block:: mapfile
+
+    LAYER
+        NAME "index_26711_tileindex"
+        TYPE POLYGON
+        STATUS OFF
+        CONNECTIONTYPE OGR
+        CONNECTION "pg:dbname=autotest,index_26711"
+        PROJECTION
+            "+init=epsg:26711" 
+        END
+    END
+
+    LAYER
+        NAME "index_26711"
+        TYPE RASTER
+        STATUS ON
+        TILEINDEX "index_26711_tileindex"
+        TILEITEM "location"
+        TILESRS "src_srs"
+        PROJECTION
+            "+init=epsg:26711" 
+        END
+        METADATA   
+            "wcs_label"       "index_26711"
+            "wcs_rangeset_name"   "Range 1"  ### required to support DescribeCoverage request
+            "wcs_rangeset_label"  "My Label" ### required to support DescribeCoverage request
+            "wcs_extent"      "440701.103108 3745270.030930 446726.551080 3751320.000893"
+            "wcs_size"        "100 101"
+            "wcs_resolution"  "60.019424 60.019424"
+        END
+    END
+
+
+6. Voting history
+-----------------
+
+Vote passed with +1 from ThomasB, StephenW, MichaelS, TamasS, StephanM, 
+DanielM, JeffM and SteveL
+
+
+.. _`pull4697`: https://github.com/MapServer/MapServer/pull/4697

@@ -1,0 +1,178 @@
+.. _rfc79:
+
+=========================================================================
+MS RFC 79: Layer Masking
+=========================================================================
+
+:Date:  2011/11/30
+:Author: Thomas Bonfort
+:Author: Alan Boudreault
+:Contact: tbonfort at terriscope.fr
+:Contact: aboudreault at mapgears.com
+:Last Edited: 2012/05/11
+:Status: Implemented
+:Version: MapServer 6.2
+
+1. Overview
+-----------
+
+For some applications, it is desirable to mask out one or more layers so
+that only the features that intersect another set of features are rendered
+in the returned image.
+While it is relatively trivial to achieve this goal with sql joins if all
+the data is stored in postgis, the task becomes much more evolved or even
+impossible if the layer to be masked, or the layer to use as a mask, comes
+from a shapefile or a raster datasource.
+
+A example use-case for this could be rendering meteo data for a given
+client, but only on the areas where the client has purchased the service.
+In this case, the meteo data should only be rendered on the areas covered by
+a set of polygons that represent the purchased areas.
+
+Another example use-case given an input DEM raster, could be to only render
+data where the elevation is comprised in a given range.
+
+To achieve these goals, the present RFC proposes the introduction of "MASK"
+layers, where only the features that intersect the given mask are rendered
+onto the final image.
+
+2. Proposed solution
+------------------------
+
+In order to work with all layer types, this RFC proposes to implement layer
+masking at the pixel level, with the addition of a single "MASK" mapfile
+keyword. The MASK keywords is placed at the layer level, and takes a single
+argument which is the name of another mapfile layer that should be used as
+a mask.
+
+The mechanism to achieve masking at rendering time is:
+
+- Each layer that is used as a mask is rendered in its own temporary image.
+  All the filtering and styling is done as usual, which implies that raster
+  classification/filtering can be performed, as well as style-level
+  geomtransforms, etc...
+
+- When a layer references a MASK, it is rendered in its own temporary image,
+  in the same way that is done when OPACITY is set. As before, all kind of
+  filtering/transformations can be performed on the masked layer
+
+- The masked layer is blended onto the final map image, but only for the
+  pixels that have been set in the mask image.
+
+Example of MASK usage:
+
+::
+
+  LAYER
+   NAME "parcels"
+   TYPE POLYGON
+   STATUS OFF
+   DATA "the_geom from parcels where clientid='%token%'"
+   CLASS
+    STYLE
+     COLOR 0 0 0
+    END
+   END
+  END
+
+  LAYER
+   NAME "meteo"
+   STATUS ON
+   TYPE RASTER
+   DATA "raster.tif"
+   MASK "parcels"
+  END
+
+.. note::
+
+   The layer used as a mask **will** be rendered in the final map image
+   if its status is set to DEFAULT, or if its status is set to ON and the
+   layer name is included in the requested layers. Most users of this
+   feature will probably want to set the mask layer to STATUS OFF.
+
+
+3. Implementation Details
+-------------------------
+
+- The parser will have a MASK keyword added to it, expecting a string
+- The layerObj will have two properties added to it:
+  
+  - char* masklayer : the name of the layer that should be used as a mask
+  - imageObj* maskimage : for a layer that has been referenced as a mask by
+    another layer, this will contain the pixels that should be used to
+    determine where data can be rendered on the final map image. This is to
+    prevent the mask layer from being rendered multiple times if it is
+    referenced by multiple layers.
+
+- In msDrawLayer(), if the current layer references a MASK layer:
+  
+  - a temp image is created and rendered into by another call to
+    msDrawLayer()
+  - a temp image is created and rendered into following the same codepath
+    as if layer->opacity has been set
+  - the second temporary image's
+    alpha channel is tampered with and set to 0 for all the pixels that haven't
+    been set in the first temporary image.
+  - the second temporary image is blended into the final map image, again
+    following codepath as if layer->opacity has been set.
+
+3.1 Files affected
+------------------
+
+The following files will be modified/created by this RFC:
+
+::
+
+  mapserver.h/mapfile.c/mapfile.h/maplexer.l/mapcopy.c: parser and new layerObj members
+  mapdraw.c: implementation in msDrawLayer()
+  maplabel.c: implementation for dropping labels from the labelcache if they don't
+              intersect the mask layer in msAddLabel()
+
+3.2 MapScript
+-------------
+
+Getters and Setters will have to be added to programmatically add a MASK to a layerObj.
+No other issues are to be expected.
+
+3.4 Backwards Compatibility Issues
+----------------------------------
+
+This change provides a new functionality with no backwards compatibility issues being considered.
+
+4. Limitations
+--------------
+
+- Querying: The masking is done at the pixel level, as such all operations that query the
+  datasource will not mask out features.
+- Vector renderers: masking operations will not be supported on the vector renderers (svg,pdf)
+- Labelling: Labelling is usually performed after all layers have been rendered, in the labelcache
+  phase.
+  
+  - For layers that are referenced as a mask, the layer's labelcache will be set to OFF, which
+    results in all labels being directly added to the temporary mask image instead of being added
+    to the labelcache. Of course, it is not recommended to add labels to a layer used as a mask
+    (that is, unless someone finds a compelling use-case to do so)
+  - If the layer that is being masked has labels, these have the potential to be rendered outside the
+    mask area if they go through the labelcache. To overcome this, there will be a test to ensure
+    that the labelpoint is contained in the masked areas before adding it to the labelcache. Note that
+    the label text itself might be rendered outside of the masked areas, but this should not be an
+    issue. If the masked layer is set with LABELCACHE FALSE, the rendered labels will be filtered
+    out automatically at the pixel level, although there will probably be truncated labels that
+    can appear.
+
+5. Error Handling
+-----------------
+
+There are no special cases to treat here aside from the classic ones (parsing errors, invalid
+layer referenced by MASK, invalid renderer selected)
+
+6. Bug ID
+---------
+
+https://github.com/MapServer/MapServer/issues/4111
+
+7. Voting history
+-----------------
+
+Passed with +1 from ThomasB, MichaelS, StephenW, AssefaY, FrankW, TamasS, DanielM, JeffMcK, TomK,
+OlivierC, SteveL

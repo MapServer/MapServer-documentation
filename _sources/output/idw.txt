@@ -1,0 +1,116 @@
+.. _idw:
+
+*****************************************************************************
+ Inverse distance weighted interpolation
+*****************************************************************************
+
+.. contents:: Table of Contents
+    :depth: 2
+    :backlinks: top
+
+Introduction
+============
+
+.. versionadded:: 8.0
+
+The inverse distance weighted interpolation is a method to rasterize vector
+features with a weight that is the inverse of a power of the distance between
+the target pixel and the source feature.
+
+Configuration
+=============
+
+First, you must set the `LAYER` `CONNECTIONTYPE` parameter to
+`IDW`.  The vector-to-raster interpolation takes the following
+parameters:
+
+- **CONNECTION "layername"** : reference to the `NAME` or `GROUP` of a
+  `LAYER` to use as an input vector datasource.  `NAME` takes
+  precedence, followed by the first layer from `GROUP` who's
+  minscaledenom/maxscaledenom matches the current map scale.  The
+  referenced layer should be a `TYPE` `POINT` layer.  Other layer
+  types will result in one sample being added for each vertex of the
+  input features.
+
+- **PROCESSING "IDW_RADIUS=10"** :
+  Radius in pixels of the search radius of features to take into account.
+  Higher values result in increased cpu time needed to compute the filtered data.
+  The default is the dimension of the image to render.
+
+- **PROCESSING "IDW_COMPUTE_BORDERS=ON|OFF"** : A kernel of
+  radius "r" cannot be applied to "r" pixels along the borders of the
+  image.  The default is to extend the search rectangle of the input
+  datasource to include features "r" pixels outside of the current map
+  extent so that the computed result extends to the full extent of
+  the resulting image.  This can be deactivated when tiling if the
+  tiling software applies a metabuffer of "r" pixels to its requests,
+  to avoid the performance overhead of computing this extra
+  information.
+
+- **PROCESSING "IDW_POWER=numeric"** :
+
+  Value such that 1 / distance^power is the weight applied when computing
+  pixel values. The default is 1.0.
+
+Advanced sample weighting and filtering
+=======================================
+
+See corresponding section of :ref:`kerneldensity`
+
+Raster Color Ramping
+=====================
+
+
+See corresponding section of :ref:`kerneldensity`
+
+Example mapfiles
+=================
+
+.. code-block:: mapfile
+
+  MAP
+    SIZE 1000 500
+    EXTENT -180 -90 180 90
+    NAME "test heat"
+    IMAGETYPE "png"
+
+    WEB
+      METADATA
+        "ows_srs" "epsg:4326  epsg:3857 epsg:900913"
+        "ows_enable_request" "*"
+      END # METADATA
+    END # WEB
+
+    PROJECTION
+      "+init=epsg:4326"
+    END # PROJECTION
+
+    LAYER
+      NAME "idw"
+      TYPE raster
+      CONNECTIONTYPE idw
+      CONNECTION "points"
+      STATUS on
+      PROCESSING "IDW_RADIUS=20"
+      PROCESSING "IDW_COMPUTE_BORDERS=OFF"
+      PROCESSING "IDW_WEIGHT=1"
+      OFFSITE 0 0 0
+      CLASS
+        STYLE
+          COLORRANGE  "#0000ff00"  "#0000ffff"
+          DATARANGE 0 32
+        END # STYLE
+        STYLE
+          COLORRANGE  "#0000ffff"  "#ff0000ff"
+          DATARANGE 32 255
+        END # STYLE
+      END # CLASS
+    END # LAYER
+
+    LAYER
+        NAME "points"
+        STATUS on
+        TYPE POINT
+        DATA "pnts.shp"
+     END # LAYER
+  END # MAPFILE

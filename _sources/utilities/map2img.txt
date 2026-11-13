@@ -1,0 +1,190 @@
+.. index::
+   pair: Utility; map2img
+
+.. _map2img:
+
+*****************************************************************************
+ map2img
+*****************************************************************************
+
+:Author: Jeff McKenna
+:Contact: jmckenna at gatewaygeomatics.com
+:Last Updated: 2022-08-09
+
+.. contents:: Table of Contents
+    :depth: 3
+    :backlinks: top
+
+Purpose
+-----------------------------------------------------------------------------
+
+map2img is a commandline utility that creates a map image from a mapfile. Output 
+is by default PNG, but you can specify other output formats defined in the mapfile.  
+This is a very useful utility to test your mapfile (and should always be your first test, 
+before any tests through a web browser or OGC client). You can simply provide the 
+path to your mapfile and the name of an output image, and an image should be 
+returned. If an image cannot be created an error will be displayed at the 
+commandline that should refer to a line number in the mapfile.
+
+.. note:: map2img was renamed from 'shp2img' as of the MapServer 8.0 release, 
+    according to :ref:`rfc136`
+   
+Syntax
+-----------------------------------------------------------------------------
+::
+
+    map2img -m mapfile [-o image] [-e minx miny maxx maxy] [-s sizex sizey]
+               [-l "layer1 [layers2...]"] [-i format]
+               [-all_debug n] [-map_debug n] [-layer_debug n] [-p n] [-c n] [-d layername datavalue]
+               [-conf filename]
+    -m mapfile: Map file to operate on - required
+    -i format: Override the IMAGETYPE value to pick output format
+    -o image: output filename (stdout if not provided)
+    -e minx miny maxx maxy: extents to render
+    -s sizex sizey: output image size
+    -l layers: layers / groups to enable - make sure they are quoted and space separated if more than one listed
+    -all_debug n: Set debug level for map and all layers
+    -map_debug n: Set map debug level
+    -layer_debug layer_name n: Set layer debug level
+    -c n: draw map n number of times
+    -p n: pause for n seconds after reading the map
+    -d layername datavalue: change DATA value for layer
+    -conf filename: filename of the MapServer configuration file.
+
+.. seealso::
+    
+    :ref:`debugging`
+
+Example #1 Generate a Map Image
+.............................................................................
+
+::
+    
+    map2img -m local.map -o test.png
+
+Result
+    A file named 'test.png' is created, that you can drag into your browser to view.
+
+.. tip::
+    These examples use the distributed working mapfile that every `MS4W <https://ms4w.com/>`__ 
+    instance contains at */ms4w/apps/local-demo/local.map*    
+
+Example #2 Generate a Map Image with Draw Speeds
+.............................................................................
+
+::
+    
+    map2img -m local.map -o test2.png -map_debug 3
+
+Result
+    A file named 'test2.png' is created, and layer draw speeds are returned such as:
+
+::
+
+    msDrawMap(): rendering using outputformat named png (AGG/PNG).
+    msDrawMap(): WMS/WFS set-up and query, 0.000s
+    msDrawMap(): Layer 0 (ocean), 0.081s
+    msDrawMap(): Layer 1 (countries), 0.026s
+    msDrawMap(): Layer 2 (lakes), 0.009s
+    msDrawMap(): Layer 3 (ocean-labels), 0.010s
+    msDrawMap(): Drawing Label Cache, 0.039s
+    msDrawMap() total time: 0.167s
+    msSaveImage(test2.png) total time: 0.019s
+
+Example #3 Generate a Map Image with Debug Information for all Layers
+.............................................................................
+
+::
+    
+    map2img -m local.map -o test3.png -all_debug 3
+
+Result
+    A file named 'test3.png' is created, layer draw speeds are returned, 
+    and some warnings that index qix files are not found, such as:
+
+::
+
+    msLoadMap(): 0.006s
+    msDrawMap(): rendering using outputformat named png (AGG/PNG).
+    msDrawMap(): WMS/WFS set-up and query, 0.000s
+    msOGRFileOpen(demo.sqlite)...
+    OGROPen(D:\ms4w\apps\local-demo/.\./data/demo.sqlite)
+    msConnPoolRegister(ocean,demo.sqlite,015672C8)
+    msOGRLayerClose(demo.sqlite).
+    msOGRFileClose(D:\ms4w\apps\local-demo/.\./data/demo.sqlite,3).
+    msConnPoolRelease(ocean,demo.sqlite,015672C8)
+    msConnPoolClose(demo.sqlite,015672C8)
+    msDrawMap(): Layer 0 (ocean), 0.030s
+    msOGRFileOpen(demo.sqlite)...
+    OGROPen(D:\ms4w\apps\local-demo/.\./data/demo.sqlite)
+    msConnPoolRegister(countries,demo.sqlite,03561F40)
+    msOGRLayerClose(demo.sqlite).
+    msOGRFileClose(D:\ms4w\apps\local-demo/.\./data/demo.sqlite,0).
+    msConnPoolRelease(countries,demo.sqlite,03561F40)
+    msConnPoolClose(demo.sqlite,03561F40)
+    msDrawMap(): Layer 1 (countries), 0.020s
+    msOGRFileOpen(demo.sqlite)...
+    OGROPen(D:\ms4w\apps\local-demo/.\./data/demo.sqlite)
+    msConnPoolRegister(lakes,demo.sqlite,03517620)
+    msOGRLayerClose(demo.sqlite).
+    msOGRFileClose(D:\ms4w\apps\local-demo/.\./data/demo.sqlite,2).
+    msConnPoolRelease(lakes,demo.sqlite,03517620)
+    msConnPoolClose(demo.sqlite,03517620)
+    msDrawMap(): Layer 2 (lakes), 0.009s
+    msOGRFileOpen(demo.sqlite)...
+    OGROPen(D:\ms4w\apps\local-demo/.\./data/demo.sqlite)
+    msConnPoolRegister(ocean-labels,demo.sqlite,03517620)
+    msOGRLayerClose(demo.sqlite).
+    msOGRFileClose(D:\ms4w\apps\local-demo/.\./data/demo.sqlite,4).
+    msConnPoolRelease(ocean-labels,demo.sqlite,03517620)
+    msConnPoolClose(demo.sqlite,03517620)
+    msDrawMap(): Layer 3 (ocean-labels), 0.012s
+    msLayerIsVisible(): Skipping layer (places) because no CLASS in the layer is in-scale for this MAP scale
+    msDrawMap(): Drawing Label Cache, 0.004s
+    msDrawMap() total time: 0.075s
+    msSaveImage(test3.png) total time: 0.013s
+    map2img total time: 0.096s
+
+Example #4 Generate a Map Image for a Specific Layer
+.............................................................................
+
+::
+    
+    map2img -m local.map -o test4.png -l "countries" -map_debug 3
+
+Result
+    A file named 'test4.png' is created, and layer draw speeds are returned for 
+    1 layer only, such as:
+
+::
+
+    msDrawMap(): rendering using outputformat named png (AGG/PNG).
+    msDrawMap(): WMS/WFS set-up and query, 0.000s
+    msDrawMap(): Layer 1 (countries), 0.036s
+    msDrawMap(): Drawing Label Cache, 0.002s
+    msDrawMap() total time: 0.038s
+    msSaveImage(test4.png) total time: 0.026s
+    
+Example #5 Generate a Map Image for Specific (Multiple) Layers
+.............................................................................
+
+.. NOTE::
+   The syntax for specifying multiple layers is: -l "layer1 layer2 layer3 layer4"
+
+::
+    
+    map2img -m local.map -o test5.png -l "countries lakes" -map_debug 3
+
+Result
+    A file named 'test5.png' is created, and layer draw speeds are returned for 
+    only the 2 specified layers, such as:
+
+::
+
+    msDrawMap(): rendering using outputformat named png (AGG/PNG).
+    msDrawMap(): WMS/WFS set-up and query, 0.000s
+    msDrawMap(): Layer 1 (countries), 0.037s
+    msDrawMap(): Layer 2 (lakes), 0.008s
+    msDrawMap(): Drawing Label Cache, 0.002s
+    msDrawMap() total time: 0.049s
+    msSaveImage(test5.png) total time: 0.011s
